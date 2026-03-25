@@ -1,0 +1,158 @@
+import Lomiri.Components 1.3
+import QtQuick 2.7
+import QtQuick.Layouts 1.3
+import io.thp.pyotherside 1.4
+import "ut_components"
+
+Page {
+    id: settingsPage
+
+    property bool daemonInstalled: false
+    property bool checkingDaemon: true
+
+    Flickable {
+        contentHeight: content.height + units.gu(4)
+        clip: true
+
+        anchors {
+            top: settingsPage.header.bottom
+            left: parent.left
+            right: parent.right
+            bottom: parent.bottom
+        }
+
+        Column {
+            id: content
+
+            width: parent.width
+            spacing: units.gu(2)
+            topPadding: units.gu(1)
+
+            ConfigurationGroup {
+                title: i18n.tr("Daemon")
+
+                Item {
+                    width: parent.width
+                    height: units.gu(6)
+
+                    RowLayout {
+                        anchors {
+                            fill: parent
+                            leftMargin: units.gu(2)
+                            rightMargin: units.gu(2)
+                        }
+
+                        Label {
+                            text: i18n.tr("Status")
+                            fontSize: "medium"
+                            Layout.fillWidth: true
+                        }
+
+                        ActivityIndicator {
+                            running: checkingDaemon
+                            visible: checkingDaemon
+                            Layout.alignment: Qt.AlignRight
+                        }
+
+                        Label {
+                            visible: !checkingDaemon
+                            text: daemonInstalled ? i18n.tr("Installed") : i18n.tr("Not installed")
+                            fontSize: "medium"
+                            color: daemonInstalled ? LomiriColors.green : LomiriColors.red
+                            Layout.alignment: Qt.AlignRight
+                        }
+
+                    }
+
+                }
+
+            }
+
+            ActionButton {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: daemonInstalled ? i18n.tr("Uninstall Daemon") : i18n.tr("Install Daemon")
+                iconName: daemonInstalled ? "delete" : "import"
+                backgroundColor: daemonInstalled ? theme.palette.normal.negative : theme.palette.normal.positive
+                enabled: !checkingDaemon
+                onClicked: {
+                    checkingDaemon = true;
+                    if (daemonInstalled)
+                        python.call('main.uninstall_daemon', [], function(result) {
+                        daemonInstalled = !result.success;
+                        checkingDaemon = false;
+                    });
+                    else
+                        python.call('main.install_daemon', [], function(result) {
+                        daemonInstalled = result.success;
+                        checkingDaemon = false;
+                    });
+                }
+            }
+
+            ConfigurationGroup {
+                title: i18n.tr("Data")
+
+                Item {
+                    width: parent.width
+                    height: units.gu(6)
+
+                    RowLayout {
+                        anchors {
+                            fill: parent
+                            leftMargin: units.gu(2)
+                            rightMargin: units.gu(2)
+                        }
+
+                        Label {
+                            text: i18n.tr("Clear all local data including messages and settings")
+                            fontSize: "small"
+                            color: theme.palette.normal.backgroundTertiaryText
+                            wrapMode: Text.WordWrap
+                            Layout.fillWidth: true
+                        }
+
+                    }
+
+                }
+
+            }
+
+            ActionButton {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: i18n.tr("Clear Data")
+                iconName: "reset"
+                backgroundColor: theme.palette.normal.negative
+                onClicked: {
+                    python.call('main.clear_data', [], function(result) {
+                        if (result.success)
+                            pageStack.clear();
+
+                        pageStack.push(Qt.resolvedUrl("ChatListPage.qml"));
+                    });
+                }
+            }
+
+        }
+
+    }
+
+    Python {
+        id: python
+
+        Component.onCompleted: {
+            addImportPath(Qt.resolvedUrl('../src/'));
+            importModule('main', function() {
+                python.call('main.check_daemon_status', [], function(result) {
+                    daemonInstalled = result.installed;
+                    checkingDaemon = false;
+                });
+            });
+        }
+    }
+
+    header: AppHeader {
+        pageTitle: i18n.tr("Settings")
+        isRootPage: false
+    }
+
+}

@@ -1,0 +1,15 @@
+{
+    "name": "greenline.brennoflavio",
+    "description": "A native Whatsapp Client for Ubuntu Touch",
+    "architecture": "arm64",
+    "title": "Greenline",
+    "hooks": {
+        "greenline": {
+            "apparmor": "greenline.apparmor",
+            "desktop":  "greenline.desktop"
+        }
+    },
+    "version": "@BUILD_VERSION@",
+    "maintainer": "Brenno Almeida <contato@brennoflavio.com.br>",
+    "framework" : "@CLICK_FRAMEWORK@"
+}

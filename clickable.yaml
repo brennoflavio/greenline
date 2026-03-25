@@ -1,0 +1,19 @@
+clickable_minimum_required: 8.0.0
+builder: cmake
+kill: qmlscene
+dependencies_host:
+  - gcc-aarch64-linux-gnu
+  - qemu-user
+  - libc6-arm64-cross
+  - build-essential
+  - libsqlite3-dev
+env_vars:
+  UV_INSTALL_DIR: /usr/local
+image_setup:
+  run:
+    - rm -rf /usr/local/go && wget https://go.dev/dl/go1.25.4.linux-amd64.tar.gz && tar -C /usr/local -xzf go1.25.4.linux-amd64.tar.gz
+    - curl -LsSf https://astral.sh/uv/install.sh | sh
+postbuild:
+  # - /usr/bin/bash install/build-daemon.sh
+  - /usr/bin/bash install/build-python-deps.sh
+skip_review: true
