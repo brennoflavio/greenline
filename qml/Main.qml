@@ -21,6 +21,8 @@ import io.thp.pyotherside 1.4
 MainView {
     id: root
 
+    property bool isAuthenticating: false
+
     objectName: 'mainView'
     applicationName: 'greenline.brennoflavio'
     automaticOrientation: true
@@ -54,7 +56,28 @@ MainView {
         Component.onCompleted: {
             addImportPath(Qt.resolvedUrl('../src/'));
             importModule('main', function() {
-                pageStack.push(Qt.resolvedUrl("ChatListPage.qml"));
+                python.call('main.check_daemon_status', [], function(result) {
+                    if (!result.installed || !result.active) {
+                        pageStack.push(Qt.resolvedUrl("DaemonSetupPage.qml"));
+                        return ;
+                    }
+                    python.call('main.check_daemon_version', [], function() {
+                        python.call('main.get_session_status', [], function(session) {
+                            python.call('main.start_event_loop', [], function() {
+                            });
+                            if (session.logged_in)
+                                pageStack.push(Qt.resolvedUrl("ChatListPage.qml"));
+                            else
+                                pageStack.push(Qt.resolvedUrl("AuthorizationPage.qml"));
+                        });
+                    });
+                });
+                setHandler('session-status', function(status) {
+                    if (!status.logged_in && !isAuthenticating) {
+                        pageStack.clear();
+                        pageStack.push(Qt.resolvedUrl("AuthorizationPage.qml"));
+                    }
+                });
             });
         }
         onError: {

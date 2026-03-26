@@ -1,0 +1,251 @@
+package waconn
+
+import (
+	"context"
+	"fmt"
+	"log/slog"
+	"time"
+
+	"go.mau.fi/whatsmeow"
+	"go.mau.fi/whatsmeow/proto/waCompanionReg"
+	"go.mau.fi/whatsmeow/store"
+	"go.mau.fi/whatsmeow/store/sqlstore"
+	"go.mau.fi/whatsmeow/types/events"
+	waLog "go.mau.fi/whatsmeow/util/log"
+	"google.golang.org/protobuf/proto"
+
+	_ "modernc.org/sqlite"
+)
+
+type Client struct {
+	waCli        *whatsmeow.Client
+	container    *sqlstore.Container
+	log          *slog.Logger
+	disconnectCh chan struct{}
+	stopCh       chan string
+}
+
+func New(dbPath string, logger *slog.Logger) (*Client, error) {
+	ctx := context.Background()
+	waLogger := &slogAdapter{logger: logger}
+
+	store.DeviceProps.RequireFullSync = proto.Bool(true)
+	store.DeviceProps.HistorySyncConfig.SupportGroupHistory = proto.Bool(true)
+	store.DeviceProps.HistorySyncConfig.SupportCallLogHistory = proto.Bool(true)
+	store.DeviceProps.PlatformType = waCompanionReg.DeviceProps_ANDROID_PHONE.Enum()
+	store.SetOSInfo("Greenline", [3]uint32{0, 1, 0})
+
+	address := fmt.Sprintf("file:%s?_pragma=foreign_keys(1)&_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)", dbPath)
+	container, err := sqlstore.New(ctx, "sqlite", address, waLogger.Sub("sqlstore"))
+	if err != nil {
+		return nil, fmt.Errorf("waconn: open store: %w", err)
+	}
+
+	device, err := container.GetFirstDevice(ctx)
+	if err != nil {
+		container.Close()
+		return nil, fmt.Errorf("waconn: get device: %w", err)
+	}
+
+	waCli := whatsmeow.NewClient(device, waLogger.Sub("client"))
+
+	c := &Client{
+		waCli:        waCli,
+		container:    container,
+		log:          logger,
+		disconnectCh: make(chan struct{}, 1),
+		stopCh:       make(chan string, 1),
+	}
+
+	waCli.AddEventHandler(c.handleEvent)
+
+	return c, nil
+}
+
+func (c *Client) handleEvent(evt interface{}) {
+	switch v := evt.(type) {
+	case *events.Disconnected:
+		select {
+		case c.disconnectCh <- struct{}{}:
+		default:
+		}
+	case *events.LoggedOut:
+		c.log.Warn("whatsmeow: logged out", "reason", v.Reason.String())
+		select {
+		case c.disconnectCh <- struct{}{}:
+		default:
+		}
+	case *events.StreamReplaced:
+		select {
+		case c.stopCh <- "stream replaced by another client":
+		default:
+		}
+	case *events.ClientOutdated:
+		select {
+		case c.stopCh <- "client outdated, update required":
+		default:
+		}
+	case *events.TemporaryBan:
+		c.log.Error("whatsmeow: temporary ban",
+			"reason", v.Code.String(), "expires_in", v.Expire)
+		select {
+		case c.stopCh <- fmt.Sprintf("temporary ban: %s (expires in %s)",
+			v.Code.String(), v.Expire):
+		default:
+		}
+	}
+}
+
+func (c *Client) ConnectWithRetry(ctx context.Context, onQR func(code string)) {
+	const retryDelay = 5 * time.Second
+
+	for {
+		if ctx.Err() != nil {
+			return
+		}
+
+		select {
+		case reason := <-c.stopCh:
+			c.log.Error("whatsmeow: permanent disconnect, stopping", "reason", reason)
+			return
+		default:
+		}
+
+		if c.waCli.Store.ID == nil {
+			c.log.Info("whatsmeow: device not paired, starting QR flow")
+
+			qrChan, err := c.waCli.GetQRChannel(ctx)
+			if err != nil {
+				c.log.Error("whatsmeow: get QR channel failed", "error", err)
+				if !c.sleepCtx(ctx, retryDelay) {
+					return
+				}
+				continue
+			}
+
+			if err := c.waCli.Connect(); err != nil {
+				c.log.Error("whatsmeow: connect failed", "error", err)
+				if !c.sleepCtx(ctx, retryDelay) {
+					return
+				}
+				continue
+			}
+
+			paired := false
+			for evt := range qrChan {
+				switch evt.Event {
+				case whatsmeow.QRChannelEventCode:
+					onQR(evt.Code)
+				case "success":
+					paired = true
+				default:
+					c.log.Info("whatsmeow: QR event", "event", evt.Event)
+				}
+			}
+
+			onQR("")
+
+			if !paired {
+				c.log.Warn("whatsmeow: QR expired, retrying")
+				c.waCli.Disconnect()
+				c.drainDisconnect()
+				if !c.sleepCtx(ctx, retryDelay) {
+					return
+				}
+				continue
+			}
+
+			c.log.Info("whatsmeow: paired successfully, waiting for connection")
+			c.drainDisconnect()
+			if !c.waCli.WaitForConnection(30 * time.Second) {
+				c.log.Warn("whatsmeow: timed out waiting for post-pairing connection")
+				continue
+			}
+			c.drainDisconnect()
+			c.log.Info("whatsmeow: connected after pairing")
+		} else {
+			if c.waCli.IsConnected() {
+				c.log.Info("whatsmeow: already connected, skipping connect")
+			} else {
+				if err := c.waCli.Connect(); err != nil {
+					c.log.Error("whatsmeow: connect failed", "error", err)
+					if !c.sleepCtx(ctx, retryDelay) {
+						return
+					}
+					continue
+				}
+				c.log.Info("whatsmeow: connected (already paired)")
+			}
+		}
+
+		select {
+		case <-ctx.Done():
+			return
+		case reason := <-c.stopCh:
+			c.log.Error("whatsmeow: permanent disconnect, stopping", "reason", reason)
+			return
+		case <-c.disconnectCh:
+			c.log.Warn("whatsmeow: disconnected, will reconnect")
+			if !c.sleepCtx(ctx, retryDelay) {
+				return
+			}
+		}
+	}
+}
+
+func (c *Client) drainDisconnect() {
+	select {
+	case <-c.disconnectCh:
+	default:
+	}
+}
+
+func (c *Client) sleepCtx(ctx context.Context, d time.Duration) bool {
+	t := time.NewTimer(d)
+	defer t.Stop()
+	select {
+	case <-ctx.Done():
+		return false
+	case <-t.C:
+		return true
+	}
+}
+
+func (c *Client) AddEventHandler(handler func(evt interface{})) {
+	c.waCli.AddEventHandler(handler)
+}
+
+func (c *Client) Disconnect() {
+	c.waCli.Disconnect()
+	c.container.Close()
+}
+
+func (c *Client) IsConnected() bool {
+	return c.waCli.IsConnected()
+}
+
+func (c *Client) IsLoggedIn() bool {
+	return c.waCli.IsLoggedIn()
+}
+
+type slogAdapter struct {
+	logger *slog.Logger
+}
+
+func (a *slogAdapter) Warnf(msg string, args ...interface{}) {
+	a.logger.Warn(fmt.Sprintf(msg, args...))
+}
+func (a *slogAdapter) Errorf(msg string, args ...interface{}) {
+	a.logger.Error(fmt.Sprintf(msg, args...))
+}
+func (a *slogAdapter) Infof(msg string, args ...interface{}) {
+	a.logger.Info(fmt.Sprintf(msg, args...))
+}
+func (a *slogAdapter) Debugf(msg string, args ...interface{}) {
+	a.logger.Debug(fmt.Sprintf(msg, args...))
+}
+func (a *slogAdapter) Sub(module string) waLog.Logger {
+	return &slogAdapter{logger: a.logger.With("module", module)}
+}
+
+var _ waLog.Logger = (*slogAdapter)(nil)

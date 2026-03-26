@@ -61,6 +61,7 @@ Page {
 
                     fillMode: Image.PreserveAspectFit
                     source: ""
+                    cache: false
                     visible: source != ""
 
                     anchors {
@@ -105,17 +106,25 @@ Page {
     }
 
     Python {
-        // call('main.get_qr_code', [], function(result) {
-        //     qrImage.source = result.qr_path;
-        // });
-        // setHandler('qr-updated', function(result) {
-        //     qrImage.source = result.qr_path;
-        // });
+        id: python
 
         Component.onCompleted: {
             addImportPath(Qt.resolvedUrl('../src/'));
             importModule('main', function() {
+                isAuthenticating = true;
+                setHandler('session-status', function(status) {
+                    if (status.logged_in) {
+                        isAuthenticating = false;
+                        pageStack.clear();
+                        pageStack.push(Qt.resolvedUrl("ChatListPage.qml"));
+                    } else if (status.qr_image_path !== "") {
+                        qrImage.source = status.qr_image_path;
+                    }
+                });
             });
+        }
+        Component.onDestruction: {
+            isAuthenticating = false;
         }
     }
 

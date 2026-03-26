@@ -8,6 +8,7 @@ Page {
     id: settingsPage
 
     property bool daemonInstalled: false
+    property bool daemonActive: false
     property bool checkingDaemon: true
 
     Flickable {
@@ -56,9 +57,9 @@ Page {
 
                         Label {
                             visible: !checkingDaemon
-                            text: daemonInstalled ? i18n.tr("Installed") : i18n.tr("Not installed")
+                            text: daemonActive ? i18n.tr("Running") : (daemonInstalled ? i18n.tr("Stopped") : i18n.tr("Not installed"))
                             fontSize: "medium"
-                            color: daemonInstalled ? LomiriColors.green : LomiriColors.red
+                            color: daemonActive ? LomiriColors.green : LomiriColors.red
                             Layout.alignment: Qt.AlignRight
                         }
 
@@ -76,16 +77,22 @@ Page {
                 enabled: !checkingDaemon
                 onClicked: {
                     checkingDaemon = true;
-                    if (daemonInstalled)
+                    if (daemonInstalled) {
                         python.call('main.uninstall_daemon', [], function(result) {
-                        daemonInstalled = !result.success;
-                        checkingDaemon = false;
-                    });
-                    else
+                            if (result.success) {
+                                pageStack.clear();
+                                pageStack.push(Qt.resolvedUrl("DaemonSetupPage.qml"));
+                            } else {
+                                checkingDaemon = false;
+                            }
+                        });
+                    } else {
                         python.call('main.install_daemon', [], function(result) {
-                        daemonInstalled = result.success;
-                        checkingDaemon = false;
-                    });
+                            daemonInstalled = result.success;
+                            daemonActive = result.success;
+                            checkingDaemon = false;
+                        });
+                    }
                 }
             }
 
@@ -144,6 +151,7 @@ Page {
             importModule('main', function() {
                 python.call('main.check_daemon_status', [], function(result) {
                     daemonInstalled = result.installed;
+                    daemonActive = result.active;
                     checkingDaemon = false;
                 });
             });

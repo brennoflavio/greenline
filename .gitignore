@@ -207,3 +207,11 @@ AGENTS.md
 go.work
 
 # End of https://www.toptal.com/developers/gitignore/api/go
+
+# Compiled daemon binary
+daemon/daemon
+
+# SQLite databases
+*.db
+*.db-shm
+*.db-wal

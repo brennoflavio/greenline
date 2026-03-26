@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-25 04:06+0000\n"
+"POT-Creation-Date: 2026-03-26 18:44+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,86 +17,106 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../qml/AuthorizationPage.qml:11
-msgid "Link Device"
-msgstr ""
-
-#: ../qml/AuthorizationPage.qml:41
+#: ../qml/AuthorizationPage.qml:37
 msgid "Scan QR Code"
 msgstr ""
 
-#: ../qml/AuthorizationPage.qml:49
+#: ../qml/AuthorizationPage.qml:45
 msgid ""
 "Open WhatsApp on your phone, go to Settings → Linked Devices → Link a "
 "Device, then scan the code below."
 msgstr ""
 
-#: ../qml/AuthorizationPage.qml:86
+#: ../qml/AuthorizationPage.qml:85
 msgid "Loading QR Code..."
 msgstr ""
 
-#: ../qml/AuthorizationPage.qml:96
+#: ../qml/AuthorizationPage.qml:97
 msgid "The code refreshes automatically. Keep this screen open while scanning."
 msgstr ""
 
-#: ../qml/ChatListPage.qml:56
+#: ../qml/AuthorizationPage.qml:132
+msgid "Link Device"
+msgstr ""
+
+#: ../qml/ChatListPage.qml:49
 msgid "Search chats..."
 msgstr ""
 
-#: ../qml/ChatListPage.qml:251
+#: ../qml/ChatListPage.qml:252
 msgid "No chats found"
 msgstr ""
 
-#: ../qml/ChatPage.qml:21 ../qml/ut_components/AppHeader.qml:78
-msgid "Back"
-msgstr ""
-
-#: ../qml/ChatPage.qml:57
-msgid "online"
-msgstr ""
-
-#: ../qml/ChatPage.qml:207
+#: ../qml/ChatPage.qml:181
 msgid "Type a message..."
 msgstr ""
 
-#: ../qml/SettingsPage.qml:11 ../qml/ut_components/AppHeader.qml:94
-msgid "Settings"
+#: ../qml/ChatPage.qml:242 ../qml/ut_components/AppHeader.qml:78
+msgid "Back"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:36
+#: ../qml/ChatPage.qml:279
+msgid "online"
+msgstr ""
+
+#: ../qml/DaemonSetupPage.qml:39
+msgid "The background service is installed but not running."
+msgstr ""
+
+#: ../qml/DaemonSetupPage.qml:39
+msgid "The background service needs to be installed to sync your messages."
+msgstr ""
+
+#: ../qml/DaemonSetupPage.qml:58
+msgid "Install & Start"
+msgstr ""
+
+#: ../qml/DaemonSetupPage.qml:58
+msgid "Start Service"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:33
 msgid "Daemon"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:50
+#: ../qml/SettingsPage.qml:47
 msgid "Status"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:64
-msgid "Installed"
-msgstr ""
-
-#: ../qml/SettingsPage.qml:65
+#: ../qml/SettingsPage.qml:60
 msgid "Not installed"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:79
-msgid "Uninstall Daemon"
+#: ../qml/SettingsPage.qml:60
+msgid "Running"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:80
+#: ../qml/SettingsPage.qml:60
+msgid "Stopped"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:74
 msgid "Install Daemon"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:103
+#: ../qml/SettingsPage.qml:74
+msgid "Uninstall Daemon"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:100
 msgid "Data"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:117
+#: ../qml/SettingsPage.qml:114
 msgid "Clear all local data including messages and settings"
 msgstr ""
 
 #: ../qml/SettingsPage.qml:129
 msgid "Clear Data"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:162 ../qml/ut_components/AppHeader.qml:94
+msgid "Settings"
 msgstr ""
 
 #: ../qml/ut_components/ActionableList.qml:92

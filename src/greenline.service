@@ -17,9 +17,9 @@ Description=Greenline Sync Service
 
 [Service]
 Type=simple
-ExecStart=/opt/click.ubuntu.com/greenline.brennoflavio/current/wuzapi-daemon -osname Greenline -appname "greenline.brennoflavio"
+ExecStart=/opt/click.ubuntu.com/greenline.brennoflavio/current/greenline-daemon --data-dir %h/.config/greenline.brennoflavio
 WorkingDirectory=/opt/click.ubuntu.com/greenline.brennoflavio/current/
-Restart=always
+Restart=on-failure
 RestartSec=10
 
 [Install]

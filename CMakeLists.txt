@@ -55,6 +55,14 @@ string(SUBSTRING ${BUILD_VERSION_RAW} 1 -1 BUILD_VERSION)
 message(STATUS "Build version is: ${BUILD_VERSION}")
 add_definitions(-DBUILD_VERSION="${BUILD_VERSION}")
 
+# Git commit hash for daemon version checking
+execute_process(
+  COMMAND git rev-parse HEAD
+  OUTPUT_VARIABLE GIT_COMMIT_HASH
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/version.txt "${GIT_COMMIT_HASH}")
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/version.txt DESTINATION ${DATA_DIR}src)
 
 configure_file(manifest.json.in ${CMAKE_CURRENT_BINARY_DIR}/manifest.json)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/manifest.json DESTINATION ${CMAKE_INSTALL_PREFIX})
@@ -66,8 +74,8 @@ install(DIRECTORY src DESTINATION ${DATA_DIR})
 install(DIRECTORY qml DESTINATION ${DATA_DIR})
 
 # Golang Daemon
-# install(FILES "build-daemon.sh" DESTINATION ${DATA_DIR})
-# install(DIRECTORY wuzapi DESTINATION ${DATA_DIR})
+install(FILES "build-daemon.sh" DESTINATION ${DATA_DIR})
+install(DIRECTORY daemon DESTINATION ${DATA_DIR})
 
 # Python Deps
 install(FILES "build-python-deps.sh" DESTINATION ${DATA_DIR})

@@ -1,16 +1,16 @@
 
 set -euo pipefail
 
-SRC_FOLDER="wuzapi"
+SRC_FOLDER="daemon"
 BINARY_FOLDER="dist"
-BINARY_NAME="wuzapi-daemon"
+BINARY_NAME="greenline-daemon"
 GO_CACHE_FOLDER="go"
 
 mkdir -p "$INSTALL_DIR/$SRC_FOLDER/$BINARY_FOLDER"
 mkdir -p "$BUILD_DIR/$GO_CACHE_FOLDER"
 
 export GOPATH="$BUILD_DIR/$GO_CACHE_FOLDER"
-export CGO_ENABLED=1
+export CGO_ENABLED=0
 export GOOS=linux
 export GOARCH="$ARCH"
 if [ "$ARCH" = "arm64" ]; then
@@ -20,7 +20,9 @@ fi
 
 cd "$INSTALL_DIR/$SRC_FOLDER"
 
-go build -o "$INSTALL_DIR/$SRC_FOLDER/$BINARY_FOLDER/$BINARY_NAME" .
+GIT_HASH=$(cat "$INSTALL_DIR/src/version.txt" 2>/dev/null || echo "unknown")
+
+go build -ldflags "-X main.GitCommit=$GIT_HASH" -o "$INSTALL_DIR/$SRC_FOLDER/$BINARY_FOLDER/$BINARY_NAME" .
 chmod +x "$INSTALL_DIR/$SRC_FOLDER/$BINARY_FOLDER/$BINARY_NAME"
 
 cp "$INSTALL_DIR/$SRC_FOLDER/$BINARY_FOLDER/$BINARY_NAME" "$INSTALL_DIR/$BINARY_NAME"

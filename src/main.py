@@ -19,14 +19,25 @@ from ut_components import setup
 
 setup(APP_NAME, CRASH_REPORT_URL)
 
+import base64
+import os
 from dataclasses import asdict, dataclass
 
 from daemon import (
+    ensure_daemon_version,
     install_background_service_files,
     is_daemon_active,
-    reload_systemd,
+    is_daemon_installed,
+    remove_background_service_files,
 )
-from events import ChatListUpdateEvent, MessageStatusUpdateEvent, NewMessageEvent
+from events import (
+    QR_IMAGE_PATH,
+    ChatListUpdateEvent,
+    MessageStatusUpdateEvent,
+    NewMessageEvent,
+    SessionStatusEvent,
+    SessionStatusResponse,
+)
 from models import (
     ChatListItem,
     ChatListResponse,
@@ -35,14 +46,28 @@ from models import (
     MessageType,
     ReadReceipt,
 )
+from rpc import DaemonRPC
 from ut_components.crash import crash_reporter
 from ut_components.event import get_event_dispatcher
 from ut_components.kv import KV
 from ut_components.utils import dataclass_to_dict
 
 
+@dataclass
+class EnsureDaemonVersionResponse:
+    restarted: bool
+
+
+@crash_reporter
+@dataclass_to_dict
+def check_daemon_version() -> EnsureDaemonVersionResponse:
+    restarted = ensure_daemon_version()
+    return EnsureDaemonVersionResponse(restarted=restarted)
+
+
 def start_event_loop():
     dispatcher = get_event_dispatcher()
+    dispatcher.register_event(SessionStatusEvent())
     dispatcher.register_event(NewMessageEvent())
     dispatcher.register_event(MessageStatusUpdateEvent())
     dispatcher.register_event(ChatListUpdateEvent())
@@ -297,6 +322,7 @@ def _seed_mock_data():
 @dataclass
 class DaemonStatusResponse:
     installed: bool
+    active: bool
 
 
 @dataclass
@@ -306,8 +332,44 @@ class ClearDataResponse:
 
 @crash_reporter
 @dataclass_to_dict
+def ping_daemon() -> SuccessResponse:
+    try:
+        result = DaemonRPC().ping()
+        return SuccessResponse(success=True, message=result)
+    except Exception as e:
+        return SuccessResponse(success=False, message=str(e))
+
+
+@crash_reporter
+@dataclass_to_dict
 def check_daemon_status() -> DaemonStatusResponse:
-    return DaemonStatusResponse(installed=is_daemon_active())
+    return DaemonStatusResponse(
+        installed=is_daemon_installed(),
+        active=is_daemon_active(),
+    )
+
+
+@crash_reporter
+@dataclass_to_dict
+def get_session_status() -> SessionStatusResponse:
+    try:
+        result = DaemonRPC().get_session_status()
+        logged_in = result.get("LoggedIn", False)
+        qr_image_b64 = result.get("QRImage", "")
+        qr_image_path = ""
+
+        if not logged_in and qr_image_b64:
+            os.makedirs(os.path.dirname(QR_IMAGE_PATH), exist_ok=True)
+            with open(QR_IMAGE_PATH, "wb") as f:
+                f.write(base64.b64decode(qr_image_b64))
+            qr_image_path = "file://" + QR_IMAGE_PATH
+
+        return SessionStatusResponse(
+            logged_in=logged_in,
+            qr_image_path=qr_image_path,
+        )
+    except Exception:
+        return SessionStatusResponse(logged_in=False, qr_image_path="")
 
 
 @crash_reporter
@@ -315,7 +377,6 @@ def check_daemon_status() -> DaemonStatusResponse:
 def install_daemon() -> SuccessResponse:
     try:
         install_background_service_files()
-        reload_systemd()
         return SuccessResponse(success=True, message="Daemon installed.")
     except Exception as e:
         return SuccessResponse(success=False, message=str(e))
@@ -325,7 +386,7 @@ def install_daemon() -> SuccessResponse:
 @dataclass_to_dict
 def uninstall_daemon() -> SuccessResponse:
     try:
-        reload_systemd()
+        remove_background_service_files()
         return SuccessResponse(success=True, message="Daemon uninstalled.")
     except Exception as e:
         return SuccessResponse(success=False, message=str(e))
