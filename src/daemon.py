@@ -8,11 +8,11 @@ from constants import SERVICE_DEST_PATH, SERVICE_NAME
 from ut_components.config import get_app_data_path
 
 
-def run_subprocess(args):
+def run_subprocess(args: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(args, check=False, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
 
-def reload_systemd(start):
+def reload_systemd(start: bool) -> None:
     result = run_subprocess(["systemctl", "--user", "daemon-reload"])
     if result.returncode != 0:
         raise ValueError(f"Error reloading systemd: {result.stdout}")
@@ -30,7 +30,7 @@ def reload_systemd(start):
         run_subprocess(["systemctl", "--user", "disable", f"{SERVICE_NAME}.service"])
 
 
-def install_background_service_files():
+def install_background_service_files() -> None:
     service_source = os.path.join(get_app_data_path(), "src", "greenline.service")
 
     dest_dir = os.path.dirname(SERVICE_DEST_PATH)
@@ -43,7 +43,7 @@ def install_background_service_files():
     reload_systemd(start=True)
 
 
-def remove_background_service_files():
+def remove_background_service_files() -> None:
     reload_systemd(start=False)
 
     if os.path.exists(SERVICE_DEST_PATH):
@@ -52,20 +52,20 @@ def remove_background_service_files():
     run_subprocess(["systemctl", "--user", "daemon-reload"])
 
 
-def restart_daemon():
+def restart_daemon() -> None:
     run_subprocess(["systemctl", "--user", "restart", f"{SERVICE_NAME}.service"])
 
 
-def is_daemon_installed():
+def is_daemon_installed() -> bool:
     return os.path.exists(SERVICE_DEST_PATH)
 
 
-def is_daemon_active():
+def is_daemon_active() -> bool:
     result = run_subprocess(["systemctl", "--user", "is-active", f"{SERVICE_NAME}.service"])
     return result.returncode == 0
 
 
-def ensure_service_file():
+def ensure_service_file() -> bool:
     if not is_daemon_installed():
         return False
 
@@ -82,13 +82,13 @@ def ensure_service_file():
     return True
 
 
-def get_expected_version():
+def get_expected_version() -> str:
     version_path = os.path.join(get_app_data_path(), "src", "version.txt")
     with open(version_path) as f:
         return f.read().strip()
 
 
-def ensure_daemon_version():
+def ensure_daemon_version() -> bool:
     if not is_daemon_installed():
         return False
 

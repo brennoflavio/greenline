@@ -1,5 +1,6 @@
 import json
 import socket
+from typing import Any, Dict, Optional
 
 from dacite import from_dict
 
@@ -15,11 +16,11 @@ from daemon_types import (
 
 
 class DaemonRPC:
-    def __init__(self, socket_path=DAEMON_SOCKET_PATH):
+    def __init__(self, socket_path: str = DAEMON_SOCKET_PATH) -> None:
         self._socket_path = socket_path
         self._id = 0
 
-    def _call(self, method, params=None):
+    def _call(self, method: str, params: Optional[Dict[str, Any]] = None) -> Any:
         self._id += 1
         request = {"method": method, "params": [params or {}], "id": self._id}
 
@@ -46,7 +47,8 @@ class DaemonRPC:
         return response.get("result")
 
     def ping(self) -> str:
-        return self._call("Service.Ping")
+        result: str = self._call("Service.Ping")
+        return result
 
     def get_version(self) -> VersionReply:
         return from_dict(data_class=VersionReply, data=self._call("Service.GetVersion"))

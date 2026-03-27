@@ -1,6 +1,6 @@
 from dataclasses import asdict, dataclass
 from datetime import datetime
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from models import ChatListItem, Message, MessageType, ReadReceipt
 from ut_components.kv import KV
@@ -127,7 +127,7 @@ class StoredMessage:
     chat: ChatListItem
 
 
-def store_message(evt: MessageEvent, raw: dict = None) -> Optional[StoredMessage]:
+def store_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = None) -> Optional[StoredMessage]:
     msg = message_event_to_message(evt)
     if msg is None:
         return None

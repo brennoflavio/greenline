@@ -4,7 +4,7 @@ import os
 import traceback
 from dataclasses import asdict, dataclass
 from datetime import timedelta
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 import pyotherside
 from dacite import from_dict
@@ -15,8 +15,13 @@ from rpc import DaemonRPC
 from ut_components.config import get_cache_path
 from ut_components.event import Event
 from ut_components.kv import KV
-from ut_components.utils import enum_to_str
+from ut_components.utils import enum_to_str as _enum_to_str
 from whatsmeow_types import MessageEvent
+
+
+def enum_to_str(obj: Dict[str, Any]) -> Dict[str, Any]:
+    return _enum_to_str(obj)  # type: ignore[no-untyped-call, no-any-return]
+
 
 QR_IMAGE_PATH = os.path.join(get_cache_path(), "qr.png")
 STATUS_BROADCAST_JID = "status@broadcast"
@@ -29,13 +34,13 @@ class SessionStatusResponse:
 
 
 class SessionStatusEvent(Event):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(
             id="session-status",
             execution_interval=timedelta(seconds=2),
         )
 
-    def trigger(self, metadata):
+    def trigger(self, metadata: Optional[Dict[str, Any]]) -> Optional[SessionStatusResponse]:
         result = DaemonRPC().get_session_status()
         qr_image_path = ""
 
@@ -55,10 +60,10 @@ LAST_EVENT_ID_KEY = "daemon:last_event_id"
 
 
 class NewMessageEvent(Event):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(id="new-message", execution_interval=timedelta(seconds=2))
 
-    def trigger(self, metadata: Optional[Dict]):
+    def trigger(self, metadata: Optional[Dict[str, Any]]) -> None:
         with KV() as kv:
             last_id = kv.get(LAST_EVENT_ID_KEY, default=0)
 
@@ -93,18 +98,18 @@ class NewMessageEvent(Event):
 
 
 class MessageStatusUpdateEvent(Event):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(id="message-status-update", execution_interval=timedelta(seconds=5))
 
-    def trigger(self, metadata: Optional[Dict]):
+    def trigger(self, metadata: Optional[Dict[str, Any]]) -> None:
         pass
 
 
 class ChatListUpdateEvent(Event):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(id="chat-list-update", execution_interval=timedelta(seconds=30))
 
-    def trigger(self, metadata: Optional[Dict]):
+    def trigger(self, metadata: Optional[Dict[str, Any]]) -> None:
         reply = DaemonRPC().get_contacts()
         contact_names = {}
         for c in reply.Contacts:

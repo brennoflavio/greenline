@@ -69,7 +69,7 @@ def check_daemon_version() -> EnsureDaemonVersionResponse:
     return EnsureDaemonVersionResponse(restarted=restarted)
 
 
-def start_event_loop():
+def start_event_loop() -> None:
     dispatcher = get_event_dispatcher()
     dispatcher.register_event(SessionStatusEvent())
     dispatcher.register_event(NewMessageEvent())

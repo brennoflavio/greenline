@@ -7,3 +7,20 @@ requires-python = ">=3.12.3"
 dependencies = [
     "dacite>=1.9.2",
 ]
+
+[tool.mypy]
+files = ["src"]
+exclude = ["ut_components"]
+
+[[tool.mypy.overrides]]
+module = "ut_components.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "pyotherside"
+ignore_missing_imports = true
+
+[dependency-groups]
+dev = [
+    "mypy>=1.19.1",
+]

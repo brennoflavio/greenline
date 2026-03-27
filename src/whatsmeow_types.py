@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
@@ -90,7 +90,7 @@ class FeatureEligibilities:
 class ContextInfo:
     stanzaID: str = ""
     participant: str = ""
-    quotedMessage: Optional[dict] = None
+    quotedMessage: Optional[Dict[str, Any]] = None
     quotedType: int = 0
     pairedMediaType: int = 0
     statusSourceType: int = 0
@@ -271,4 +271,4 @@ class MessageEvent:
     UnavailableRequestID: str = ""
     RetryCount: int = 0
     NewsletterMeta: Optional[object] = None
-    RawMessage: Optional[dict] = None
+    RawMessage: Optional[Dict[str, Any]] = None
