@@ -7,6 +7,10 @@
         "greenline": {
             "apparmor": "greenline.apparmor",
             "desktop":  "greenline.desktop"
+        },
+        "push": {
+            "apparmor": "push.apparmor",
+            "push-helper": "push.json"
         }
     },
     "version": "@BUILD_VERSION@",

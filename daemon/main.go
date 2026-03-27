@@ -15,10 +15,57 @@ import (
 	"reflect"
 	"syscall"
 
+	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
 	"greenline.brennoflavio/daemon/eventstore"
+	"greenline.brennoflavio/daemon/notify"
 	"greenline.brennoflavio/daemon/waconn"
 )
+
+func extractBody(msg *events.Message) string {
+	if msg.Message == nil {
+		return ""
+	}
+	if s := msg.Message.GetConversation(); s != "" {
+		return s
+	}
+	if etm := msg.Message.GetExtendedTextMessage(); etm != nil {
+		if s := etm.GetText(); s != "" {
+			return s
+		}
+	}
+	if im := msg.Message.GetImageMessage(); im != nil {
+		if c := im.GetCaption(); c != "" {
+			return "📷 " + c
+		}
+		return "📷 Photo"
+	}
+	if vm := msg.Message.GetVideoMessage(); vm != nil {
+		if c := vm.GetCaption(); c != "" {
+			return "🎥 " + c
+		}
+		return "🎥 Video"
+	}
+	if msg.Message.GetAudioMessage() != nil {
+		return "🎵 Audio"
+	}
+	if dm := msg.Message.GetDocumentMessage(); dm != nil {
+		if c := dm.GetCaption(); c != "" {
+			return "📄 " + c
+		}
+		return "📄 Document"
+	}
+	if msg.Message.GetStickerMessage() != nil {
+		return "🏷️ Sticker"
+	}
+	if msg.Message.GetContactMessage() != nil {
+		return "👤 Contact"
+	}
+	if msg.Message.GetLocationMessage() != nil {
+		return "📍 Location"
+	}
+	return ""
+}
 
 var GitCommit string
 
@@ -32,6 +79,7 @@ func defaultSocketPath() string {
 func main() {
 	socketPath := flag.String("socket", defaultSocketPath(), "Unix socket path")
 	dataDir := flag.String("data-dir", "", "Data directory for persistent storage")
+	appID := flag.String("app-id", "", "Ubuntu Touch app ID for push notifications (e.g. com.example.app_myapp)")
 	flag.Parse()
 
 	if *dataDir == "" {
@@ -56,6 +104,16 @@ func main() {
 		log.Fatal(err)
 	}
 
+	var notifier *notify.Notifier
+	if *appID != "" {
+		n, err := notify.New(*appID)
+		if err != nil {
+			logger.Warn("notifications disabled", "error", err)
+		} else {
+			notifier = n
+		}
+	}
+
 	client.AddEventHandler(func(evt interface{}) {
 		switch evt.(type) {
 		case *events.Disconnected, *events.LoggedOut, *events.StreamReplaced,
@@ -74,6 +132,29 @@ func main() {
 		}
 		if err := evStore.Insert(typeName, data); err != nil {
 			logger.Error("failed to store event", "type", typeName, "error", err)
+		}
+
+		if notifier == nil {
+			return
+		}
+		if msg, ok := evt.(*events.Message); ok {
+			if msg.Info.IsFromMe {
+				return
+			}
+			if msg.Info.Chat == types.StatusBroadcastJID {
+				return
+			}
+			body := extractBody(msg)
+			if body == "" {
+				return
+			}
+			summary := msg.Info.PushName
+			if summary == "" {
+				summary = msg.Info.Sender.User
+			}
+			if err := notifier.Post(summary, body); err != nil {
+				logger.Error("failed to send notification", "error", err)
+			}
 		}
 	})
 
@@ -105,6 +186,9 @@ func main() {
 		cancel()
 		client.Disconnect()
 		evStore.Close()
+		if notifier != nil {
+			notifier.Close()
+		}
 		listener.Close()
 	}()
 

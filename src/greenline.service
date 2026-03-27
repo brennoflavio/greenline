@@ -17,7 +17,7 @@ Description=Greenline Sync Service
 
 [Service]
 Type=simple
-ExecStart=/opt/click.ubuntu.com/greenline.brennoflavio/current/greenline-daemon --data-dir %h/.config/greenline.brennoflavio
+ExecStart=/opt/click.ubuntu.com/greenline.brennoflavio/current/greenline-daemon --data-dir %h/.config/greenline.brennoflavio --app-id greenline.brennoflavio_push
 WorkingDirectory=/opt/click.ubuntu.com/greenline.brennoflavio/current/
 Restart=on-failure
 RestartSec=10

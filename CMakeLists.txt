@@ -82,6 +82,11 @@ install(FILES "build-python-deps.sh" DESTINATION ${DATA_DIR})
 install(FILES "uv.lock" DESTINATION ${DATA_DIR})
 install(FILES "pyproject.toml" DESTINATION ${DATA_DIR})
 
+# Push Notifications and Background Sync
+install(FILES pushexec PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ DESTINATION ${DATA_DIR})
+install(FILES push.json DESTINATION ${DATA_DIR})
+install(FILES push.apparmor DESTINATION ${DATA_DIR})
+
 # Translations
 file(GLOB_RECURSE I18N_SRC_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/po qml/*.qml qml/*.js)
 list(APPEND I18N_SRC_FILES ${DESKTOP_FILE_NAME}.in.h)
