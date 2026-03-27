@@ -7,6 +7,7 @@ from dacite import from_dict
 from constants import DAEMON_SOCKET_PATH
 from daemon_types import (
     GetContactsReply,
+    GetGroupsReply,
     ListEventsReply,
     SessionStatusReply,
     VersionReply,
@@ -56,6 +57,12 @@ class DaemonRPC:
 
     def get_contacts(self) -> GetContactsReply:
         return from_dict(data_class=GetContactsReply, data=self._call("Service.GetContacts"))
+
+    def get_groups(self) -> GetGroupsReply:
+        data = self._call("Service.GetGroups")
+        if data.get("Groups") is None:
+            data["Groups"] = []
+        return from_dict(data_class=GetGroupsReply, data=data)
 
     def list_events(self, after_id: int = 0, limit: int = 100) -> ListEventsReply:
         data = self._call("Service.ListEvents", {"AfterID": after_id, "Limit": limit})

@@ -13,6 +13,8 @@ import (
 	"greenline.brennoflavio/daemon/avatarsync"
 	"greenline.brennoflavio/daemon/eventstore"
 	"greenline.brennoflavio/daemon/waconn"
+
+	"go.mau.fi/whatsmeow/types"
 )
 
 type Service struct {
@@ -154,5 +156,56 @@ func (s *Service) GetContacts(args *struct{}, reply *GetContactsReply) error {
 	})
 
 	reply.Contacts = contacts
+	return nil
+}
+
+// Group types
+
+type Group struct {
+	JID        string `json:"jid"`
+	Name       string `json:"name"`
+	Topic      string `json:"topic"`
+	AvatarPath string `json:"avatar_path"`
+}
+
+type GetGroupsReply struct {
+	Groups []Group
+}
+
+func (s *Service) GetGroups(args *struct{}, reply *GetGroupsReply) error {
+	ctx := context.Background()
+	joined, err := s.client.GetJoinedGroups(ctx)
+	if err != nil {
+		return err
+	}
+
+	groups := make([]Group, 0, len(joined))
+	for _, info := range joined {
+		jidStr := info.JID.String()
+		if info.JID.Server != types.GroupServer {
+			continue
+		}
+		avatarPath := ""
+		jpgPath := avatarsync.AvatarJPGPath(s.cacheDir, jidStr)
+		if _, err := os.Stat(jpgPath); err == nil {
+			avatarPath = jpgPath
+		}
+		name := info.Name
+		if name == "" {
+			name = jidStr
+		}
+		groups = append(groups, Group{
+			JID:        jidStr,
+			Name:       name,
+			Topic:      info.Topic,
+			AvatarPath: avatarPath,
+		})
+	}
+
+	sort.Slice(groups, func(i, j int) bool {
+		return strings.ToLower(groups[i].Name) < strings.ToLower(groups[j].Name)
+	})
+
+	reply.Groups = groups
 	return nil
 }

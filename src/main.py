@@ -34,8 +34,8 @@ from daemon_types import Contact as DaemonContact
 from events import (
     QR_IMAGE_PATH,
     ChatListUpdateEvent,
+    DaemonEventHandler,
     MessageStatusUpdateEvent,
-    NewMessageEvent,
     SessionStatusEvent,
     SessionStatusResponse,
 )
@@ -69,7 +69,7 @@ def check_daemon_version() -> EnsureDaemonVersionResponse:
 def start_event_loop() -> None:
     dispatcher = get_event_dispatcher()
     dispatcher.register_event(SessionStatusEvent())
-    dispatcher.register_event(NewMessageEvent())
+    dispatcher.register_event(DaemonEventHandler())
     dispatcher.register_event(MessageStatusUpdateEvent())
     dispatcher.register_event(ChatListUpdateEvent())
     dispatcher.start()

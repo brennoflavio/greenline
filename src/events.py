@@ -59,9 +59,31 @@ class SessionStatusEvent(Event):
 LAST_EVENT_ID_KEY = "daemon:last_event_id"
 
 
-class NewMessageEvent(Event):
+def _handle_message(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None:
+    raw = json.loads(event.payload or "{}")
+    evt = from_dict(data_class=MessageEvent, data=raw)
+    if evt.Info.Chat == STATUS_BROADCAST_JID:
+        return
+    stored = store_message(evt, raw=raw)
+    if stored is not None:
+        pyotherside.send("new-message", enum_to_str(asdict(stored.message)))
+        chat_updates[stored.chat.id] = enum_to_str(asdict(stored.chat))
+
+
+def _handle_unknown(event: Any) -> None:
+    with KV() as kv:
+        kv.put(
+            f"unknown_event:{event.event_type}:{event.id}",
+            {
+                "event_type": event.event_type,
+                "payload": event.payload or "",
+            },
+        )
+
+
+class DaemonEventHandler(Event):
     def __init__(self) -> None:
-        super().__init__(id="new-message", execution_interval=timedelta(seconds=2))
+        super().__init__(id="daemon-event", execution_interval=timedelta(seconds=2))
 
     def trigger(self, metadata: Optional[Dict[str, Any]]) -> None:
         with KV() as kv:
@@ -76,14 +98,9 @@ class NewMessageEvent(Event):
         for event in reply.Events:
             try:
                 if event.event_type == "Message":
-                    raw = json.loads(event.payload or "{}")
-                    evt = from_dict(data_class=MessageEvent, data=raw)
-                    if evt.Info.Chat == STATUS_BROADCAST_JID:
-                        continue
-                    stored = store_message(evt, raw=raw)
-                    if stored is not None:
-                        pyotherside.send("new-message", enum_to_str(asdict(stored.message)))
-                        chat_updates[stored.chat.id] = enum_to_str(asdict(stored.chat))
+                    _handle_message(event, chat_updates)
+                else:
+                    _handle_unknown(event)
             except Exception:
                 traceback.print_exc()
             finally:
@@ -114,6 +131,17 @@ class ChatListUpdateEvent(Event):
         super().__init__(id="chat-list-update", execution_interval=timedelta(seconds=30))
 
     def trigger(self, metadata: Optional[Dict[str, Any]]) -> None:
+        chat_updates: list[dict[str, Any]] = []
+
+        self._sync_contacts(chat_updates)
+        self._sync_groups(chat_updates)
+
+        if chat_updates:
+            pyotherside.send("chat-list-update", chat_updates)
+
+        return None
+
+    def _sync_contacts(self, chat_updates: list[dict[str, Any]]) -> None:
         reply = DaemonRPC().get_contacts()
         contacts = {}
         for c in reply.Contacts:
@@ -124,9 +152,8 @@ class ChatListUpdateEvent(Event):
                 contacts[c.jid] = {"name": c.display_name, "photo": photo}
 
         if not contacts:
-            return None
+            return
 
-        chat_updates: list[dict[str, Any]] = []
         with KV() as kv:
             existing = {key: value for key, value in kv.get_partial("chat:")}
 
@@ -154,12 +181,52 @@ class ChatListUpdateEvent(Event):
                         last_message_timestamp=0,
                         read_receipt=ReadReceipt.NONE,
                         unread_count=0,
-                        is_group=jid.endswith("@g.us"),
+                        is_group=False,
                     )
                     kv.put(key, asdict(chat))
                     chat_updates.append(enum_to_str(asdict(chat)))
 
-        if chat_updates:
-            pyotherside.send("chat-list-update", chat_updates)
+    def _sync_groups(self, chat_updates: list[dict[str, Any]]) -> None:
+        reply = DaemonRPC().get_groups()
+        groups = {}
+        for g in reply.Groups:
+            if g.jid and g.name:
+                photo = ""
+                if g.avatar_path:
+                    photo = "file://" + g.avatar_path
+                groups[g.jid] = {"name": g.name, "photo": photo}
 
-        return None
+        if not groups:
+            return
+
+        with KV() as kv:
+            existing = {key: value for key, value in kv.get_partial("chat:")}
+
+            for jid, info in groups.items():
+                key = f"chat:{jid}"
+                if key in existing:
+                    chat = ChatListItem(**existing[key])
+                    changed = False
+                    if chat.name != info["name"]:
+                        chat.name = info["name"]
+                        changed = True
+                    if chat.photo != info["photo"]:
+                        chat.photo = info["photo"]
+                        changed = True
+                    if changed:
+                        kv.put(key, asdict(chat))
+                        chat_updates.append(enum_to_str(asdict(chat)))
+                else:
+                    chat = ChatListItem(
+                        id=jid,
+                        name=info["name"],
+                        photo=info["photo"],
+                        last_message="",
+                        date="",
+                        last_message_timestamp=0,
+                        read_receipt=ReadReceipt.NONE,
+                        unread_count=0,
+                        is_group=True,
+                    )
+                    kv.put(key, asdict(chat))
+                    chat_updates.append(enum_to_str(asdict(chat)))

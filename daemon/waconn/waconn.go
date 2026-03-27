@@ -233,6 +233,10 @@ func (c *Client) GetAllContacts(ctx context.Context) (map[types.JID]types.Contac
 	return c.waCli.Store.Contacts.GetAllContacts(ctx)
 }
 
+func (c *Client) GetJoinedGroups(ctx context.Context) ([]*types.GroupInfo, error) {
+	return c.waCli.GetJoinedGroups(ctx)
+}
+
 func (c *Client) GetProfilePictureInfo(ctx context.Context, jid types.JID, params *whatsmeow.GetProfilePictureParams) (*types.ProfilePictureInfo, error) {
 	return c.waCli.GetProfilePictureInfo(ctx, jid, params)
 }

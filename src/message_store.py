@@ -2,6 +2,7 @@ from dataclasses import asdict, dataclass
 from datetime import datetime
 from typing import Any, Dict, Optional
 
+from constants import GROUP_JID_SUFFIX
 from models import ChatListItem, Message, MessageType, ReadReceipt
 from ut_components.kv import KV
 from whatsmeow_types import MessageEvent
@@ -90,6 +91,8 @@ def upsert_chat(msg: Message, push_name: str) -> ChatListItem:
 
     preview = _message_preview(msg)
 
+    is_group = msg.chat_id.endswith(GROUP_JID_SUFFIX)
+
     if existing is not None:
         chat = ChatListItem(**existing)
         if msg.timestamp_unix >= chat.last_message_timestamp:
@@ -100,10 +103,10 @@ def upsert_chat(msg: Message, push_name: str) -> ChatListItem:
                 chat.read_receipt = msg.read_receipt
             else:
                 chat.unread_count += 1
-        if push_name and chat.name == chat.id:
+        if not is_group and push_name and chat.name == chat.id:
             chat.name = push_name
     else:
-        name = push_name or msg.chat_id
+        name = msg.chat_id if is_group else (push_name or msg.chat_id)
         chat = ChatListItem(
             id=msg.chat_id,
             name=name,
@@ -113,7 +116,7 @@ def upsert_chat(msg: Message, push_name: str) -> ChatListItem:
             last_message_timestamp=msg.timestamp_unix,
             read_receipt=msg.read_receipt if msg.is_outgoing else ReadReceipt.NONE,
             unread_count=0 if msg.is_outgoing else 1,
-            is_group=msg.chat_id.endswith("@g.us"),
+            is_group=is_group,
         )
 
     with KV() as kv:

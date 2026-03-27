@@ -33,6 +33,19 @@ class GetContactsReply:
 
 
 @dataclass
+class Group:
+    jid: str = ""
+    name: str = ""
+    topic: str = ""
+    avatar_path: str = ""
+
+
+@dataclass
+class GetGroupsReply:
+    Groups: List[Group] = field(default_factory=list)
+
+
+@dataclass
 class StoredEvent:
     id: int = 0
     event_type: str = ""

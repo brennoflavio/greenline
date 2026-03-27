@@ -113,7 +113,7 @@ func (s *Syncer) syncAll(ctx context.Context) {
 		return
 	}
 
-	s.log.Info("syncing avatars", "contacts", len(all))
+	s.log.Info("syncing contact avatars", "contacts", len(all))
 	for jid := range all {
 		if ctx.Err() != nil {
 			return
@@ -121,6 +121,21 @@ func (s *Syncer) syncAll(ctx context.Context) {
 		s.syncOne(ctx, jid)
 		sleepCtx(ctx, requestDelay)
 	}
+
+	groups, err := s.client.GetJoinedGroups(ctx)
+	if err != nil {
+		s.log.Error("failed to get groups for avatar sync", "error", err)
+	} else {
+		s.log.Info("syncing group avatars", "groups", len(groups))
+		for _, info := range groups {
+			if ctx.Err() != nil {
+				return
+			}
+			s.syncOne(ctx, info.JID)
+			sleepCtx(ctx, requestDelay)
+		}
+	}
+
 	s.log.Info("avatar sync complete")
 }
 
