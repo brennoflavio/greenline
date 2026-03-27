@@ -20,8 +20,10 @@ from ut_components import setup
 setup(APP_NAME, CRASH_REPORT_URL)
 
 import base64
+import hashlib
 import os
-from dataclasses import asdict, dataclass
+import urllib.request
+from dataclasses import dataclass
 
 from daemon import (
     ensure_daemon_version,
@@ -30,6 +32,7 @@ from daemon import (
     is_daemon_installed,
     remove_background_service_files,
 )
+from daemon_types import Contact as DaemonContact
 from events import (
     QR_IMAGE_PATH,
     ChatListUpdateEvent,
@@ -41,10 +44,11 @@ from events import (
 from models import (
     ChatListItem,
     ChatListResponse,
+    ContactInfoResponse,
+    ContactItem,
+    ContactListResponse,
     Message,
     MessagesResponse,
-    MessageType,
-    ReadReceipt,
 )
 from rpc import DaemonRPC
 from ut_components.crash import crash_reporter
@@ -78,245 +82,6 @@ def start_event_loop():
 class SuccessResponse:
     success: bool
     message: str
-
-
-def _seed_mock_data():
-    with KV() as kv:
-        if kv.get("mock_seeded"):
-            return
-
-        chats = [
-            ChatListItem(
-                id="alice@s.whatsapp.net",
-                name="Alice",
-                photo="",
-                last_message="See you tomorrow!",
-                date="10:42",
-                last_message_timestamp=1742900520,
-                read_receipt=ReadReceipt.READ,
-                unread_count=0,
-                is_group=False,
-            ),
-            ChatListItem(
-                id="work@g.us",
-                name="Work Group",
-                photo="",
-                last_message="Bob: I'll send the report by EOD",
-                date="09:15",
-                last_message_timestamp=1742895300,
-                read_receipt=ReadReceipt.NONE,
-                unread_count=3,
-                is_group=True,
-            ),
-            ChatListItem(
-                id="mom@s.whatsapp.net",
-                name="Mom",
-                photo="",
-                last_message="Thanks for calling 😊",
-                date="Yesterday",
-                last_message_timestamp=1742810400,
-                read_receipt=ReadReceipt.DELIVERED,
-                unread_count=0,
-                is_group=False,
-            ),
-            ChatListItem(
-                id="david@s.whatsapp.net",
-                name="David",
-                photo="",
-                last_message="Can you pick up some groceries?",
-                date="Yesterday",
-                last_message_timestamp=1742808000,
-                read_receipt=ReadReceipt.NONE,
-                unread_count=1,
-                is_group=False,
-            ),
-            ChatListItem(
-                id="football@g.us",
-                name="Football Team",
-                photo="",
-                last_message="You: Game is at 5pm",
-                date="Monday",
-                last_message_timestamp=1742724000,
-                read_receipt=ReadReceipt.SENT,
-                unread_count=0,
-                is_group=True,
-            ),
-            ChatListItem(
-                id="sarah@s.whatsapp.net",
-                name="Sarah",
-                photo="",
-                last_message="That's hilarious 😂",
-                date="Monday",
-                last_message_timestamp=1742720400,
-                read_receipt=ReadReceipt.READ,
-                unread_count=0,
-                is_group=False,
-            ),
-            ChatListItem(
-                id="technews@g.us",
-                name="Tech News",
-                photo="",
-                last_message="5 new messages",
-                date="Sunday",
-                last_message_timestamp=1742637600,
-                read_receipt=ReadReceipt.NONE,
-                unread_count=5,
-                is_group=True,
-            ),
-        ]
-
-        for chat in chats:
-            kv.put(f"chat:{chat.id}", asdict(chat))
-
-        alice_messages = [
-            Message(
-                id="msg1",
-                chat_id="alice@s.whatsapp.net",
-                type=MessageType.TEXT,
-                is_outgoing=False,
-                timestamp="10:30",
-                timestamp_unix=1742899800,
-                read_receipt=ReadReceipt.NONE,
-                text="Hey! How are you doing?",
-            ),
-            Message(
-                id="msg2",
-                chat_id="alice@s.whatsapp.net",
-                type=MessageType.TEXT,
-                is_outgoing=True,
-                timestamp="10:31",
-                timestamp_unix=1742899860,
-                read_receipt=ReadReceipt.READ,
-                text="I'm doing great, thanks! Just got back from the trip 🎉",
-            ),
-            Message(
-                id="msg3",
-                chat_id="alice@s.whatsapp.net",
-                type=MessageType.IMAGE,
-                is_outgoing=True,
-                timestamp="10:31",
-                timestamp_unix=1742899870,
-                read_receipt=ReadReceipt.READ,
-                caption="Check out this view from the hotel!",
-            ),
-            Message(
-                id="msg4",
-                chat_id="alice@s.whatsapp.net",
-                type=MessageType.TEXT,
-                is_outgoing=False,
-                timestamp="10:32",
-                timestamp_unix=1742899920,
-                read_receipt=ReadReceipt.NONE,
-                text="Wow that looks amazing! 😍",
-            ),
-            Message(
-                id="msg5",
-                chat_id="alice@s.whatsapp.net",
-                type=MessageType.IMAGE_GALLERY,
-                is_outgoing=True,
-                timestamp="10:33",
-                timestamp_unix=1742899980,
-                read_receipt=ReadReceipt.DELIVERED,
-                caption="Here are more photos from the trip",
-                images=["", "", "", ""],
-            ),
-            Message(
-                id="msg6",
-                chat_id="alice@s.whatsapp.net",
-                type=MessageType.VOICE,
-                is_outgoing=False,
-                timestamp="10:35",
-                timestamp_unix=1742900100,
-                read_receipt=ReadReceipt.NONE,
-                duration="0:42",
-            ),
-            Message(
-                id="msg7",
-                chat_id="alice@s.whatsapp.net",
-                type=MessageType.STICKER,
-                is_outgoing=True,
-                timestamp="10:36",
-                timestamp_unix=1742900160,
-                read_receipt=ReadReceipt.READ,
-            ),
-            Message(
-                id="msg8",
-                chat_id="alice@s.whatsapp.net",
-                type=MessageType.TEXT,
-                is_outgoing=False,
-                timestamp="10:37",
-                timestamp_unix=1742900220,
-                read_receipt=ReadReceipt.NONE,
-                text="Haha love that sticker! Let's catch up this weekend?",
-            ),
-            Message(
-                id="msg9",
-                chat_id="alice@s.whatsapp.net",
-                type=MessageType.IMAGE,
-                is_outgoing=False,
-                timestamp="10:38",
-                timestamp_unix=1742900280,
-                read_receipt=ReadReceipt.NONE,
-            ),
-            Message(
-                id="msg10",
-                chat_id="alice@s.whatsapp.net",
-                type=MessageType.TEXT,
-                is_outgoing=True,
-                timestamp="10:42",
-                timestamp_unix=1742900520,
-                read_receipt=ReadReceipt.READ,
-                text="See you tomorrow!",
-            ),
-        ]
-
-        david_messages = [
-            Message(
-                id="dmsg1",
-                chat_id="david@s.whatsapp.net",
-                type=MessageType.TEXT,
-                is_outgoing=False,
-                timestamp="14:20",
-                timestamp_unix=1742806800,
-                read_receipt=ReadReceipt.NONE,
-                text="Hey, are you free today?",
-            ),
-            Message(
-                id="dmsg2",
-                chat_id="david@s.whatsapp.net",
-                type=MessageType.TEXT,
-                is_outgoing=True,
-                timestamp="14:25",
-                timestamp_unix=1742807100,
-                read_receipt=ReadReceipt.READ,
-                text="Yeah, what's up?",
-            ),
-            Message(
-                id="dmsg3",
-                chat_id="david@s.whatsapp.net",
-                type=MessageType.VOICE,
-                is_outgoing=False,
-                timestamp="14:26",
-                timestamp_unix=1742807160,
-                read_receipt=ReadReceipt.NONE,
-                duration="1:15",
-            ),
-            Message(
-                id="dmsg4",
-                chat_id="david@s.whatsapp.net",
-                type=MessageType.TEXT,
-                is_outgoing=False,
-                timestamp="14:30",
-                timestamp_unix=1742808000,
-                read_receipt=ReadReceipt.NONE,
-                text="Can you pick up some groceries?",
-            ),
-        ]
-
-        for msg in alice_messages + david_messages:
-            kv.put(f"message:{msg.chat_id}:{msg.id}", asdict(msg))
-
-        kv.put("mock_seeded", True)
 
 
 @dataclass
@@ -354,18 +119,16 @@ def check_daemon_status() -> DaemonStatusResponse:
 def get_session_status() -> SessionStatusResponse:
     try:
         result = DaemonRPC().get_session_status()
-        logged_in = result.get("LoggedIn", False)
-        qr_image_b64 = result.get("QRImage", "")
         qr_image_path = ""
 
-        if not logged_in and qr_image_b64:
+        if not result.LoggedIn and result.QRImage:
             os.makedirs(os.path.dirname(QR_IMAGE_PATH), exist_ok=True)
             with open(QR_IMAGE_PATH, "wb") as f:
-                f.write(base64.b64decode(qr_image_b64))
+                f.write(base64.b64decode(result.QRImage))
             qr_image_path = "file://" + QR_IMAGE_PATH
 
         return SessionStatusResponse(
-            logged_in=logged_in,
+            logged_in=result.LoggedIn,
             qr_image_path=qr_image_path,
         )
     except Exception:
@@ -392,25 +155,114 @@ def uninstall_daemon() -> SuccessResponse:
         return SuccessResponse(success=False, message=str(e))
 
 
+def _avatar_cache_dir() -> str:
+    from ut_components.config import get_cache_path
+
+    return os.path.join(get_cache_path(), "avatars")
+
+
+def _avatar_path_for_jid(jid: str) -> str:
+    jid_hash = hashlib.sha256(jid.encode()).hexdigest()[:16]
+    return os.path.join(_avatar_cache_dir(), f"{jid_hash}.jpg")
+
+
+def _download_avatar(url: str, jid: str) -> str:
+    if not url:
+        return ""
+    cache_dir = _avatar_cache_dir()
+    os.makedirs(cache_dir, exist_ok=True)
+    path = _avatar_path_for_jid(jid)
+    try:
+        with urllib.request.urlopen(url, timeout=10) as resp:
+            with open(path, "wb") as f:
+                f.write(resp.read())
+        return "file://" + path
+    except Exception:
+        return ""
+
+
+def _build_contact_item(contact: DaemonContact, photo: str = "") -> ContactItem:
+    return ContactItem(
+        jid=contact.jid,
+        display_name=contact.display_name or contact.jid,
+        first_name=contact.first_name,
+        full_name=contact.full_name,
+        push_name=contact.push_name,
+        business_name=contact.business_name,
+        photo=photo,
+    )
+
+
+@crash_reporter
+@dataclass_to_dict
+def get_contact_list() -> ContactListResponse:
+    try:
+        reply = DaemonRPC().get_contacts()
+        contacts = [_build_contact_item(c) for c in reply.Contacts]
+        return ContactListResponse(success=True, contacts=contacts, message="")
+    except Exception as e:
+        return ContactListResponse(success=False, contacts=[], message=str(e))
+
+
+@crash_reporter
+@dataclass_to_dict
+def fetch_contact_info(jid: str) -> ContactInfoResponse:
+    try:
+        reply = DaemonRPC().get_contact_info(jid)
+        info = reply.Contact
+
+        photo = ""
+        with KV() as kv:
+            existing_id = kv.get(f"avatar_id:{jid}") or ""
+
+        cached_path = _avatar_path_for_jid(jid)
+        if info.profile_pic_id and info.profile_pic_id == existing_id and os.path.exists(cached_path):
+            photo = "file://" + cached_path
+        elif info.profile_pic_url:
+            photo = _download_avatar(info.profile_pic_url, jid)
+            if photo and info.profile_pic_id:
+                with KV() as kv:
+                    kv.put(f"avatar_id:{jid}", info.profile_pic_id)
+
+        contact = ContactItem(
+            jid=info.jid,
+            display_name=info.display_name or info.jid,
+            first_name=info.first_name,
+            full_name=info.full_name,
+            push_name=info.push_name,
+            business_name=info.business_name,
+            photo=photo,
+        )
+        return ContactInfoResponse(success=True, contact=contact, found=reply.Found, message="")
+    except Exception as e:
+        empty = ContactItem(
+            jid=jid, display_name=jid, first_name="", full_name="", push_name="", business_name="", photo=""
+        )
+        return ContactInfoResponse(success=False, contact=empty, found=False, message=str(e))
+
+
 @crash_reporter
 @dataclass_to_dict
 def clear_data() -> ClearDataResponse:
     with KV() as kv:
         kv.delete_partial("chat:")
         kv.delete_partial("message:")
-        kv.delete("mock_seeded")
+        kv.delete_partial("avatar_id:")
     return ClearDataResponse(success=True)
 
 
 @crash_reporter
 @dataclass_to_dict
 def get_chat_list() -> ChatListResponse:
-    _seed_mock_data()
-    with KV() as kv:
-        entries = kv.get_partial("chat:")
+    try:
+        with KV() as kv:
+            entries = kv.get_partial("chat:")
+
         chats = [ChatListItem(**value) for _, value in entries]
         chats.sort(key=lambda c: c.last_message_timestamp, reverse=True)
-    return ChatListResponse(success=True, chats=chats, message="")
+        return ChatListResponse(success=True, chats=chats, message="")
+    except Exception as e:
+        return ChatListResponse(success=False, chats=[], message=str(e))
 
 
 @crash_reporter

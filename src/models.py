@@ -67,3 +67,29 @@ class StatusUpdate:
     message_id: str
     chat_id: str
     read_receipt: ReadReceipt
+
+
+@dataclass
+class ContactItem:
+    jid: str
+    display_name: str
+    first_name: str
+    full_name: str
+    push_name: str
+    business_name: str
+    photo: str
+
+
+@dataclass
+class ContactListResponse:
+    success: bool
+    contacts: List[ContactItem]
+    message: str
+
+
+@dataclass
+class ContactInfoResponse:
+    success: bool
+    contact: ContactItem
+    found: bool
+    message: str

@@ -106,7 +106,7 @@ def ensure_daemon_version():
 
     try:
         result = DaemonRPC().get_version()
-        current = result.get("GitCommit", "")
+        current = result.GitCommit
     except Exception:
         current = ""
 

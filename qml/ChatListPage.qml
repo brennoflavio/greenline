@@ -69,7 +69,7 @@ Page {
             }
 
             delegate: Item {
-                width: parent.width
+                width: parent ? parent.width : 0
                 height: units.gu(8)
 
                 Rectangle {

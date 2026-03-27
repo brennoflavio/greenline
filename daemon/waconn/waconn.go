@@ -10,6 +10,7 @@ import (
 	"go.mau.fi/whatsmeow/proto/waCompanionReg"
 	"go.mau.fi/whatsmeow/store"
 	"go.mau.fi/whatsmeow/store/sqlstore"
+	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
 	waLog "go.mau.fi/whatsmeow/util/log"
 	"google.golang.org/protobuf/proto"
@@ -226,6 +227,18 @@ func (c *Client) IsConnected() bool {
 
 func (c *Client) IsLoggedIn() bool {
 	return c.waCli.IsLoggedIn()
+}
+
+func (c *Client) GetAllContacts(ctx context.Context) (map[types.JID]types.ContactInfo, error) {
+	return c.waCli.Store.Contacts.GetAllContacts(ctx)
+}
+
+func (c *Client) GetContact(ctx context.Context, jid types.JID) (types.ContactInfo, error) {
+	return c.waCli.Store.Contacts.GetContact(ctx, jid)
+}
+
+func (c *Client) GetProfilePictureInfo(ctx context.Context, jid types.JID, params *whatsmeow.GetProfilePictureParams) (*types.ProfilePictureInfo, error) {
+	return c.waCli.GetProfilePictureInfo(ctx, jid, params)
 }
 
 type slogAdapter struct {
