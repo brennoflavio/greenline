@@ -17,6 +17,7 @@ import (
 
 	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
+	"greenline.brennoflavio/daemon/avatarsync"
 	"greenline.brennoflavio/daemon/eventstore"
 	"greenline.brennoflavio/daemon/notify"
 	"greenline.brennoflavio/daemon/waconn"
@@ -79,11 +80,16 @@ func defaultSocketPath() string {
 func main() {
 	socketPath := flag.String("socket", defaultSocketPath(), "Unix socket path")
 	dataDir := flag.String("data-dir", "", "Data directory for persistent storage")
+	cacheDir := flag.String("cache-dir", "", "Cache directory for avatars and temporary files")
 	appID := flag.String("app-id", "", "Ubuntu Touch app ID for push notifications (e.g. com.example.app_myapp)")
 	flag.Parse()
 
 	if *dataDir == "" {
 		log.Fatal("--data-dir is required")
+	}
+
+	if *cacheDir == "" {
+		log.Fatal("--cache-dir is required")
 	}
 
 	if err := os.MkdirAll(*dataDir, 0700); err != nil {
@@ -158,10 +164,13 @@ func main() {
 		}
 	})
 
-	svc := &Service{client: client, eventStore: evStore}
+	svc := &Service{client: client, eventStore: evStore, cacheDir: *cacheDir}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	go client.ConnectWithRetry(ctx, svc.setQR)
+
+	syncer := avatarsync.New(client, *cacheDir, logger)
+	go syncer.Run(ctx)
 
 	if err := rpc.Register(svc); err != nil {
 		log.Fatal(err)

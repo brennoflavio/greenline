@@ -85,11 +85,3 @@ class ContactListResponse:
     success: bool
     contacts: List[ContactItem]
     message: str
-
-
-@dataclass
-class ContactInfoResponse:
-    success: bool
-    contact: ContactItem
-    found: bool
-    message: str

@@ -24,35 +24,12 @@ class Contact:
     full_name: str = ""
     push_name: str = ""
     business_name: str = ""
+    avatar_path: str = ""
 
 
 @dataclass
 class GetContactsReply:
     Contacts: List[Contact] = field(default_factory=list)
-
-
-@dataclass
-class ContactInfoResult:
-    jid: str = ""
-    display_name: str = ""
-    first_name: str = ""
-    full_name: str = ""
-    push_name: str = ""
-    business_name: str = ""
-    profile_pic_url: str = ""
-    profile_pic_id: str = ""
-
-
-@dataclass
-class GetContactInfoReply:
-    Contact: ContactInfoResult = field(default_factory=ContactInfoResult)
-    Found: bool = False
-
-
-@dataclass
-class GetProfilePictureReply:
-    URL: str = ""
-    ID: str = ""
 
 
 @dataclass

@@ -72,6 +72,7 @@ class NewMessageEvent(Event):
             return None
 
         max_id = last_id
+        chat_updates: dict[str, dict[str, Any]] = {}
         for event in reply.Events:
             try:
                 if event.event_type == "Message":
@@ -82,12 +83,15 @@ class NewMessageEvent(Event):
                     stored = store_message(evt, raw=raw)
                     if stored is not None:
                         pyotherside.send("new-message", enum_to_str(asdict(stored.message)))
-                        pyotherside.send("chat-list-update", enum_to_str(asdict(stored.chat)))
+                        chat_updates[stored.chat.id] = enum_to_str(asdict(stored.chat))
             except Exception:
                 traceback.print_exc()
             finally:
                 if event.id > max_id:
                     max_id = event.id
+
+        if chat_updates:
+            pyotherside.send("chat-list-update", list(chat_updates.values()))
 
         if max_id > last_id:
             DaemonRPC().delete_events(up_to_id=max_id)
@@ -111,30 +115,40 @@ class ChatListUpdateEvent(Event):
 
     def trigger(self, metadata: Optional[Dict[str, Any]]) -> None:
         reply = DaemonRPC().get_contacts()
-        contact_names = {}
+        contacts = {}
         for c in reply.Contacts:
             if c.jid and c.display_name:
-                contact_names[c.jid] = c.display_name
+                photo = ""
+                if c.avatar_path:
+                    photo = "file://" + c.avatar_path
+                contacts[c.jid] = {"name": c.display_name, "photo": photo}
 
-        if not contact_names:
+        if not contacts:
             return None
 
+        chat_updates: list[dict[str, Any]] = []
         with KV() as kv:
             existing = {key: value for key, value in kv.get_partial("chat:")}
 
-            for jid, name in contact_names.items():
+            for jid, info in contacts.items():
                 key = f"chat:{jid}"
                 if key in existing:
                     chat = ChatListItem(**existing[key])
-                    if chat.name != name:
-                        chat.name = name
+                    changed = False
+                    if chat.name != info["name"]:
+                        chat.name = info["name"]
+                        changed = True
+                    if chat.photo != info["photo"]:
+                        chat.photo = info["photo"]
+                        changed = True
+                    if changed:
                         kv.put(key, asdict(chat))
-                        pyotherside.send("chat-list-update", enum_to_str(asdict(chat)))
+                        chat_updates.append(enum_to_str(asdict(chat)))
                 else:
                     chat = ChatListItem(
                         id=jid,
-                        name=name,
-                        photo="",
+                        name=info["name"],
+                        photo=info["photo"],
                         last_message="",
                         date="",
                         last_message_timestamp=0,
@@ -143,6 +157,9 @@ class ChatListUpdateEvent(Event):
                         is_group=jid.endswith("@g.us"),
                     )
                     kv.put(key, asdict(chat))
-                    pyotherside.send("chat-list-update", enum_to_str(asdict(chat)))
+                    chat_updates.append(enum_to_str(asdict(chat)))
+
+        if chat_updates:
+            pyotherside.send("chat-list-update", chat_updates)
 
         return None

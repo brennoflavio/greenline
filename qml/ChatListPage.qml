@@ -296,18 +296,17 @@ Page {
                     });
                     chatsChanged();
                 });
-                setHandler('chat-list-update', function(updatedChat) {
-                    var found = false;
-                    var newChats = chats.map(function(chat) {
-                        if (chat.id === updatedChat.id) {
-                            found = true;
-                            return updatedChat;
-                        }
-                        return chat;
+                setHandler('chat-list-update', function(updatedChats) {
+                    var chatMap = {
+                    };
+                    for (var i = 0; i < chats.length; i++) chatMap[chats[i].id] = chats[i]
+                    for (var j = 0; j < updatedChats.length; j++) chatMap[updatedChats[j].id] = updatedChats[j]
+                    var newChats = Object.keys(chatMap).map(function(key) {
+                        return chatMap[key];
                     });
-                    if (!found)
-                        newChats.unshift(updatedChat);
-
+                    newChats.sort(function(a, b) {
+                        return b.last_message_timestamp - a.last_message_timestamp;
+                    });
                     chats = newChats;
                 });
             });

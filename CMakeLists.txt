@@ -82,7 +82,7 @@ install(FILES "build-python-deps.sh" DESTINATION ${DATA_DIR})
 install(FILES "uv.lock" DESTINATION ${DATA_DIR})
 install(FILES "pyproject.toml" DESTINATION ${DATA_DIR})
 
-# Push Notifications and Background Sync
+# Push Notifications
 install(FILES pushexec PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ DESTINATION ${DATA_DIR})
 install(FILES push.json DESTINATION ${DATA_DIR})
 install(FILES push.apparmor DESTINATION ${DATA_DIR})

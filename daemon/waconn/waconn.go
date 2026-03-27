@@ -233,10 +233,6 @@ func (c *Client) GetAllContacts(ctx context.Context) (map[types.JID]types.Contac
 	return c.waCli.Store.Contacts.GetAllContacts(ctx)
 }
 
-func (c *Client) GetContact(ctx context.Context, jid types.JID) (types.ContactInfo, error) {
-	return c.waCli.Store.Contacts.GetContact(ctx, jid)
-}
-
 func (c *Client) GetProfilePictureInfo(ctx context.Context, jid types.JID, params *whatsmeow.GetProfilePictureParams) (*types.ProfilePictureInfo, error) {
 	return c.waCli.GetProfilePictureInfo(ctx, jid, params)
 }

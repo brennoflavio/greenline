@@ -20,9 +20,7 @@ from ut_components import setup
 setup(APP_NAME, CRASH_REPORT_URL)
 
 import base64
-import hashlib
 import os
-import urllib.request
 from dataclasses import dataclass
 
 from daemon import (
@@ -44,7 +42,6 @@ from events import (
 from models import (
     ChatListItem,
     ChatListResponse,
-    ContactInfoResponse,
     ContactItem,
     ContactListResponse,
     Message,
@@ -155,33 +152,10 @@ def uninstall_daemon() -> SuccessResponse:
         return SuccessResponse(success=False, message=str(e))
 
 
-def _avatar_cache_dir() -> str:
-    from ut_components.config import get_cache_path
-
-    return os.path.join(get_cache_path(), "avatars")
-
-
-def _avatar_path_for_jid(jid: str) -> str:
-    jid_hash = hashlib.sha256(jid.encode()).hexdigest()[:16]
-    return os.path.join(_avatar_cache_dir(), f"{jid_hash}.jpg")
-
-
-def _download_avatar(url: str, jid: str) -> str:
-    if not url:
-        return ""
-    cache_dir = _avatar_cache_dir()
-    os.makedirs(cache_dir, exist_ok=True)
-    path = _avatar_path_for_jid(jid)
-    try:
-        with urllib.request.urlopen(url, timeout=10) as resp:
-            with open(path, "wb") as f:
-                f.write(resp.read())
-        return "file://" + path
-    except Exception:
-        return ""
-
-
-def _build_contact_item(contact: DaemonContact, photo: str = "") -> ContactItem:
+def _build_contact_item(contact: DaemonContact) -> ContactItem:
+    photo = ""
+    if contact.avatar_path:
+        photo = "file://" + contact.avatar_path
     return ContactItem(
         jid=contact.jid,
         display_name=contact.display_name or contact.jid,
@@ -206,48 +180,10 @@ def get_contact_list() -> ContactListResponse:
 
 @crash_reporter
 @dataclass_to_dict
-def fetch_contact_info(jid: str) -> ContactInfoResponse:
-    try:
-        reply = DaemonRPC().get_contact_info(jid)
-        info = reply.Contact
-
-        photo = ""
-        with KV() as kv:
-            existing_id = kv.get(f"avatar_id:{jid}") or ""
-
-        cached_path = _avatar_path_for_jid(jid)
-        if info.profile_pic_id and info.profile_pic_id == existing_id and os.path.exists(cached_path):
-            photo = "file://" + cached_path
-        elif info.profile_pic_url:
-            photo = _download_avatar(info.profile_pic_url, jid)
-            if photo and info.profile_pic_id:
-                with KV() as kv:
-                    kv.put(f"avatar_id:{jid}", info.profile_pic_id)
-
-        contact = ContactItem(
-            jid=info.jid,
-            display_name=info.display_name or info.jid,
-            first_name=info.first_name,
-            full_name=info.full_name,
-            push_name=info.push_name,
-            business_name=info.business_name,
-            photo=photo,
-        )
-        return ContactInfoResponse(success=True, contact=contact, found=reply.Found, message="")
-    except Exception as e:
-        empty = ContactItem(
-            jid=jid, display_name=jid, first_name="", full_name="", push_name="", business_name="", photo=""
-        )
-        return ContactInfoResponse(success=False, contact=empty, found=False, message=str(e))
-
-
-@crash_reporter
-@dataclass_to_dict
 def clear_data() -> ClearDataResponse:
     with KV() as kv:
         kv.delete_partial("chat:")
         kv.delete_partial("message:")
-        kv.delete_partial("avatar_id:")
     return ClearDataResponse(success=True)
 
 
@@ -270,6 +206,6 @@ def get_chat_list() -> ChatListResponse:
 def get_messages(chat_id: str) -> MessagesResponse:
     with KV() as kv:
         entries = kv.get_partial(f"message:{chat_id}:")
-        messages = [Message(**value) for _, value in entries]
+        messages = [Message(**{k: v for k, v in value.items() if k != "raw"}) for _, value in entries]
         messages.sort(key=lambda m: m.timestamp_unix)
     return MessagesResponse(success=True, messages=messages, message="")
