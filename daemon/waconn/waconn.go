@@ -237,8 +237,16 @@ func (c *Client) GetJoinedGroups(ctx context.Context) ([]*types.GroupInfo, error
 	return c.waCli.GetJoinedGroups(ctx)
 }
 
+func (c *Client) MarkRead(ctx context.Context, ids []types.MessageID, timestamp time.Time, chat, sender types.JID) error {
+	return c.waCli.MarkRead(ctx, ids, timestamp, chat, sender)
+}
+
 func (c *Client) GetProfilePictureInfo(ctx context.Context, jid types.JID, params *whatsmeow.GetProfilePictureParams) (*types.ProfilePictureInfo, error) {
 	return c.waCli.GetProfilePictureInfo(ctx, jid, params)
+}
+
+func (c *Client) GetPNForLID(ctx context.Context, lid types.JID) (types.JID, error) {
+	return c.waCli.Store.LIDs.GetPNForLID(ctx, lid)
 }
 
 type slogAdapter struct {

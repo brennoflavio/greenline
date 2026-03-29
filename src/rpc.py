@@ -14,6 +14,10 @@ from daemon_types import (
 )
 
 
+class RateLimitError(Exception):
+    pass
+
+
 class DaemonRPC:
     def __init__(self, socket_path: str = DAEMON_SOCKET_PATH) -> None:
         self._socket_path = socket_path
@@ -42,7 +46,10 @@ class DaemonRPC:
             raise Exception("Daemon returned empty response")
         response = json.loads(data.decode())
         if response.get("error"):
-            raise Exception(response["error"])
+            error_msg = response["error"]
+            if "429" in str(error_msg) or "rate" in str(error_msg).lower():
+                raise RateLimitError(error_msg)
+            raise Exception(error_msg)
         return response.get("result")
 
     def ping(self) -> str:
@@ -72,3 +79,13 @@ class DaemonRPC:
 
     def delete_events(self, up_to_id: int) -> None:
         self._call("Service.DeleteEvents", {"UpToID": up_to_id})
+
+    def ensure_jid(self, jid: str) -> str:
+        result = self._call("Service.EnsureJID", {"JID": jid})
+        return str(result.get("JID", jid))
+
+    def mark_read(self, chat_jid: str, message_ids: list[str], sender_jid: str = "") -> None:
+        self._call(
+            "Service.MarkRead",
+            {"ChatJID": chat_jid, "SenderJID": sender_jid, "MessageIDs": message_ids},
+        )

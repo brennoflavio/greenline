@@ -1,7 +1,6 @@
 import base64
 import json
 import os
-import traceback
 from dataclasses import asdict, dataclass
 from datetime import timedelta
 from typing import Any, Dict, Optional
@@ -11,12 +10,13 @@ from dacite import from_dict
 
 from message_store import store_message
 from models import ChatListItem, ReadReceipt
-from rpc import DaemonRPC
+from receipt_store import process_receipt
+from rpc import DaemonRPC, RateLimitError
 from ut_components.config import get_cache_path
 from ut_components.event import Event
 from ut_components.kv import KV
 from ut_components.utils import enum_to_str as _enum_to_str
-from whatsmeow_types import MessageEvent
+from whatsmeow_types import MessageEvent, ReceiptEvent
 
 
 def enum_to_str(obj: Dict[str, Any]) -> Dict[str, Any]:
@@ -64,10 +64,26 @@ def _handle_message(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None
     evt = from_dict(data_class=MessageEvent, data=raw)
     if evt.Info.Chat == STATUS_BROADCAST_JID:
         return
+    evt.Info.Chat = DaemonRPC().ensure_jid(evt.Info.Chat)
     stored = store_message(evt, raw=raw)
     if stored is not None:
         pyotherside.send("new-message", enum_to_str(asdict(stored.message)))
         chat_updates[stored.chat.id] = enum_to_str(asdict(stored.chat))
+
+
+def _handle_receipt(
+    event: Any,
+    chat_updates: dict[str, dict[str, Any]],
+    message_updates: list[dict[str, Any]],
+) -> None:
+    raw = json.loads(event.payload or "{}")
+    evt = from_dict(data_class=ReceiptEvent, data=raw)
+    evt.Chat = DaemonRPC().ensure_jid(evt.Chat)
+    updated_messages, updated_chat = process_receipt(evt)
+    for msg in updated_messages:
+        message_updates.append(enum_to_str(msg))
+    if updated_chat is not None:
+        chat_updates[updated_chat.id] = enum_to_str(asdict(updated_chat))
 
 
 def _handle_unknown(event: Any) -> None:
@@ -95,17 +111,19 @@ class DaemonEventHandler(Event):
 
         max_id = last_id
         chat_updates: dict[str, dict[str, Any]] = {}
+        message_updates: list[dict[str, Any]] = []
         for event in reply.Events:
-            try:
-                if event.event_type == "Message":
-                    _handle_message(event, chat_updates)
-                else:
-                    _handle_unknown(event)
-            except Exception:
-                traceback.print_exc()
-            finally:
-                if event.id > max_id:
-                    max_id = event.id
+            if event.event_type == "Message":
+                _handle_message(event, chat_updates)
+            elif event.event_type == "Receipt":
+                _handle_receipt(event, chat_updates, message_updates)
+            else:
+                _handle_unknown(event)
+            if event.id > max_id:
+                max_id = event.id
+
+        for msg in message_updates:
+            pyotherside.send("message-status-update", msg)
 
         if chat_updates:
             pyotherside.send("chat-list-update", list(chat_updates.values()))
@@ -133,8 +151,11 @@ class ChatListUpdateEvent(Event):
     def trigger(self, metadata: Optional[Dict[str, Any]]) -> None:
         chat_updates: list[dict[str, Any]] = []
 
-        self._sync_contacts(chat_updates)
-        self._sync_groups(chat_updates)
+        try:
+            self._sync_contacts(chat_updates)
+            self._sync_groups(chat_updates)
+        except RateLimitError:
+            return None
 
         if chat_updates:
             pyotherside.send("chat-list-update", chat_updates)

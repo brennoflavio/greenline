@@ -21,7 +21,7 @@ setup(APP_NAME, CRASH_REPORT_URL)
 
 import base64
 import os
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 
 from daemon import (
     ensure_daemon_version,
@@ -46,12 +46,14 @@ from models import (
     ContactListResponse,
     Message,
     MessagesResponse,
+    ReadReceipt,
 )
 from rpc import DaemonRPC
 from ut_components.crash import crash_reporter
 from ut_components.event import get_event_dispatcher
 from ut_components.kv import KV
 from ut_components.utils import dataclass_to_dict
+from ut_components.utils import enum_to_str as _enum_to_str
 
 
 @dataclass
@@ -209,3 +211,35 @@ def get_messages(chat_id: str) -> MessagesResponse:
         messages = [Message(**{k: v for k, v in value.items() if k != "raw"}) for _, value in entries]
         messages.sort(key=lambda m: m.timestamp_unix)
     return MessagesResponse(success=True, messages=messages, message="")
+
+
+@crash_reporter
+@dataclass_to_dict
+def mark_messages_as_read(chat_id: str) -> SuccessResponse:
+    import pyotherside
+
+    with KV() as kv:
+        entries = kv.get_partial(f"message:{chat_id}:")
+        unread_by_sender: dict[str, list[str]] = {}
+        for _key, value in entries:
+            if value.get("is_outgoing") or value.get("read_receipt") == ReadReceipt.READ:
+                continue
+            sender = value.get("sender", "")
+            unread_by_sender.setdefault(sender, []).append(value["id"])
+
+    if not unread_by_sender:
+        return SuccessResponse(success=True, message="")
+
+    rpc = DaemonRPC()
+    for sender, ids in unread_by_sender.items():
+        rpc.mark_read(chat_id, ids, sender_jid=sender)
+
+    with KV() as kv:
+        existing = kv.get(f"chat:{chat_id}")
+        if existing:
+            chat = ChatListItem(**existing)
+            chat.unread_count = 0
+            kv.put(f"chat:{chat_id}", asdict(chat))
+            pyotherside.send("chat-list-update", [_enum_to_str(asdict(chat))])  # type: ignore[no-untyped-call]
+
+    return SuccessResponse(success=True, message="")

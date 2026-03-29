@@ -57,6 +57,7 @@ def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
         timestamp=timestamp_display,
         timestamp_unix=timestamp_unix,
         read_receipt=read_receipt,
+        sender=info.Sender,
         text=text,
         caption=caption,
     )

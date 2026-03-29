@@ -184,7 +184,7 @@ Page {
                                         name: "tick"
                                         height: units.gu(1.6)
                                         width: units.gu(1.6)
-                                        color: modelData.read_receipt === "read" ? LomiriColors.blue : theme.palette.normal.backgroundTertiaryText
+                                        color: modelData.read_receipt === "read" ? LomiriColors.lightBlue : theme.palette.normal.backgroundTertiaryText
                                         visible: modelData.read_receipt === "sent" || modelData.read_receipt === "delivered" || modelData.read_receipt === "read"
                                         anchors.verticalCenter: parent.verticalCenter
                                     }
@@ -194,6 +194,7 @@ Page {
                                         fontSize: "small"
                                         color: theme.palette.normal.backgroundTertiaryText
                                         elide: Text.ElideRight
+                                        maximumLineCount: 1
                                         width: parent.parent.width - (receiptIcon.visible ? units.gu(2) : 0) - parent.spacing
                                         anchors.verticalCenter: parent.verticalCenter
                                     }
@@ -286,15 +287,6 @@ Page {
                         return b.last_message_timestamp - a.last_message_timestamp;
                     });
                     chats = newChats;
-                });
-                setHandler('message-status-update', function(update) {
-                    chats = chats.map(function(chat) {
-                        if (chat.id === update.chat_id)
-                            chat.read_receipt = update.read_receipt;
-
-                        return chat;
-                    });
-                    chatsChanged();
                 });
                 setHandler('chat-list-update', function(updatedChats) {
                     var chatMap = {

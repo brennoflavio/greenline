@@ -126,6 +126,7 @@ func main() {
 			*events.ClientOutdated, *events.TemporaryBan:
 			return
 		}
+
 		t := reflect.TypeOf(evt)
 		if t.Kind() == reflect.Ptr {
 			t = t.Elem()

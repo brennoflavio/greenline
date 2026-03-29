@@ -47,6 +47,7 @@ class Message:
     timestamp: str
     timestamp_unix: int
     read_receipt: ReadReceipt
+    sender: str = ""
     text: str = ""
     image_source: str = ""
     caption: str = ""
@@ -60,13 +61,6 @@ class MessagesResponse:
     success: bool
     messages: List[Message]
     message: str
-
-
-@dataclass
-class StatusUpdate:
-    message_id: str
-    chat_id: str
-    read_receipt: ReadReceipt
 
 
 @dataclass

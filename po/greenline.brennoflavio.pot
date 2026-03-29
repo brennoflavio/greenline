@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-27 14:52+0000\n"
+"POT-Creation-Date: 2026-03-29 19:37+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -43,7 +43,7 @@ msgstr ""
 msgid "Search chats..."
 msgstr ""
 
-#: ../qml/ChatListPage.qml:252
+#: ../qml/ChatListPage.qml:253
 msgid "No chats found"
 msgstr ""
 
@@ -51,11 +51,11 @@ msgstr ""
 msgid "Type a message..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:242 ../qml/ut_components/AppHeader.qml:78
+#: ../qml/ChatPage.qml:248 ../qml/ut_components/AppHeader.qml:78
 msgid "Back"
 msgstr ""
 
-#: ../qml/ChatPage.qml:279
+#: ../qml/ChatPage.qml:285
 msgid "online"
 msgstr ""
 

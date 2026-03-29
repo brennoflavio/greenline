@@ -256,6 +256,23 @@ class MessageContent:
 
 
 @dataclass
+class ReceiptEvent:
+    Chat: str = ""
+    Sender: str = ""
+    IsFromMe: bool = False
+    IsGroup: bool = False
+    AddressingMode: str = ""
+    SenderAlt: str = ""
+    RecipientAlt: str = ""
+    BroadcastListOwner: str = ""
+    BroadcastRecipients: Optional[List[str]] = None
+    MessageIDs: List[str] = field(default_factory=list)
+    MessageSender: str = ""
+    Timestamp: str = ""
+    Type: str = ""
+
+
+@dataclass
 class MessageEvent:
     Info: MessageInfo = field(default_factory=MessageInfo)
     Message: MessageContent = field(default_factory=MessageContent)

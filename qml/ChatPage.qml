@@ -205,9 +205,11 @@ Page {
             addImportPath(Qt.resolvedUrl('../src/'));
             importModule('main', function() {
                 python.call('main.get_messages', [chatId], function(result) {
-                    if (result.success)
+                    if (result.success) {
                         messages = result.messages;
-
+                        python.call('main.mark_messages_as_read', [chatId], function() {
+                        });
+                    }
                 });
                 setHandler('new-message', function(message) {
                     if (message.chat_id !== chatId)
@@ -216,14 +218,18 @@ Page {
                     var newMessages = messages.slice();
                     newMessages.push(message);
                     messages = newMessages;
+                    if (!message.is_outgoing)
+                        python.call('main.mark_messages_as_read', [chatId], function() {
+                    });
+
                 });
-                setHandler('message-status-update', function(update) {
-                    if (update.chat_id !== chatId)
+                setHandler('message-status-update', function(updated) {
+                    if (updated.chat_id !== chatId)
                         return ;
 
                     messages = messages.map(function(msg) {
-                        if (msg.id === update.message_id)
-                            msg.read_receipt = update.read_receipt;
+                        if (msg.id === updated.id)
+                            return updated;
 
                         return msg;
                     });

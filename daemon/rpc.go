@@ -3,9 +3,11 @@ package main
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"os"
 
@@ -92,6 +94,55 @@ type DeleteEventsArgs struct {
 
 func (s *Service) DeleteEvents(args *DeleteEventsArgs, reply *struct{}) error {
 	return s.eventStore.Delete(args.UpToID)
+}
+
+// MarkRead types
+
+type MarkReadArgs struct {
+	ChatJID    string
+	SenderJID  string
+	MessageIDs []string
+}
+
+func (s *Service) MarkRead(args *MarkReadArgs, reply *struct{}) error {
+	chat, err := types.ParseJID(args.ChatJID)
+	if err != nil {
+		return fmt.Errorf("invalid chat JID: %w", err)
+	}
+	var sender types.JID
+	if args.SenderJID != "" {
+		sender, err = types.ParseJID(args.SenderJID)
+		if err != nil {
+			return fmt.Errorf("invalid sender JID: %w", err)
+		}
+	}
+	return s.client.MarkRead(context.Background(), args.MessageIDs, time.Now(), chat, sender)
+}
+
+// EnsureJID types
+
+type EnsureJIDArgs struct {
+	JID string
+}
+
+type EnsureJIDReply struct {
+	JID string
+}
+
+func (s *Service) EnsureJID(args *EnsureJIDArgs, reply *EnsureJIDReply) error {
+	jid, err := types.ParseJID(args.JID)
+	if err != nil {
+		return fmt.Errorf("invalid JID: %w", err)
+	}
+	if jid.Server == types.HiddenUserServer {
+		pn, err := s.client.GetPNForLID(context.Background(), jid)
+		if err == nil && !pn.IsEmpty() {
+			reply.JID = pn.String()
+			return nil
+		}
+	}
+	reply.JID = jid.String()
+	return nil
 }
 
 // Contact types
