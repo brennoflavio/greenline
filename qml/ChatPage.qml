@@ -1,4 +1,5 @@
 import Lomiri.Components 1.3
+import QtGraphicalEffects 1.0
 import QtQuick 2.7
 import QtQuick.Layouts 1.3
 import "components"
@@ -363,13 +364,29 @@ Page {
                 radius: width / 2
                 color: theme.palette.normal.base
                 anchors.verticalCenter: parent.verticalCenter
-                clip: true
 
                 Image {
+                    id: headerAvatar
+
                     anchors.fill: parent
-                    source: chatPhoto
+                    source: chatPhoto || ""
                     fillMode: Image.PreserveAspectCrop
-                    visible: chatPhoto
+                    visible: false
+                }
+
+                Rectangle {
+                    id: headerAvatarMask
+
+                    anchors.fill: parent
+                    radius: width / 2
+                    visible: false
+                }
+
+                OpacityMask {
+                    anchors.fill: parent
+                    source: headerAvatar
+                    maskSource: headerAvatarMask
+                    visible: !!chatPhoto
                 }
 
                 Icon {

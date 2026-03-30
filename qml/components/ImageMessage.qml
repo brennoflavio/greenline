@@ -70,9 +70,12 @@ MessageBubble {
         MouseArea {
             anchors.fill: parent
             onClicked: {
-                if (!root.mediaPath && !root.downloading)
+                if (root.mediaPath)
+                    pageStack.push(Qt.resolvedUrl("../ImagePreviewPage.qml"), {
+                    "imagePath": root.mediaPath
+                });
+                else if (!root.downloading)
                     root.downloadRequested();
-
             }
         }
 

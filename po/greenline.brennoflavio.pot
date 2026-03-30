@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-30 03:38+0000\n"
+"POT-Creation-Date: 2026-03-30 03:56+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -47,15 +47,16 @@ msgstr ""
 msgid "No chats found"
 msgstr ""
 
-#: ../qml/ChatPage.qml:250
+#: ../qml/ChatPage.qml:251
 msgid "Type a message..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:347 ../qml/ut_components/AppHeader.qml:78
+#: ../qml/ChatPage.qml:352 ../qml/ImagePreviewPage.qml:20
+#: ../qml/ut_components/AppHeader.qml:78
 msgid "Back"
 msgstr ""
 
-#: ../qml/ChatPage.qml:392
+#: ../qml/ChatPage.qml:413
 msgid "online"
 msgstr ""
 
@@ -73,6 +74,22 @@ msgstr ""
 
 #: ../qml/DaemonSetupPage.qml:58
 msgid "Start Service"
+msgstr ""
+
+#: ../qml/ImagePreviewPage.qml:15
+msgid "Image"
+msgstr ""
+
+#: ../qml/ImagePreviewPage.qml:50
+msgid "Save"
+msgstr ""
+
+#: ../qml/ImagePreviewPage.qml:60 ../qml/ImagePreviewPage.qml:143
+msgid "Share"
+msgstr ""
+
+#: ../qml/ImagePreviewPage.qml:81
+msgid "Save to"
 msgstr ""
 
 #: ../qml/SettingsPage.qml:33
