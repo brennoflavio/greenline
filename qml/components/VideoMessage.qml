@@ -5,7 +5,6 @@ import QtQuick 2.7
 MessageBubble {
     id: root
 
-    property string imageSource: ""
     property string thumbnailSource: ""
     property string mediaPath: ""
     property string caption: ""
@@ -22,18 +21,18 @@ MessageBubble {
 
         Image {
             anchors.fill: parent
-            source: root.mediaPath || root.thumbnailSource || root.imageSource
-            fillMode: root.mediaPath ? Image.PreserveAspectFit : Image.PreserveAspectCrop
-            visible: source != ""
+            source: root.thumbnailSource
+            fillMode: Image.PreserveAspectCrop
+            visible: source != "" && !root.mediaPath
         }
 
         Icon {
             anchors.centerIn: parent
-            name: "image-x-generic-symbolic"
+            name: "camcorder"
             width: units.gu(4)
             height: units.gu(4)
             color: theme.palette.normal.backgroundSecondaryText
-            visible: !root.mediaPath && !root.thumbnailSource && !root.imageSource
+            visible: !root.thumbnailSource && !root.mediaPath
         }
 
         Rectangle {
@@ -42,11 +41,11 @@ MessageBubble {
             height: units.gu(5)
             radius: width / 2
             color: "#80000000"
-            visible: !root.mediaPath && !root.downloading && (root.thumbnailSource || root.imageSource)
+            visible: !root.downloading
 
             Icon {
                 anchors.centerIn: parent
-                name: "save"
+                name: root.mediaPath ? "media-playback-start" : "save"
                 width: units.gu(3)
                 height: units.gu(3)
                 color: "white"

@@ -123,7 +123,7 @@ Item {
                 margins: units.gu(2)
             }
 
-            ActivityIndicator {
+            LoadingSpinner {
                 id: spinner
 
                 anchors.horizontalCenter: parent.horizontalCenter

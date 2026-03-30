@@ -249,6 +249,10 @@ func (c *Client) GetPNForLID(ctx context.Context, lid types.JID) (types.JID, err
 	return c.waCli.Store.LIDs.GetPNForLID(ctx, lid)
 }
 
+func (c *Client) DownloadMediaWithPath(ctx context.Context, directPath string, encFileHash, fileHash, mediaKey []byte, fileLength int, mediaType whatsmeow.MediaType, mmsType string) ([]byte, error) {
+	return c.waCli.DownloadMediaWithPath(ctx, directPath, encFileHash, fileHash, mediaKey, fileLength, mediaType, mmsType)
+}
+
 type slogAdapter struct {
 	logger *slog.Logger
 }

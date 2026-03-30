@@ -7,7 +7,10 @@ class MessageType(StrEnum):
     TEXT = "text"
     IMAGE = "image"
     IMAGE_GALLERY = "image_gallery"
+    VIDEO = "video"
     VOICE = "voice"
+    AUDIO = "audio"
+    DOCUMENT = "document"
     STICKER = "sticker"
 
 
@@ -54,6 +57,10 @@ class Message:
     images: List[str] = field(default_factory=list)
     duration: str = ""
     sticker_source: str = ""
+    media_path: str = ""
+    thumbnail_path: str = ""
+    mimetype: str = ""
+    file_name: str = ""
 
 
 @dataclass

@@ -80,7 +80,7 @@ Page {
             }
         }
 
-        ActivityIndicator {
+        LoadingSpinner {
             anchors.horizontalCenter: parent.horizontalCenter
             running: loading
             visible: loading

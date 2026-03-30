@@ -49,7 +49,7 @@ Page {
                             Layout.fillWidth: true
                         }
 
-                        ActivityIndicator {
+                        LoadingSpinner {
                             running: checkingDaemon
                             visible: checkingDaemon
                             Layout.alignment: Qt.AlignRight

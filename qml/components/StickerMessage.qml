@@ -1,3 +1,4 @@
+import "../ut_components"
 import Lomiri.Components 1.3
 import QtQuick 2.7
 
@@ -7,6 +8,11 @@ Item {
     property bool isOutgoing: false
     property string timestamp: ""
     property string stickerSource: ""
+    property string thumbnailSource: ""
+    property string mediaPath: ""
+    property bool downloading: false
+
+    signal downloadRequested()
 
     width: parent.width
     height: stickerContainer.height + units.gu(0.5)
@@ -30,7 +36,7 @@ Item {
 
             Image {
                 anchors.fill: parent
-                source: root.stickerSource
+                source: root.mediaPath || root.thumbnailSource || root.stickerSource
                 fillMode: Image.PreserveAspectFit
                 visible: source != ""
             }
@@ -41,7 +47,22 @@ Item {
                 width: units.gu(8)
                 height: units.gu(8)
                 color: theme.palette.normal.backgroundSecondaryText
-                visible: root.stickerSource === ""
+                visible: !root.mediaPath && !root.thumbnailSource && !root.stickerSource
+            }
+
+            LoadingSpinner {
+                anchors.centerIn: parent
+                running: root.downloading
+                visible: root.downloading
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    if (!root.mediaPath && !root.downloading)
+                        root.downloadRequested();
+
+                }
             }
 
         }

@@ -67,7 +67,7 @@ def _handle_message(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None
     evt.Info.Chat = DaemonRPC().ensure_jid(evt.Info.Chat)
     stored = store_message(evt, raw=raw)
     if stored is not None:
-        pyotherside.send("new-message", enum_to_str(asdict(stored.message)))
+        pyotherside.send("message-upsert", enum_to_str(asdict(stored.message)))
         chat_updates[stored.chat.id] = enum_to_str(asdict(stored.chat))
 
 
@@ -123,7 +123,7 @@ class DaemonEventHandler(Event):
                 max_id = event.id
 
         for msg in message_updates:
-            pyotherside.send("message-status-update", msg)
+            pyotherside.send("message-upsert", msg)
 
         if chat_updates:
             pyotherside.send("chat-list-update", list(chat_updates.values()))
@@ -134,14 +134,6 @@ class DaemonEventHandler(Event):
                 kv.put(LAST_EVENT_ID_KEY, max_id)
 
         return None
-
-
-class MessageStatusUpdateEvent(Event):
-    def __init__(self) -> None:
-        super().__init__(id="message-status-update", execution_interval=timedelta(seconds=5))
-
-    def trigger(self, metadata: Optional[Dict[str, Any]]) -> None:
-        pass
 
 
 class ChatListUpdateEvent(Event):

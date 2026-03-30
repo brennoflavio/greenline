@@ -76,7 +76,7 @@ Page {
                     spacing: units.gu(1)
                     visible: qrImage.source == ""
 
-                    ActivityIndicator {
+                    LoadingSpinner {
                         anchors.horizontalCenter: parent.horizontalCenter
                         running: true
                     }

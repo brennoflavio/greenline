@@ -268,17 +268,12 @@ Page {
                         chats = result.chats;
 
                 });
-                setHandler('new-message', function(message) {
-                    var updated = false;
+                setHandler('message-upsert', function(message) {
                     var newChats = chats.map(function(chat) {
-                        if (chat.id === message.chat_id) {
-                            updated = true;
+                        if (chat.id === message.chat_id && message.timestamp_unix >= chat.last_message_timestamp) {
                             chat.last_message = message.text || message.caption || message.type;
                             chat.date = message.timestamp;
                             chat.last_message_timestamp = message.timestamp_unix;
-                            if (!message.is_outgoing)
-                                chat.unread_count = (chat.unread_count || 0) + 1;
-
                             chat.read_receipt = message.is_outgoing ? message.read_receipt : "";
                         }
                         return chat;

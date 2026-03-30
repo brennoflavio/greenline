@@ -4,14 +4,16 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"mime"
+	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
 	"time"
 
-	"os"
-
 	qrcode "github.com/skip2/go-qrcode"
+	"go.mau.fi/whatsmeow"
 	"greenline.brennoflavio/daemon/avatarsync"
 	"greenline.brennoflavio/daemon/eventstore"
 	"greenline.brennoflavio/daemon/waconn"
@@ -258,5 +260,97 @@ func (s *Service) GetGroups(args *struct{}, reply *GetGroupsReply) error {
 	})
 
 	reply.Groups = groups
+	return nil
+}
+
+// DownloadMedia types
+
+type DownloadMediaArgs struct {
+	DirectPath    string
+	MediaKey      string
+	FileEncSHA256 string
+	FileSHA256    string
+	FileLength    int
+	MediaType     string // "image", "video", "audio", "document", "sticker"
+	Mimetype      string
+	MessageID     string
+	ChatID        string
+}
+
+type DownloadMediaReply struct {
+	FilePath string
+}
+
+var mediaTypeMap = map[string]whatsmeow.MediaType{
+	"image":    whatsmeow.MediaImage,
+	"video":    whatsmeow.MediaVideo,
+	"audio":    whatsmeow.MediaAudio,
+	"document": whatsmeow.MediaDocument,
+	"sticker":  whatsmeow.MediaImage,
+}
+
+var mmsTypeMap = map[string]string{
+	"image":    "image",
+	"video":    "video",
+	"audio":    "audio",
+	"document": "document",
+	"sticker":  "image",
+}
+
+func extensionFromMimetype(mimetype string) string {
+	exts, err := mime.ExtensionsByType(mimetype)
+	if err == nil && len(exts) > 0 {
+		return exts[0]
+	}
+	parts := strings.SplitN(mimetype, "/", 2)
+	if len(parts) == 2 {
+		sub := parts[1]
+		if sub == "ogg" || sub == "ogg; codecs=opus" {
+			return ".ogg"
+		}
+		return "." + sub
+	}
+	return ".bin"
+}
+
+func (s *Service) DownloadMedia(args *DownloadMediaArgs, reply *DownloadMediaReply) error {
+	wmMediaType, ok := mediaTypeMap[args.MediaType]
+	if !ok {
+		return fmt.Errorf("unknown media type: %s", args.MediaType)
+	}
+	mmsType := mmsTypeMap[args.MediaType]
+
+	mediaKey, err := base64.StdEncoding.DecodeString(args.MediaKey)
+	if err != nil {
+		return fmt.Errorf("invalid media key: %w", err)
+	}
+	encSHA256, err := base64.StdEncoding.DecodeString(args.FileEncSHA256)
+	if err != nil {
+		return fmt.Errorf("invalid file enc SHA256: %w", err)
+	}
+	fileSHA256, err := base64.StdEncoding.DecodeString(args.FileSHA256)
+	if err != nil {
+		return fmt.Errorf("invalid file SHA256: %w", err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	data, err := s.client.DownloadMediaWithPath(ctx, args.DirectPath, encSHA256, fileSHA256, mediaKey, args.FileLength, wmMediaType, mmsType)
+	if err != nil {
+		return fmt.Errorf("download failed: %w", err)
+	}
+
+	ext := extensionFromMimetype(args.Mimetype)
+	dir := filepath.Join(s.cacheDir, "media", args.ChatID)
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		return fmt.Errorf("failed to create media dir: %w", err)
+	}
+	filePath := filepath.Join(dir, args.MessageID+ext)
+	if err := os.WriteFile(filePath, data, 0600); err != nil {
+		return fmt.Errorf("failed to write media file: %w", err)
+	}
+
+	reply.FilePath = filePath
 	return nil
 }

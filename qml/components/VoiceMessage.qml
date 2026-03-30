@@ -6,14 +6,26 @@ MessageBubble {
     id: root
 
     property string duration: "0:00"
+    property string mediaPath: ""
     property bool playing: false
+    property bool downloading: false
+
+    signal downloadRequested()
 
     RowLayout {
         width: parent.width
         spacing: units.gu(1)
 
         Icon {
-            name: root.playing ? "media-playback-pause" : "media-playback-start"
+            name: {
+                if (root.downloading)
+                    return "sync-updating";
+
+                if (!root.mediaPath)
+                    return "save";
+
+                return root.playing ? "media-playback-pause" : "media-playback-start";
+            }
             width: units.gu(3)
             height: units.gu(3)
             color: LomiriColors.green
@@ -21,7 +33,15 @@ MessageBubble {
 
             MouseArea {
                 anchors.fill: parent
-                onClicked: root.playing = !root.playing
+                onClicked: {
+                    if (!root.mediaPath && !root.downloading) {
+                        root.downloadRequested();
+                        return ;
+                    }
+                    if (root.mediaPath)
+                        root.playing = !root.playing;
+
+                }
             }
 
         }

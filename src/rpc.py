@@ -89,3 +89,31 @@ class DaemonRPC:
             "Service.MarkRead",
             {"ChatJID": chat_jid, "SenderJID": sender_jid, "MessageIDs": message_ids},
         )
+
+    def download_media(
+        self,
+        direct_path: str,
+        media_key: str,
+        file_enc_sha256: str,
+        file_sha256: str,
+        file_length: int,
+        media_type: str,
+        mimetype: str,
+        message_id: str,
+        chat_id: str,
+    ) -> str:
+        result = self._call(
+            "Service.DownloadMedia",
+            {
+                "DirectPath": direct_path,
+                "MediaKey": media_key,
+                "FileEncSHA256": file_enc_sha256,
+                "FileSHA256": file_sha256,
+                "FileLength": file_length,
+                "MediaType": media_type,
+                "Mimetype": mimetype,
+                "MessageID": message_id,
+                "ChatID": chat_id,
+            },
+        )
+        return str(result.get("FilePath", ""))

@@ -12,6 +12,21 @@ Page {
     property string chatName: ""
     property string chatPhoto: ""
     property var messages: []
+    property var downloadingIds: ({
+    })
+
+    function triggerDownload(messageId, mediaType) {
+        var d = downloadingIds;
+        d[messageId] = true;
+        downloadingIds = d;
+        messagesChanged();
+        python.call('main.download_media', [chatId, messageId, mediaType], function(result) {
+            var d2 = downloadingIds;
+            delete d2[messageId];
+            downloadingIds = d2;
+            messagesChanged();
+        });
+    }
 
     ListView {
         id: messageList
@@ -42,8 +57,14 @@ Page {
                 if (msg.type === "image_gallery")
                     return galleryComponent;
 
-                if (msg.type === "voice")
+                if (msg.type === "video")
+                    return videoComponent;
+
+                if (msg.type === "voice" || msg.type === "audio")
                     return voiceComponent;
+
+                if (msg.type === "document")
+                    return documentComponent;
 
                 if (msg.type === "sticker")
                     return stickerComponent;
@@ -71,10 +92,14 @@ Page {
 
         ImageMessage {
             imageSource: msg.image_source || ""
+            thumbnailSource: msg.thumbnail_path || ""
+            mediaPath: msg.media_path || ""
             caption: msg.caption || ""
             isOutgoing: msg.is_outgoing || false
             timestamp: msg.timestamp || ""
             readReceipt: msg.read_receipt || ""
+            downloading: downloadingIds[msg.id] || false
+            onDownloadRequested: triggerDownload(msg.id, "image")
         }
 
     }
@@ -93,13 +118,47 @@ Page {
     }
 
     Component {
+        id: videoComponent
+
+        VideoMessage {
+            thumbnailSource: msg.thumbnail_path || ""
+            mediaPath: msg.media_path || ""
+            caption: msg.caption || ""
+            isOutgoing: msg.is_outgoing || false
+            timestamp: msg.timestamp || ""
+            readReceipt: msg.read_receipt || ""
+            downloading: downloadingIds[msg.id] || false
+            onDownloadRequested: triggerDownload(msg.id, "video")
+        }
+
+    }
+
+    Component {
         id: voiceComponent
 
         VoiceMessage {
             duration: msg.duration || "0:00"
+            mediaPath: msg.media_path || ""
             isOutgoing: msg.is_outgoing || false
             timestamp: msg.timestamp || ""
             readReceipt: msg.read_receipt || ""
+            downloading: downloadingIds[msg.id] || false
+            onDownloadRequested: triggerDownload(msg.id, "audio")
+        }
+
+    }
+
+    Component {
+        id: documentComponent
+
+        DocumentMessage {
+            fileName: msg.file_name || ""
+            mediaPath: msg.media_path || ""
+            isOutgoing: msg.is_outgoing || false
+            timestamp: msg.timestamp || ""
+            readReceipt: msg.read_receipt || ""
+            downloading: downloadingIds[msg.id] || false
+            onDownloadRequested: triggerDownload(msg.id, "document")
         }
 
     }
@@ -109,8 +168,12 @@ Page {
 
         StickerMessage {
             stickerSource: msg.sticker_source || ""
+            thumbnailSource: msg.thumbnail_path || ""
+            mediaPath: msg.media_path || ""
             isOutgoing: msg.is_outgoing || false
             timestamp: msg.timestamp || ""
+            downloading: downloadingIds[msg.id] || false
+            onDownloadRequested: triggerDownload(msg.id, "sticker")
         }
 
     }
@@ -211,29 +274,30 @@ Page {
                         });
                     }
                 });
-                setHandler('new-message', function(message) {
+                setHandler('message-upsert', function(message) {
                     if (message.chat_id !== chatId)
                         return ;
 
-                    var newMessages = messages.slice();
-                    newMessages.push(message);
-                    messages = newMessages;
-                    if (!message.is_outgoing)
+                    var found = false;
+                    var updated = messages.map(function(m) {
+                        if (m.id === message.id) {
+                            found = true;
+                            return message;
+                        }
+                        return m;
+                    });
+                    if (found) {
+                        messages = updated;
+                    } else {
+                        var newMessages = messages.slice();
+                        newMessages.push(message);
+                        messages = newMessages;
+                    }
+                    messagesChanged();
+                    if (!message.is_outgoing && !found)
                         python.call('main.mark_messages_as_read', [chatId], function() {
                     });
 
-                });
-                setHandler('message-status-update', function(updated) {
-                    if (updated.chat_id !== chatId)
-                        return ;
-
-                    messages = messages.map(function(msg) {
-                        if (msg.id === updated.id)
-                            return updated;
-
-                        return msg;
-                    });
-                    messagesChanged();
                 });
             });
         }

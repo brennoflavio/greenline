@@ -124,6 +124,7 @@ class ImageMessage:
 class VideoMessage:
     URL: str = ""
     mimetype: str = ""
+    caption: str = ""
     fileSHA256: str = ""
     fileLength: int = 0
     seconds: int = 0
@@ -235,6 +236,59 @@ class PeerDataOperationRequestResponseMessage:
 
 
 @dataclass
+class AudioMessage:
+    URL: str = ""
+    mimetype: str = ""
+    fileSHA256: str = ""
+    fileLength: int = 0
+    seconds: int = 0
+    ptt: bool = False
+    mediaKey: str = ""
+    fileEncSHA256: str = ""
+    directPath: str = ""
+    mediaKeyTimestamp: int = 0
+    contextInfo: Optional[ContextInfo] = None
+
+
+@dataclass
+class DocumentMessage:
+    URL: str = ""
+    mimetype: str = ""
+    title: str = ""
+    fileSHA256: str = ""
+    fileLength: int = 0
+    pageCount: int = 0
+    mediaKey: str = ""
+    fileName: str = ""
+    fileEncSHA256: str = ""
+    directPath: str = ""
+    mediaKeyTimestamp: int = 0
+    caption: str = ""
+    contextInfo: Optional[ContextInfo] = None
+    JPEGThumbnail: str = ""
+
+
+@dataclass
+class StickerMessage:
+    URL: str = ""
+    fileSHA256: str = ""
+    fileEncSHA256: str = ""
+    mediaKey: str = ""
+    mimetype: str = ""
+    directPath: str = ""
+    fileLength: int = 0
+    mediaKeyTimestamp: int = 0
+    pngThumbnail: str = ""
+    contextInfo: Optional[ContextInfo] = None
+    height: int = 0
+    width: int = 0
+    isAnimated: bool = False
+    isAvatar: bool = False
+    isAISticker: bool = False
+    isLottie: bool = False
+
+
+@dataclass
 class ProtocolMessage:
     type: int = 0
     initialSecurityNotificationSettingSync: Optional[InitialSecurityNotificationSettingSync] = None
@@ -249,6 +303,9 @@ class MessageContent:
     extendedTextMessage: Optional[ExtendedTextMessage] = None
     imageMessage: Optional[ImageMessage] = None
     videoMessage: Optional[VideoMessage] = None
+    audioMessage: Optional[AudioMessage] = None
+    documentMessage: Optional[DocumentMessage] = None
+    stickerMessage: Optional[StickerMessage] = None
     reactionMessage: Optional[ReactionMessage] = None
     senderKeyDistributionMessage: Optional[SenderKeyDistributionMessage] = None
     protocolMessage: Optional[ProtocolMessage] = None

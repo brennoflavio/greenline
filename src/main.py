@@ -35,7 +35,6 @@ from events import (
     QR_IMAGE_PATH,
     ChatListUpdateEvent,
     DaemonEventHandler,
-    MessageStatusUpdateEvent,
     SessionStatusEvent,
     SessionStatusResponse,
 )
@@ -72,7 +71,6 @@ def start_event_loop() -> None:
     dispatcher = get_event_dispatcher()
     dispatcher.register_event(SessionStatusEvent())
     dispatcher.register_event(DaemonEventHandler())
-    dispatcher.register_event(MessageStatusUpdateEvent())
     dispatcher.register_event(ChatListUpdateEvent())
     dispatcher.start()
 
@@ -208,7 +206,8 @@ def get_chat_list() -> ChatListResponse:
 def get_messages(chat_id: str) -> MessagesResponse:
     with KV() as kv:
         entries = kv.get_partial(f"message:{chat_id}:")
-        messages = [Message(**{k: v for k, v in value.items() if k != "raw"}) for _, value in entries]
+        msg_fields = {f.name for f in Message.__dataclass_fields__.values()}
+        messages = [Message(**{k: v for k, v in value.items() if k in msg_fields}) for _, value in entries]
         messages.sort(key=lambda m: m.timestamp_unix)
     return MessagesResponse(success=True, messages=messages, message="")
 
@@ -243,3 +242,84 @@ def mark_messages_as_read(chat_id: str) -> SuccessResponse:
             pyotherside.send("chat-list-update", [_enum_to_str(asdict(chat))])  # type: ignore[no-untyped-call]
 
     return SuccessResponse(success=True, message="")
+
+
+_MEDIA_TYPE_MAP = {
+    "image": "imageMessage",
+    "video": "videoMessage",
+    "audio": "audioMessage",
+    "document": "documentMessage",
+    "sticker": "stickerMessage",
+}
+
+
+@dataclass
+class DownloadMediaResponse:
+    success: bool
+    media_path: str
+    message: str
+
+
+@crash_reporter
+@dataclass_to_dict
+def download_media(chat_id: str, message_id: str, media_type: str) -> DownloadMediaResponse:
+    import pyotherside
+
+    with KV() as kv:
+        entries = kv.get_partial(f"message:{chat_id}:")
+        entry = None
+        entry_key = ""
+        for key, value in entries:
+            if value.get("id") == message_id:
+                entry = value
+                entry_key = key
+                break
+
+    if entry is None or entry.get("raw") is None:
+        return DownloadMediaResponse(success=False, media_path="", message="Message not found")
+
+    raw = entry["raw"]
+    msg_content = raw.get("Message", {})
+    field_name = _MEDIA_TYPE_MAP.get(media_type)
+    if not field_name:
+        return DownloadMediaResponse(success=False, media_path="", message=f"Unknown media type: {media_type}")
+
+    media_msg = msg_content.get(field_name)
+    if not media_msg:
+        return DownloadMediaResponse(success=False, media_path="", message="No media content in message")
+
+    direct_path = media_msg.get("directPath", "")
+    media_key = media_msg.get("mediaKey", "")
+    file_enc_sha256 = media_msg.get("fileEncSHA256", "")
+    file_sha256 = media_msg.get("fileSHA256", "")
+    file_length = media_msg.get("fileLength", 0)
+    mimetype = media_msg.get("mimetype", "")
+
+    if not direct_path or not media_key:
+        return DownloadMediaResponse(success=False, media_path="", message="Missing media download info")
+
+    try:
+        file_path = DaemonRPC().download_media(
+            direct_path=direct_path,
+            media_key=media_key,
+            file_enc_sha256=file_enc_sha256,
+            file_sha256=file_sha256,
+            file_length=file_length,
+            media_type=media_type,
+            mimetype=mimetype,
+            message_id=message_id,
+            chat_id=chat_id,
+        )
+    except Exception as e:
+        return DownloadMediaResponse(success=False, media_path="", message=str(e))
+
+    media_path = "file://" + file_path
+    entry["media_path"] = media_path
+    with KV() as kv:
+        kv.put(entry_key, entry)
+
+    msg_fields = {f.name for f in Message.__dataclass_fields__.values()}
+    msg_dict = _enum_to_str({k: v for k, v in entry.items() if k in msg_fields})  # type: ignore[no-untyped-call]
+    pyotherside.send("message-upsert", msg_dict)
+
+    return DownloadMediaResponse(success=True, media_path=media_path, message="")
