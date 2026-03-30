@@ -248,6 +248,31 @@ def mark_messages_as_read(chat_id: str) -> SuccessResponse:
 
 @crash_reporter
 @dataclass_to_dict
+def toggle_mute(chat_id: str) -> SuccessResponse:
+    import pyotherside
+
+    with KV() as kv:
+        data = kv.get(f"chat:{chat_id}")
+        if data is None:
+            return SuccessResponse(success=False, message="Chat not found")
+        chat = ChatListItem(**data)
+        new_muted = not chat.muted
+
+    DaemonRPC().set_muted(chat_id, new_muted)
+
+    with KV() as kv:
+        data = kv.get(f"chat:{chat_id}")
+        if data is not None:
+            chat = ChatListItem(**data)
+            chat.muted = new_muted
+            kv.put(f"chat:{chat_id}", asdict(chat))
+            pyotherside.send("chat-list-update", [_enum_to_str(asdict(chat))])  # type: ignore[no-untyped-call]
+
+    return SuccessResponse(success=True, message="")
+
+
+@crash_reporter
+@dataclass_to_dict
 def send_text_message(chat_id: str, text: str, temp_id: str = "") -> SuccessResponse:
     from datetime import datetime
 

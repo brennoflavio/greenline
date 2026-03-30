@@ -15,6 +15,7 @@ import (
 	qrcode "github.com/skip2/go-qrcode"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waE2E"
+	"go.mau.fi/whatsmeow/store"
 	"google.golang.org/protobuf/proto"
 	"greenline.brennoflavio/daemon/avatarsync"
 	"greenline.brennoflavio/daemon/eventstore"
@@ -263,6 +264,50 @@ func (s *Service) GetGroups(args *struct{}, reply *GetGroupsReply) error {
 
 	reply.Groups = groups
 	return nil
+}
+
+// ChatSettings types
+
+type GetChatSettingsArgs struct {
+	ChatJID string
+}
+
+type GetChatSettingsReply struct {
+	MutedUntil int64 `json:"MutedUntil"` // unix ms: 0 = not muted, -1 = forever
+}
+
+func (s *Service) GetChatSettings(args *GetChatSettingsArgs, reply *GetChatSettingsReply) error {
+	jid, err := types.ParseJID(args.ChatJID)
+	if err != nil {
+		return fmt.Errorf("invalid chat JID: %w", err)
+	}
+	settings, err := s.client.GetChatSettings(context.Background(), jid)
+	if err != nil {
+		return fmt.Errorf("get chat settings: %w", err)
+	}
+	if !settings.Found || settings.MutedUntil.IsZero() {
+		reply.MutedUntil = 0
+	} else if settings.MutedUntil.Equal(store.MutedForever) {
+		reply.MutedUntil = -1
+	} else {
+		reply.MutedUntil = settings.MutedUntil.UnixMilli()
+	}
+	return nil
+}
+
+// SetMuted types
+
+type SetMutedArgs struct {
+	ChatJID string
+	Muted   bool
+}
+
+func (s *Service) SetMuted(args *SetMutedArgs, reply *struct{}) error {
+	jid, err := types.ParseJID(args.ChatJID)
+	if err != nil {
+		return fmt.Errorf("invalid chat JID: %w", err)
+	}
+	return s.client.SetMuted(context.Background(), jid, args.Muted)
 }
 
 // DownloadMedia types

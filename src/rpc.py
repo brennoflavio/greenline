@@ -6,6 +6,7 @@ from dacite import from_dict
 
 from constants import DAEMON_SOCKET_PATH
 from daemon_types import (
+    GetChatSettingsReply,
     GetContactsReply,
     GetGroupsReply,
     ListEventsReply,
@@ -96,6 +97,13 @@ class DaemonRPC:
             {"ChatJID": chat_jid, "Type": msg_type, "Text": text},
         )
         return result
+
+    def get_chat_settings(self, chat_jid: str) -> GetChatSettingsReply:
+        data = self._call("Service.GetChatSettings", {"ChatJID": chat_jid})
+        return from_dict(data_class=GetChatSettingsReply, data=data)
+
+    def set_muted(self, chat_jid: str, muted: bool) -> None:
+        self._call("Service.SetMuted", {"ChatJID": chat_jid, "Muted": muted})
 
     def download_media(
         self,

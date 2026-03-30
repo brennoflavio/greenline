@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"go.mau.fi/whatsmeow"
+	"go.mau.fi/whatsmeow/appstate"
 	"go.mau.fi/whatsmeow/proto/waCompanionReg"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/store"
@@ -256,6 +257,38 @@ func (c *Client) DownloadMediaWithPath(ctx context.Context, directPath string, e
 
 func (c *Client) SendMessage(ctx context.Context, to types.JID, message *waE2E.Message) (whatsmeow.SendResponse, error) {
 	return c.waCli.SendMessage(ctx, to, message)
+}
+
+func (c *Client) GetChatSettings(ctx context.Context, chat types.JID) (types.LocalChatSettings, error) {
+	if c.waCli.Store.ChatSettings == nil {
+		return types.LocalChatSettings{}, nil
+	}
+	return c.waCli.Store.ChatSettings.GetChatSettings(ctx, chat)
+}
+
+func (c *Client) IsMuted(ctx context.Context, chat types.JID) bool {
+	settings, err := c.GetChatSettings(ctx, chat)
+	if err != nil || !settings.Found {
+		return false
+	}
+	if settings.MutedUntil.Equal(store.MutedForever) {
+		return true
+	}
+	return !settings.MutedUntil.IsZero() && settings.MutedUntil.After(time.Now())
+}
+
+func (c *Client) SetMuted(ctx context.Context, chat types.JID, muted bool) error {
+	patch := appstate.BuildMute(chat, muted, 0)
+	err := c.waCli.SendAppState(ctx, patch)
+	if err == nil {
+		return nil
+	}
+	c.log.Warn("SetMuted: first attempt failed, resyncing app state", "error", err)
+	if syncErr := c.waCli.FetchAppState(ctx, patch.Type, true, false); syncErr != nil {
+		c.log.Error("SetMuted: full resync failed", "error", syncErr)
+		return fmt.Errorf("app state conflict and resync failed: %w", err)
+	}
+	return c.waCli.SendAppState(ctx, patch)
 }
 
 type slogAdapter struct {

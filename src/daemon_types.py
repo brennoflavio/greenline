@@ -62,3 +62,8 @@ class ListEventsReply:
 class SendMessageReply:
     MessageID: str = ""
     Timestamp: int = 0
+
+
+@dataclass
+class GetChatSettingsReply:
+    MutedUntil: int = 0

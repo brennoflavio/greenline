@@ -32,6 +32,7 @@ class ChatListItem:
     read_receipt: ReadReceipt
     unread_count: int
     is_group: bool
+    muted: bool = False
 
 
 @dataclass

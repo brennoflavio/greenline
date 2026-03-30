@@ -68,157 +68,150 @@ Page {
                 });
             }
 
-            delegate: Item {
-                width: parent ? parent.width : 0
+            delegate: ListItem {
                 height: units.gu(8)
+                onClicked: {
+                    pageStack.push(Qt.resolvedUrl("ChatPage.qml"), {
+                        "chatId": modelData.id,
+                        "chatName": modelData.name,
+                        "chatPhoto": modelData.photo
+                    });
+                }
 
-                Rectangle {
-                    id: chatBackground
+                RowLayout {
+                    spacing: units.gu(1.5)
 
-                    anchors.fill: parent
-                    color: "transparent"
-
-                    MouseArea {
-                        anchors.fill: parent
-                        onPressed: chatBackground.color = theme.palette.highlighted.background
-                        onReleased: chatBackground.color = "transparent"
-                        onCanceled: chatBackground.color = "transparent"
-                        onClicked: {
-                            pageStack.push(Qt.resolvedUrl("ChatPage.qml"), {
-                                "chatId": modelData.id,
-                                "chatName": modelData.name,
-                                "chatPhoto": modelData.photo
-                            });
-                        }
+                    anchors {
+                        fill: parent
+                        leftMargin: units.gu(2)
+                        rightMargin: units.gu(2)
+                        topMargin: units.gu(1)
+                        bottomMargin: units.gu(1)
                     }
 
-                    RowLayout {
-                        spacing: units.gu(1.5)
+                    Rectangle {
+                        width: units.gu(6)
+                        height: units.gu(6)
+                        radius: width / 2
+                        color: theme.palette.normal.base
+                        Layout.alignment: Qt.AlignVCenter
 
-                        anchors {
-                            fill: parent
-                            leftMargin: units.gu(2)
-                            rightMargin: units.gu(2)
-                            topMargin: units.gu(1)
-                            bottomMargin: units.gu(1)
+                        Image {
+                            id: avatarImage
+
+                            anchors.fill: parent
+                            source: modelData.photo || ""
+                            fillMode: Image.PreserveAspectCrop
+                            visible: false
                         }
 
                         Rectangle {
-                            width: units.gu(6)
-                            height: units.gu(6)
+                            id: avatarMask
+
+                            anchors.fill: parent
                             radius: width / 2
-                            color: theme.palette.normal.base
-                            Layout.alignment: Qt.AlignVCenter
+                            visible: false
+                        }
 
-                            Image {
-                                id: avatarImage
+                        OpacityMask {
+                            anchors.fill: parent
+                            source: avatarImage
+                            maskSource: avatarMask
+                            visible: !!modelData.photo
+                        }
 
-                                anchors.fill: parent
-                                source: modelData.photo || ""
-                                fillMode: Image.PreserveAspectCrop
-                                visible: false
-                            }
+                        Icon {
+                            anchors.centerIn: parent
+                            name: "contact"
+                            width: units.gu(3)
+                            height: units.gu(3)
+                            color: theme.palette.normal.backgroundSecondaryText
+                            visible: !modelData.photo
+                        }
 
-                            Rectangle {
-                                id: avatarMask
+                    }
 
-                                anchors.fill: parent
-                                radius: width / 2
-                                visible: false
-                            }
+                    Column {
+                        Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignVCenter
+                        spacing: units.gu(0.3)
 
-                            OpacityMask {
-                                anchors.fill: parent
-                                source: avatarImage
-                                maskSource: avatarMask
-                                visible: !!modelData.photo
+                        RowLayout {
+                            width: parent.width
+
+                            Label {
+                                text: modelData.name || ""
+                                fontSize: "medium"
+                                font.bold: modelData.unread_count > 0
+                                color: theme.palette.normal.foregroundText
+                                elide: Text.ElideRight
+                                Layout.fillWidth: true
                             }
 
                             Icon {
-                                anchors.centerIn: parent
-                                name: "contact"
-                                width: units.gu(3)
-                                height: units.gu(3)
-                                color: theme.palette.normal.backgroundSecondaryText
-                                visible: !modelData.photo
+                                name: "audio-volume-muted"
+                                height: units.gu(2)
+                                width: units.gu(2)
+                                color: theme.palette.normal.backgroundTertiaryText
+                                visible: !!modelData.muted
+                                Layout.alignment: Qt.AlignRight
+                            }
+
+                            Label {
+                                text: modelData.date || ""
+                                fontSize: "x-small"
+                                color: modelData.unread_count > 0 ? LomiriColors.green : theme.palette.normal.backgroundTertiaryText
+                                Layout.alignment: Qt.AlignRight
                             }
 
                         }
 
-                        Column {
-                            Layout.fillWidth: true
-                            Layout.alignment: Qt.AlignVCenter
-                            spacing: units.gu(0.3)
+                        RowLayout {
+                            width: parent.width
 
-                            RowLayout {
-                                width: parent.width
+                            Row {
+                                spacing: units.gu(0.3)
+                                Layout.fillWidth: true
 
-                                Label {
-                                    text: modelData.name || ""
-                                    fontSize: "medium"
-                                    font.bold: modelData.unread_count > 0
-                                    color: theme.palette.normal.foregroundText
-                                    elide: Text.ElideRight
-                                    Layout.fillWidth: true
+                                Icon {
+                                    id: receiptIcon
+
+                                    name: "tick"
+                                    height: units.gu(1.6)
+                                    width: units.gu(1.6)
+                                    color: modelData.read_receipt === "read" ? LomiriColors.lightBlue : theme.palette.normal.backgroundTertiaryText
+                                    visible: modelData.read_receipt === "sent" || modelData.read_receipt === "delivered" || modelData.read_receipt === "read"
+                                    anchors.verticalCenter: parent.verticalCenter
                                 }
 
                                 Label {
-                                    text: modelData.date || ""
-                                    fontSize: "x-small"
-                                    color: modelData.unread_count > 0 ? LomiriColors.green : theme.palette.normal.backgroundTertiaryText
-                                    Layout.alignment: Qt.AlignRight
+                                    text: modelData.last_message || ""
+                                    fontSize: "small"
+                                    color: theme.palette.normal.backgroundTertiaryText
+                                    elide: Text.ElideRight
+                                    maximumLineCount: 1
+                                    width: parent.parent.width - (receiptIcon.visible ? units.gu(2) : 0) - parent.spacing
+                                    anchors.verticalCenter: parent.verticalCenter
                                 }
 
                             }
 
-                            RowLayout {
-                                width: parent.width
+                            Rectangle {
+                                id: unreadBadge
 
-                                Row {
-                                    spacing: units.gu(0.3)
-                                    Layout.fillWidth: true
+                                width: units.gu(2.5)
+                                height: units.gu(2.5)
+                                radius: width / 2
+                                color: LomiriColors.green
+                                visible: modelData.unread_count > 0
+                                Layout.alignment: Qt.AlignRight
 
-                                    Icon {
-                                        id: receiptIcon
-
-                                        name: "tick"
-                                        height: units.gu(1.6)
-                                        width: units.gu(1.6)
-                                        color: modelData.read_receipt === "read" ? LomiriColors.lightBlue : theme.palette.normal.backgroundTertiaryText
-                                        visible: modelData.read_receipt === "sent" || modelData.read_receipt === "delivered" || modelData.read_receipt === "read"
-                                        anchors.verticalCenter: parent.verticalCenter
-                                    }
-
-                                    Label {
-                                        text: modelData.last_message || ""
-                                        fontSize: "small"
-                                        color: theme.palette.normal.backgroundTertiaryText
-                                        elide: Text.ElideRight
-                                        maximumLineCount: 1
-                                        width: parent.parent.width - (receiptIcon.visible ? units.gu(2) : 0) - parent.spacing
-                                        anchors.verticalCenter: parent.verticalCenter
-                                    }
-
-                                }
-
-                                Rectangle {
-                                    id: unreadBadge
-
-                                    width: units.gu(2.5)
-                                    height: units.gu(2.5)
-                                    radius: width / 2
-                                    color: LomiriColors.green
-                                    visible: modelData.unread_count > 0
-                                    Layout.alignment: Qt.AlignRight
-
-                                    Label {
-                                        anchors.centerIn: parent
-                                        text: modelData.unread_count
-                                        fontSize: "x-small"
-                                        color: "white"
-                                        font.bold: true
-                                    }
-
+                                Label {
+                                    anchors.centerIn: parent
+                                    text: modelData.unread_count
+                                    fontSize: "x-small"
+                                    color: "white"
+                                    font.bold: true
                                 }
 
                             }
@@ -229,18 +222,16 @@ Page {
 
                 }
 
-                Rectangle {
-                    height: units.dp(1)
-                    color: theme.palette.normal.base
-
-                    anchors {
-                        bottom: parent.bottom
-                        left: parent.left
-                        right: parent.right
-                        leftMargin: units.gu(9.5)
-                        rightMargin: units.gu(2)
-                    }
-
+                leadingActions: ListItemActions {
+                    actions: [
+                        Action {
+                            iconName: modelData.muted ? "audio-volume-high" : "audio-volume-muted"
+                            text: modelData.muted ? i18n.tr("Unmute") : i18n.tr("Mute")
+                            onTriggered: {
+                                python.call('main.toggle_mute', [modelData.id]);
+                            }
+                        }
+                    ]
                 }
 
             }

@@ -151,6 +151,9 @@ func main() {
 			if msg.Info.Chat == types.StatusBroadcastJID {
 				return
 			}
+			if client.IsMuted(context.Background(), msg.Info.Chat) {
+				return
+			}
 			body := extractBody(msg)
 			if body == "" {
 				return

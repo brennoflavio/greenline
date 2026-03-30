@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-30 03:56+0000\n"
+"POT-Creation-Date: 2026-03-30 23:51+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -43,7 +43,15 @@ msgstr ""
 msgid "Search chats..."
 msgstr ""
 
-#: ../qml/ChatListPage.qml:253
+#: ../qml/ChatListPage.qml:229
+msgid "Mute"
+msgstr ""
+
+#: ../qml/ChatListPage.qml:229
+msgid "Unmute"
+msgstr ""
+
+#: ../qml/ChatListPage.qml:244
 msgid "No chats found"
 msgstr ""
 
@@ -51,7 +59,7 @@ msgstr ""
 msgid "Type a message..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:352 ../qml/ImagePreviewPage.qml:20
+#: ../qml/ChatPage.qml:352 ../qml/ImagePreviewPage.qml:190
 #: ../qml/ut_components/AppHeader.qml:78
 msgid "Back"
 msgstr ""
@@ -76,20 +84,20 @@ msgstr ""
 msgid "Start Service"
 msgstr ""
 
-#: ../qml/ImagePreviewPage.qml:15
-msgid "Image"
-msgstr ""
-
-#: ../qml/ImagePreviewPage.qml:50
+#: ../qml/ImagePreviewPage.qml:37
 msgid "Save"
 msgstr ""
 
-#: ../qml/ImagePreviewPage.qml:60 ../qml/ImagePreviewPage.qml:143
+#: ../qml/ImagePreviewPage.qml:47 ../qml/ImagePreviewPage.qml:165
 msgid "Share"
 msgstr ""
 
-#: ../qml/ImagePreviewPage.qml:81
+#: ../qml/ImagePreviewPage.qml:102
 msgid "Save to"
+msgstr ""
+
+#: ../qml/ImagePreviewPage.qml:186
+msgid "Image"
 msgstr ""
 
 #: ../qml/SettingsPage.qml:33

@@ -86,6 +86,26 @@ def _handle_receipt(
         chat_updates[updated_chat.id] = enum_to_str(asdict(updated_chat))
 
 
+def _handle_mute(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None:
+    raw = json.loads(event.payload or "{}")
+    jid = raw.get("JID", "")
+    if not jid:
+        return
+    action = raw.get("Action") or {}
+    muted = action.get("muted", False)
+
+    with KV() as kv:
+        key = f"chat:{jid}"
+        data = kv.get(key)
+        if data is None:
+            return
+        chat = ChatListItem(**data)
+        if chat.muted != muted:
+            chat.muted = muted
+            kv.put(key, asdict(chat))
+            chat_updates[chat.id] = enum_to_str(asdict(chat))
+
+
 def _handle_unknown(event: Any) -> None:
     with KV() as kv:
         kv.put(
@@ -117,6 +137,8 @@ class DaemonEventHandler(Event):
                 _handle_message(event, chat_updates)
             elif event.event_type == "Receipt":
                 _handle_receipt(event, chat_updates, message_updates)
+            elif event.event_type == "Mute":
+                _handle_mute(event, chat_updates)
             else:
                 _handle_unknown(event)
             if event.id > max_id:
@@ -154,6 +176,14 @@ class ChatListUpdateEvent(Event):
 
         return None
 
+    @staticmethod
+    def _is_muted(jid: str) -> bool:
+        try:
+            reply = DaemonRPC().get_chat_settings(jid)
+            return reply.MutedUntil != 0
+        except Exception:
+            return False
+
     def _sync_contacts(self, chat_updates: list[dict[str, Any]]) -> None:
         reply = DaemonRPC().get_contacts()
         contacts = {}
@@ -172,6 +202,7 @@ class ChatListUpdateEvent(Event):
 
             for jid, info in contacts.items():
                 key = f"chat:{jid}"
+                muted = self._is_muted(jid)
                 if key in existing:
                     chat = ChatListItem(**existing[key])
                     changed = False
@@ -180,6 +211,9 @@ class ChatListUpdateEvent(Event):
                         changed = True
                     if chat.photo != info["photo"]:
                         chat.photo = info["photo"]
+                        changed = True
+                    if chat.muted != muted:
+                        chat.muted = muted
                         changed = True
                     if changed:
                         kv.put(key, asdict(chat))
@@ -195,6 +229,7 @@ class ChatListUpdateEvent(Event):
                         read_receipt=ReadReceipt.NONE,
                         unread_count=0,
                         is_group=False,
+                        muted=muted,
                     )
                     kv.put(key, asdict(chat))
                     chat_updates.append(enum_to_str(asdict(chat)))
@@ -217,6 +252,7 @@ class ChatListUpdateEvent(Event):
 
             for jid, info in groups.items():
                 key = f"chat:{jid}"
+                muted = self._is_muted(jid)
                 if key in existing:
                     chat = ChatListItem(**existing[key])
                     changed = False
@@ -225,6 +261,9 @@ class ChatListUpdateEvent(Event):
                         changed = True
                     if chat.photo != info["photo"]:
                         chat.photo = info["photo"]
+                        changed = True
+                    if chat.muted != muted:
+                        chat.muted = muted
                         changed = True
                     if changed:
                         kv.put(key, asdict(chat))
@@ -240,6 +279,7 @@ class ChatListUpdateEvent(Event):
                         read_receipt=ReadReceipt.NONE,
                         unread_count=0,
                         is_group=True,
+                        muted=muted,
                     )
                     kv.put(key, asdict(chat))
                     chat_updates.append(enum_to_str(asdict(chat)))
