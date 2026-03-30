@@ -38,6 +38,7 @@ from events import (
     SessionStatusEvent,
     SessionStatusResponse,
 )
+from message_store import upsert_chat
 from models import (
     ChatListItem,
     ChatListResponse,
@@ -45,6 +46,7 @@ from models import (
     ContactListResponse,
     Message,
     MessagesResponse,
+    MessageType,
     ReadReceipt,
 )
 from rpc import DaemonRPC
@@ -240,6 +242,57 @@ def mark_messages_as_read(chat_id: str) -> SuccessResponse:
             chat.unread_count = 0
             kv.put(f"chat:{chat_id}", asdict(chat))
             pyotherside.send("chat-list-update", [_enum_to_str(asdict(chat))])  # type: ignore[no-untyped-call]
+
+    return SuccessResponse(success=True, message="")
+
+
+@crash_reporter
+@dataclass_to_dict
+def send_text_message(chat_id: str, text: str, temp_id: str = "") -> SuccessResponse:
+    from datetime import datetime
+
+    import pyotherside
+
+    try:
+        rpc = DaemonRPC()
+        result = rpc.send_message(chat_id, "text", text=text)
+    except Exception:
+        now = datetime.now()
+        failed_msg = Message(
+            id=temp_id or f"failed-{int(now.timestamp())}",
+            chat_id=chat_id,
+            type=MessageType.TEXT,
+            is_outgoing=True,
+            timestamp=now.strftime("%H:%M"),
+            timestamp_unix=int(now.timestamp()),
+            read_receipt=ReadReceipt.NONE,
+            text=text,
+            send_status="failed",
+            temp_id=temp_id,
+        )
+        pyotherside.send("message-upsert", _enum_to_str(asdict(failed_msg)))  # type: ignore[no-untyped-call]
+        return SuccessResponse(success=False, message="Failed to send message")
+
+    ts = result["Timestamp"]
+    msg = Message(
+        id=result["MessageID"],
+        chat_id=chat_id,
+        type=MessageType.TEXT,
+        is_outgoing=True,
+        timestamp=datetime.fromtimestamp(ts).strftime("%H:%M"),
+        timestamp_unix=ts,
+        read_receipt=ReadReceipt.SENT,
+        text=text,
+        temp_id=temp_id,
+    )
+
+    key = f"message:{chat_id}:{msg.timestamp_unix}:{msg.id}"
+    with KV() as kv:
+        kv.put(key, asdict(msg))
+
+    chat = upsert_chat(msg, "")
+    pyotherside.send("message-upsert", _enum_to_str(asdict(msg)))  # type: ignore[no-untyped-call]
+    pyotherside.send("chat-list-update", [_enum_to_str(asdict(chat))])  # type: ignore[no-untyped-call]
 
     return SuccessResponse(success=True, message="")
 

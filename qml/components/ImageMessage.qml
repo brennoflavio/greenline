@@ -14,16 +14,23 @@ MessageBubble {
     signal downloadRequested()
 
     Rectangle {
+        id: imageContainer
+
+        property real aspectRatio: img.status === Image.Ready && img.implicitWidth > 0 ? img.implicitWidth / img.implicitHeight : 4 / 3
+
+        implicitWidth: aspectRatio >= 1 ? units.gu(28) : Math.min(units.gu(30) * aspectRatio, units.gu(28))
         width: parent.width
-        height: units.gu(20)
+        height: Math.min(width / aspectRatio, units.gu(35))
         radius: units.gu(0.5)
         color: theme.palette.normal.base
         clip: true
 
         Image {
+            id: img
+
             anchors.fill: parent
             source: root.mediaPath || root.thumbnailSource || root.imageSource
-            fillMode: root.mediaPath ? Image.PreserveAspectFit : Image.PreserveAspectCrop
+            fillMode: Image.PreserveAspectCrop
             visible: source != ""
         }
 

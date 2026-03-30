@@ -61,6 +61,8 @@ class Message:
     thumbnail_path: str = ""
     mimetype: str = ""
     file_name: str = ""
+    send_status: str = ""
+    temp_id: str = ""
 
 
 @dataclass

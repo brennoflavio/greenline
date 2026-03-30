@@ -83,6 +83,7 @@ Page {
             isOutgoing: msg.is_outgoing || false
             timestamp: msg.timestamp || ""
             readReceipt: msg.read_receipt || ""
+            sendStatus: msg.send_status || ""
         }
 
     }
@@ -98,6 +99,7 @@ Page {
             isOutgoing: msg.is_outgoing || false
             timestamp: msg.timestamp || ""
             readReceipt: msg.read_receipt || ""
+            sendStatus: msg.send_status || ""
             downloading: downloadingIds[msg.id] || false
             onDownloadRequested: triggerDownload(msg.id, "image")
         }
@@ -113,6 +115,7 @@ Page {
             isOutgoing: msg.is_outgoing || false
             timestamp: msg.timestamp || ""
             readReceipt: msg.read_receipt || ""
+            sendStatus: msg.send_status || ""
         }
 
     }
@@ -127,6 +130,7 @@ Page {
             isOutgoing: msg.is_outgoing || false
             timestamp: msg.timestamp || ""
             readReceipt: msg.read_receipt || ""
+            sendStatus: msg.send_status || ""
             downloading: downloadingIds[msg.id] || false
             onDownloadRequested: triggerDownload(msg.id, "video")
         }
@@ -142,6 +146,7 @@ Page {
             isOutgoing: msg.is_outgoing || false
             timestamp: msg.timestamp || ""
             readReceipt: msg.read_receipt || ""
+            sendStatus: msg.send_status || ""
             downloading: downloadingIds[msg.id] || false
             onDownloadRequested: triggerDownload(msg.id, "audio")
         }
@@ -157,6 +162,7 @@ Page {
             isOutgoing: msg.is_outgoing || false
             timestamp: msg.timestamp || ""
             readReceipt: msg.read_receipt || ""
+            sendStatus: msg.send_status || ""
             downloading: downloadingIds[msg.id] || false
             onDownloadRequested: triggerDownload(msg.id, "document")
         }
@@ -253,6 +259,39 @@ Page {
 
                 MouseArea {
                     anchors.fill: parent
+                    onClicked: {
+                        if (messageInput.text.length > 0) {
+                            var text = messageInput.text;
+                            var tempId = "pending-" + Date.now();
+                            var now = new Date();
+                            var hours = now.getHours().toString();
+                            if (hours.length < 2)
+                                hours = "0" + hours;
+
+                            var minutes = now.getMinutes().toString();
+                            if (minutes.length < 2)
+                                minutes = "0" + minutes;
+
+                            var pendingMsg = {
+                                "id": tempId,
+                                "chat_id": chatId,
+                                "type": "text",
+                                "is_outgoing": true,
+                                "text": text,
+                                "timestamp": hours + ":" + minutes,
+                                "read_receipt": "",
+                                "send_status": "pending",
+                                "temp_id": tempId
+                            };
+                            var newMessages = messages.slice();
+                            newMessages.push(pendingMsg);
+                            messages = newMessages;
+                            messagesChanged();
+                            messageInput.text = "";
+                            python.call('main.send_text_message', [chatId, text, tempId], function() {
+                            });
+                        }
+                    }
                 }
 
             }
@@ -280,7 +319,7 @@ Page {
 
                     var found = false;
                     var updated = messages.map(function(m) {
-                        if (m.id === message.id) {
+                        if (m.id === message.id || (message.temp_id && m.id === message.temp_id)) {
                             found = true;
                             return message;
                         }
@@ -324,6 +363,14 @@ Page {
                 radius: width / 2
                 color: theme.palette.normal.base
                 anchors.verticalCenter: parent.verticalCenter
+                clip: true
+
+                Image {
+                    anchors.fill: parent
+                    source: chatPhoto
+                    fillMode: Image.PreserveAspectCrop
+                    visible: chatPhoto
+                }
 
                 Icon {
                     anchors.centerIn: parent

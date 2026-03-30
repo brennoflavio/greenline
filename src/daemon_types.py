@@ -56,3 +56,9 @@ class StoredEvent:
 @dataclass
 class ListEventsReply:
     Events: List[StoredEvent] = field(default_factory=list)
+
+
+@dataclass
+class SendMessageReply:
+    MessageID: str = ""
+    Timestamp: int = 0

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-30 00:42+0000\n"
+"POT-Creation-Date: 2026-03-30 03:38+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -47,15 +47,15 @@ msgstr ""
 msgid "No chats found"
 msgstr ""
 
-#: ../qml/ChatPage.qml:244
+#: ../qml/ChatPage.qml:250
 msgid "Type a message..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:312 ../qml/ut_components/AppHeader.qml:78
+#: ../qml/ChatPage.qml:347 ../qml/ut_components/AppHeader.qml:78
 msgid "Back"
 msgstr ""
 
-#: ../qml/ChatPage.qml:349
+#: ../qml/ChatPage.qml:392
 msgid "online"
 msgstr ""
 
@@ -119,15 +119,15 @@ msgstr ""
 msgid "Settings"
 msgstr ""
 
-#: ../qml/components/DocumentMessage.qml:47
+#: ../qml/components/DocumentMessage.qml:48
 msgid "Document"
 msgstr ""
 
-#: ../qml/components/DocumentMessage.qml:55
+#: ../qml/components/DocumentMessage.qml:56
 msgid "Downloaded"
 msgstr ""
 
-#: ../qml/components/DocumentMessage.qml:55
+#: ../qml/components/DocumentMessage.qml:56
 msgid "Tap to download"
 msgstr ""
 

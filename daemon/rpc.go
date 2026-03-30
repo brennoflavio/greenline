@@ -14,6 +14,8 @@ import (
 
 	qrcode "github.com/skip2/go-qrcode"
 	"go.mau.fi/whatsmeow"
+	"go.mau.fi/whatsmeow/proto/waE2E"
+	"google.golang.org/protobuf/proto"
 	"greenline.brennoflavio/daemon/avatarsync"
 	"greenline.brennoflavio/daemon/eventstore"
 	"greenline.brennoflavio/daemon/waconn"
@@ -311,6 +313,48 @@ func extensionFromMimetype(mimetype string) string {
 		return "." + sub
 	}
 	return ".bin"
+}
+
+// SendMessage types
+
+type SendMessageArgs struct {
+	ChatJID string
+	Type    string // "text", "image", "video", "audio", "sticker", "document"
+	Text    string
+}
+
+type SendMessageReply struct {
+	MessageID string
+	Timestamp int64
+}
+
+func (s *Service) SendMessage(args *SendMessageArgs, reply *SendMessageReply) error {
+	jid, err := types.ParseJID(args.ChatJID)
+	if err != nil {
+		return fmt.Errorf("invalid chat JID: %w", err)
+	}
+
+	var message *waE2E.Message
+	switch args.Type {
+	case "text":
+		message = &waE2E.Message{
+			Conversation: proto.String(args.Text),
+		}
+	default:
+		return fmt.Errorf("unsupported message type: %s", args.Type)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	resp, err := s.client.SendMessage(ctx, jid, message)
+	if err != nil {
+		return fmt.Errorf("send failed: %w", err)
+	}
+
+	reply.MessageID = string(resp.ID)
+	reply.Timestamp = resp.Timestamp.Unix()
+	return nil
 }
 
 func (s *Service) DownloadMedia(args *DownloadMediaArgs, reply *DownloadMediaReply) error {

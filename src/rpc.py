@@ -90,6 +90,13 @@ class DaemonRPC:
             {"ChatJID": chat_jid, "SenderJID": sender_jid, "MessageIDs": message_ids},
         )
 
+    def send_message(self, chat_jid: str, msg_type: str, text: str = "") -> Dict[str, Any]:
+        result: Dict[str, Any] = self._call(
+            "Service.SendMessage",
+            {"ChatJID": chat_jid, "Type": msg_type, "Text": text},
+        )
+        return result
+
     def download_media(
         self,
         direct_path: str,

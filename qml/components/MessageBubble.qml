@@ -9,6 +9,7 @@ Item {
     property bool isOutgoing: false
     property string timestamp: ""
     property string readReceipt: ""
+    property string sendStatus: ""
 
     width: parent.width
     height: wrapper.height + units.gu(0.5)
@@ -58,11 +59,20 @@ Item {
             }
 
             Icon {
+                name: "close"
+                height: units.gu(1.4)
+                width: units.gu(1.4)
+                color: LomiriColors.red
+                visible: bubble.isOutgoing && bubble.sendStatus === "failed"
+                anchors.verticalCenter: parent.verticalCenter
+            }
+
+            Icon {
                 name: "tick"
                 height: units.gu(1.4)
                 width: units.gu(1.4)
-                color: bubble.readReceipt === "read" ? LomiriColors.blue : "#999999"
-                visible: bubble.isOutgoing && bubble.readReceipt !== ""
+                color: bubble.readReceipt === "read" ? LomiriColors.lightBlue : "#999999"
+                visible: bubble.isOutgoing && bubble.sendStatus !== "failed" && bubble.readReceipt !== ""
                 anchors.verticalCenter: parent.verticalCenter
             }
 
