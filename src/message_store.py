@@ -2,9 +2,9 @@ import base64
 import os
 from dataclasses import asdict, dataclass
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
-from constants import GROUP_JID_SUFFIX
+from constants import GROUP_JID_SUFFIX, WHATSAPP_JID_SUFFIX
 from models import ChatListItem, Message, MessageType, ReadReceipt
 from ut_components.config import get_cache_path
 from ut_components.kv import KV
@@ -13,6 +13,19 @@ from whatsmeow_types import MessageEvent
 
 def _get_thumbnail_dir() -> str:
     return os.path.join(get_cache_path(), "thumbnails")
+
+
+def resolve_sender(sender_jid: str, push_name: str = "") -> Tuple[str, str]:
+    with KV() as kv:
+        data = kv.get(f"chat:{sender_jid}")
+    if data is not None:
+        name = data.get("name", "")
+        photo = data.get("photo", "")
+        if name and name != sender_jid:
+            return name, photo
+    if push_name:
+        return push_name, ""
+    return sender_jid.replace(WHATSAPP_JID_SUFFIX, ""), ""
 
 
 def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
@@ -79,6 +92,11 @@ def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
 
     read_receipt = ReadReceipt.SENT if info.IsFromMe else ReadReceipt.NONE
 
+    sender_name = ""
+    sender_photo = ""
+    if not info.IsFromMe and info.Sender:
+        sender_name, sender_photo = resolve_sender(info.Sender, info.PushName)
+
     return Message(
         id=info.ID,
         chat_id=info.Chat,
@@ -88,6 +106,8 @@ def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
         timestamp_unix=timestamp_unix,
         read_receipt=read_receipt,
         sender=info.Sender,
+        sender_name=sender_name,
+        sender_photo=sender_photo,
         text=text,
         caption=caption,
         mimetype=mimetype,
@@ -147,6 +167,7 @@ def upsert_chat(msg: Message, push_name: str) -> ChatListItem:
             if msg.is_outgoing:
                 chat.read_receipt = msg.read_receipt
             else:
+                chat.read_receipt = ReadReceipt.NONE
                 chat.unread_count += 1
         if not is_group and push_name and chat.name == chat.id:
             chat.name = push_name

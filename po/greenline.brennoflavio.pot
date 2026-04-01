@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-01 14:20+0000\n"
+"POT-Creation-Date: 2026-04-01 20:59+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -39,32 +39,33 @@ msgstr ""
 msgid "Link Device"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:49
+#: ../qml/ChatListPage.qml:68
 msgid "Search chats..."
 msgstr ""
 
-#: ../qml/ChatListPage.qml:229
+#: ../qml/ChatListPage.qml:249
 msgid "Mute"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:229
+#: ../qml/ChatListPage.qml:249
 msgid "Unmute"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:244
+#: ../qml/ChatListPage.qml:264
 msgid "No chats found"
 msgstr ""
 
-#: ../qml/ChatPage.qml:252
+#: ../qml/ChatPage.qml:275
 msgid "Type a message..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:353 ../qml/ImagePreviewPage.qml:190
-#: ../qml/VideoPreviewPage.qml:335 ../qml/ut_components/AppHeader.qml:78
+#: ../qml/ChatPage.qml:376 ../qml/DocumentPreviewPage.qml:223
+#: ../qml/ImagePreviewPage.qml:190 ../qml/VideoPreviewPage.qml:335
+#: ../qml/ut_components/AppHeader.qml:78
 msgid "Back"
 msgstr ""
 
-#: ../qml/ChatPage.qml:425
+#: ../qml/ChatPage.qml:448
 msgid "online"
 msgstr ""
 
@@ -84,16 +85,28 @@ msgstr ""
 msgid "Start Service"
 msgstr ""
 
-#: ../qml/ImagePreviewPage.qml:37 ../qml/VideoPreviewPage.qml:180
+#: ../qml/DocumentPreviewPage.qml:42 ../qml/DocumentPreviewPage.qml:219
+#: ../qml/components/DocumentMessage.qml:56
+msgid "Document"
+msgstr ""
+
+#: ../qml/DocumentPreviewPage.qml:50
+msgid "Downloaded"
+msgstr ""
+
+#: ../qml/DocumentPreviewPage.qml:70 ../qml/ImagePreviewPage.qml:37
+#: ../qml/VideoPreviewPage.qml:180
 msgid "Save"
 msgstr ""
 
+#: ../qml/DocumentPreviewPage.qml:80 ../qml/DocumentPreviewPage.qml:198
 #: ../qml/ImagePreviewPage.qml:47 ../qml/ImagePreviewPage.qml:165
 #: ../qml/VideoPreviewPage.qml:191 ../qml/VideoPreviewPage.qml:310
 msgid "Share"
 msgstr ""
 
-#: ../qml/ImagePreviewPage.qml:102 ../qml/VideoPreviewPage.qml:247
+#: ../qml/DocumentPreviewPage.qml:135 ../qml/ImagePreviewPage.qml:102
+#: ../qml/VideoPreviewPage.qml:247
 msgid "Save to"
 msgstr ""
 
@@ -166,16 +179,16 @@ msgstr ""
 msgid "Video"
 msgstr ""
 
-#: ../qml/components/DocumentMessage.qml:48
-msgid "Document"
+#: ../qml/components/DocumentMessage.qml:64
+msgid "Downloading..."
 msgstr ""
 
-#: ../qml/components/DocumentMessage.qml:56
-msgid "Downloaded"
-msgstr ""
-
-#: ../qml/components/DocumentMessage.qml:56
+#: ../qml/components/DocumentMessage.qml:64
 msgid "Tap to download"
+msgstr ""
+
+#: ../qml/components/DocumentMessage.qml:64
+msgid "Tap to open"
 msgstr ""
 
 #: ../qml/ut_components/ActionableList.qml:92

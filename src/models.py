@@ -52,6 +52,8 @@ class Message:
     timestamp_unix: int
     read_receipt: ReadReceipt
     sender: str = ""
+    sender_name: str = ""
+    sender_photo: str = ""
     text: str = ""
     image_source: str = ""
     caption: str = ""

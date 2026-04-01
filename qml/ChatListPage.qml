@@ -10,6 +10,25 @@ Page {
 
     property var chats: []
 
+    function messagePreview(msg) {
+        if (msg.text)
+            return msg.text;
+
+        if (msg.caption)
+            return msg.caption;
+
+        var previews = {
+            "image": "📷 Photo",
+            "image_gallery": "📷 Photo",
+            "video": "🎥 Video",
+            "audio": "🎵 Audio",
+            "voice": "🎵 Audio",
+            "document": "📄 Document",
+            "sticker": "🏷️ Sticker"
+        };
+        return previews[msg.type] || msg.type;
+    }
+
     Column {
         anchors {
             top: chatListPage.header.bottom
@@ -74,7 +93,8 @@ Page {
                     pageStack.push(Qt.resolvedUrl("ChatPage.qml"), {
                         "chatId": modelData.id,
                         "chatName": modelData.name,
-                        "chatPhoto": modelData.photo
+                        "chatPhoto": modelData.photo,
+                        "isGroup": modelData.is_group || false
                     });
                 }
 
@@ -176,7 +196,7 @@ Page {
                                 Icon {
                                     id: receiptIcon
 
-                                    name: "tick"
+                                    name: modelData.read_receipt === "sent" ? "message-sent" : "tick"
                                     height: units.gu(1.6)
                                     width: units.gu(1.6)
                                     color: modelData.read_receipt === "read" ? LomiriColors.lightBlue : theme.palette.normal.backgroundTertiaryText
@@ -262,7 +282,7 @@ Page {
                 setHandler('message-upsert', function(message) {
                     var newChats = chats.map(function(chat) {
                         if (chat.id === message.chat_id && message.timestamp_unix >= chat.last_message_timestamp) {
-                            chat.last_message = message.text || message.caption || message.type;
+                            chat.last_message = messagePreview(message);
                             chat.date = message.timestamp;
                             chat.last_message_timestamp = message.timestamp_unix;
                             chat.read_receipt = message.is_outgoing ? message.read_receipt : "";

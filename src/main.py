@@ -388,6 +388,7 @@ def download_media(chat_id: str, message_id: str, media_type: str) -> DownloadMe
     file_sha256 = media_msg.get("fileSHA256", "")
     file_length = media_msg.get("fileLength", 0)
     mimetype = media_msg.get("mimetype", "")
+    file_name = media_msg.get("fileName", "")
 
     if not direct_path or not media_key:
         return DownloadMediaResponse(success=False, media_path="", message="Missing media download info")
@@ -403,6 +404,7 @@ def download_media(chat_id: str, message_id: str, media_type: str) -> DownloadMe
             mimetype=mimetype,
             message_id=message_id,
             chat_id=chat_id,
+            file_name=file_name,
         )
     except Exception as e:
         return DownloadMediaResponse(success=False, media_path="", message=str(e))

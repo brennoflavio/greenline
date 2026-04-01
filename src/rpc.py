@@ -123,6 +123,7 @@ class DaemonRPC:
         mimetype: str,
         message_id: str,
         chat_id: str,
+        file_name: str = "",
     ) -> str:
         result = self._call(
             "Service.DownloadMedia",
@@ -136,6 +137,7 @@ class DaemonRPC:
                 "Mimetype": mimetype,
                 "MessageID": message_id,
                 "ChatID": chat_id,
+                "FileName": file_name,
             },
         )
         return str(result.get("FilePath", ""))

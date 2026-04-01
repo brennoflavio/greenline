@@ -322,6 +322,7 @@ type DownloadMediaArgs struct {
 	Mimetype      string
 	MessageID     string
 	ChatID        string
+	FileName      string
 }
 
 type DownloadMediaReply struct {
@@ -435,7 +436,15 @@ func (s *Service) DownloadMedia(args *DownloadMediaArgs, reply *DownloadMediaRep
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return fmt.Errorf("failed to create media dir: %w", err)
 	}
-	filePath := filepath.Join(dir, args.MessageID+ext)
+	ts := fmt.Sprintf("%d", time.Now().Unix())
+	baseName := args.MessageID
+	if args.FileName != "" {
+		name := strings.TrimSuffix(args.FileName, filepath.Ext(args.FileName))
+		baseName = name + "_" + ts
+	} else {
+		baseName = args.MessageID + "_" + ts
+	}
+	filePath := filepath.Join(dir, baseName+ext)
 	if err := os.WriteFile(filePath, data, 0600); err != nil {
 		return fmt.Errorf("failed to write media file: %w", err)
 	}

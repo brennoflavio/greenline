@@ -12,6 +12,7 @@ Page {
     property string chatId: ""
     property string chatName: ""
     property string chatPhoto: ""
+    property bool isGroup: false
     property var messages: []
     property var downloadingIds: ({
     })
@@ -82,9 +83,12 @@ Page {
         TextMessage {
             text: msg.text || ""
             isOutgoing: msg.is_outgoing || false
+            isGroup: chatPage.isGroup
             timestamp: msg.timestamp || ""
             readReceipt: msg.read_receipt || ""
             sendStatus: msg.send_status || ""
+            senderName: msg.sender_name || ""
+            senderPhoto: msg.sender_photo || ""
         }
 
     }
@@ -98,9 +102,12 @@ Page {
             mediaPath: msg.media_path || ""
             caption: msg.caption || ""
             isOutgoing: msg.is_outgoing || false
+            isGroup: chatPage.isGroup
             timestamp: msg.timestamp || ""
             readReceipt: msg.read_receipt || ""
             sendStatus: msg.send_status || ""
+            senderName: msg.sender_name || ""
+            senderPhoto: msg.sender_photo || ""
             downloading: downloadingIds[msg.id] || false
             onDownloadRequested: triggerDownload(msg.id, "image")
         }
@@ -114,9 +121,12 @@ Page {
             images: msg.images || []
             caption: msg.caption || ""
             isOutgoing: msg.is_outgoing || false
+            isGroup: chatPage.isGroup
             timestamp: msg.timestamp || ""
             readReceipt: msg.read_receipt || ""
             sendStatus: msg.send_status || ""
+            senderName: msg.sender_name || ""
+            senderPhoto: msg.sender_photo || ""
         }
 
     }
@@ -130,9 +140,12 @@ Page {
             caption: msg.caption || ""
             duration: msg.duration || ""
             isOutgoing: msg.is_outgoing || false
+            isGroup: chatPage.isGroup
             timestamp: msg.timestamp || ""
             readReceipt: msg.read_receipt || ""
             sendStatus: msg.send_status || ""
+            senderName: msg.sender_name || ""
+            senderPhoto: msg.sender_photo || ""
             downloading: downloadingIds[msg.id] || false
             onDownloadRequested: triggerDownload(msg.id, "video")
         }
@@ -146,9 +159,12 @@ Page {
             duration: msg.duration || "0:00"
             mediaPath: msg.media_path || ""
             isOutgoing: msg.is_outgoing || false
+            isGroup: chatPage.isGroup
             timestamp: msg.timestamp || ""
             readReceipt: msg.read_receipt || ""
             sendStatus: msg.send_status || ""
+            senderName: msg.sender_name || ""
+            senderPhoto: msg.sender_photo || ""
             downloading: downloadingIds[msg.id] || false
             onDownloadRequested: triggerDownload(msg.id, "audio")
         }
@@ -160,11 +176,15 @@ Page {
 
         DocumentMessage {
             fileName: msg.file_name || ""
+            caption: msg.caption || ""
             mediaPath: msg.media_path || ""
             isOutgoing: msg.is_outgoing || false
+            isGroup: chatPage.isGroup
             timestamp: msg.timestamp || ""
             readReceipt: msg.read_receipt || ""
             sendStatus: msg.send_status || ""
+            senderName: msg.sender_name || ""
+            senderPhoto: msg.sender_photo || ""
             downloading: downloadingIds[msg.id] || false
             onDownloadRequested: triggerDownload(msg.id, "document")
         }
@@ -179,7 +199,10 @@ Page {
             thumbnailSource: msg.thumbnail_path || ""
             mediaPath: msg.media_path || ""
             isOutgoing: msg.is_outgoing || false
+            isGroup: chatPage.isGroup
             timestamp: msg.timestamp || ""
+            senderName: msg.sender_name || ""
+            senderPhoto: msg.sender_photo || ""
             downloading: downloadingIds[msg.id] || false
             onDownloadRequested: triggerDownload(msg.id, "sticker")
         }
