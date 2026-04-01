@@ -16,7 +16,7 @@ from ut_components.config import get_cache_path
 from ut_components.event import Event
 from ut_components.kv import KV
 from ut_components.utils import enum_to_str as _enum_to_str
-from whatsmeow_types import MessageEvent, ReceiptEvent
+from whatsmeow_types import ContactEvent, MessageEvent, ReceiptEvent
 
 
 def enum_to_str(obj: Dict[str, Any]) -> Dict[str, Any]:
@@ -86,6 +86,39 @@ def _handle_receipt(
         chat_updates[updated_chat.id] = enum_to_str(asdict(updated_chat))
 
 
+def _handle_contact(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None:
+    raw = json.loads(event.payload or "{}")
+    evt = from_dict(data_class=ContactEvent, data=raw)
+    jid = DaemonRPC().ensure_jid(evt.JID)
+    name = evt.Action.fullName
+    if not name:
+        return
+
+    with KV() as kv:
+        key = f"chat:{jid}"
+        data = kv.get(key)
+        if data is not None:
+            chat = ChatListItem(**data)
+            if chat.name != name:
+                chat.name = name
+                kv.put(key, asdict(chat))
+                chat_updates[chat.id] = enum_to_str(asdict(chat))
+        else:
+            chat = ChatListItem(
+                id=jid,
+                name=name,
+                photo="",
+                last_message="",
+                date="",
+                last_message_timestamp=0,
+                read_receipt=ReadReceipt.NONE,
+                unread_count=0,
+                is_group=False,
+            )
+            kv.put(key, asdict(chat))
+            chat_updates[chat.id] = enum_to_str(asdict(chat))
+
+
 def _handle_mute(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None:
     raw = json.loads(event.payload or "{}")
     jid = raw.get("JID", "")
@@ -137,8 +170,12 @@ class DaemonEventHandler(Event):
                 _handle_message(event, chat_updates)
             elif event.event_type == "Receipt":
                 _handle_receipt(event, chat_updates, message_updates)
+            elif event.event_type == "Contact":
+                _handle_contact(event, chat_updates)
             elif event.event_type == "Mute":
                 _handle_mute(event, chat_updates)
+            elif event.event_type in ("PushName", "Picture"):
+                pass
             else:
                 _handle_unknown(event)
             if event.id > max_id:

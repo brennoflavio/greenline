@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-01 14:02+0000\n"
+"POT-Creation-Date: 2026-04-01 14:20+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -60,7 +60,7 @@ msgid "Type a message..."
 msgstr ""
 
 #: ../qml/ChatPage.qml:353 ../qml/ImagePreviewPage.qml:190
-#: ../qml/VideoPreviewPage.qml:333 ../qml/ut_components/AppHeader.qml:78
+#: ../qml/VideoPreviewPage.qml:335 ../qml/ut_components/AppHeader.qml:78
 msgid "Back"
 msgstr ""
 
@@ -84,16 +84,16 @@ msgstr ""
 msgid "Start Service"
 msgstr ""
 
-#: ../qml/ImagePreviewPage.qml:37 ../qml/VideoPreviewPage.qml:178
+#: ../qml/ImagePreviewPage.qml:37 ../qml/VideoPreviewPage.qml:180
 msgid "Save"
 msgstr ""
 
 #: ../qml/ImagePreviewPage.qml:47 ../qml/ImagePreviewPage.qml:165
-#: ../qml/VideoPreviewPage.qml:189 ../qml/VideoPreviewPage.qml:308
+#: ../qml/VideoPreviewPage.qml:191 ../qml/VideoPreviewPage.qml:310
 msgid "Share"
 msgstr ""
 
-#: ../qml/ImagePreviewPage.qml:102 ../qml/VideoPreviewPage.qml:245
+#: ../qml/ImagePreviewPage.qml:102 ../qml/VideoPreviewPage.qml:247
 msgid "Save to"
 msgstr ""
 
@@ -162,7 +162,7 @@ msgstr ""
 msgid "Clear Data"
 msgstr ""
 
-#: ../qml/VideoPreviewPage.qml:329
+#: ../qml/VideoPreviewPage.qml:331
 msgid "Video"
 msgstr ""
 

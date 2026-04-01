@@ -313,6 +313,31 @@ class MessageContent:
 
 
 @dataclass
+class ContactAction:
+    fullName: str = ""
+    firstName: Optional[str] = None
+    lidJID: str = ""
+    saveOnPrimaryAddressbook: bool = False
+
+
+@dataclass
+class PictureEvent:
+    JID: str = ""
+    Author: str = ""
+    Timestamp: str = ""
+    Remove: bool = False
+    PictureID: str = ""
+
+
+@dataclass
+class ContactEvent:
+    JID: str = ""
+    Timestamp: str = ""
+    Action: ContactAction = field(default_factory=ContactAction)
+    FromFullSync: bool = False
+
+
+@dataclass
 class ReceiptEvent:
     Chat: str = ""
     Sender: str = ""
@@ -327,6 +352,15 @@ class ReceiptEvent:
     MessageSender: str = ""
     Timestamp: str = ""
     Type: str = ""
+
+
+@dataclass
+class PushNameEvent:
+    JID: str = ""
+    JIDAlt: str = ""
+    Message: MessageInfo = field(default_factory=MessageInfo)
+    OldPushName: str = ""
+    NewPushName: str = ""
 
 
 @dataclass
