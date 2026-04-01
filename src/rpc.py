@@ -85,6 +85,13 @@ class DaemonRPC:
         result = self._call("Service.EnsureJID", {"JID": jid})
         return str(result.get("JID", jid))
 
+    def get_phone_number(self, jid: str) -> str:
+        resolved = self.ensure_jid(jid)
+        user = resolved.split("@")[0]
+        if user.startswith("lid:"):
+            return ""
+        return "+" + user if user else ""
+
     def mark_read(self, chat_jid: str, message_ids: list[str], sender_jid: str = "") -> None:
         self._call(
             "Service.MarkRead",

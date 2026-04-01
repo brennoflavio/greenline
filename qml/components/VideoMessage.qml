@@ -8,6 +8,7 @@ MessageBubble {
     property string thumbnailSource: ""
     property string mediaPath: ""
     property string caption: ""
+    property string duration: ""
     property bool downloading: false
 
     signal downloadRequested()
@@ -53,6 +54,27 @@ MessageBubble {
 
         }
 
+        Rectangle {
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            anchors.margins: units.gu(0.5)
+            width: durationLabel.width + units.gu(1)
+            height: durationLabel.height + units.gu(0.4)
+            radius: units.gu(0.3)
+            color: "#80000000"
+            visible: root.duration !== ""
+
+            Label {
+                id: durationLabel
+
+                anchors.centerIn: parent
+                text: root.duration
+                fontSize: "x-small"
+                color: "white"
+            }
+
+        }
+
         LoadingSpinner {
             anchors.centerIn: parent
             running: root.downloading
@@ -62,9 +84,12 @@ MessageBubble {
         MouseArea {
             anchors.fill: parent
             onClicked: {
-                if (!root.mediaPath && !root.downloading)
+                if (root.mediaPath)
+                    pageStack.push(Qt.resolvedUrl("../VideoPreviewPage.qml"), {
+                    "videoPath": root.mediaPath
+                });
+                else if (!root.downloading)
                     root.downloadRequested();
-
             }
         }
 

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-30 23:51+0000\n"
+"POT-Creation-Date: 2026-04-01 14:02+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -55,16 +55,16 @@ msgstr ""
 msgid "No chats found"
 msgstr ""
 
-#: ../qml/ChatPage.qml:251
+#: ../qml/ChatPage.qml:252
 msgid "Type a message..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:352 ../qml/ImagePreviewPage.qml:190
-#: ../qml/ut_components/AppHeader.qml:78
+#: ../qml/ChatPage.qml:353 ../qml/ImagePreviewPage.qml:190
+#: ../qml/VideoPreviewPage.qml:333 ../qml/ut_components/AppHeader.qml:78
 msgid "Back"
 msgstr ""
 
-#: ../qml/ChatPage.qml:413
+#: ../qml/ChatPage.qml:425
 msgid "online"
 msgstr ""
 
@@ -84,20 +84,42 @@ msgstr ""
 msgid "Start Service"
 msgstr ""
 
-#: ../qml/ImagePreviewPage.qml:37
+#: ../qml/ImagePreviewPage.qml:37 ../qml/VideoPreviewPage.qml:178
 msgid "Save"
 msgstr ""
 
 #: ../qml/ImagePreviewPage.qml:47 ../qml/ImagePreviewPage.qml:165
+#: ../qml/VideoPreviewPage.qml:189 ../qml/VideoPreviewPage.qml:308
 msgid "Share"
 msgstr ""
 
-#: ../qml/ImagePreviewPage.qml:102
+#: ../qml/ImagePreviewPage.qml:102 ../qml/VideoPreviewPage.qml:245
 msgid "Save to"
 msgstr ""
 
 #: ../qml/ImagePreviewPage.qml:186
 msgid "Image"
+msgstr ""
+
+#: ../qml/ProfilePage.qml:88
+msgid "Group"
+msgstr ""
+
+#: ../qml/ProfilePage.qml:102 ../qml/SettingsPage.qml:162
+#: ../qml/ut_components/AppHeader.qml:94
+msgid "Settings"
+msgstr ""
+
+#: ../qml/ProfilePage.qml:105
+msgid "Mute notifications"
+msgstr ""
+
+#: ../qml/ProfilePage.qml:106
+msgid "Silence all notifications from this chat"
+msgstr ""
+
+#: ../qml/ProfilePage.qml:149
+msgid "Profile"
 msgstr ""
 
 #: ../qml/SettingsPage.qml:33
@@ -140,8 +162,8 @@ msgstr ""
 msgid "Clear Data"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:162 ../qml/ut_components/AppHeader.qml:94
-msgid "Settings"
+#: ../qml/VideoPreviewPage.qml:329
+msgid "Video"
 msgstr ""
 
 #: ../qml/components/DocumentMessage.qml:48

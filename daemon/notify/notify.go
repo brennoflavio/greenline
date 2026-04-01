@@ -26,15 +26,18 @@ func New(appID string) (*Notifier, error) {
 	return &Notifier{conn: conn, appID: appID}, nil
 }
 
-func (n *Notifier) Post(summary, body string) error {
+func (n *Notifier) Post(summary, body, icon string) error {
 	if len(body) > maxBodyLen {
 		body = body[:maxBodyLen] + "…"
+	}
+	if icon == "" {
+		icon = "message"
 	}
 	card := map[string]interface{}{
 		"summary": summary,
 		"popup":   true,
 		"persist": true,
-		"icon":    "message",
+		"icon":    icon,
 	}
 	if body != "" {
 		card["body"] = body

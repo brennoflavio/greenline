@@ -189,6 +189,22 @@ def clear_data() -> ClearDataResponse:
     return ClearDataResponse(success=True)
 
 
+@dataclass
+class PhoneNumberResponse:
+    success: bool
+    phone_number: str
+
+
+@crash_reporter
+@dataclass_to_dict
+def get_phone_number(jid: str) -> PhoneNumberResponse:
+    try:
+        phone = DaemonRPC().get_phone_number(jid)
+        return PhoneNumberResponse(success=True, phone_number=phone)
+    except Exception:
+        return PhoneNumberResponse(success=True, phone_number="")
+
+
 @crash_reporter
 @dataclass_to_dict
 def get_chat_list() -> ChatListResponse:

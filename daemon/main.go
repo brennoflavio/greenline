@@ -162,7 +162,11 @@ func main() {
 			if summary == "" {
 				summary = msg.Info.Sender.User
 			}
-			if err := notifier.Post(summary, body); err != nil {
+			icon := avatarsync.AvatarJPGPath(*cacheDir, msg.Info.Chat.String())
+			if _, err := os.Stat(icon); err != nil {
+				icon = ""
+			}
+			if err := notifier.Post(summary, body, icon); err != nil {
 				logger.Error("failed to send notification", "error", err)
 			}
 		}

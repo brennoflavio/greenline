@@ -41,6 +41,7 @@ def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
 
     text = ""
     caption = ""
+    duration = ""
 
     if content.conversation:
         text = content.conversation
@@ -58,8 +59,12 @@ def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
         if content.videoMessage.caption:
             caption = content.videoMessage.caption
         mimetype = content.videoMessage.mimetype
+        secs = content.videoMessage.seconds or 0
+        duration = f"{secs // 60}:{secs % 60:02d}"
     elif content.audioMessage:
         mimetype = content.audioMessage.mimetype
+        secs = content.audioMessage.seconds or 0
+        duration = f"{secs // 60}:{secs % 60:02d}"
     elif content.documentMessage:
         if content.documentMessage.caption:
             caption = content.documentMessage.caption
@@ -87,6 +92,7 @@ def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
         caption=caption,
         mimetype=mimetype,
         file_name=file_name,
+        duration=duration,
     )
 
 

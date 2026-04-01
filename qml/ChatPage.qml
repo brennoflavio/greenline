@@ -128,6 +128,7 @@ Page {
             thumbnailSource: msg.thumbnail_path || ""
             mediaPath: msg.media_path || ""
             caption: msg.caption || ""
+            duration: msg.duration || ""
             isOutgoing: msg.is_outgoing || false
             timestamp: msg.timestamp || ""
             readReceipt: msg.read_receipt || ""
@@ -396,6 +397,17 @@ Page {
                     height: units.gu(2.5)
                     color: theme.palette.normal.backgroundSecondaryText
                     visible: !chatPhoto
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: {
+                        pageStack.push(Qt.resolvedUrl("ProfilePage.qml"), {
+                            "chatId": chatId,
+                            "chatName": chatName,
+                            "chatPhoto": chatPhoto
+                        });
+                    }
                 }
 
             }
