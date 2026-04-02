@@ -30,6 +30,41 @@ Page {
         });
     }
 
+    function sendMessage() {
+        Qt.inputMethod.commit();
+        if (messageInput.text.length > 0) {
+            var text = messageInput.text;
+            var tempId = "pending-" + Date.now();
+            var now = new Date();
+            var hours = now.getHours().toString();
+            if (hours.length < 2)
+                hours = "0" + hours;
+
+            var minutes = now.getMinutes().toString();
+            if (minutes.length < 2)
+                minutes = "0" + minutes;
+
+            var pendingMsg = {
+                "id": tempId,
+                "chat_id": chatId,
+                "type": "text",
+                "is_outgoing": true,
+                "text": text,
+                "timestamp": hours + ":" + minutes,
+                "read_receipt": "",
+                "send_status": "pending",
+                "temp_id": tempId
+            };
+            var newMessages = messages.slice();
+            newMessages.push(pendingMsg);
+            messages = newMessages;
+            messagesChanged();
+            messageInput.text = "";
+            python.call('main.send_text_message', [chatId, text, tempId], function() {
+            });
+        }
+    }
+
     ListView {
         id: messageList
 
@@ -273,6 +308,7 @@ Page {
 
                 Layout.fillWidth: true
                 placeholderText: i18n.tr("Type a message...")
+                onAccepted: sendMessage()
             }
 
             Icon {
@@ -284,39 +320,7 @@ Page {
 
                 MouseArea {
                     anchors.fill: parent
-                    onClicked: {
-                        if (messageInput.text.length > 0) {
-                            var text = messageInput.text;
-                            var tempId = "pending-" + Date.now();
-                            var now = new Date();
-                            var hours = now.getHours().toString();
-                            if (hours.length < 2)
-                                hours = "0" + hours;
-
-                            var minutes = now.getMinutes().toString();
-                            if (minutes.length < 2)
-                                minutes = "0" + minutes;
-
-                            var pendingMsg = {
-                                "id": tempId,
-                                "chat_id": chatId,
-                                "type": "text",
-                                "is_outgoing": true,
-                                "text": text,
-                                "timestamp": hours + ":" + minutes,
-                                "read_receipt": "",
-                                "send_status": "pending",
-                                "temp_id": tempId
-                            };
-                            var newMessages = messages.slice();
-                            newMessages.push(pendingMsg);
-                            messages = newMessages;
-                            messagesChanged();
-                            messageInput.text = "";
-                            python.call('main.send_text_message', [chatId, text, tempId], function() {
-                            });
-                        }
-                    }
+                    onClicked: sendMessage()
                 }
 
             }

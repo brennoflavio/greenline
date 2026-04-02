@@ -172,12 +172,11 @@ func main() {
 		}
 	})
 
-	svc := &Service{client: client, eventStore: evStore, cacheDir: *cacheDir}
+	syncer := avatarsync.New(client, *cacheDir, logger)
+	svc := &Service{client: client, eventStore: evStore, syncer: syncer, cacheDir: *cacheDir}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	go client.ConnectWithRetry(ctx, svc.setQR)
-
-	syncer := avatarsync.New(client, *cacheDir, logger)
 	go syncer.Run(ctx)
 
 	if err := rpc.Register(svc); err != nil {

@@ -241,6 +241,31 @@ func (s *Syncer) writeIDFile(jid, id string) {
 	os.WriteFile(s.idPath(jid), []byte(id), 0600)
 }
 
+func (s *Syncer) ForceSync(ctx context.Context, jidStr string) string {
+	if err := os.MkdirAll(s.cacheDir, 0700); err != nil {
+		s.log.Error("failed to create avatar cache dir", "error", err)
+		return ""
+	}
+
+	os.Remove(s.jpgPath(jidStr))
+	os.Remove(s.idPath(jidStr))
+	os.Remove(s.nopicPath(jidStr))
+
+	jid, err := types.ParseJID(jidStr)
+	if err != nil {
+		s.log.Warn("ForceSync: invalid JID", "jid", jidStr, "error", err)
+		return ""
+	}
+
+	s.syncOne(ctx, jid)
+
+	path := s.jpgPath(jidStr)
+	if _, err := os.Stat(path); err == nil {
+		return path
+	}
+	return ""
+}
+
 func sleepCtx(ctx context.Context, d time.Duration) bool {
 	t := time.NewTimer(d)
 	defer t.Stop()

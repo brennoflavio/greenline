@@ -27,6 +27,7 @@ import (
 type Service struct {
 	client     *waconn.Client
 	eventStore *eventstore.Store
+	syncer     *avatarsync.Syncer
 	cacheDir   string
 	mu         sync.RWMutex
 	qrCode     string
@@ -263,6 +264,23 @@ func (s *Service) GetGroups(args *struct{}, reply *GetGroupsReply) error {
 	})
 
 	reply.Groups = groups
+	return nil
+}
+
+// SyncAvatar types
+
+type SyncAvatarArgs struct {
+	JID string
+}
+
+type SyncAvatarReply struct {
+	AvatarPath string
+}
+
+func (s *Service) SyncAvatar(args *SyncAvatarArgs, reply *SyncAvatarReply) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	reply.AvatarPath = s.syncer.ForceSync(ctx, args.JID)
 	return nil
 }
 

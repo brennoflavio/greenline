@@ -16,7 +16,7 @@ from ut_components.config import get_cache_path
 from ut_components.event import Event
 from ut_components.kv import KV
 from ut_components.utils import enum_to_str as _enum_to_str
-from whatsmeow_types import ContactEvent, MessageEvent, ReceiptEvent
+from whatsmeow_types import ContactEvent, MessageEvent, PictureEvent, ReceiptEvent
 
 
 def enum_to_str(obj: Dict[str, Any]) -> Dict[str, Any]:
@@ -139,6 +139,28 @@ def _handle_mute(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None:
             chat_updates[chat.id] = enum_to_str(asdict(chat))
 
 
+def _handle_picture(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None:
+    raw = json.loads(event.payload or "{}")
+    evt = from_dict(data_class=PictureEvent, data=raw)
+    jid = DaemonRPC().ensure_jid(evt.JID)
+    if not jid:
+        return
+
+    avatar_path = DaemonRPC().sync_avatar(jid)
+    photo = "file://" + avatar_path if avatar_path else ""
+
+    with KV() as kv:
+        key = f"chat:{jid}"
+        data = kv.get(key)
+        if data is None:
+            return
+        chat = ChatListItem(**data)
+        if chat.photo != photo:
+            chat.photo = photo
+            kv.put(key, asdict(chat))
+            chat_updates[chat.id] = enum_to_str(asdict(chat))
+
+
 def _handle_unknown(event: Any) -> None:
     with KV() as kv:
         kv.put(
@@ -174,7 +196,9 @@ class DaemonEventHandler(Event):
                 _handle_contact(event, chat_updates)
             elif event.event_type == "Mute":
                 _handle_mute(event, chat_updates)
-            elif event.event_type in ("PushName", "Picture"):
+            elif event.event_type == "Picture":
+                _handle_picture(event, chat_updates)
+            elif event.event_type == "PushName":
                 pass
             else:
                 _handle_unknown(event)

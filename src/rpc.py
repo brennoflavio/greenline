@@ -11,6 +11,7 @@ from daemon_types import (
     GetGroupsReply,
     ListEventsReply,
     SessionStatusReply,
+    SyncAvatarReply,
     VersionReply,
 )
 
@@ -71,6 +72,11 @@ class DaemonRPC:
         if data.get("Groups") is None:
             data["Groups"] = []
         return from_dict(data_class=GetGroupsReply, data=data)
+
+    def sync_avatar(self, jid: str) -> str:
+        data = self._call("Service.SyncAvatar", {"JID": jid})
+        reply = from_dict(data_class=SyncAvatarReply, data=data)
+        return reply.AvatarPath
 
     def list_events(self, after_id: int = 0, limit: int = 100) -> ListEventsReply:
         data = self._call("Service.ListEvents", {"AfterID": after_id, "Limit": limit})

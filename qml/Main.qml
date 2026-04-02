@@ -22,6 +22,7 @@ MainView {
     id: root
 
     property bool isAuthenticating: false
+    property bool initComplete: false
 
     objectName: 'mainView'
     applicationName: 'greenline.brennoflavio'
@@ -33,16 +34,15 @@ MainView {
         id: pageStack
     }
 
-    Column {
-        anchors.centerIn: parent
-        spacing: units.gu(2)
-        visible: pageStack.depth === 0
+    Rectangle {
+        anchors.fill: parent
+        z: 100
+        color: theme.palette.normal.background
+        visible: !initComplete
 
         Image {
-            id: logo
-
             source: Qt.resolvedUrl("../assets/logo-no-bg.png")
-            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.centerIn: parent
             width: units.gu(20)
             height: units.gu(20)
             fillMode: Image.PreserveAspectFit
@@ -69,6 +69,7 @@ MainView {
                                 pageStack.push(Qt.resolvedUrl("ChatListPage.qml"));
                             else
                                 pageStack.push(Qt.resolvedUrl("AuthorizationPage.qml"));
+                            initComplete = true;
                         });
                     });
                 });
