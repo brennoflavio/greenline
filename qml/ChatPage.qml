@@ -1,4 +1,5 @@
 import Lomiri.Components 1.3
+import Lomiri.Content 1.3
 import QtGraphicalEffects 1.0
 import QtQuick 2.7
 import QtQuick.Layouts 1.3
@@ -27,6 +28,38 @@ Page {
             delete d2[messageId];
             downloadingIds = d2;
             messagesChanged();
+        });
+    }
+
+    function sendImageMessage(filePath) {
+        var tempId = "pending-" + Date.now();
+        var now = new Date();
+        var hours = now.getHours().toString();
+        if (hours.length < 2)
+            hours = "0" + hours;
+
+        var minutes = now.getMinutes().toString();
+        if (minutes.length < 2)
+            minutes = "0" + minutes;
+
+        var pendingMsg = {
+            "id": tempId,
+            "chat_id": chatId,
+            "type": "image",
+            "is_outgoing": true,
+            "text": "",
+            "caption": "",
+            "timestamp": hours + ":" + minutes,
+            "read_receipt": "",
+            "send_status": "pending",
+            "temp_id": tempId,
+            "media_path": "file://" + filePath
+        };
+        var newMessages = messages.slice();
+        newMessages.push(pendingMsg);
+        messages = newMessages;
+        messagesChanged();
+        python.call('main.send_image_message', [chatId, filePath, "", tempId], function() {
         });
     }
 
@@ -299,6 +332,7 @@ Page {
 
                 MouseArea {
                     anchors.fill: parent
+                    onClicked: pageStack.push(mediaPickerPage)
                 }
 
             }
@@ -369,6 +403,74 @@ Page {
                 });
             });
         }
+    }
+
+    ContentStore {
+        id: contentStore
+
+        scope: ContentScope.App
+    }
+
+    Component {
+        id: mediaPickerPage
+
+        Page {
+            id: pickerPageInstance
+
+            property var activeTransfer
+
+            ContentPeerPicker {
+                contentType: ContentType.Pictures
+                handler: ContentHandler.Source
+                onPeerSelected: {
+                    pickerPageInstance.activeTransfer = peer.request(contentStore);
+                    pickerPageInstance.activeTransfer.selectionType = ContentTransfer.Single;
+                    pickerPageInstance.activeTransfer.stateChanged.connect(function() {
+                        if (pickerPageInstance.activeTransfer.state === ContentTransfer.Charged) {
+                            if (pickerPageInstance.activeTransfer.items.length > 0) {
+                                var fileUrl = pickerPageInstance.activeTransfer.items[0].url.toString();
+                                var filePath = fileUrl.replace("file://", "");
+                                pageStack.pop();
+                                sendImageMessage(filePath);
+                            }
+                        }
+                    });
+                }
+                onCancelPressed: {
+                    if (pickerPageInstance.activeTransfer)
+                        pickerPageInstance.activeTransfer.state = ContentTransfer.Aborted;
+
+                    pageStack.pop();
+                }
+
+                anchors {
+                    top: pickerHeader.bottom
+                    left: parent.left
+                    right: parent.right
+                    bottom: parent.bottom
+                }
+
+            }
+
+            header: PageHeader {
+                id: pickerHeader
+
+                title: i18n.tr("Send Photo")
+                leadingActionBar.actions: [
+                    Action {
+                        iconName: "back"
+                        onTriggered: {
+                            if (pickerPageInstance.activeTransfer)
+                                pickerPageInstance.activeTransfer.state = ContentTransfer.Aborted;
+
+                            pageStack.pop();
+                        }
+                    }
+                ]
+            }
+
+        }
+
     }
 
     header: PageHeader {

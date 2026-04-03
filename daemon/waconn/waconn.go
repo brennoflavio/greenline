@@ -255,6 +255,10 @@ func (c *Client) DownloadMediaWithPath(ctx context.Context, directPath string, e
 	return c.waCli.DownloadMediaWithPath(ctx, directPath, encFileHash, fileHash, mediaKey, fileLength, mediaType, mmsType)
 }
 
+func (c *Client) Upload(ctx context.Context, plaintext []byte, appInfo whatsmeow.MediaType) (whatsmeow.UploadResponse, error) {
+	return c.waCli.Upload(ctx, plaintext, appInfo)
+}
+
 func (c *Client) SendMessage(ctx context.Context, to types.JID, message *waE2E.Message) (whatsmeow.SendResponse, error) {
 	return c.waCli.SendMessage(ctx, to, message)
 }

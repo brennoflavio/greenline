@@ -338,6 +338,74 @@ def send_text_message(chat_id: str, text: str, temp_id: str = "") -> SuccessResp
     return SuccessResponse(success=True, message="")
 
 
+@crash_reporter
+@dataclass_to_dict
+def send_image_message(chat_id: str, file_path: str, caption: str = "", temp_id: str = "") -> SuccessResponse:
+    import shutil
+    from datetime import datetime
+
+    import pyotherside
+
+    from ut_components.config import get_cache_path
+
+    cache_dir = os.path.join(get_cache_path(), "outgoing")
+    os.makedirs(cache_dir, exist_ok=True)
+    ext = os.path.splitext(file_path)[1] or ".jpg"
+    cached_path = os.path.join(cache_dir, f"{temp_id or int(datetime.now().timestamp())}{ext}")
+    shutil.copy2(file_path, cached_path)
+
+    now = datetime.now()
+    hours = now.strftime("%H")
+    minutes = now.strftime("%M")
+
+    pending_msg = Message(
+        id=temp_id or f"pending-{int(now.timestamp())}",
+        chat_id=chat_id,
+        type=MessageType.IMAGE,
+        is_outgoing=True,
+        timestamp=f"{hours}:{minutes}",
+        timestamp_unix=int(now.timestamp()),
+        read_receipt=ReadReceipt.NONE,
+        caption=caption,
+        media_path="file://" + cached_path,
+        send_status="pending",
+        temp_id=temp_id,
+    )
+    pyotherside.send("message-upsert", _enum_to_str(asdict(pending_msg)))  # type: ignore[no-untyped-call]
+
+    try:
+        rpc = DaemonRPC()
+        result = rpc.send_message(chat_id, "image", file_path=cached_path, caption=caption)
+    except Exception:
+        pending_msg.send_status = "failed"
+        pyotherside.send("message-upsert", _enum_to_str(asdict(pending_msg)))  # type: ignore[no-untyped-call]
+        return SuccessResponse(success=False, message="Failed to send image")
+
+    ts = result["Timestamp"]
+    msg = Message(
+        id=result["MessageID"],
+        chat_id=chat_id,
+        type=MessageType.IMAGE,
+        is_outgoing=True,
+        timestamp=datetime.fromtimestamp(ts).strftime("%H:%M"),
+        timestamp_unix=ts,
+        read_receipt=ReadReceipt.SENT,
+        caption=caption,
+        media_path="file://" + cached_path,
+        temp_id=temp_id,
+    )
+
+    key = f"message:{chat_id}:{msg.timestamp_unix}:{msg.id}"
+    with KV() as kv:
+        kv.put(key, asdict(msg))
+
+    chat = upsert_chat(msg, "")
+    pyotherside.send("message-upsert", _enum_to_str(asdict(msg)))  # type: ignore[no-untyped-call]
+    pyotherside.send("chat-list-update", [_enum_to_str(asdict(chat))])  # type: ignore[no-untyped-call]
+
+    return SuccessResponse(success=True, message="")
+
+
 _MEDIA_TYPE_MAP = {
     "image": "imageMessage",
     "video": "videoMessage",

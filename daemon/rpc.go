@@ -382,14 +382,58 @@ func extensionFromMimetype(mimetype string) string {
 // SendMessage types
 
 type SendMessageArgs struct {
-	ChatJID string
-	Type    string // "text", "image", "video", "audio", "sticker", "document"
-	Text    string
+	ChatJID  string
+	Type     string // "text", "image", "video", "audio", "sticker", "document"
+	Text     string
+	FilePath string
+	Caption  string
 }
 
 type SendMessageReply struct {
 	MessageID string
 	Timestamp int64
+}
+
+func (s *Service) sendImageMessage(jid types.JID, args *SendMessageArgs) (*waE2E.Message, error) {
+	data, err := os.ReadFile(args.FilePath)
+	if err != nil {
+		return nil, fmt.Errorf("read file: %w", err)
+	}
+
+	mimetype := mime.TypeByExtension(filepath.Ext(args.FilePath))
+	if mimetype == "" {
+		mimetype = "image/jpeg"
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	uploadResp, err := s.client.Upload(ctx, data, whatsmeow.MediaImage)
+	if err != nil {
+		return nil, fmt.Errorf("upload: %w", err)
+	}
+
+	thumbnail := generateThumbnail(data)
+
+	msg := &waE2E.Message{
+		ImageMessage: &waE2E.ImageMessage{
+			Mimetype:      proto.String(mimetype),
+			URL:           &uploadResp.URL,
+			DirectPath:    &uploadResp.DirectPath,
+			MediaKey:      uploadResp.MediaKey,
+			FileEncSHA256: uploadResp.FileEncSHA256,
+			FileSHA256:    uploadResp.FileSHA256,
+			FileLength:    &uploadResp.FileLength,
+		},
+	}
+	if args.Caption != "" {
+		msg.ImageMessage.Caption = proto.String(args.Caption)
+	}
+	if thumbnail != nil {
+		msg.ImageMessage.JPEGThumbnail = thumbnail
+	}
+
+	return msg, nil
 }
 
 func (s *Service) SendMessage(args *SendMessageArgs, reply *SendMessageReply) error {
@@ -404,6 +448,15 @@ func (s *Service) SendMessage(args *SendMessageArgs, reply *SendMessageReply) er
 		message = &waE2E.Message{
 			Conversation: proto.String(args.Text),
 		}
+	case "image":
+		if args.FilePath == "" {
+			return fmt.Errorf("file path required for image message")
+		}
+		msg, err := s.sendImageMessage(jid, args)
+		if err != nil {
+			return fmt.Errorf("image message: %w", err)
+		}
+		message = msg
 	default:
 		return fmt.Errorf("unsupported message type: %s", args.Type)
 	}
