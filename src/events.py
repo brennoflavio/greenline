@@ -198,7 +198,14 @@ class DaemonEventHandler(Event):
                 _handle_mute(event, chat_updates)
             elif event.event_type == "Picture":
                 _handle_picture(event, chat_updates)
-            elif event.event_type == "PushName":
+            elif event.event_type in (
+                "PushName",
+                "AppState",
+                "Connected",
+                "OfflineSyncCompleted",
+                "OfflineSyncPreview",
+                "KeepAliveTimeout",
+            ):
                 pass
             else:
                 _handle_unknown(event)

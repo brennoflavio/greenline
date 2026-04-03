@@ -321,6 +321,44 @@ class ContactAction:
 
 
 @dataclass
+class KeyExpirationAction:
+    expiredKeyEpoch: int = 0
+
+
+@dataclass
+class MuteAction:
+    muted: bool = False
+    muteEndTimestamp: int = 0
+
+
+@dataclass
+class NuxAction:
+    acknowledged: bool = False
+
+
+@dataclass
+class PrimaryVersionAction:
+    version: str = ""
+
+
+@dataclass
+class StarAction:
+    starred: bool = False
+
+
+@dataclass
+class AppStateEvent:
+    Index: List[str] = field(default_factory=list)
+    timestamp: int = 0
+    contactAction: Optional[ContactAction] = None
+    keyExpiration: Optional[KeyExpirationAction] = None
+    muteAction: Optional[MuteAction] = None
+    nuxAction: Optional[NuxAction] = None
+    primaryVersionAction: Optional[PrimaryVersionAction] = None
+    starAction: Optional[StarAction] = None
+
+
+@dataclass
 class PictureEvent:
     JID: str = ""
     Author: str = ""
