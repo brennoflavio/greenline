@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"mime"
 	"os"
@@ -37,6 +38,15 @@ func (s *Service) setQR(code string) {
 	s.mu.Lock()
 	s.qrCode = code
 	s.mu.Unlock()
+}
+
+var ErrNotLoggedIn = errors.New("not logged in")
+
+func (s *Service) requireLogin() error {
+	if !s.client.IsLoggedIn() {
+		return ErrNotLoggedIn
+	}
+	return nil
 }
 
 func (s *Service) Ping(args *struct{}, reply *string) error {
@@ -115,6 +125,9 @@ type MarkReadArgs struct {
 }
 
 func (s *Service) MarkRead(args *MarkReadArgs, reply *struct{}) error {
+	if err := s.requireLogin(); err != nil {
+		return err
+	}
 	chat, err := types.ParseJID(args.ChatJID)
 	if err != nil {
 		return fmt.Errorf("invalid chat JID: %w", err)
@@ -140,6 +153,9 @@ type EnsureJIDReply struct {
 }
 
 func (s *Service) EnsureJID(args *EnsureJIDArgs, reply *EnsureJIDReply) error {
+	if err := s.requireLogin(); err != nil {
+		return err
+	}
 	jid, err := types.ParseJID(args.JID)
 	if err != nil {
 		return fmt.Errorf("invalid JID: %w", err)
@@ -187,6 +203,9 @@ type GetContactsReply struct {
 }
 
 func (s *Service) GetContacts(args *struct{}, reply *GetContactsReply) error {
+	if err := s.requireLogin(); err != nil {
+		return err
+	}
 	ctx := context.Background()
 	all, err := s.client.GetAllContacts(ctx)
 	if err != nil {
@@ -234,6 +253,9 @@ type GetGroupsReply struct {
 }
 
 func (s *Service) GetGroups(args *struct{}, reply *GetGroupsReply) error {
+	if err := s.requireLogin(); err != nil {
+		return err
+	}
 	ctx := context.Background()
 	joined, err := s.client.GetJoinedGroups(ctx)
 	if err != nil {
@@ -282,6 +304,9 @@ type SyncAvatarReply struct {
 }
 
 func (s *Service) SyncAvatar(args *SyncAvatarArgs, reply *SyncAvatarReply) error {
+	if err := s.requireLogin(); err != nil {
+		return err
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	reply.AvatarPath = s.syncer.ForceSync(ctx, args.JID)
@@ -299,6 +324,9 @@ type GetChatSettingsReply struct {
 }
 
 func (s *Service) GetChatSettings(args *GetChatSettingsArgs, reply *GetChatSettingsReply) error {
+	if err := s.requireLogin(); err != nil {
+		return err
+	}
 	jid, err := types.ParseJID(args.ChatJID)
 	if err != nil {
 		return fmt.Errorf("invalid chat JID: %w", err)
@@ -325,6 +353,9 @@ type SetMutedArgs struct {
 }
 
 func (s *Service) SetMuted(args *SetMutedArgs, reply *struct{}) error {
+	if err := s.requireLogin(); err != nil {
+		return err
+	}
 	jid, err := types.ParseJID(args.ChatJID)
 	if err != nil {
 		return fmt.Errorf("invalid chat JID: %w", err)
@@ -441,6 +472,9 @@ func (s *Service) sendImageMessage(jid types.JID, args *SendMessageArgs) (*waE2E
 }
 
 func (s *Service) SendMessage(args *SendMessageArgs, reply *SendMessageReply) error {
+	if err := s.requireLogin(); err != nil {
+		return err
+	}
 	jid, err := types.ParseJID(args.ChatJID)
 	if err != nil {
 		return fmt.Errorf("invalid chat JID: %w", err)
@@ -479,6 +513,9 @@ func (s *Service) SendMessage(args *SendMessageArgs, reply *SendMessageReply) er
 }
 
 func (s *Service) DownloadMedia(args *DownloadMediaArgs, reply *DownloadMediaReply) error {
+	if err := s.requireLogin(); err != nil {
+		return err
+	}
 	wmMediaType, ok := mediaTypeMap[args.MediaType]
 	if !ok {
 		return fmt.Errorf("unknown media type: %s", args.MediaType)

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-04 04:29+0000\n"
+"POT-Creation-Date: 2026-04-04 04:35+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -182,9 +182,9 @@ msgstr ""
 
 #: ../qml/SettingsPage.qml:173
 msgid ""
-"This will log out from WhatsApp and delete all local data including "
-"messages, settings and cache. You will need to scan the QR code again to "
-"reconnect."
+"This will log out from WhatsApp, delete all local data including messages, "
+"settings and cache, and uninstall the daemon. You will need to reinstall the "
+"daemon and scan the QR code again to reconnect."
 msgstr ""
 
 #: ../qml/SettingsPage.qml:176
