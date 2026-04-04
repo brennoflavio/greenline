@@ -58,7 +58,10 @@ MainView {
             importModule('main', function() {
                 python.call('main.check_daemon_status', [], function(result) {
                     if (!result.installed || !result.active) {
-                        pageStack.push(Qt.resolvedUrl("DaemonSetupPage.qml"));
+                        initComplete = true;
+                        pageStack.push(Qt.resolvedUrl("DaemonSetupPage.qml"), {
+                            "daemonInstalled": result.installed
+                        });
                         return ;
                     }
                     python.call('main.check_daemon_version', [], function() {

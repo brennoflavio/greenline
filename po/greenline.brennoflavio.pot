@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-04 03:38+0000\n"
+"POT-Creation-Date: 2026-04-04 04:19+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -73,19 +73,19 @@ msgstr ""
 msgid "online"
 msgstr ""
 
-#: ../qml/DaemonSetupPage.qml:39
+#: ../qml/DaemonSetupPage.qml:38
 msgid "The background service is installed but not running."
 msgstr ""
 
-#: ../qml/DaemonSetupPage.qml:39
+#: ../qml/DaemonSetupPage.qml:38
 msgid "The background service needs to be installed to sync your messages."
 msgstr ""
 
-#: ../qml/DaemonSetupPage.qml:58
+#: ../qml/DaemonSetupPage.qml:57
 msgid "Install & Start"
 msgstr ""
 
-#: ../qml/DaemonSetupPage.qml:58
+#: ../qml/DaemonSetupPage.qml:57
 msgid "Start Service"
 msgstr ""
 

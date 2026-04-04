@@ -7,8 +7,7 @@ Page {
     id: daemonSetupPage
 
     property bool daemonInstalled: false
-    property bool daemonActive: false
-    property bool loading: true
+    property bool loading: false
     property string errorMessage: ""
 
     Column {
@@ -63,14 +62,16 @@ Page {
                 errorMessage = "";
                 python.call('main.install_daemon', [], function(result) {
                     if (result.success)
+                        python.call('main.check_daemon_version', [], function() {
                         python.call('main.get_session_status', [], function(session) {
-                        python.call('main.start_event_loop', [], function() {
+                            python.call('main.start_event_loop', [], function() {
+                            });
+                            pageStack.clear();
+                            if (session.logged_in)
+                                pageStack.push(Qt.resolvedUrl("ChatListPage.qml"));
+                            else
+                                pageStack.push(Qt.resolvedUrl("AuthorizationPage.qml"));
                         });
-                        pageStack.clear();
-                        if (session.logged_in)
-                            pageStack.push(Qt.resolvedUrl("ChatListPage.qml"));
-                        else
-                            pageStack.push(Qt.resolvedUrl("AuthorizationPage.qml"));
                     });
                     else {
                         errorMessage = result.message;
@@ -100,22 +101,6 @@ Page {
         Component.onCompleted: {
             addImportPath(Qt.resolvedUrl('../src/'));
             importModule('main', function() {
-                python.call('main.check_daemon_status', [], function(result) {
-                    daemonInstalled = result.installed;
-                    daemonActive = result.active;
-                    if (daemonActive)
-                        python.call('main.get_session_status', [], function(session) {
-                        python.call('main.start_event_loop', [], function() {
-                        });
-                        pageStack.clear();
-                        if (session.logged_in)
-                            pageStack.push(Qt.resolvedUrl("ChatListPage.qml"));
-                        else
-                            pageStack.push(Qt.resolvedUrl("AuthorizationPage.qml"));
-                    });
-                    else
-                        loading = false;
-                });
             });
         }
     }
