@@ -55,6 +55,7 @@ from ut_components.event import get_event_dispatcher
 from ut_components.kv import KV
 from ut_components.utils import dataclass_to_dict
 from ut_components.utils import enum_to_str as _enum_to_str
+from whatsmeow_types import MessageInfo
 
 
 @dataclass
@@ -331,7 +332,7 @@ def send_text_message(chat_id: str, text: str, temp_id: str = "") -> SuccessResp
     with KV() as kv:
         kv.put(key, asdict(msg))
 
-    chat = upsert_chat(msg, "")
+    chat = upsert_chat(msg, MessageInfo())
     pyotherside.send("message-upsert", _enum_to_str(asdict(msg)))  # type: ignore[no-untyped-call]
     pyotherside.send("chat-list-update", [_enum_to_str(asdict(chat))])  # type: ignore[no-untyped-call]
 
@@ -399,7 +400,7 @@ def send_image_message(chat_id: str, file_path: str, caption: str = "", temp_id:
     with KV() as kv:
         kv.put(key, asdict(msg))
 
-    chat = upsert_chat(msg, "")
+    chat = upsert_chat(msg, MessageInfo())
     pyotherside.send("message-upsert", _enum_to_str(asdict(msg)))  # type: ignore[no-untyped-call]
     pyotherside.send("chat-list-update", [_enum_to_str(asdict(chat))])  # type: ignore[no-untyped-call]
 

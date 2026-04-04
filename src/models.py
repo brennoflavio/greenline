@@ -33,6 +33,10 @@ class ChatListItem:
     unread_count: int
     is_group: bool
     muted: bool = False
+    full_name: str = ""
+    push_name: str = ""
+    business_name: str = ""
+    name_updated_at: int = 0
 
 
 @dataclass

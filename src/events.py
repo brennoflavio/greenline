@@ -1,14 +1,15 @@
 import base64
 import json
 import os
+import time
 from dataclasses import asdict, dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
 import pyotherside
 from dacite import from_dict
 
-from message_store import store_message
+from message_store import store_message, update_chat_name
 from models import ChatListItem, ReadReceipt
 from receipt_store import process_receipt
 from rpc import DaemonRPC, RateLimitError
@@ -16,7 +17,14 @@ from ut_components.config import get_cache_path
 from ut_components.event import Event
 from ut_components.kv import KV
 from ut_components.utils import enum_to_str as _enum_to_str
-from whatsmeow_types import ContactEvent, MessageEvent, PictureEvent, ReceiptEvent
+from whatsmeow_types import (
+    BusinessNameEvent,
+    ContactEvent,
+    MessageEvent,
+    PictureEvent,
+    PushNameEvent,
+    ReceiptEvent,
+)
 
 
 def enum_to_str(obj: Dict[str, Any]) -> Dict[str, Any]:
@@ -94,13 +102,14 @@ def _handle_contact(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None
     if not name:
         return
 
+    ts = int(datetime.fromisoformat(evt.Timestamp).timestamp()) if evt.Timestamp else 0
+
     with KV() as kv:
         key = f"chat:{jid}"
         data = kv.get(key)
         if data is not None:
             chat = ChatListItem(**data)
-            if chat.name != name:
-                chat.name = name
+            if update_chat_name(chat, ts, full_name=name):
                 kv.put(key, asdict(chat))
                 chat_updates[chat.id] = enum_to_str(asdict(chat))
         else:
@@ -114,9 +123,49 @@ def _handle_contact(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None
                 read_receipt=ReadReceipt.NONE,
                 unread_count=0,
                 is_group=False,
+                full_name=name,
+                name_updated_at=ts,
             )
             kv.put(key, asdict(chat))
             chat_updates[chat.id] = enum_to_str(asdict(chat))
+
+
+def _handle_push_name(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None:
+    raw = json.loads(event.payload or "{}")
+    evt = from_dict(data_class=PushNameEvent, data=raw)
+    jid = DaemonRPC().ensure_jid(evt.JID)
+    if not evt.NewPushName:
+        return
+
+    ts = int(datetime.fromisoformat(evt.Message.Timestamp).timestamp()) if evt.Message.Timestamp else 0
+
+    with KV() as kv:
+        key = f"chat:{jid}"
+        data = kv.get(key)
+        if data is not None:
+            chat = ChatListItem(**data)
+            if update_chat_name(chat, ts, push_name=evt.NewPushName):
+                kv.put(key, asdict(chat))
+                chat_updates[chat.id] = enum_to_str(asdict(chat))
+
+
+def _handle_business_name(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None:
+    raw = json.loads(event.payload or "{}")
+    evt = from_dict(data_class=BusinessNameEvent, data=raw)
+    jid = DaemonRPC().ensure_jid(evt.JID)
+    if not evt.NewBusinessName:
+        return
+
+    ts = int(datetime.fromisoformat(evt.Message.Timestamp).timestamp()) if evt.Message.Timestamp else 0
+
+    with KV() as kv:
+        key = f"chat:{jid}"
+        data = kv.get(key)
+        if data is not None:
+            chat = ChatListItem(**data)
+            if update_chat_name(chat, ts, business_name=evt.NewBusinessName):
+                kv.put(key, asdict(chat))
+                chat_updates[chat.id] = enum_to_str(asdict(chat))
 
 
 def _handle_mute(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None:
@@ -198,8 +247,11 @@ class DaemonEventHandler(Event):
                 _handle_mute(event, chat_updates)
             elif event.event_type == "Picture":
                 _handle_picture(event, chat_updates)
+            elif event.event_type == "PushName":
+                _handle_push_name(event, chat_updates)
+            elif event.event_type == "BusinessName":
+                _handle_business_name(event, chat_updates)
             elif event.event_type in (
-                "PushName",
                 "AppState",
                 "Connected",
                 "OfflineSyncCompleted",
@@ -254,31 +306,33 @@ class ChatListUpdateEvent(Event):
 
     def _sync_contacts(self, chat_updates: list[dict[str, Any]]) -> None:
         reply = DaemonRPC().get_contacts()
-        contacts = {}
-        for c in reply.Contacts:
-            if c.jid and c.display_name:
-                photo = ""
-                if c.avatar_path:
-                    photo = "file://" + c.avatar_path
-                contacts[c.jid] = {"name": c.display_name, "photo": photo}
-
-        if not contacts:
+        if not reply.Contacts:
             return
+
+        now = int(time.time())
 
         with KV() as kv:
             existing = {key: value for key, value in kv.get_partial("chat:")}
 
-            for jid, info in contacts.items():
-                key = f"chat:{jid}"
-                muted = self._is_muted(jid)
+            for c in reply.Contacts:
+                if not c.jid:
+                    continue
+                key = f"chat:{c.jid}"
+                photo = ("file://" + c.avatar_path) if c.avatar_path else ""
+                display_name = c.full_name or c.push_name or c.business_name or c.jid
+                muted = self._is_muted(c.jid)
+
                 if key in existing:
                     chat = ChatListItem(**existing[key])
-                    changed = False
-                    if chat.name != info["name"]:
-                        chat.name = info["name"]
-                        changed = True
-                    if chat.photo != info["photo"]:
-                        chat.photo = info["photo"]
+                    changed = update_chat_name(
+                        chat,
+                        now,
+                        full_name=c.full_name,
+                        push_name=c.push_name,
+                        business_name=c.business_name,
+                    )
+                    if chat.photo != photo:
+                        chat.photo = photo
                         changed = True
                     if chat.muted != muted:
                         chat.muted = muted
@@ -288,9 +342,9 @@ class ChatListUpdateEvent(Event):
                         chat_updates.append(enum_to_str(asdict(chat)))
                 else:
                     chat = ChatListItem(
-                        id=jid,
-                        name=info["name"],
-                        photo=info["photo"],
+                        id=c.jid,
+                        name=display_name,
+                        photo=photo,
                         last_message="",
                         date="",
                         last_message_timestamp=0,
@@ -298,37 +352,40 @@ class ChatListUpdateEvent(Event):
                         unread_count=0,
                         is_group=False,
                         muted=muted,
+                        full_name=c.full_name,
+                        push_name=c.push_name,
+                        business_name=c.business_name,
+                        name_updated_at=now,
                     )
                     kv.put(key, asdict(chat))
                     chat_updates.append(enum_to_str(asdict(chat)))
 
     def _sync_groups(self, chat_updates: list[dict[str, Any]]) -> None:
         reply = DaemonRPC().get_groups()
-        groups = {}
-        for g in reply.Groups:
-            if g.jid and g.name:
-                photo = ""
-                if g.avatar_path:
-                    photo = "file://" + g.avatar_path
-                groups[g.jid] = {"name": g.name, "photo": photo}
-
-        if not groups:
+        if not reply.Groups:
             return
+
+        now = int(time.time())
 
         with KV() as kv:
             existing = {key: value for key, value in kv.get_partial("chat:")}
 
-            for jid, info in groups.items():
-                key = f"chat:{jid}"
-                muted = self._is_muted(jid)
+            for g in reply.Groups:
+                if not g.jid or not g.name:
+                    continue
+                key = f"chat:{g.jid}"
+                photo = ("file://" + g.avatar_path) if g.avatar_path else ""
+                muted = self._is_muted(g.jid)
+
                 if key in existing:
                     chat = ChatListItem(**existing[key])
                     changed = False
-                    if chat.name != info["name"]:
-                        chat.name = info["name"]
+                    if chat.name != g.name:
+                        chat.name = g.name
+                        chat.name_updated_at = now
                         changed = True
-                    if chat.photo != info["photo"]:
-                        chat.photo = info["photo"]
+                    if chat.photo != photo:
+                        chat.photo = photo
                         changed = True
                     if chat.muted != muted:
                         chat.muted = muted
@@ -338,9 +395,9 @@ class ChatListUpdateEvent(Event):
                         chat_updates.append(enum_to_str(asdict(chat)))
                 else:
                     chat = ChatListItem(
-                        id=jid,
-                        name=info["name"],
-                        photo=info["photo"],
+                        id=g.jid,
+                        name=g.name,
+                        photo=photo,
                         last_message="",
                         date="",
                         last_message_timestamp=0,
@@ -348,6 +405,7 @@ class ChatListUpdateEvent(Event):
                         unread_count=0,
                         is_group=True,
                         muted=muted,
+                        name_updated_at=now,
                     )
                     kv.put(key, asdict(chat))
                     chat_updates.append(enum_to_str(asdict(chat)))

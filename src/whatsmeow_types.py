@@ -393,6 +393,14 @@ class ReceiptEvent:
 
 
 @dataclass
+class BusinessNameEvent:
+    JID: str = ""
+    Message: MessageInfo = field(default_factory=MessageInfo)
+    OldBusinessName: str = ""
+    NewBusinessName: str = ""
+
+
+@dataclass
 class PushNameEvent:
     JID: str = ""
     JIDAlt: str = ""

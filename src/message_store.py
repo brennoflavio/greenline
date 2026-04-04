@@ -8,11 +8,37 @@ from constants import GROUP_JID_SUFFIX, WHATSAPP_JID_SUFFIX
 from models import ChatListItem, Message, MessageType, ReadReceipt
 from ut_components.config import get_cache_path
 from ut_components.kv import KV
-from whatsmeow_types import MessageEvent
+from whatsmeow_types import MessageEvent, MessageInfo
 
 
 def _get_thumbnail_dir() -> str:
     return os.path.join(get_cache_path(), "thumbnails")
+
+
+def update_chat_name(
+    chat: ChatListItem,
+    timestamp: int,
+    *,
+    full_name: str = "",
+    push_name: str = "",
+    business_name: str = "",
+) -> bool:
+    if timestamp < chat.name_updated_at:
+        return False
+    changed = False
+    if full_name and chat.full_name != full_name:
+        chat.full_name = full_name
+        changed = True
+    if push_name and chat.push_name != push_name:
+        chat.push_name = push_name
+        changed = True
+    if business_name and chat.business_name != business_name:
+        chat.business_name = business_name
+        changed = True
+    if changed:
+        chat.name_updated_at = timestamp
+        chat.name = chat.full_name or chat.push_name or chat.business_name or chat.id
+    return changed
 
 
 def resolve_sender(sender_jid: str, push_name: str = "") -> Tuple[str, str]:
@@ -149,14 +175,18 @@ def _message_preview(msg: Message) -> str:
     return previews.get(msg.type, msg.type)
 
 
-def upsert_chat(msg: Message, push_name: str) -> ChatListItem:
+def upsert_chat(msg: Message, info: MessageInfo) -> ChatListItem:
     chat_key = f"chat:{msg.chat_id}"
     with KV() as kv:
         existing = kv.get(chat_key)
 
     preview = _message_preview(msg)
-
     is_group = msg.chat_id.endswith(GROUP_JID_SUFFIX)
+
+    push_name = info.PushName
+    business_name = ""
+    if info.VerifiedName and info.VerifiedName.Details:
+        business_name = info.VerifiedName.Details.verifiedName
 
     if existing is not None:
         chat = ChatListItem(**existing)
@@ -169,13 +199,20 @@ def upsert_chat(msg: Message, push_name: str) -> ChatListItem:
             else:
                 chat.read_receipt = ReadReceipt.NONE
                 chat.unread_count += 1
-        if not is_group and push_name and chat.name == chat.id:
-            chat.name = push_name
+        if not is_group:
+            update_chat_name(
+                chat,
+                msg.timestamp_unix,
+                push_name=push_name,
+                business_name=business_name,
+            )
     else:
-        name = msg.chat_id if is_group else (push_name or msg.chat_id)
+        display_name = msg.chat_id
+        if not is_group:
+            display_name = push_name or business_name or msg.chat_id
         chat = ChatListItem(
             id=msg.chat_id,
-            name=name,
+            name=display_name,
             photo="",
             last_message=preview,
             date=msg.timestamp,
@@ -183,6 +220,9 @@ def upsert_chat(msg: Message, push_name: str) -> ChatListItem:
             read_receipt=msg.read_receipt if msg.is_outgoing else ReadReceipt.NONE,
             unread_count=0 if msg.is_outgoing else 1,
             is_group=is_group,
+            push_name=push_name if not is_group else "",
+            business_name=business_name if not is_group else "",
+            name_updated_at=msg.timestamp_unix,
         )
 
     with KV() as kv:
@@ -238,5 +278,5 @@ def store_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = None) -> Op
     with KV() as kv:
         kv.put(key, data)
 
-    chat = upsert_chat(msg, evt.Info.PushName)
+    chat = upsert_chat(msg, evt.Info)
     return StoredMessage(message=msg, chat=chat)
