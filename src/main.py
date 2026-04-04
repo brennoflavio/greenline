@@ -31,7 +31,6 @@ from daemon import (
     is_daemon_active,
     is_daemon_installed,
     remove_background_service_files,
-    restart_daemon,
     run_subprocess,
 )
 from daemon_types import Contact as DaemonContact
@@ -207,8 +206,6 @@ def clear_data() -> ClearDataResponse:
     except Exception:
         pass
 
-    run_subprocess(["systemctl", "--user", "stop", "greenline.service"])
-
     config_path = get_config_path()
     if os.path.exists(config_path):
         shutil.rmtree(config_path)
@@ -217,7 +214,7 @@ def clear_data() -> ClearDataResponse:
     if os.path.exists(cache_path):
         shutil.rmtree(cache_path)
 
-    restart_daemon()
+    remove_background_service_files()
 
     return ClearDataResponse(success=True)
 

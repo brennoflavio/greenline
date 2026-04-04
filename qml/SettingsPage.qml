@@ -170,7 +170,7 @@ Page {
             id: dialog
 
             title: i18n.tr("Clear Data")
-            text: i18n.tr("This will log out from WhatsApp and delete all local data including messages, settings and cache. You will need to scan the QR code again to reconnect.")
+            text: i18n.tr("This will log out from WhatsApp, delete all local data including messages, settings and cache, and uninstall the daemon. You will need to reinstall the daemon and scan the QR code again to reconnect.")
 
             Button {
                 text: i18n.tr("Cancel")
