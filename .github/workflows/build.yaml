@@ -1,0 +1,32 @@
+name: Build Greenline
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Pull Clickable
+        run: |
+          docker pull clickable/ci-ut24.04-1.x-arm64:latest
+
+      - name: Build
+        run: |
+          docker run --env UV_INSTALL_DIR=/usr/local --volume ./:/app clickable/ci-ut24.04-1.x-arm64:latest bash -c "cd /app && clickable build --arch arm64"
+
+      - name: Create alpha release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: alpha-${{ github.sha }}
+          name: Alpha Build ${{ github.sha }}
+          prerelease: true
+          files: build/aarch64-linux-gnu/app/*.click

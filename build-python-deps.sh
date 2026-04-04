@@ -7,4 +7,5 @@ export UV_PROJECT_ENVIRONMENT="$VENV_PATH"
 
 /usr/local/uv sync
 
-cp -r "$VENV_PATH/lib/python3.14/site-packages/"* .
+PYTHON_DIR=$(ls "$VENV_PATH/lib/")
+cp -r "$VENV_PATH/lib/$PYTHON_DIR/site-packages/"* .
