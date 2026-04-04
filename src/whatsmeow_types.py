@@ -670,3 +670,30 @@ class HistorySyncData:
 @dataclass
 class HistorySyncEvent:
     Data: HistorySyncData = field(default_factory=HistorySyncData)
+
+
+@dataclass
+class QREvent:
+    Codes: List[str] = field(default_factory=list)
+
+
+@dataclass
+class AppStateSyncCompleteEvent:
+    Name: str = ""
+    Version: int = 0
+    Recovery: bool = False
+
+
+@dataclass
+class AppStateSyncErrorEvent:
+    Name: str = ""
+    Error: Optional[Dict[str, Any]] = None
+    FullSync: bool = False
+
+
+@dataclass
+class PairSuccessEvent:
+    ID: str = ""
+    LID: str = ""
+    BusinessName: str = ""
+    Platform: str = ""

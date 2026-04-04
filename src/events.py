@@ -271,10 +271,14 @@ class DaemonEventHandler(Event):
                 chat_updates.update(updated)
             elif event.event_type in (
                 "AppState",
+                "AppStateSyncComplete",
+                "AppStateSyncError",
                 "Connected",
+                "KeepAliveTimeout",
                 "OfflineSyncCompleted",
                 "OfflineSyncPreview",
-                "KeepAliveTimeout",
+                "PairSuccess",
+                "QR",
             ):
                 pass
             else:
