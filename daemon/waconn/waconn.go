@@ -2,6 +2,7 @@ package waconn
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -292,11 +293,53 @@ func (c *Client) SetMuted(ctx context.Context, chat types.JID, muted bool) error
 		return nil
 	}
 	c.log.Warn("SetMuted: first attempt failed, resyncing app state", "error", err)
-	if syncErr := c.waCli.FetchAppState(ctx, patch.Type, true, false); syncErr != nil {
-		c.log.Error("SetMuted: full resync failed", "error", syncErr)
-		return fmt.Errorf("app state conflict and resync failed: %w", err)
+	syncErr := c.waCli.FetchAppState(ctx, patch.Type, true, false)
+	if syncErr == nil {
+		return c.waCli.SendAppState(ctx, patch)
 	}
+	c.log.Error("SetMuted: full resync failed", "error", syncErr)
+	if !errors.Is(syncErr, appstate.ErrMismatchingLTHash) {
+		return fmt.Errorf("app state conflict and resync failed: %w", syncErr)
+	}
+	// LTHash is irrecoverably out of sync. Request the primary device to send
+	// an unencrypted snapshot which bypasses LTHash validation.
+	c.log.Info("SetMuted: requesting app state recovery from primary device")
+	if recoverErr := c.requestAppStateRecovery(ctx, patch.Type); recoverErr != nil {
+		return fmt.Errorf("app state recovery failed: %w", recoverErr)
+	}
+	c.log.Info("SetMuted: recovery completed, retrying")
 	return c.waCli.SendAppState(ctx, patch)
+}
+
+func (c *Client) requestAppStateRecovery(ctx context.Context, name appstate.WAPatchName) error {
+	recoveryCh := make(chan error, 1)
+	handlerID := c.waCli.AddEventHandler(func(evt interface{}) {
+		switch v := evt.(type) {
+		case *events.AppStateSyncComplete:
+			if v.Name == name && v.Recovery {
+				recoveryCh <- nil
+			}
+		case *events.AppStateSyncError:
+			if v.Name == name {
+				recoveryCh <- v.Error
+			}
+		}
+	})
+	defer c.waCli.RemoveEventHandler(handlerID)
+
+	msg := whatsmeow.BuildAppStateRecoveryRequest(name)
+	if _, err := c.waCli.SendPeerMessage(ctx, msg); err != nil {
+		return fmt.Errorf("failed to send recovery request: %w", err)
+	}
+
+	select {
+	case err := <-recoveryCh:
+		return err
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-time.After(30 * time.Second):
+		return fmt.Errorf("timed out waiting for recovery response")
+	}
 }
 
 type slogAdapter struct {
