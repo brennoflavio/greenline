@@ -9,6 +9,7 @@ from typing import Any, Dict, Optional
 import pyotherside
 from dacite import from_dict
 
+from history_sync import handle_history_sync
 from message_store import store_message, update_chat_name
 from models import ChatListItem, ReadReceipt
 from receipt_store import process_receipt
@@ -251,6 +252,9 @@ class DaemonEventHandler(Event):
                 _handle_push_name(event, chat_updates)
             elif event.event_type == "BusinessName":
                 _handle_business_name(event, chat_updates)
+            elif event.event_type == "HistorySync":
+                updated = handle_history_sync(event)
+                chat_updates.update(updated)
             elif event.event_type in (
                 "AppState",
                 "Connected",
