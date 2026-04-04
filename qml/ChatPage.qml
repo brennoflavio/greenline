@@ -1,4 +1,5 @@
 import Lomiri.Components 1.3
+import Lomiri.Components.Popups 1.3
 import Lomiri.Content 1.3
 import QtGraphicalEffects 1.0
 import QtQuick 2.7
@@ -28,6 +29,38 @@ Page {
             delete d2[messageId];
             downloadingIds = d2;
             messagesChanged();
+        });
+    }
+
+    function sendVideoMessage(filePath) {
+        var tempId = "pending-" + Date.now();
+        var now = new Date();
+        var hours = now.getHours().toString();
+        if (hours.length < 2)
+            hours = "0" + hours;
+
+        var minutes = now.getMinutes().toString();
+        if (minutes.length < 2)
+            minutes = "0" + minutes;
+
+        var pendingMsg = {
+            "id": tempId,
+            "chat_id": chatId,
+            "type": "video",
+            "is_outgoing": true,
+            "text": "",
+            "caption": "",
+            "timestamp": hours + ":" + minutes,
+            "read_receipt": "",
+            "send_status": "pending",
+            "temp_id": tempId,
+            "media_path": "file://" + filePath
+        };
+        var newMessages = messages.slice();
+        newMessages.push(pendingMsg);
+        messages = newMessages;
+        messagesChanged();
+        python.call('main.send_video_message', [chatId, filePath, "", tempId], function() {
         });
     }
 
@@ -324,6 +357,8 @@ Page {
             }
 
             Icon {
+                id: attachmentIcon
+
                 name: "attachment"
                 width: units.gu(3)
                 height: units.gu(3)
@@ -332,7 +367,7 @@ Page {
 
                 MouseArea {
                     anchors.fill: parent
-                    onClicked: pageStack.push(mediaPickerPage)
+                    onClicked: PopupUtils.open(attachmentDialog)
                 }
 
             }
@@ -417,6 +452,40 @@ Page {
     }
 
     Component {
+        id: attachmentDialog
+
+        Dialog {
+            id: attachDialog
+
+            title: i18n.tr("Send Attachment")
+
+            Button {
+                text: i18n.tr("Photo")
+                onClicked: {
+                    PopupUtils.close(attachDialog);
+                    pageStack.push(mediaPickerPage);
+                }
+            }
+
+            Button {
+                text: i18n.tr("Video")
+                onClicked: {
+                    PopupUtils.close(attachDialog);
+                    pageStack.push(videoPickerPage);
+                }
+            }
+
+            Button {
+                text: i18n.tr("Cancel")
+                color: theme.palette.normal.base
+                onClicked: PopupUtils.close(attachDialog)
+            }
+
+        }
+
+    }
+
+    Component {
         id: mediaPickerPage
 
         Page {
@@ -467,6 +536,68 @@ Page {
                         onTriggered: {
                             if (pickerPageInstance.activeTransfer)
                                 pickerPageInstance.activeTransfer.state = ContentTransfer.Aborted;
+
+                            pageStack.pop();
+                        }
+                    }
+                ]
+            }
+
+        }
+
+    }
+
+    Component {
+        id: videoPickerPage
+
+        Page {
+            id: videoPickerPageInstance
+
+            property var activeTransfer
+
+            ContentPeerPicker {
+                contentType: ContentType.Videos
+                handler: ContentHandler.Source
+                onPeerSelected: {
+                    videoPickerPageInstance.activeTransfer = peer.request(contentStore);
+                    videoPickerPageInstance.activeTransfer.selectionType = ContentTransfer.Single;
+                    videoPickerPageInstance.activeTransfer.stateChanged.connect(function() {
+                        if (videoPickerPageInstance.activeTransfer.state === ContentTransfer.Charged) {
+                            if (videoPickerPageInstance.activeTransfer.items.length > 0) {
+                                var fileUrl = videoPickerPageInstance.activeTransfer.items[0].url.toString();
+                                var filePath = fileUrl.replace("file://", "");
+                                pageStack.pop();
+                                sendVideoMessage(filePath);
+                            }
+                        }
+                    });
+                }
+                onCancelPressed: {
+                    if (videoPickerPageInstance.activeTransfer)
+                        videoPickerPageInstance.activeTransfer.state = ContentTransfer.Aborted;
+
+                    pageStack.pop();
+                }
+
+                anchors {
+                    top: videoPickerHeader.bottom
+                    left: parent.left
+                    right: parent.right
+                    bottom: parent.bottom
+                }
+
+            }
+
+            header: PageHeader {
+                id: videoPickerHeader
+
+                title: i18n.tr("Send Video")
+                leadingActionBar.actions: [
+                    Action {
+                        iconName: "back"
+                        onTriggered: {
+                            if (videoPickerPageInstance.activeTransfer)
+                                videoPickerPageInstance.activeTransfer.state = ContentTransfer.Aborted;
 
                             pageStack.pop();
                         }

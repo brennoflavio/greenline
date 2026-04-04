@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-04 18:47+0000\n"
+"POT-Creation-Date: 2026-04-04 19:54+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -55,21 +55,41 @@ msgstr ""
 msgid "No chats found"
 msgstr ""
 
-#: ../qml/ChatPage.qml:344
+#: ../qml/ChatPage.qml:379
 msgid "Type a message..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:461
+#: ../qml/ChatPage.qml:460
+msgid "Send Attachment"
+msgstr ""
+
+#: ../qml/ChatPage.qml:463
+msgid "Photo"
+msgstr ""
+
+#: ../qml/ChatPage.qml:471 ../qml/VideoPreviewPage.qml:331
+msgid "Video"
+msgstr ""
+
+#: ../qml/ChatPage.qml:479 ../qml/SettingsPage.qml:176
+msgid "Cancel"
+msgstr ""
+
+#: ../qml/ChatPage.qml:531
 msgid "Send Photo"
 msgstr ""
 
-#: ../qml/ChatPage.qml:485 ../qml/DocumentPreviewPage.qml:223
+#: ../qml/ChatPage.qml:593
+msgid "Send Video"
+msgstr ""
+
+#: ../qml/ChatPage.qml:617 ../qml/DocumentPreviewPage.qml:223
 #: ../qml/ImagePreviewPage.qml:190 ../qml/VideoPreviewPage.qml:335
 #: ../qml/ut_components/AppHeader.qml:78
 msgid "Back"
 msgstr ""
 
-#: ../qml/ChatPage.qml:557
+#: ../qml/ChatPage.qml:689
 msgid "online"
 msgstr ""
 
@@ -185,14 +205,6 @@ msgid ""
 "This will log out from WhatsApp, delete all local data including messages, "
 "settings and cache, and uninstall the daemon. You will need to reinstall the "
 "daemon and scan the QR code again to reconnect."
-msgstr ""
-
-#: ../qml/SettingsPage.qml:176
-msgid "Cancel"
-msgstr ""
-
-#: ../qml/VideoPreviewPage.qml:331
-msgid "Video"
 msgstr ""
 
 #: ../qml/components/DocumentMessage.qml:64
