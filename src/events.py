@@ -13,7 +13,7 @@ from history_sync import handle_history_sync
 from message_store import store_message, update_chat_name
 from models import ChatListItem, ReadReceipt
 from receipt_store import process_receipt
-from rpc import DaemonRPC, RateLimitError
+from rpc import DaemonNotReadyError, DaemonRPC, RateLimitError
 from ut_components.config import get_cache_path
 from ut_components.event import Event
 from ut_components.kv import KV
@@ -50,7 +50,10 @@ class SessionStatusEvent(Event):
         )
 
     def trigger(self, metadata: Optional[Dict[str, Any]]) -> Optional[SessionStatusResponse]:
-        result = DaemonRPC().get_session_status()
+        try:
+            result = DaemonRPC().get_session_status()
+        except (ConnectionRefusedError, DaemonNotReadyError):
+            return None
         qr_image_path = ""
 
         if not result.LoggedIn and result.QRImage:
@@ -227,6 +230,12 @@ class DaemonEventHandler(Event):
         super().__init__(id="daemon-event", execution_interval=timedelta(seconds=2))
 
     def trigger(self, metadata: Optional[Dict[str, Any]]) -> None:
+        try:
+            return self._do_trigger()
+        except (ConnectionRefusedError, DaemonNotReadyError):
+            return None
+
+    def _do_trigger(self) -> None:
         with KV() as kv:
             last_id = kv.get(LAST_EVENT_ID_KEY, default=0)
 
@@ -292,7 +301,7 @@ class ChatListUpdateEvent(Event):
         try:
             self._sync_contacts(chat_updates)
             self._sync_groups(chat_updates)
-        except RateLimitError:
+        except (RateLimitError, ConnectionRefusedError, DaemonNotReadyError):
             return None
 
         if chat_updates:

@@ -20,6 +20,10 @@ class RateLimitError(Exception):
     pass
 
 
+class DaemonNotReadyError(Exception):
+    pass
+
+
 class DaemonRPC:
     def __init__(self, socket_path: str = DAEMON_SOCKET_PATH) -> None:
         self._socket_path = socket_path
@@ -45,7 +49,7 @@ class DaemonRPC:
             sock.close()
 
         if not data:
-            raise Exception("Daemon returned empty response")
+            raise DaemonNotReadyError("Daemon returned empty response")
         response = json.loads(data.decode())
         if response.get("error"):
             error_msg = response["error"]
