@@ -376,27 +376,32 @@ Page {
                         });
                     }
                 });
-                setHandler('message-upsert', function(message) {
-                    if (message.chat_id !== chatId)
-                        return ;
+                setHandler('message-upsert', function(messageList) {
+                    var updated = messages.slice();
+                    var hasNewIncoming = false;
+                    for (var i = 0; i < messageList.length; i++) {
+                        var message = messageList[i];
+                        if (message.chat_id !== chatId)
+                            continue;
 
-                    var found = false;
-                    var updated = messages.map(function(m) {
-                        if (m.id === message.id || (message.temp_id && m.id === message.temp_id)) {
-                            found = true;
-                            return message;
+                        var found = false;
+                        for (var j = 0; j < updated.length; j++) {
+                            if (updated[j].id === message.id || (message.temp_id && updated[j].id === message.temp_id)) {
+                                updated[j] = message;
+                                found = true;
+                                break;
+                            }
                         }
-                        return m;
-                    });
-                    if (found) {
-                        messages = updated;
-                    } else {
-                        var newMessages = messages.slice();
-                        newMessages.push(message);
-                        messages = newMessages;
+                        if (!found) {
+                            updated.push(message);
+                            if (!message.is_outgoing)
+                                hasNewIncoming = true;
+
+                        }
                     }
+                    messages = updated;
                     messagesChanged();
-                    if (!message.is_outgoing && !found)
+                    if (hasNewIncoming)
                         python.call('main.mark_messages_as_read', [chatId], function() {
                     });
 

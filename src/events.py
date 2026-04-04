@@ -71,7 +71,11 @@ class SessionStatusEvent(Event):
 LAST_EVENT_ID_KEY = "daemon:last_event_id"
 
 
-def _handle_message(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None:
+def _handle_message(
+    event: Any,
+    chat_updates: dict[str, dict[str, Any]],
+    message_upserts: list[dict[str, Any]],
+) -> None:
     raw = json.loads(event.payload or "{}")
     evt = from_dict(data_class=MessageEvent, data=raw)
     if evt.Info.Chat == STATUS_BROADCAST_JID:
@@ -79,7 +83,7 @@ def _handle_message(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None
     evt.Info.Chat = DaemonRPC().ensure_jid(evt.Info.Chat)
     stored = store_message(evt, raw=raw)
     if stored is not None:
-        pyotherside.send("message-upsert", enum_to_str(asdict(stored.message)))
+        message_upserts.append(enum_to_str(asdict(stored.message)))
         chat_updates[stored.chat.id] = enum_to_str(asdict(stored.chat))
 
 
@@ -245,10 +249,11 @@ class DaemonEventHandler(Event):
 
         max_id = last_id
         chat_updates: dict[str, dict[str, Any]] = {}
+        message_upserts: list[dict[str, Any]] = []
         message_updates: list[dict[str, Any]] = []
         for event in reply.Events:
             if event.event_type == "Message":
-                _handle_message(event, chat_updates)
+                _handle_message(event, chat_updates, message_upserts)
             elif event.event_type == "Receipt":
                 _handle_receipt(event, chat_updates, message_updates)
             elif event.event_type == "Contact":
@@ -277,8 +282,9 @@ class DaemonEventHandler(Event):
             if event.id > max_id:
                 max_id = event.id
 
-        for msg in message_updates:
-            pyotherside.send("message-upsert", msg)
+        all_message_upserts = message_upserts + message_updates
+        if all_message_upserts:
+            pyotherside.send("message-upsert", all_message_upserts)
 
         if chat_updates:
             pyotherside.send("chat-list-update", list(chat_updates.values()))

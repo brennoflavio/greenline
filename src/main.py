@@ -341,7 +341,7 @@ def send_text_message(chat_id: str, text: str, temp_id: str = "") -> SuccessResp
             send_status="failed",
             temp_id=temp_id,
         )
-        pyotherside.send("message-upsert", _enum_to_str(asdict(failed_msg)))  # type: ignore[no-untyped-call]
+        pyotherside.send("message-upsert", [_enum_to_str(asdict(failed_msg))])  # type: ignore[no-untyped-call]
         return SuccessResponse(success=False, message="Failed to send message")
 
     ts = result["Timestamp"]
@@ -362,7 +362,7 @@ def send_text_message(chat_id: str, text: str, temp_id: str = "") -> SuccessResp
         kv.put(key, asdict(msg))
 
     chat = upsert_chat(msg, MessageInfo())
-    pyotherside.send("message-upsert", _enum_to_str(asdict(msg)))  # type: ignore[no-untyped-call]
+    pyotherside.send("message-upsert", [_enum_to_str(asdict(msg))])  # type: ignore[no-untyped-call]
     pyotherside.send("chat-list-update", [_enum_to_str(asdict(chat))])  # type: ignore[no-untyped-call]
 
     return SuccessResponse(success=True, message="")
@@ -399,14 +399,14 @@ def send_image_message(chat_id: str, file_path: str, caption: str = "", temp_id:
         send_status="pending",
         temp_id=temp_id,
     )
-    pyotherside.send("message-upsert", _enum_to_str(asdict(pending_msg)))  # type: ignore[no-untyped-call]
+    pyotherside.send("message-upsert", [_enum_to_str(asdict(pending_msg))])  # type: ignore[no-untyped-call]
 
     try:
         rpc = DaemonRPC()
         result = rpc.send_message(chat_id, "image", file_path=cached_path, caption=caption)
     except Exception:
         pending_msg.send_status = "failed"
-        pyotherside.send("message-upsert", _enum_to_str(asdict(pending_msg)))  # type: ignore[no-untyped-call]
+        pyotherside.send("message-upsert", [_enum_to_str(asdict(pending_msg))])  # type: ignore[no-untyped-call]
         return SuccessResponse(success=False, message="Failed to send image")
 
     ts = result["Timestamp"]
@@ -428,7 +428,7 @@ def send_image_message(chat_id: str, file_path: str, caption: str = "", temp_id:
         kv.put(key, asdict(msg))
 
     chat = upsert_chat(msg, MessageInfo())
-    pyotherside.send("message-upsert", _enum_to_str(asdict(msg)))  # type: ignore[no-untyped-call]
+    pyotherside.send("message-upsert", [_enum_to_str(asdict(msg))])  # type: ignore[no-untyped-call]
     pyotherside.send("chat-list-update", [_enum_to_str(asdict(chat))])  # type: ignore[no-untyped-call]
 
     return SuccessResponse(success=True, message="")
@@ -512,6 +512,6 @@ def download_media(chat_id: str, message_id: str, media_type: str) -> DownloadMe
 
     msg_fields = {f.name for f in Message.__dataclass_fields__.values()}
     msg_dict = _enum_to_str({k: v for k, v in entry.items() if k in msg_fields})  # type: ignore[no-untyped-call]
-    pyotherside.send("message-upsert", msg_dict)
+    pyotherside.send("message-upsert", [msg_dict])
 
     return DownloadMediaResponse(success=True, media_path=media_path, message="")

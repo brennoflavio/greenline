@@ -279,16 +279,20 @@ Page {
                         chats = result.chats;
 
                 });
-                setHandler('message-upsert', function(message) {
-                    var newChats = chats.map(function(chat) {
-                        if (chat.id === message.chat_id && message.timestamp_unix >= chat.last_message_timestamp) {
-                            chat.last_message = messagePreview(message);
-                            chat.date = message.timestamp;
-                            chat.last_message_timestamp = message.timestamp_unix;
-                            chat.read_receipt = message.is_outgoing ? message.read_receipt : "";
+                setHandler('message-upsert', function(messages) {
+                    var newChats = chats.slice();
+                    for (var i = 0; i < messages.length; i++) {
+                        var message = messages[i];
+                        for (var j = 0; j < newChats.length; j++) {
+                            var chat = newChats[j];
+                            if (chat.id === message.chat_id && message.timestamp_unix >= chat.last_message_timestamp) {
+                                chat.last_message = messagePreview(message);
+                                chat.date = message.timestamp;
+                                chat.last_message_timestamp = message.timestamp_unix;
+                                chat.read_receipt = message.is_outgoing ? message.read_receipt : "";
+                            }
                         }
-                        return chat;
-                    });
+                    }
                     newChats.sort(function(a, b) {
                         return b.last_message_timestamp - a.last_message_timestamp;
                     });
