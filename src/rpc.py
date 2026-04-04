@@ -128,6 +128,9 @@ class DaemonRPC:
         data = self._call("Service.GetChatSettings", {"ChatJID": chat_jid})
         return from_dict(data_class=GetChatSettingsReply, data=data)
 
+    def logout(self) -> None:
+        self._call("Service.Logout")
+
     def set_muted(self, chat_jid: str, muted: bool) -> None:
         self._call("Service.SetMuted", {"ChatJID": chat_jid, "Muted": muted})
 

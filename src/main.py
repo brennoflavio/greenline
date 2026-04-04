@@ -21,6 +21,8 @@ setup(APP_NAME, CRASH_REPORT_URL)
 
 import base64
 import os
+import shutil
+import time
 from dataclasses import asdict, dataclass
 
 from daemon import (
@@ -29,6 +31,8 @@ from daemon import (
     is_daemon_active,
     is_daemon_installed,
     remove_background_service_files,
+    restart_daemon,
+    run_subprocess,
 )
 from daemon_types import Contact as DaemonContact
 from events import (
@@ -50,6 +54,7 @@ from models import (
     ReadReceipt,
 )
 from rpc import DaemonRPC
+from ut_components.config import get_cache_path, get_config_path
 from ut_components.crash import crash_reporter
 from ut_components.event import get_event_dispatcher
 from ut_components.kv import KV
@@ -108,8 +113,18 @@ def ping_daemon() -> SuccessResponse:
 @crash_reporter
 @dataclass_to_dict
 def check_daemon_status() -> DaemonStatusResponse:
+    installed = is_daemon_installed()
+    if installed and not is_daemon_active():
+        run_subprocess(["systemctl", "--user", "start", "greenline.service"])
+        for _ in range(10):
+            time.sleep(0.5)
+            try:
+                DaemonRPC().ping()
+                break
+            except Exception:
+                continue
     return DaemonStatusResponse(
-        installed=is_daemon_installed(),
+        installed=installed,
         active=is_daemon_active(),
     )
 
@@ -184,9 +199,26 @@ def get_contact_list() -> ContactListResponse:
 @crash_reporter
 @dataclass_to_dict
 def clear_data() -> ClearDataResponse:
-    with KV() as kv:
-        kv.delete_partial("chat:")
-        kv.delete_partial("message:")
+    dispatcher = get_event_dispatcher()
+    dispatcher.stop()  # type: ignore[no-untyped-call]
+
+    try:
+        DaemonRPC().logout()
+    except Exception:
+        pass
+
+    run_subprocess(["systemctl", "--user", "stop", "greenline.service"])
+
+    config_path = get_config_path()
+    if os.path.exists(config_path):
+        shutil.rmtree(config_path)
+
+    cache_path = get_cache_path()
+    if os.path.exists(cache_path):
+        shutil.rmtree(cache_path)
+
+    restart_daemon()
+
     return ClearDataResponse(success=True)
 
 
@@ -346,8 +378,6 @@ def send_image_message(chat_id: str, file_path: str, caption: str = "", temp_id:
     from datetime import datetime
 
     import pyotherside
-
-    from ut_components.config import get_cache_path
 
     cache_dir = os.path.join(get_cache_path(), "outgoing")
     os.makedirs(cache_dir, exist_ok=True)

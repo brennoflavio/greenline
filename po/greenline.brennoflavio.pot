@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-03 22:00+0000\n"
+"POT-Creation-Date: 2026-04-04 03:37+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -122,7 +122,7 @@ msgstr ""
 msgid "Group"
 msgstr ""
 
-#: ../qml/ProfilePage.qml:102 ../qml/SettingsPage.qml:162
+#: ../qml/ProfilePage.qml:102 ../qml/SettingsPage.qml:194
 #: ../qml/ut_components/AppHeader.qml:94
 msgid "Settings"
 msgstr ""
@@ -139,44 +139,56 @@ msgstr ""
 msgid "Profile"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:33
+#: ../qml/SettingsPage.qml:43
 msgid "Daemon"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:47
+#: ../qml/SettingsPage.qml:57
 msgid "Status"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:60
+#: ../qml/SettingsPage.qml:70
 msgid "Not installed"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:60
+#: ../qml/SettingsPage.qml:70
 msgid "Running"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:60
+#: ../qml/SettingsPage.qml:70
 msgid "Stopped"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:74
+#: ../qml/SettingsPage.qml:84
 msgid "Install Daemon"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:74
+#: ../qml/SettingsPage.qml:84
 msgid "Uninstall Daemon"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:100
+#: ../qml/SettingsPage.qml:110
 msgid "Data"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:114
+#: ../qml/SettingsPage.qml:124
 msgid "Clear all local data including messages and settings"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:129
+#: ../qml/SettingsPage.qml:139 ../qml/SettingsPage.qml:172
+#: ../qml/SettingsPage.qml:181
 msgid "Clear Data"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:173
+msgid ""
+"This will log out from WhatsApp and delete all local data including "
+"messages, settings and cache. You will need to scan the QR code again to "
+"reconnect."
+msgstr ""
+
+#: ../qml/SettingsPage.qml:176
+msgid "Cancel"
 msgstr ""
 
 #: ../qml/VideoPreviewPage.qml:331

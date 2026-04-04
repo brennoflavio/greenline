@@ -1,4 +1,5 @@
 import Lomiri.Components 1.3
+import Lomiri.Components.Popups 1.3
 import QtQuick 2.7
 import QtQuick.Layouts 1.3
 import io.thp.pyotherside 1.4
@@ -10,6 +11,15 @@ Page {
     property bool daemonInstalled: false
     property bool daemonActive: false
     property bool checkingDaemon: true
+
+    function clearData() {
+        python.call('main.clear_data', [], function(result) {
+            if (result.success) {
+                pageStack.clear();
+                pageStack.push(Qt.resolvedUrl("DaemonSetupPage.qml"));
+            }
+        });
+    }
 
     Flickable {
         contentHeight: content.height + units.gu(4)
@@ -130,12 +140,7 @@ Page {
                 iconName: "reset"
                 backgroundColor: theme.palette.normal.negative
                 onClicked: {
-                    python.call('main.clear_data', [], function(result) {
-                        if (result.success)
-                            pageStack.clear();
-
-                        pageStack.push(Qt.resolvedUrl("ChatListPage.qml"));
-                    });
+                    PopupUtils.open(confirmClearDataDialog);
                 }
             }
 
@@ -156,6 +161,33 @@ Page {
                 });
             });
         }
+    }
+
+    Component {
+        id: confirmClearDataDialog
+
+        Dialog {
+            id: dialog
+
+            title: i18n.tr("Clear Data")
+            text: i18n.tr("This will log out from WhatsApp and delete all local data including messages, settings and cache. You will need to scan the QR code again to reconnect.")
+
+            Button {
+                text: i18n.tr("Cancel")
+                onClicked: PopupUtils.close(dialog)
+            }
+
+            Button {
+                text: i18n.tr("Clear Data")
+                color: theme.palette.normal.negative
+                onClicked: {
+                    PopupUtils.close(dialog);
+                    settingsPage.clearData();
+                }
+            }
+
+        }
+
     }
 
     header: AppHeader {

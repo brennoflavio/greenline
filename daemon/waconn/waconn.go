@@ -218,6 +218,10 @@ func (c *Client) AddEventHandler(handler func(evt interface{})) {
 	c.waCli.AddEventHandler(handler)
 }
 
+func (c *Client) Logout(ctx context.Context) error {
+	return c.waCli.Logout(ctx)
+}
+
 func (c *Client) Disconnect() {
 	c.waCli.Disconnect()
 	c.container.Close()

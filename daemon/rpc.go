@@ -44,6 +44,10 @@ func (s *Service) Ping(args *struct{}, reply *string) error {
 	return nil
 }
 
+func (s *Service) Logout(args *struct{}, reply *struct{}) error {
+	return s.client.Logout(context.Background())
+}
+
 type VersionReply struct {
 	GitCommit string
 }
