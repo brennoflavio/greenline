@@ -55,6 +55,8 @@ class DaemonRPC:
             error_msg = response["error"]
             if "429" in str(error_msg) or "rate" in str(error_msg).lower():
                 raise RateLimitError(error_msg)
+            if error_msg == "not logged in":
+                raise DaemonNotReadyError(error_msg)
             raise Exception(error_msg)
         return response.get("result")
 
