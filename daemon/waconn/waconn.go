@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"sync"
 	"time"
 
 	"go.mau.fi/whatsmeow"
@@ -27,6 +28,9 @@ type Client struct {
 	log          *slog.Logger
 	disconnectCh chan struct{}
 	stopCh       chan string
+
+	recoveryMu       sync.Mutex
+	recoveryLastTime map[appstate.WAPatchName]time.Time
 }
 
 func New(dbPath string, logger *slog.Logger) (*Client, error) {
@@ -54,11 +58,12 @@ func New(dbPath string, logger *slog.Logger) (*Client, error) {
 	waCli := whatsmeow.NewClient(device, waLogger.Sub("client"))
 
 	c := &Client{
-		waCli:        waCli,
-		container:    container,
-		log:          logger,
-		disconnectCh: make(chan struct{}, 1),
-		stopCh:       make(chan string, 1),
+		waCli:            waCli,
+		container:        container,
+		log:              logger,
+		disconnectCh:     make(chan struct{}, 1),
+		stopCh:           make(chan string, 1),
+		recoveryLastTime: make(map[appstate.WAPatchName]time.Time),
 	}
 
 	waCli.AddEventHandler(c.handleEvent)
@@ -96,6 +101,10 @@ func (c *Client) handleEvent(evt interface{}) {
 		case c.stopCh <- fmt.Sprintf("temporary ban: %s (expires in %s)",
 			v.Code.String(), v.Expire):
 		default:
+		}
+	case *events.AppStateSyncError:
+		if errors.Is(v.Error, appstate.ErrMismatchingLTHash) {
+			go c.maybeRecoverAppState(v.Name)
 		}
 	}
 }
@@ -293,25 +302,29 @@ func (c *Client) SetMuted(ctx context.Context, chat types.JID, muted bool) error
 		return nil
 	}
 	c.log.Warn("SetMuted: first attempt failed, resyncing app state", "error", err)
-	syncErr := c.waCli.FetchAppState(ctx, patch.Type, true, false)
-	if syncErr == nil {
-		return c.waCli.SendAppState(ctx, patch)
-	}
-	c.log.Error("SetMuted: full resync failed", "error", syncErr)
-	if !errors.Is(syncErr, appstate.ErrMismatchingLTHash) {
+	if syncErr := c.waCli.FetchAppState(ctx, patch.Type, true, false); syncErr != nil {
+		c.log.Error("SetMuted: full resync failed", "error", syncErr)
 		return fmt.Errorf("app state conflict and resync failed: %w", syncErr)
 	}
-	// LTHash is irrecoverably out of sync. Request the primary device to send
-	// an unencrypted snapshot which bypasses LTHash validation.
-	c.log.Info("SetMuted: requesting app state recovery from primary device")
-	if recoverErr := c.requestAppStateRecovery(ctx, patch.Type); recoverErr != nil {
-		return fmt.Errorf("app state recovery failed: %w", recoverErr)
-	}
-	c.log.Info("SetMuted: recovery completed, retrying")
 	return c.waCli.SendAppState(ctx, patch)
 }
 
-func (c *Client) requestAppStateRecovery(ctx context.Context, name appstate.WAPatchName) error {
+const appStateRecoveryCooldown = 5 * time.Minute
+
+func (c *Client) maybeRecoverAppState(name appstate.WAPatchName) {
+	c.recoveryMu.Lock()
+	if time.Since(c.recoveryLastTime[name]) < appStateRecoveryCooldown {
+		c.recoveryMu.Unlock()
+		return
+	}
+	c.recoveryLastTime[name] = time.Now()
+	c.recoveryMu.Unlock()
+
+	c.log.Warn("app state LTHash mismatch detected, requesting recovery from primary device", "collection", string(name))
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
 	recoveryCh := make(chan error, 1)
 	handlerID := c.waCli.AddEventHandler(func(evt interface{}) {
 		switch v := evt.(type) {
@@ -329,16 +342,19 @@ func (c *Client) requestAppStateRecovery(ctx context.Context, name appstate.WAPa
 
 	msg := whatsmeow.BuildAppStateRecoveryRequest(name)
 	if _, err := c.waCli.SendPeerMessage(ctx, msg); err != nil {
-		return fmt.Errorf("failed to send recovery request: %w", err)
+		c.log.Error("app state recovery: failed to send request", "collection", string(name), "error", err)
+		return
 	}
 
 	select {
 	case err := <-recoveryCh:
-		return err
+		if err != nil {
+			c.log.Error("app state recovery failed", "collection", string(name), "error", err)
+		} else {
+			c.log.Info("app state recovery completed", "collection", string(name))
+		}
 	case <-ctx.Done():
-		return ctx.Err()
-	case <-time.After(30 * time.Second):
-		return fmt.Errorf("timed out waiting for recovery response")
+		c.log.Error("app state recovery timed out", "collection", string(name))
 	}
 }
 
