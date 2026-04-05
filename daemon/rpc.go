@@ -508,6 +508,40 @@ func (s *Service) sendVideoMessage(jid types.JID, args *SendMessageArgs) (*waE2E
 	return msg, nil
 }
 
+func (s *Service) sendStickerMessage(jid types.JID, args *SendMessageArgs) (*waE2E.Message, error) {
+	data, err := os.ReadFile(args.FilePath)
+	if err != nil {
+		return nil, fmt.Errorf("read file: %w", err)
+	}
+
+	mimetype := mime.TypeByExtension(filepath.Ext(args.FilePath))
+	if mimetype == "" {
+		mimetype = "image/webp"
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	uploadResp, err := s.client.Upload(ctx, data, whatsmeow.MediaImage)
+	if err != nil {
+		return nil, fmt.Errorf("upload: %w", err)
+	}
+
+	msg := &waE2E.Message{
+		StickerMessage: &waE2E.StickerMessage{
+			Mimetype:      proto.String(mimetype),
+			URL:           &uploadResp.URL,
+			DirectPath:    &uploadResp.DirectPath,
+			MediaKey:      uploadResp.MediaKey,
+			FileEncSHA256: uploadResp.FileEncSHA256,
+			FileSHA256:    uploadResp.FileSHA256,
+			FileLength:    &uploadResp.FileLength,
+		},
+	}
+
+	return msg, nil
+}
+
 func (s *Service) SendMessage(args *SendMessageArgs, reply *SendMessageReply) error {
 	if err := s.requireLogin(); err != nil {
 		return err
@@ -539,6 +573,15 @@ func (s *Service) SendMessage(args *SendMessageArgs, reply *SendMessageReply) er
 		msg, err := s.sendVideoMessage(jid, args)
 		if err != nil {
 			return fmt.Errorf("video message: %w", err)
+		}
+		message = msg
+	case "sticker":
+		if args.FilePath == "" {
+			return fmt.Errorf("file path required for sticker message")
+		}
+		msg, err := s.sendStickerMessage(jid, args)
+		if err != nil {
+			return fmt.Errorf("sticker message: %w", err)
 		}
 		message = msg
 	default:

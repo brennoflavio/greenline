@@ -64,6 +64,39 @@ Page {
         });
     }
 
+    function sendStickerMessage(filePath) {
+        var tempId = "pending-" + Date.now();
+        var now = new Date();
+        var hours = now.getHours().toString();
+        if (hours.length < 2)
+            hours = "0" + hours;
+
+        var minutes = now.getMinutes().toString();
+        if (minutes.length < 2)
+            minutes = "0" + minutes;
+
+        var pendingMsg = {
+            "id": tempId,
+            "chat_id": chatId,
+            "type": "sticker",
+            "is_outgoing": true,
+            "text": "",
+            "caption": "",
+            "timestamp": hours + ":" + minutes,
+            "read_receipt": "",
+            "send_status": "pending",
+            "temp_id": tempId,
+            "media_path": filePath
+        };
+        var newMessages = messages.slice();
+        newMessages.push(pendingMsg);
+        messages = newMessages;
+        messagesChanged();
+        var cleanPath = filePath.toString().replace("file://", "");
+        python.call('main.send_sticker_message', [chatId, cleanPath, tempId], function() {
+        });
+    }
+
     function sendImageMessage(filePath) {
         var tempId = "pending-" + Date.now();
         var now = new Date();
@@ -474,6 +507,14 @@ Page {
             }
 
             Button {
+                text: i18n.tr("Sticker")
+                onClicked: {
+                    PopupUtils.close(attachDialog);
+                    pageStack.push(stickerPickerComponent);
+                }
+            }
+
+            Button {
                 text: i18n.tr("Cancel")
                 color: theme.palette.normal.base
                 onClicked: PopupUtils.close(attachDialog)
@@ -603,6 +644,15 @@ Page {
                 ]
             }
 
+        }
+
+    }
+
+    Component {
+        id: stickerPickerComponent
+
+        StickerPickerPage {
+            onStickerSelected: sendStickerMessage(filePath)
         }
 
     }
