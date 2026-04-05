@@ -154,7 +154,7 @@ def _derive_message_type(info_type: str, media_type: str) -> Optional[MessageTyp
             return MessageType.AUDIO
         if media_type == "document":
             return MessageType.DOCUMENT
-        if media_type == "sticker":
+        if media_type in ("sticker", "user_created_sticker"):
             return MessageType.STICKER
         return None
     return None

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-04 22:39+0000\n"
+"POT-Creation-Date: 2026-04-05 03:48+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -55,41 +55,41 @@ msgstr ""
 msgid "No chats found"
 msgstr ""
 
-#: ../qml/ChatPage.qml:379
+#: ../qml/ChatPage.qml:377
 msgid "Type a message..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:460
+#: ../qml/ChatPage.qml:458
 msgid "Send Attachment"
 msgstr ""
 
-#: ../qml/ChatPage.qml:463
+#: ../qml/ChatPage.qml:461
 msgid "Photo"
 msgstr ""
 
-#: ../qml/ChatPage.qml:471 ../qml/VideoPreviewPage.qml:331
+#: ../qml/ChatPage.qml:469 ../qml/VideoPreviewPage.qml:331
 msgid "Video"
 msgstr ""
 
-#: ../qml/ChatPage.qml:479 ../qml/SettingsPage.qml:176
+#: ../qml/ChatPage.qml:477 ../qml/SettingsPage.qml:176
 msgid "Cancel"
 msgstr ""
 
-#: ../qml/ChatPage.qml:532
+#: ../qml/ChatPage.qml:530
 msgid "Send Photo"
 msgstr ""
 
-#: ../qml/ChatPage.qml:594
+#: ../qml/ChatPage.qml:592
 msgid "Send Video"
 msgstr ""
 
-#: ../qml/ChatPage.qml:618 ../qml/DocumentPreviewPage.qml:223
+#: ../qml/ChatPage.qml:616 ../qml/DocumentPreviewPage.qml:223
 #: ../qml/ImagePreviewPage.qml:190 ../qml/VideoPreviewPage.qml:335
 #: ../qml/ut_components/AppHeader.qml:78
 msgid "Back"
 msgstr ""
 
-#: ../qml/ChatPage.qml:690
+#: ../qml/ChatPage.qml:688
 msgid "online"
 msgstr ""
 

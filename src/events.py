@@ -11,7 +11,7 @@ from dacite import from_dict
 
 from history_sync import handle_history_sync
 from message_store import store_message, update_chat_name
-from models import ChatListItem, ReadReceipt
+from models import ChatListItem, Message, MessageType, ReadReceipt
 from receipt_store import process_receipt
 from rpc import DaemonNotReadyError, DaemonRPC, RateLimitError
 from ut_components.config import get_cache_path
@@ -71,6 +71,62 @@ class SessionStatusEvent(Event):
 LAST_EVENT_ID_KEY = "daemon:last_event_id"
 
 
+def _auto_download_sticker(msg: Message, raw: Dict[str, Any]) -> str:
+    msg_content = raw.get("Message", {})
+    sticker = msg_content.get("stickerMessage")
+    if not sticker:
+        return ""
+
+    direct_path = sticker.get("directPath", "")
+    media_key = sticker.get("mediaKey", "")
+    if not direct_path or not media_key:
+        return ""
+
+    file_sha256 = sticker.get("fileSHA256", "")
+    if file_sha256:
+        cache_key = f"sticker_cache:{file_sha256}"
+        with KV() as kv:
+            cached_path = kv.get(cache_key)
+        if cached_path and os.path.exists(str(cached_path)):
+            media_path = "file://" + str(cached_path)
+            key = f"message:{msg.chat_id}:{msg.timestamp_unix}:{msg.id}"
+            with KV() as kv:
+                entry = kv.get(key)
+                if entry:
+                    entry["media_path"] = media_path
+                    kv.put(key, entry)
+            return media_path
+
+    try:
+        file_path = DaemonRPC().download_media(
+            direct_path=direct_path,
+            media_key=media_key,
+            file_enc_sha256=sticker.get("fileEncSHA256", ""),
+            file_sha256=file_sha256,
+            file_length=sticker.get("fileLength", 0),
+            media_type="sticker",
+            mimetype=sticker.get("mimetype", ""),
+            message_id=msg.id,
+            chat_id=msg.chat_id,
+        )
+    except Exception:
+        return ""
+
+    if file_sha256:
+        with KV() as kv:
+            kv.put(f"sticker_cache:{file_sha256}", file_path)
+
+    media_path = "file://" + str(file_path)
+    key = f"message:{msg.chat_id}:{msg.timestamp_unix}:{msg.id}"
+    with KV() as kv:
+        entry = kv.get(key)
+        if entry:
+            entry["media_path"] = media_path
+            kv.put(key, entry)
+
+    return media_path
+
+
 def _handle_message(
     event: Any,
     chat_updates: dict[str, dict[str, Any]],
@@ -83,6 +139,10 @@ def _handle_message(
     evt.Info.Chat = DaemonRPC().ensure_jid(evt.Info.Chat)
     stored = store_message(evt, raw=raw)
     if stored is not None:
+        if stored.message.type == MessageType.STICKER:
+            media_path = _auto_download_sticker(stored.message, raw)
+            if media_path:
+                stored.message.media_path = media_path
         message_upserts.append(enum_to_str(asdict(stored.message)))
         chat_updates[stored.chat.id] = enum_to_str(asdict(stored.chat))
 

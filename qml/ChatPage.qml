@@ -304,8 +304,6 @@ Page {
             timestamp: msg.timestamp || ""
             senderName: msg.sender_name || ""
             senderPhoto: msg.sender_photo || ""
-            downloading: downloadingIds[msg.id] || false
-            onDownloadRequested: triggerDownload(msg.id, "sticker")
         }
 
     }

@@ -14,10 +14,7 @@ Item {
     property string mediaPath: ""
     property string senderName: ""
     property string senderPhoto: ""
-    property bool downloading: false
     property bool showSender: isGroup && !isOutgoing && senderName !== ""
-
-    signal downloadRequested()
 
     width: parent.width
     height: stickerContainer.height + units.gu(0.5)
@@ -111,21 +108,6 @@ Item {
                 height: units.gu(8)
                 color: theme.palette.normal.backgroundSecondaryText
                 visible: !root.mediaPath && !root.thumbnailSource && !root.stickerSource
-            }
-
-            LoadingSpinner {
-                anchors.centerIn: parent
-                running: root.downloading
-                visible: root.downloading
-            }
-
-            MouseArea {
-                anchors.fill: parent
-                onClicked: {
-                    if (!root.mediaPath && !root.downloading)
-                        root.downloadRequested();
-
-                }
             }
 
         }
