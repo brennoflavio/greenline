@@ -94,7 +94,8 @@ Page {
                         "chatId": modelData.id,
                         "chatName": modelData.name,
                         "chatPhoto": modelData.photo,
-                        "isGroup": modelData.is_group || false
+                        "isGroup": modelData.is_group || false,
+                        "unreadCount": modelData.unread_count || 0
                     });
                 }
 

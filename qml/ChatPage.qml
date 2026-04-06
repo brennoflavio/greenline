@@ -18,6 +18,7 @@ Page {
     property var messages: []
     property var downloadingIds: ({
     })
+    property int unreadCount: 0
 
     function triggerDownload(messageId, mediaType) {
         var d = downloadingIds;
@@ -171,6 +172,11 @@ Page {
         verticalLayoutDirection: ListView.BottomToTop
         spacing: units.gu(0.5)
         model: messages.slice().reverse()
+        onAtYEndChanged: {
+            if (atYEnd)
+                chatPage.unreadCount = 0;
+
+        }
 
         anchors {
             top: chatHeader.bottom
@@ -341,6 +347,68 @@ Page {
 
     }
 
+    Rectangle {
+        id: scrollToBottomButton
+
+        width: units.gu(4.5)
+        height: units.gu(4.5)
+        radius: width / 2
+        color: Qt.rgba(0, 0, 0, 0.6)
+        visible: !messageList.atYEnd
+        opacity: visible ? 1 : 0
+        z: 1
+
+        anchors {
+            right: parent.right
+            rightMargin: units.gu(2)
+            bottom: inputBar.top
+            bottomMargin: units.gu(1.5)
+        }
+
+        Icon {
+            anchors.centerIn: parent
+            name: "down"
+            width: units.gu(2.5)
+            height: units.gu(2.5)
+            color: "white"
+        }
+
+        Rectangle {
+            visible: chatPage.unreadCount > 0
+            width: Math.max(units.gu(2.5), badgeLabel.implicitWidth + units.gu(1))
+            height: units.gu(2.5)
+            radius: height / 2
+            color: LomiriColors.green
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.bottom: parent.top
+            anchors.bottomMargin: units.gu(0.3)
+
+            Label {
+                id: badgeLabel
+
+                anchors.centerIn: parent
+                text: chatPage.unreadCount
+                fontSize: "x-small"
+                font.weight: Font.Medium
+                color: "white"
+            }
+
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            onClicked: messageList.positionViewAtIndex(0, ListView.End)
+        }
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 150
+            }
+
+        }
+
+    }
+
     KeyboardSpacer {
         id: keyboardSpacer
 
@@ -442,11 +510,11 @@ Page {
                         });
                     }
                 });
-                setHandler('message-upsert', function(messageList) {
+                setHandler('message-upsert', function(incomingMessages) {
                     var updated = messages.slice();
                     var hasNewIncoming = false;
-                    for (var i = 0; i < messageList.length; i++) {
-                        var message = messageList[i];
+                    for (var i = 0; i < incomingMessages.length; i++) {
+                        var message = incomingMessages[i];
                         if (message.chat_id !== chatId)
                             continue;
 
@@ -460,9 +528,12 @@ Page {
                         }
                         if (!found) {
                             updated.push(message);
-                            if (!message.is_outgoing)
+                            if (!message.is_outgoing) {
                                 hasNewIncoming = true;
+                                if (!messageList.atYEnd)
+                                    chatPage.unreadCount += 1;
 
+                            }
                         }
                     }
                     messages = updated;
