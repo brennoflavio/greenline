@@ -313,6 +313,23 @@ func (s *Service) SyncAvatar(args *SyncAvatarArgs, reply *SyncAvatarReply) error
 	return nil
 }
 
+// SendPresence types
+
+type SendPresenceArgs struct {
+	Available bool
+}
+
+func (s *Service) SendPresence(args *SendPresenceArgs, reply *struct{}) error {
+	if err := s.requireLogin(); err != nil {
+		return err
+	}
+	state := types.PresenceUnavailable
+	if args.Available {
+		state = types.PresenceAvailable
+	}
+	return s.client.SendPresence(context.Background(), state)
+}
+
 // SubscribePresence types
 
 type SubscribePresenceArgs struct {

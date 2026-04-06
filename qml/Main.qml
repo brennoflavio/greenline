@@ -34,6 +34,18 @@ MainView {
         id: pageStack
     }
 
+    Connections {
+        target: Qt.application
+        onStateChanged: {
+            if (Qt.application.state === Qt.ApplicationActive)
+                python.call('main.send_presence', [true], function() {
+            });
+            else
+                python.call('main.send_presence', [false], function() {
+            });
+        }
+    }
+
     Rectangle {
         anchors.fill: parent
         z: 100
@@ -68,10 +80,13 @@ MainView {
                         python.call('main.get_session_status', [], function(session) {
                             python.call('main.start_event_loop', [], function() {
                             });
-                            if (session.logged_in)
+                            if (session.logged_in) {
+                                python.call('main.send_presence', [true], function() {
+                                });
                                 pageStack.push(Qt.resolvedUrl("ChatListPage.qml"));
-                            else
+                            } else {
                                 pageStack.push(Qt.resolvedUrl("AuthorizationPage.qml"));
+                            }
                             initComplete = true;
                         });
                     });

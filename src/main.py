@@ -304,6 +304,13 @@ def mark_messages_as_read(chat_id: str) -> SuccessResponse:
     return SuccessResponse(success=True, message="")
 
 
+def send_presence(available: bool) -> None:
+    try:
+        DaemonRPC().send_presence(available)
+    except Exception:
+        pass
+
+
 def subscribe_presence(chat_id: str) -> None:
     if "@g.us" in chat_id:
         return
