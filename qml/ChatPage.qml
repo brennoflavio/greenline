@@ -472,6 +472,26 @@ Page {
                     });
 
                 });
+                setHandler('sender-photo-update', function(photoList) {
+                    var changed = false;
+                    var updated = messages.slice();
+                    for (var i = 0; i < photoList.length; i++) {
+                        var entry = photoList[i];
+                        for (var j = 0; j < updated.length; j++) {
+                            if (updated[j].sender === entry.jid) {
+                                updated[j] = Object.assign({
+                                }, updated[j], {
+                                    "sender_photo": entry.photo
+                                });
+                                changed = true;
+                            }
+                        }
+                    }
+                    if (changed) {
+                        messages = updated;
+                        messagesChanged();
+                    }
+                });
             });
         }
     }

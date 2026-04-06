@@ -257,6 +257,18 @@ def get_messages(chat_id: str) -> MessagesResponse:
         msg_fields = {f.name for f in Message.__dataclass_fields__.values()}
         messages = [Message(**{k: v for k, v in value.items() if k in msg_fields}) for _, value in entries]
         messages.sort(key=lambda m: m.timestamp_unix)
+
+        sender_jids = {m.sender for m in messages if m.sender and not m.is_outgoing}
+        sender_photos: dict[str, str] = {}
+        for jid in sender_jids:
+            data = kv.get(f"chat:{jid}")
+            if data:
+                sender_photos[jid] = data.get("photo", "")
+
+        for m in messages:
+            if m.sender and m.sender in sender_photos:
+                m.sender_photo = sender_photos[m.sender]
+
     return MessagesResponse(success=True, messages=messages, message="")
 
 

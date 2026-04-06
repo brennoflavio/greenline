@@ -2,7 +2,7 @@ import base64
 import os
 from dataclasses import asdict, dataclass
 from datetime import datetime
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 
 from constants import GROUP_JID_SUFFIX, WHATSAPP_JID_SUFFIX
 from models import ChatListItem, Message, MessageType, ReadReceipt
@@ -41,17 +41,16 @@ def update_chat_name(
     return changed
 
 
-def resolve_sender(sender_jid: str, push_name: str = "") -> Tuple[str, str]:
+def resolve_sender_name(sender_jid: str, push_name: str = "") -> str:
     with KV() as kv:
         data = kv.get(f"chat:{sender_jid}")
     if data is not None:
-        name = data.get("name", "")
-        photo = data.get("photo", "")
+        name = str(data.get("name", ""))
         if name and name != sender_jid:
-            return name, photo
+            return name
     if push_name:
-        return push_name, ""
-    return sender_jid.replace(WHATSAPP_JID_SUFFIX, ""), ""
+        return push_name
+    return sender_jid.replace(WHATSAPP_JID_SUFFIX, "")
 
 
 def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
@@ -119,9 +118,8 @@ def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
     read_receipt = ReadReceipt.SENT if info.IsFromMe else ReadReceipt.NONE
 
     sender_name = ""
-    sender_photo = ""
     if not info.IsFromMe and info.Sender:
-        sender_name, sender_photo = resolve_sender(info.Sender, info.PushName)
+        sender_name = resolve_sender_name(info.Sender, info.PushName)
 
     return Message(
         id=info.ID,
@@ -133,7 +131,6 @@ def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
         read_receipt=read_receipt,
         sender=info.Sender,
         sender_name=sender_name,
-        sender_photo=sender_photo,
         text=text,
         caption=caption,
         mimetype=mimetype,

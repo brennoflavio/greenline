@@ -143,6 +143,11 @@ def _handle_message(
             media_path = _auto_download_sticker(stored.message, raw)
             if media_path:
                 stored.message.media_path = media_path
+        if stored.message.sender and not stored.message.is_outgoing:
+            with KV() as kv:
+                sender_data = kv.get(f"chat:{stored.message.sender}")
+            if sender_data:
+                stored.message.sender_photo = sender_data.get("photo", "")
         message_upserts.append(enum_to_str(asdict(stored.message)))
         chat_updates[stored.chat.id] = enum_to_str(asdict(stored.chat))
 
@@ -256,7 +261,11 @@ def _handle_mute(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None:
             chat_updates[chat.id] = enum_to_str(asdict(chat))
 
 
-def _handle_picture(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None:
+def _handle_picture(
+    event: Any,
+    chat_updates: dict[str, dict[str, Any]],
+    photo_updates: list[dict[str, str]],
+) -> None:
     raw = json.loads(event.payload or "{}")
     evt = from_dict(data_class=PictureEvent, data=raw)
     jid = DaemonRPC().ensure_jid(evt.JID)
@@ -276,6 +285,7 @@ def _handle_picture(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None
             chat.photo = photo
             kv.put(key, asdict(chat))
             chat_updates[chat.id] = enum_to_str(asdict(chat))
+            photo_updates.append({"jid": jid, "photo": photo})
 
 
 def _handle_unknown(event: Any) -> None:
@@ -311,6 +321,7 @@ class DaemonEventHandler(Event):
         chat_updates: dict[str, dict[str, Any]] = {}
         message_upserts: list[dict[str, Any]] = []
         message_updates: list[dict[str, Any]] = []
+        photo_updates: list[dict[str, str]] = []
         for event in reply.Events:
             if event.event_type == "Message":
                 _handle_message(event, chat_updates, message_upserts)
@@ -321,7 +332,7 @@ class DaemonEventHandler(Event):
             elif event.event_type == "Mute":
                 _handle_mute(event, chat_updates)
             elif event.event_type == "Picture":
-                _handle_picture(event, chat_updates)
+                _handle_picture(event, chat_updates, photo_updates)
             elif event.event_type == "PushName":
                 _handle_push_name(event, chat_updates)
             elif event.event_type == "BusinessName":
@@ -353,6 +364,9 @@ class DaemonEventHandler(Event):
         if chat_updates:
             pyotherside.send("chat-list-update", list(chat_updates.values()))
 
+        if photo_updates:
+            pyotherside.send("sender-photo-update", photo_updates)
+
         if max_id > last_id:
             DaemonRPC().delete_events(up_to_id=max_id)
             with KV() as kv:
@@ -367,15 +381,19 @@ class ChatListUpdateEvent(Event):
 
     def trigger(self, metadata: Optional[Dict[str, Any]]) -> None:
         chat_updates: list[dict[str, Any]] = []
+        photo_updates: list[dict[str, str]] = []
 
         try:
-            self._sync_contacts(chat_updates)
-            self._sync_groups(chat_updates)
+            self._sync_contacts(chat_updates, photo_updates)
+            self._sync_groups(chat_updates, photo_updates)
         except (RateLimitError, ConnectionRefusedError, DaemonNotReadyError):
             return None
 
         if chat_updates:
             pyotherside.send("chat-list-update", chat_updates)
+
+        if photo_updates:
+            pyotherside.send("sender-photo-update", photo_updates)
 
         return None
 
@@ -387,7 +405,7 @@ class ChatListUpdateEvent(Event):
         except Exception:
             return False
 
-    def _sync_contacts(self, chat_updates: list[dict[str, Any]]) -> None:
+    def _sync_contacts(self, chat_updates: list[dict[str, Any]], photo_updates: list[dict[str, str]]) -> None:
         reply = DaemonRPC().get_contacts()
         if not reply.Contacts:
             return
@@ -417,6 +435,7 @@ class ChatListUpdateEvent(Event):
                     if chat.photo != photo:
                         chat.photo = photo
                         changed = True
+                        photo_updates.append({"jid": c.jid, "photo": photo})
                     if chat.muted != muted:
                         chat.muted = muted
                         changed = True
@@ -443,7 +462,7 @@ class ChatListUpdateEvent(Event):
                     kv.put(key, asdict(chat))
                     chat_updates.append(enum_to_str(asdict(chat)))
 
-    def _sync_groups(self, chat_updates: list[dict[str, Any]]) -> None:
+    def _sync_groups(self, chat_updates: list[dict[str, Any]], photo_updates: list[dict[str, str]]) -> None:
         reply = DaemonRPC().get_groups()
         if not reply.Groups:
             return
@@ -470,6 +489,7 @@ class ChatListUpdateEvent(Event):
                     if chat.photo != photo:
                         chat.photo = photo
                         changed = True
+                        photo_updates.append({"jid": g.jid, "photo": photo})
                     if chat.muted != muted:
                         chat.muted = muted
                         changed = True

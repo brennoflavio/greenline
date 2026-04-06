@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 from dacite import from_dict
 
 from constants import GROUP_JID_SUFFIX, WHATSAPP_JID_SUFFIX
-from message_store import _extract_thumbnail, resolve_sender
+from message_store import _extract_thumbnail, resolve_sender_name
 from models import ChatListItem, Message, MessageType, ReadReceipt
 from rpc import DaemonRPC
 from ut_components.kv import KV
@@ -211,7 +211,7 @@ def _process_messages(
     existing_entries = kv.get_partial(f"message:{chat_jid}:")
     existing_ids: Set[str] = {v.get("id", "") for _, v in existing_entries}
 
-    sender_cache: Dict[str, Tuple[str, str]] = {}
+    sender_cache: Dict[str, str] = {}
 
     for msg_wrap in messages:
         inner = msg_wrap.message
@@ -241,12 +241,11 @@ def _process_messages(
 
         sender = ""
         sender_name = ""
-        sender_photo = ""
         if not is_outgoing and inner.participant:
             sender = jid_map.get(inner.participant, inner.participant)
             if sender not in sender_cache:
-                sender_cache[sender] = resolve_sender(sender)
-            sender_name, sender_photo = sender_cache[sender]
+                sender_cache[sender] = resolve_sender_name(sender)
+            sender_name = sender_cache[sender]
 
         msg = Message(
             id=msg_id,
@@ -258,7 +257,6 @@ def _process_messages(
             read_receipt=read_receipt,
             sender=sender,
             sender_name=sender_name,
-            sender_photo=sender_photo,
             text=text,
             caption=caption,
             mimetype=mimetype,

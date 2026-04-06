@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-05 03:48+0000\n"
+"POT-Creation-Date: 2026-04-05 04:16+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -55,41 +55,45 @@ msgstr ""
 msgid "No chats found"
 msgstr ""
 
-#: ../qml/ChatPage.qml:377
+#: ../qml/ChatPage.qml:410
 msgid "Type a message..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:458
+#: ../qml/ChatPage.qml:491
 msgid "Send Attachment"
 msgstr ""
 
-#: ../qml/ChatPage.qml:461
+#: ../qml/ChatPage.qml:494
 msgid "Photo"
 msgstr ""
 
-#: ../qml/ChatPage.qml:469 ../qml/VideoPreviewPage.qml:331
+#: ../qml/ChatPage.qml:502 ../qml/VideoPreviewPage.qml:331
 msgid "Video"
 msgstr ""
 
-#: ../qml/ChatPage.qml:477 ../qml/SettingsPage.qml:176
+#: ../qml/ChatPage.qml:510
+msgid "Sticker"
+msgstr ""
+
+#: ../qml/ChatPage.qml:518 ../qml/SettingsPage.qml:176
 msgid "Cancel"
 msgstr ""
 
-#: ../qml/ChatPage.qml:530
+#: ../qml/ChatPage.qml:571
 msgid "Send Photo"
 msgstr ""
 
-#: ../qml/ChatPage.qml:592
+#: ../qml/ChatPage.qml:633
 msgid "Send Video"
 msgstr ""
 
-#: ../qml/ChatPage.qml:616 ../qml/DocumentPreviewPage.qml:223
+#: ../qml/ChatPage.qml:666 ../qml/DocumentPreviewPage.qml:223
 #: ../qml/ImagePreviewPage.qml:190 ../qml/VideoPreviewPage.qml:335
 #: ../qml/ut_components/AppHeader.qml:78
 msgid "Back"
 msgstr ""
 
-#: ../qml/ChatPage.qml:688
+#: ../qml/ChatPage.qml:738
 msgid "online"
 msgstr ""
 
@@ -205,6 +209,16 @@ msgid ""
 "This will log out from WhatsApp, delete all local data including messages, "
 "settings and cache, and uninstall the daemon. You will need to reinstall the "
 "daemon and scan the QR code again to reconnect."
+msgstr ""
+
+#: ../qml/StickerPickerPage.qml:54
+msgid ""
+"No stickers yet.\n"
+"Receive stickers in chats to use them here."
+msgstr ""
+
+#: ../qml/StickerPickerPage.qml:83
+msgid "Send Sticker"
 msgstr ""
 
 #: ../qml/components/DocumentMessage.qml:64
