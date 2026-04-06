@@ -23,6 +23,7 @@ from whatsmeow_types import (
     ContactEvent,
     MessageEvent,
     PictureEvent,
+    PresenceEvent,
     PushNameEvent,
     ReceiptEvent,
 )
@@ -288,6 +289,43 @@ def _handle_picture(
             photo_updates.append({"jid": jid, "photo": photo})
 
 
+def _format_presence_status(available: bool, last_seen: str) -> str:
+    if available:
+        return "online"
+    if not last_seen or last_seen.startswith("0001-01-01"):
+        return "offline"
+    try:
+        dt = datetime.fromisoformat(last_seen)
+        now = datetime.now(dt.tzinfo)
+        diff = (now - dt).total_seconds()
+        if diff < 60:
+            return "last seen just now"
+        if diff < 3600:
+            return f"last seen {int(diff // 60)} min ago"
+        if diff < 86400:
+            return f"last seen {int(diff // 3600)} h ago"
+        return f"last seen {dt.strftime('%b %d')}"
+    except (ValueError, TypeError):
+        return "offline"
+
+
+def _handle_presence(
+    event: Any,
+    presence_updates: list[dict[str, Any]],
+) -> None:
+    raw = json.loads(event.payload or "{}")
+    evt = from_dict(data_class=PresenceEvent, data=raw)
+    jid = DaemonRPC().ensure_jid(evt.From)
+    if not jid:
+        return
+    presence_updates.append(
+        {
+            "jid": jid,
+            "status": _format_presence_status(not evt.Unavailable, evt.LastSeen),
+        }
+    )
+
+
 def _handle_unknown(event: Any) -> None:
     with KV() as kv:
         kv.put(
@@ -322,6 +360,7 @@ class DaemonEventHandler(Event):
         message_upserts: list[dict[str, Any]] = []
         message_updates: list[dict[str, Any]] = []
         photo_updates: list[dict[str, str]] = []
+        presence_updates: list[dict[str, Any]] = []
         for event in reply.Events:
             if event.event_type == "Message":
                 _handle_message(event, chat_updates, message_upserts)
@@ -337,6 +376,8 @@ class DaemonEventHandler(Event):
                 _handle_push_name(event, chat_updates)
             elif event.event_type == "BusinessName":
                 _handle_business_name(event, chat_updates)
+            elif event.event_type == "Presence":
+                _handle_presence(event, presence_updates)
             elif event.event_type == "HistorySync":
                 updated = handle_history_sync(event)
                 chat_updates.update(updated)
@@ -366,6 +407,9 @@ class DaemonEventHandler(Event):
 
         if photo_updates:
             pyotherside.send("sender-photo-update", photo_updates)
+
+        if presence_updates:
+            pyotherside.send("presence-update", presence_updates)
 
         if max_id > last_id:
             DaemonRPC().delete_events(up_to_id=max_id)

@@ -134,6 +134,9 @@ class DaemonRPC:
         data = self._call("Service.GetChatSettings", {"ChatJID": chat_jid})
         return from_dict(data_class=GetChatSettingsReply, data=data)
 
+    def subscribe_presence(self, jid: str) -> None:
+        self._call("Service.SubscribePresence", {"JID": jid})
+
     def logout(self) -> None:
         self._call("Service.Logout")
 

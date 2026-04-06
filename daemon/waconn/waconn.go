@@ -176,6 +176,9 @@ func (c *Client) ConnectWithRetry(ctx context.Context, onQR func(code string)) {
 			}
 			c.drainDisconnect()
 			c.log.Info("whatsmeow: connected after pairing")
+			if err := c.waCli.SendPresence(ctx, types.PresenceAvailable); err != nil {
+				c.log.Warn("whatsmeow: failed to send presence after pairing", "error", err)
+			}
 		} else {
 			if c.waCli.IsConnected() {
 				c.log.Info("whatsmeow: already connected, skipping connect")
@@ -188,6 +191,9 @@ func (c *Client) ConnectWithRetry(ctx context.Context, onQR func(code string)) {
 					continue
 				}
 				c.log.Info("whatsmeow: connected (already paired)")
+				if err := c.waCli.SendPresence(ctx, types.PresenceAvailable); err != nil {
+					c.log.Warn("whatsmeow: failed to send presence", "error", err)
+				}
 			}
 		}
 
@@ -275,6 +281,10 @@ func (c *Client) Upload(ctx context.Context, plaintext []byte, appInfo whatsmeow
 
 func (c *Client) SendMessage(ctx context.Context, to types.JID, message *waE2E.Message) (whatsmeow.SendResponse, error) {
 	return c.waCli.SendMessage(ctx, to, message)
+}
+
+func (c *Client) SubscribePresence(ctx context.Context, jid types.JID) error {
+	return c.waCli.SubscribePresence(ctx, jid)
 }
 
 func (c *Client) GetChatSettings(ctx context.Context, chat types.JID) (types.LocalChatSettings, error) {

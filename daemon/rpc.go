@@ -313,6 +313,23 @@ func (s *Service) SyncAvatar(args *SyncAvatarArgs, reply *SyncAvatarReply) error
 	return nil
 }
 
+// SubscribePresence types
+
+type SubscribePresenceArgs struct {
+	JID string
+}
+
+func (s *Service) SubscribePresence(args *SubscribePresenceArgs, reply *struct{}) error {
+	if err := s.requireLogin(); err != nil {
+		return err
+	}
+	jid, err := types.ParseJID(args.JID)
+	if err != nil {
+		return fmt.Errorf("invalid JID: %w", err)
+	}
+	return s.client.SubscribePresence(context.Background(), jid)
+}
+
 // ChatSettings types
 
 type GetChatSettingsArgs struct {

@@ -359,6 +359,13 @@ class AppStateEvent:
 
 
 @dataclass
+class PresenceEvent:
+    From: str = ""
+    Unavailable: bool = False
+    LastSeen: str = ""
+
+
+@dataclass
 class PictureEvent:
     JID: str = ""
     Author: str = ""

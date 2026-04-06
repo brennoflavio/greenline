@@ -19,6 +19,7 @@ Page {
     property var downloadingIds: ({
     })
     property int unreadCount: 0
+    property string chatStatus: ""
 
     function triggerDownload(messageId, mediaType) {
         var d = downloadingIds;
@@ -510,6 +511,10 @@ Page {
                         });
                     }
                 });
+                if (!isGroup)
+                    python.call('main.subscribe_presence', [chatId], function() {
+                });
+
                 setHandler('message-upsert', function(incomingMessages) {
                     var updated = messages.slice();
                     var hasNewIncoming = false;
@@ -542,6 +547,14 @@ Page {
                         python.call('main.mark_messages_as_read', [chatId], function() {
                     });
 
+                });
+                setHandler('presence-update', function(presenceList) {
+                    for (var i = 0; i < presenceList.length; i++) {
+                        if (presenceList[i].jid === chatId) {
+                            chatStatus = presenceList[i].status;
+                            break;
+                        }
+                    }
                 });
                 setHandler('sender-photo-update', function(photoList) {
                     var changed = false;
@@ -826,9 +839,10 @@ Page {
                 }
 
                 Label {
-                    text: i18n.tr("online")
+                    text: chatStatus
                     fontSize: "x-small"
                     color: theme.palette.normal.backgroundTertiaryText
+                    visible: chatStatus !== ""
                 }
 
             }

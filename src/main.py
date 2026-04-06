@@ -304,6 +304,15 @@ def mark_messages_as_read(chat_id: str) -> SuccessResponse:
     return SuccessResponse(success=True, message="")
 
 
+def subscribe_presence(chat_id: str) -> None:
+    if "@g.us" in chat_id:
+        return
+    try:
+        DaemonRPC().subscribe_presence(chat_id)
+    except Exception:
+        pass
+
+
 @crash_reporter
 @dataclass_to_dict
 def toggle_mute(chat_id: str) -> SuccessResponse:
