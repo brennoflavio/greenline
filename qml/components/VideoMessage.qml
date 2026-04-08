@@ -13,6 +13,8 @@ MessageBubble {
 
     signal downloadRequested()
 
+    copyableText: caption
+
     Rectangle {
         width: parent.width
         height: units.gu(20)

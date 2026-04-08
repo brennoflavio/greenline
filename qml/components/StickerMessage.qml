@@ -6,6 +6,7 @@ import QtQuick 2.7
 Item {
     id: root
 
+    property string copyableText: ""
     property bool isOutgoing: false
     property bool isGroup: false
     property string timestamp: ""

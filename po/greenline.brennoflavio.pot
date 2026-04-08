@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-08 04:07+0000\n"
+"POT-Creation-Date: 2026-04-08 21:44+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -55,39 +55,47 @@ msgstr ""
 msgid "No chats found"
 msgstr ""
 
-#: ../qml/ChatPage.qml:513
+#: ../qml/ChatPage.qml:216
+msgid "Copy"
+msgstr ""
+
+#: ../qml/ChatPage.qml:220
+msgid "Copied to clipboard"
+msgstr ""
+
+#: ../qml/ChatPage.qml:547
 msgid "Type a message..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:629
+#: ../qml/ChatPage.qml:663
 msgid "Send Attachment"
 msgstr ""
 
-#: ../qml/ChatPage.qml:632
+#: ../qml/ChatPage.qml:666
 msgid "Photo"
 msgstr ""
 
-#: ../qml/ChatPage.qml:640 ../qml/VideoPreviewPage.qml:331
+#: ../qml/ChatPage.qml:674 ../qml/VideoPreviewPage.qml:331
 msgid "Video"
 msgstr ""
 
-#: ../qml/ChatPage.qml:648
+#: ../qml/ChatPage.qml:682
 msgid "Sticker"
 msgstr ""
 
-#: ../qml/ChatPage.qml:656 ../qml/SettingsPage.qml:176
+#: ../qml/ChatPage.qml:690 ../qml/SettingsPage.qml:176
 msgid "Cancel"
 msgstr ""
 
-#: ../qml/ChatPage.qml:709
+#: ../qml/ChatPage.qml:743
 msgid "Send Photo"
 msgstr ""
 
-#: ../qml/ChatPage.qml:771
+#: ../qml/ChatPage.qml:805
 msgid "Send Video"
 msgstr ""
 
-#: ../qml/ChatPage.qml:804 ../qml/DocumentPreviewPage.qml:223
+#: ../qml/ChatPage.qml:838 ../qml/DocumentPreviewPage.qml:223
 #: ../qml/ImagePreviewPage.qml:190 ../qml/VideoPreviewPage.qml:335
 #: ../qml/ut_components/AppHeader.qml:78
 msgid "Back"
@@ -110,7 +118,7 @@ msgid "Start Service"
 msgstr ""
 
 #: ../qml/DocumentPreviewPage.qml:42 ../qml/DocumentPreviewPage.qml:219
-#: ../qml/components/DocumentMessage.qml:56
+#: ../qml/components/DocumentMessage.qml:57
 msgid "Document"
 msgstr ""
 
@@ -217,15 +225,15 @@ msgstr ""
 msgid "Send Sticker"
 msgstr ""
 
-#: ../qml/components/DocumentMessage.qml:64
+#: ../qml/components/DocumentMessage.qml:65
 msgid "Downloading..."
 msgstr ""
 
-#: ../qml/components/DocumentMessage.qml:64
+#: ../qml/components/DocumentMessage.qml:65
 msgid "Tap to download"
 msgstr ""
 
-#: ../qml/components/DocumentMessage.qml:64
+#: ../qml/components/DocumentMessage.qml:65
 msgid "Tap to open"
 msgstr ""
 

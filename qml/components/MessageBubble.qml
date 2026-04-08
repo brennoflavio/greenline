@@ -7,6 +7,7 @@ Item {
     id: bubble
 
     default property alias content: contentColumn.children
+    property string copyableText: ""
     property bool isOutgoing: false
     property bool isGroup: false
     property string timestamp: ""

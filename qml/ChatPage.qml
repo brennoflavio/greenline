@@ -196,34 +196,61 @@ Page {
             bottom: inputBar.top
         }
 
-        delegate: Loader {
-            property var msg: modelData
+        delegate: ListItem {
+            id: messageDelegate
 
             width: parent ? parent.width : 0
-            sourceComponent: {
-                if (msg.type === "text")
+            height: messageLoader.item ? messageLoader.item.height : 0
+            color: "transparent"
+            highlightColor: "transparent"
+            divider.visible: false
+
+            Loader {
+                id: messageLoader
+
+                property var msg: modelData
+
+                width: parent.width
+                sourceComponent: {
+                    if (msg.type === "text")
+                        return textComponent;
+
+                    if (msg.type === "image")
+                        return imageComponent;
+
+                    if (msg.type === "image_gallery")
+                        return galleryComponent;
+
+                    if (msg.type === "video")
+                        return videoComponent;
+
+                    if (msg.type === "voice" || msg.type === "audio")
+                        return voiceComponent;
+
+                    if (msg.type === "document")
+                        return documentComponent;
+
+                    if (msg.type === "sticker")
+                        return stickerComponent;
+
                     return textComponent;
-
-                if (msg.type === "image")
-                    return imageComponent;
-
-                if (msg.type === "image_gallery")
-                    return galleryComponent;
-
-                if (msg.type === "video")
-                    return videoComponent;
-
-                if (msg.type === "voice" || msg.type === "audio")
-                    return voiceComponent;
-
-                if (msg.type === "document")
-                    return documentComponent;
-
-                if (msg.type === "sticker")
-                    return stickerComponent;
-
-                return textComponent;
+                }
             }
+
+            trailingActions: ListItemActions {
+                actions: [
+                    Action {
+                        iconName: "edit-copy"
+                        text: i18n.tr("Copy")
+                        enabled: messageLoader.item && messageLoader.item.copyableText
+                        onTriggered: {
+                            Clipboard.push(messageLoader.item.copyableText);
+                            toast.show(i18n.tr("Copied to clipboard"));
+                        }
+                    }
+                ]
+            }
+
         }
 
     }
@@ -442,6 +469,10 @@ Page {
 
         }
 
+    }
+
+    Toast {
+        id: toast
     }
 
     KeyboardSpacer {

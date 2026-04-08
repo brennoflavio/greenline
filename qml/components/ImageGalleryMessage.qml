@@ -8,6 +8,8 @@ MessageBubble {
     property var images: []
     property string caption: ""
 
+    copyableText: caption
+
     GridLayout {
         width: parent.width
         columns: Math.min(root.images.length, 2)

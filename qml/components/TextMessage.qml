@@ -6,6 +6,8 @@ MessageBubble {
 
     property string text: ""
 
+    copyableText: text
+
     Label {
         text: root.text
         fontSize: "small"

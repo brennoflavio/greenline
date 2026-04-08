@@ -13,6 +13,8 @@ MessageBubble {
 
     signal downloadRequested()
 
+    copyableText: caption
+
     Rectangle {
         id: imageContainer
 

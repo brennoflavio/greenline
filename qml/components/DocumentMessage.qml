@@ -13,6 +13,8 @@ MessageBubble {
 
     signal downloadRequested()
 
+    copyableText: fileName
+
     Item {
         width: parent.width
         height: docRow.height
