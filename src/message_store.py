@@ -8,7 +8,7 @@ from constants import GROUP_JID_SUFFIX, WHATSAPP_JID_SUFFIX
 from models import ChatListItem, Message, MessageType, ReadReceipt
 from ut_components.config import get_cache_path
 from ut_components.kv import KV
-from whatsmeow_types import MessageEvent, MessageInfo
+from whatsmeow_types import MessageContent, MessageEvent, MessageInfo
 
 
 def _get_thumbnail_dir() -> str:
@@ -51,6 +51,50 @@ def resolve_sender_name(sender_jid: str, push_name: str = "") -> str:
     if push_name:
         return push_name
     return sender_jid.replace(WHATSAPP_JID_SUFFIX, "")
+
+
+def _quoted_message_preview(quoted: Optional[Dict[str, Any]]) -> str:
+    if not quoted:
+        return ""
+    if quoted.get("conversation"):
+        return str(quoted["conversation"])
+    ext = quoted.get("extendedTextMessage")
+    if ext and ext.get("text"):
+        return str(ext["text"])
+    if quoted.get("imageMessage"):
+        return quoted["imageMessage"].get("caption") or "📷 Photo"
+    if quoted.get("videoMessage"):
+        return quoted["videoMessage"].get("caption") or "🎥 Video"
+    if quoted.get("audioMessage"):
+        return "🎵 Audio"
+    if quoted.get("documentMessage"):
+        return quoted["documentMessage"].get("caption") or "📄 Document"
+    if quoted.get("stickerMessage"):
+        return "🏷️ Sticker"
+    return ""
+
+
+def _extract_context_info(content: MessageContent) -> tuple[str, str, str]:
+    ctx = None
+    for sub in (
+        content.extendedTextMessage,
+        content.imageMessage,
+        content.videoMessage,
+        content.audioMessage,
+        content.documentMessage,
+        content.stickerMessage,
+    ):
+        if sub is not None and getattr(sub, "contextInfo", None) is not None:
+            ctx = sub.contextInfo
+            break
+
+    if ctx is None or not ctx.stanzaID:
+        return "", "", ""
+
+    reply_to_id = ctx.stanzaID
+    reply_to_sender = resolve_sender_name(ctx.participant) if ctx.participant else ""
+    reply_to_text = _quoted_message_preview(ctx.quotedMessage)
+    return reply_to_id, reply_to_sender, reply_to_text
 
 
 def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
@@ -111,6 +155,8 @@ def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
     elif content.stickerMessage:
         mimetype = content.stickerMessage.mimetype
 
+    reply_to_id, reply_to_sender, reply_to_text = _extract_context_info(content)
+
     ts = datetime.fromisoformat(info.Timestamp)
     timestamp_unix = int(ts.timestamp())
     timestamp_display = ts.strftime("%H:%M")
@@ -136,6 +182,9 @@ def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
         mimetype=mimetype,
         file_name=file_name,
         duration=duration,
+        reply_to_id=reply_to_id,
+        reply_to_sender=reply_to_sender,
+        reply_to_text=reply_to_text,
     )
 
 

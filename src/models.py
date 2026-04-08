@@ -70,6 +70,9 @@ class Message:
     file_name: str = ""
     send_status: str = ""
     temp_id: str = ""
+    reply_to_id: str = ""
+    reply_to_sender: str = ""
+    reply_to_text: str = ""
 
 
 @dataclass

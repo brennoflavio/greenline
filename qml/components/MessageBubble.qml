@@ -14,7 +14,12 @@ Item {
     property string sendStatus: ""
     property string senderName: ""
     property string senderPhoto: ""
+    property string replyToId: ""
+    property string replyToSender: ""
+    property string replyToText: ""
     property bool showSender: isGroup && !isOutgoing && senderName !== ""
+
+    signal replyClicked(string messageId)
 
     width: parent.width
     height: wrapper.height + units.gu(0.5)
@@ -92,6 +97,66 @@ Item {
             anchors {
                 fill: parent
                 margins: units.gu(0.5)
+            }
+
+            Rectangle {
+                visible: bubble.replyToId !== ""
+                width: parent.width
+                height: replyColumn.height + units.gu(0.8)
+                radius: units.gu(0.5)
+                color: Qt.rgba(0, 0, 0, 0.06)
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: bubble.replyClicked(bubble.replyToId)
+                }
+
+                Rectangle {
+                    id: replyBar
+
+                    width: units.gu(0.3)
+                    height: parent.height
+                    radius: units.gu(0.15)
+                    color: LomiriColors.blue
+                }
+
+                Column {
+                    id: replyColumn
+
+                    spacing: units.gu(0.1)
+
+                    anchors {
+                        left: replyBar.right
+                        right: parent.right
+                        top: parent.top
+                        leftMargin: units.gu(0.6)
+                        rightMargin: units.gu(0.5)
+                        topMargin: units.gu(0.4)
+                    }
+
+                    Label {
+                        text: bubble.replyToSender
+                        fontSize: "small"
+                        font.bold: true
+                        color: LomiriColors.blue
+                        elide: Text.ElideRight
+                        width: parent.width
+                        visible: text !== ""
+                    }
+
+                    Label {
+                        text: bubble.replyToText
+                        fontSize: "small"
+                        color: "#666666"
+                        elide: Text.ElideRight
+                        maximumLineCount: 1
+                        wrapMode: Text.NoWrap
+                        width: parent.width
+                        visible: text !== ""
+                    }
+
+                }
+
             }
 
             Label {

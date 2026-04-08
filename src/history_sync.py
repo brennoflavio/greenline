@@ -8,7 +8,11 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 from dacite import from_dict
 
 from constants import GROUP_JID_SUFFIX, WHATSAPP_JID_SUFFIX
-from message_store import _extract_thumbnail, resolve_sender_name
+from message_store import (
+    _extract_thumbnail,
+    _quoted_message_preview,
+    resolve_sender_name,
+)
 from models import ChatListItem, Message, MessageType, ReadReceipt
 from rpc import DaemonRPC
 from ut_components.kv import KV
@@ -198,6 +202,29 @@ def _find_latest_message(conv: HistorySyncConversation) -> Optional[HistorySyncI
     return latest
 
 
+def _extract_context_info_from_dict(content: Dict[str, Any], jid_map: Dict[str, str]) -> Tuple[str, str, str]:
+    for field_name in (
+        "extendedTextMessage",
+        "imageMessage",
+        "videoMessage",
+        "audioMessage",
+        "documentMessage",
+        "stickerMessage",
+    ):
+        sub = content.get(field_name)
+        if sub and isinstance(sub, dict):
+            ctx = sub.get("contextInfo")
+            if ctx and ctx.get("stanzaID"):
+                reply_to_id = ctx["stanzaID"]
+                participant = ctx.get("participant", "")
+                if participant:
+                    participant = jid_map.get(participant, participant)
+                reply_to_sender = resolve_sender_name(participant) if participant else ""
+                reply_to_text = _quoted_message_preview(ctx.get("quotedMessage"))
+                return reply_to_id, reply_to_sender, reply_to_text
+    return "", "", ""
+
+
 def _process_messages(
     kv: KV,
     conv: HistorySyncConversation,
@@ -247,6 +274,8 @@ def _process_messages(
                 sender_cache[sender] = resolve_sender_name(sender)
             sender_name = sender_cache[sender]
 
+        reply_to_id, reply_to_sender, reply_to_text = _extract_context_info_from_dict(content, jid_map)
+
         msg = Message(
             id=msg_id,
             chat_id=chat_jid,
@@ -262,6 +291,9 @@ def _process_messages(
             mimetype=mimetype,
             file_name=file_name,
             duration=duration,
+            reply_to_id=reply_to_id,
+            reply_to_sender=reply_to_sender,
+            reply_to_text=reply_to_text,
         )
 
         msg.thumbnail_path = _extract_thumbnail({"Message": content}, msg_id)

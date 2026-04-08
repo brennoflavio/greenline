@@ -21,6 +21,16 @@ Page {
     property int unreadCount: 0
     property string chatStatus: ""
 
+    function scrollToMessage(messageId) {
+        var model = messageList.model;
+        for (var i = 0; i < model.length; i++) {
+            if (model[i].id === messageId) {
+                messageList.positionViewAtIndex(i, ListView.Center);
+                return ;
+            }
+        }
+    }
+
     function triggerDownload(messageId, mediaType) {
         var d = downloadingIds;
         d[messageId] = true;
@@ -230,6 +240,10 @@ Page {
             sendStatus: msg.send_status || ""
             senderName: msg.sender_name || ""
             senderPhoto: msg.sender_photo || ""
+            replyToId: msg.reply_to_id || ""
+            replyToSender: msg.reply_to_sender || ""
+            replyToText: msg.reply_to_text || ""
+            onReplyClicked: scrollToMessage(messageId)
         }
 
     }
@@ -249,6 +263,10 @@ Page {
             sendStatus: msg.send_status || ""
             senderName: msg.sender_name || ""
             senderPhoto: msg.sender_photo || ""
+            replyToId: msg.reply_to_id || ""
+            replyToSender: msg.reply_to_sender || ""
+            replyToText: msg.reply_to_text || ""
+            onReplyClicked: scrollToMessage(messageId)
             downloading: downloadingIds[msg.id] || false
             onDownloadRequested: triggerDownload(msg.id, "image")
         }
@@ -268,6 +286,10 @@ Page {
             sendStatus: msg.send_status || ""
             senderName: msg.sender_name || ""
             senderPhoto: msg.sender_photo || ""
+            replyToId: msg.reply_to_id || ""
+            replyToSender: msg.reply_to_sender || ""
+            replyToText: msg.reply_to_text || ""
+            onReplyClicked: scrollToMessage(messageId)
         }
 
     }
@@ -287,6 +309,10 @@ Page {
             sendStatus: msg.send_status || ""
             senderName: msg.sender_name || ""
             senderPhoto: msg.sender_photo || ""
+            replyToId: msg.reply_to_id || ""
+            replyToSender: msg.reply_to_sender || ""
+            replyToText: msg.reply_to_text || ""
+            onReplyClicked: scrollToMessage(messageId)
             downloading: downloadingIds[msg.id] || false
             onDownloadRequested: triggerDownload(msg.id, "video")
         }
@@ -306,6 +332,10 @@ Page {
             sendStatus: msg.send_status || ""
             senderName: msg.sender_name || ""
             senderPhoto: msg.sender_photo || ""
+            replyToId: msg.reply_to_id || ""
+            replyToSender: msg.reply_to_sender || ""
+            replyToText: msg.reply_to_text || ""
+            onReplyClicked: scrollToMessage(messageId)
             downloading: downloadingIds[msg.id] || false
             onDownloadRequested: triggerDownload(msg.id, "audio")
         }
@@ -326,6 +356,10 @@ Page {
             sendStatus: msg.send_status || ""
             senderName: msg.sender_name || ""
             senderPhoto: msg.sender_photo || ""
+            replyToId: msg.reply_to_id || ""
+            replyToSender: msg.reply_to_sender || ""
+            replyToText: msg.reply_to_text || ""
+            onReplyClicked: scrollToMessage(messageId)
             downloading: downloadingIds[msg.id] || false
             onDownloadRequested: triggerDownload(msg.id, "document")
         }
