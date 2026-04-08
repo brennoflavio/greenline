@@ -355,6 +355,8 @@ class DaemonEventHandler(Event):
         if not reply.Events:
             return None
 
+        pyotherside.send("sync-status", True)
+
         max_id = last_id
         chat_updates: dict[str, dict[str, Any]] = {}
         message_upserts: list[dict[str, Any]] = []
@@ -415,6 +417,10 @@ class DaemonEventHandler(Event):
             DaemonRPC().delete_events(up_to_id=max_id)
             with KV() as kv:
                 kv.put(LAST_EVENT_ID_KEY, max_id)
+
+            remaining = DaemonRPC().list_events(after_id=max_id, limit=1)
+            if not remaining.Events:
+                pyotherside.send("sync-status", False)
 
         return None
 

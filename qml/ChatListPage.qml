@@ -37,6 +37,13 @@ Page {
             bottom: parent.bottom
         }
 
+        LoadingBar {
+            id: loadingBar
+
+            width: parent.width
+            isLoading: false
+        }
+
         Item {
             id: searchBar
 
@@ -76,7 +83,7 @@ Page {
             id: chatListView
 
             width: parent.width
-            height: parent.height - searchBar.height
+            height: parent.height - searchBar.height - loadingBar.height
             clip: true
             model: {
                 if (searchInput.text.length === 0)
@@ -275,10 +282,16 @@ Page {
         Component.onCompleted: {
             addImportPath(Qt.resolvedUrl('../src/'));
             importModule('main', function() {
+                python.call('main.get_sync_status', [], function(syncing) {
+                    loadingBar.isLoading = syncing;
+                });
                 python.call('main.get_chat_list', [], function(result) {
                     if (result.success)
                         chats = result.chats;
 
+                });
+                setHandler('sync-status', function(syncing) {
+                    loadingBar.isLoading = syncing;
                 });
                 setHandler('message-upsert', function(messages) {
                     var newChats = chats.slice();

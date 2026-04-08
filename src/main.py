@@ -35,6 +35,7 @@ from daemon import (
 )
 from daemon_types import Contact as DaemonContact
 from events import (
+    LAST_EVENT_ID_KEY,
     QR_IMAGE_PATH,
     ChatListUpdateEvent,
     DaemonEventHandler,
@@ -72,6 +73,16 @@ class EnsureDaemonVersionResponse:
 def check_daemon_version() -> EnsureDaemonVersionResponse:
     restarted = ensure_daemon_version()
     return EnsureDaemonVersionResponse(restarted=restarted)
+
+
+def get_sync_status() -> bool:
+    try:
+        with KV() as kv:
+            last_id = kv.get(LAST_EVENT_ID_KEY, default=0)
+        reply = DaemonRPC().list_events(after_id=last_id, limit=1)
+        return bool(reply.Events)
+    except Exception:
+        return False
 
 
 def start_event_loop() -> None:
