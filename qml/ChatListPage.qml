@@ -218,7 +218,7 @@ Page {
                                     color: theme.palette.normal.backgroundTertiaryText
                                     elide: Text.ElideRight
                                     maximumLineCount: 1
-                                    width: parent.parent.width - (receiptIcon.visible ? units.gu(2) : 0) - parent.spacing
+                                    width: parent.parent.width - (receiptIcon.visible ? units.gu(2) : 0) - parent.spacing - (unreadBadge.visible ? unreadBadge.width + units.gu(0.5) : 0)
                                     anchors.verticalCenter: parent.verticalCenter
                                 }
 
