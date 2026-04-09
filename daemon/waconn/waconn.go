@@ -81,7 +81,7 @@ func (c *Client) handleEvent(evt interface{}) {
 	case *events.LoggedOut:
 		c.log.Warn("whatsmeow: logged out", "reason", v.Reason.String())
 		select {
-		case c.disconnectCh <- struct{}{}:
+		case c.stopCh <- fmt.Sprintf("logged out: %s", v.Reason.String()):
 		default:
 		}
 	case *events.StreamReplaced:

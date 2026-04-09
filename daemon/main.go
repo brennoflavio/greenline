@@ -176,7 +176,13 @@ func main() {
 	svc := &Service{client: client, eventStore: evStore, syncer: syncer, cacheDir: *cacheDir}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	go client.ConnectWithRetry(ctx, svc.setQR)
+	restartCh := make(chan struct{})
+	go func() {
+		client.ConnectWithRetry(ctx, svc.setQR)
+		if ctx.Err() == nil {
+			close(restartCh)
+		}
+	}()
 	go syncer.Run(ctx)
 
 	if err := rpc.Register(svc); err != nil {
@@ -198,7 +204,11 @@ func main() {
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
-		<-sigCh
+		select {
+		case <-sigCh:
+		case <-restartCh:
+			log.Println("Connection lost, exiting for restart")
+		}
 		cancel()
 		client.Disconnect()
 		evStore.Close()
@@ -216,5 +226,11 @@ func main() {
 			break
 		}
 		go jsonrpc.ServeConn(conn)
+	}
+
+	select {
+	case <-restartCh:
+		os.Exit(1)
+	default:
 	}
 }
