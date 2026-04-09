@@ -489,7 +489,7 @@ Page {
     Rectangle {
         id: inputBar
 
-        height: units.gu(6)
+        height: inputRowLayout.height + units.gu(1)
         color: theme.palette.normal.background
 
         anchors {
@@ -511,13 +511,16 @@ Page {
         }
 
         RowLayout {
+            id: inputRowLayout
+
             spacing: units.gu(1)
 
             anchors {
-                fill: parent
+                left: parent.left
+                right: parent.right
+                bottom: parent.bottom
                 leftMargin: units.gu(1)
                 rightMargin: units.gu(1)
-                topMargin: units.gu(0.5)
                 bottomMargin: units.gu(0.5)
             }
 
@@ -537,16 +540,17 @@ Page {
 
             }
 
-            TextField {
+            TextArea {
                 id: messageInput
 
                 Layout.fillWidth: true
                 placeholderText: i18n.tr("Type a message...")
-                onAccepted: sendMessage()
+                autoSize: true
+                maximumLineCount: 5
             }
 
             Icon {
-                name: messageInput.text.length > 0 ? "send" : "audio-input-microphone-symbolic"
+                name: "send"
                 width: units.gu(3)
                 height: units.gu(3)
                 color: LomiriColors.green
