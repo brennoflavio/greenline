@@ -348,78 +348,88 @@ class DaemonEventHandler(Event):
             return None
 
     def _do_trigger(self) -> None:
+        batch_limit = 500
+        syncing = False
+
         with KV() as kv:
             last_id = kv.get(LAST_EVENT_ID_KEY, default=0)
 
-        reply = DaemonRPC().list_events(after_id=last_id)
-        if not reply.Events:
-            return None
+        try:
+            while True:
+                reply = DaemonRPC().list_events(after_id=last_id, limit=batch_limit)
+                if not reply.Events:
+                    break
 
-        pyotherside.send("sync-status", True)
+                if not syncing:
+                    syncing = True
+                    pyotherside.send("sync-status", True)
 
-        max_id = last_id
-        chat_updates: dict[str, dict[str, Any]] = {}
-        message_upserts: list[dict[str, Any]] = []
-        message_updates: list[dict[str, Any]] = []
-        photo_updates: list[dict[str, str]] = []
-        presence_updates: list[dict[str, Any]] = []
-        for event in reply.Events:
-            if event.event_type == "Message":
-                _handle_message(event, chat_updates, message_upserts)
-            elif event.event_type == "Receipt":
-                _handle_receipt(event, chat_updates, message_updates)
-            elif event.event_type == "Contact":
-                _handle_contact(event, chat_updates)
-            elif event.event_type == "Mute":
-                _handle_mute(event, chat_updates)
-            elif event.event_type == "Picture":
-                _handle_picture(event, chat_updates, photo_updates)
-            elif event.event_type == "PushName":
-                _handle_push_name(event, chat_updates)
-            elif event.event_type == "BusinessName":
-                _handle_business_name(event, chat_updates)
-            elif event.event_type == "Presence":
-                _handle_presence(event, presence_updates)
-            elif event.event_type == "HistorySync":
-                updated = handle_history_sync(event)
-                chat_updates.update(updated)
-            elif event.event_type in (
-                "AppState",
-                "AppStateSyncComplete",
-                "AppStateSyncError",
-                "Connected",
-                "KeepAliveTimeout",
-                "OfflineSyncCompleted",
-                "OfflineSyncPreview",
-                "PairSuccess",
-                "QR",
-            ):
-                pass
-            else:
-                _handle_unknown(event)
-            if event.id > max_id:
-                max_id = event.id
+                max_id = last_id
+                chat_updates: dict[str, dict[str, Any]] = {}
+                message_upserts: list[dict[str, Any]] = []
+                message_updates: list[dict[str, Any]] = []
+                photo_updates: list[dict[str, str]] = []
+                presence_updates: list[dict[str, Any]] = []
+                for event in reply.Events:
+                    if event.event_type == "Message":
+                        _handle_message(event, chat_updates, message_upserts)
+                    elif event.event_type == "Receipt":
+                        _handle_receipt(event, chat_updates, message_updates)
+                    elif event.event_type == "Contact":
+                        _handle_contact(event, chat_updates)
+                    elif event.event_type == "Mute":
+                        _handle_mute(event, chat_updates)
+                    elif event.event_type == "Picture":
+                        _handle_picture(event, chat_updates, photo_updates)
+                    elif event.event_type == "PushName":
+                        _handle_push_name(event, chat_updates)
+                    elif event.event_type == "BusinessName":
+                        _handle_business_name(event, chat_updates)
+                    elif event.event_type == "Presence":
+                        _handle_presence(event, presence_updates)
+                    elif event.event_type == "HistorySync":
+                        updated = handle_history_sync(event)
+                        chat_updates.update(updated)
+                    elif event.event_type in (
+                        "AppState",
+                        "AppStateSyncComplete",
+                        "AppStateSyncError",
+                        "Connected",
+                        "KeepAliveTimeout",
+                        "OfflineSyncCompleted",
+                        "OfflineSyncPreview",
+                        "PairSuccess",
+                        "QR",
+                    ):
+                        pass
+                    else:
+                        _handle_unknown(event)
+                    if event.id > max_id:
+                        max_id = event.id
 
-        all_message_upserts = message_upserts + message_updates
-        if all_message_upserts:
-            pyotherside.send("message-upsert", all_message_upserts)
+                all_message_upserts = message_upserts + message_updates
+                if all_message_upserts:
+                    pyotherside.send("message-upsert", all_message_upserts)
 
-        if chat_updates:
-            pyotherside.send("chat-list-update", list(chat_updates.values()))
+                if chat_updates:
+                    pyotherside.send("chat-list-update", list(chat_updates.values()))
 
-        if photo_updates:
-            pyotherside.send("sender-photo-update", photo_updates)
+                if photo_updates:
+                    pyotherside.send("sender-photo-update", photo_updates)
 
-        if presence_updates:
-            pyotherside.send("presence-update", presence_updates)
+                if presence_updates:
+                    pyotherside.send("presence-update", presence_updates)
 
-        if max_id > last_id:
-            DaemonRPC().delete_events(up_to_id=max_id)
-            with KV() as kv:
-                kv.put(LAST_EVENT_ID_KEY, max_id)
+                if max_id > last_id:
+                    DaemonRPC().delete_events(up_to_id=max_id)
+                    with KV() as kv:
+                        kv.put(LAST_EVENT_ID_KEY, max_id)
+                    last_id = max_id
 
-            remaining = DaemonRPC().list_events(after_id=max_id, limit=1)
-            if not remaining.Events:
+                if len(reply.Events) < batch_limit:
+                    break
+        finally:
+            if syncing:
                 pyotherside.send("sync-status", False)
 
         return None
