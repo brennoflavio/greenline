@@ -29,8 +29,10 @@ type Client struct {
 	disconnectCh chan struct{}
 	stopCh       chan string
 
-	recoveryMu       sync.Mutex
-	recoveryLastTime map[appstate.WAPatchName]time.Time
+	keepAliveMu         sync.Mutex
+	keepAliveRecovering bool
+	recoveryMu          sync.Mutex
+	recoveryLastTime    map[appstate.WAPatchName]time.Time
 }
 
 func New(dbPath string, logger *slog.Logger) (*Client, error) {
@@ -56,6 +58,7 @@ func New(dbPath string, logger *slog.Logger) (*Client, error) {
 	}
 
 	waCli := whatsmeow.NewClient(device, waLogger.Sub("client"))
+	waCli.EnableAutoReconnect = false
 
 	c := &Client{
 		waCli:            waCli,
@@ -73,39 +76,67 @@ func New(dbPath string, logger *slog.Logger) (*Client, error) {
 
 func (c *Client) handleEvent(evt interface{}) {
 	switch v := evt.(type) {
+	case *events.Connected:
+		c.clearKeepAliveRecovery()
 	case *events.Disconnected:
-		select {
-		case c.disconnectCh <- struct{}{}:
-		default:
+		c.signalDisconnect()
+	case *events.KeepAliveTimeout:
+		if time.Since(v.LastSuccess) < whatsmeow.KeepAliveMaxFailTime || !c.beginKeepAliveRecovery() {
+			return
 		}
+		c.log.Warn("whatsmeow: keepalive stalled, forcing reconnect",
+			"error_count", v.ErrorCount, "last_success", v.LastSuccess)
+		c.waCli.Disconnect()
+		c.signalDisconnect()
 	case *events.LoggedOut:
 		c.log.Warn("whatsmeow: logged out", "reason", v.Reason.String())
-		select {
-		case c.stopCh <- fmt.Sprintf("logged out: %s", v.Reason.String()):
-		default:
-		}
+		c.signalStop(fmt.Sprintf("logged out: %s", v.Reason.String()))
 	case *events.StreamReplaced:
-		select {
-		case c.stopCh <- "stream replaced by another client":
-		default:
-		}
+		c.signalStop("stream replaced by another client")
 	case *events.ClientOutdated:
-		select {
-		case c.stopCh <- "client outdated, update required":
-		default:
-		}
+		c.signalStop("client outdated, update required")
 	case *events.TemporaryBan:
 		c.log.Error("whatsmeow: temporary ban",
 			"reason", v.Code.String(), "expires_in", v.Expire)
-		select {
-		case c.stopCh <- fmt.Sprintf("temporary ban: %s (expires in %s)",
-			v.Code.String(), v.Expire):
-		default:
-		}
+		c.signalStop(fmt.Sprintf("temporary ban: %s (expires in %s)",
+			v.Code.String(), v.Expire))
+	case *events.CATRefreshError:
+		c.log.Error("whatsmeow: CAT refresh failed", "error", v.Error)
+		c.signalStop(fmt.Sprintf("CAT refresh failed: %v", v.Error))
 	case *events.AppStateSyncError:
 		if errors.Is(v.Error, appstate.ErrMismatchingLTHash) {
 			go c.maybeRecoverAppState(v.Name)
 		}
+	}
+}
+
+func (c *Client) beginKeepAliveRecovery() bool {
+	c.keepAliveMu.Lock()
+	defer c.keepAliveMu.Unlock()
+	if c.keepAliveRecovering {
+		return false
+	}
+	c.keepAliveRecovering = true
+	return true
+}
+
+func (c *Client) clearKeepAliveRecovery() {
+	c.keepAliveMu.Lock()
+	c.keepAliveRecovering = false
+	c.keepAliveMu.Unlock()
+}
+
+func (c *Client) signalDisconnect() {
+	select {
+	case c.disconnectCh <- struct{}{}:
+	default:
+	}
+}
+
+func (c *Client) signalStop(reason string) {
+	select {
+	case c.stopCh <- reason:
+	default:
 	}
 }
 
@@ -123,6 +154,8 @@ func (c *Client) ConnectWithRetry(ctx context.Context, onQR func(code string)) {
 			return
 		default:
 		}
+
+		c.drainDisconnect()
 
 		if c.waCli.Store.ID == nil {
 			c.log.Info("whatsmeow: device not paired, starting QR flow")
@@ -174,21 +207,46 @@ func (c *Client) ConnectWithRetry(ctx context.Context, onQR func(code string)) {
 				c.log.Warn("whatsmeow: timed out waiting for post-pairing connection")
 				continue
 			}
-			c.drainDisconnect()
+			c.drainDisconnectIfConnected()
 			c.log.Info("whatsmeow: connected after pairing")
 		} else {
-			if c.waCli.IsConnected() {
-				c.log.Info("whatsmeow: already connected, skipping connect")
-			} else {
-				if err := c.waCli.Connect(); err != nil {
+			for {
+				if ctx.Err() != nil {
+					return
+				}
+
+				select {
+				case reason := <-c.stopCh:
+					c.log.Error("whatsmeow: permanent disconnect, stopping", "reason", reason)
+					return
+				default:
+				}
+
+				c.drainDisconnect()
+
+				if c.waCli.IsConnected() {
+					c.log.Info("whatsmeow: already connected, skipping connect")
+					break
+				}
+
+				err := c.waCli.Connect()
+				if errors.Is(err, whatsmeow.ErrAlreadyConnected) {
+					c.log.Info("whatsmeow: already connected, skipping connect")
+					break
+				}
+				if err != nil {
 					c.log.Error("whatsmeow: connect failed", "error", err)
 					if !c.sleepCtx(ctx, retryDelay) {
 						return
 					}
 					continue
 				}
+
 				c.log.Info("whatsmeow: connected (already paired)")
+				break
 			}
+
+			c.drainDisconnectIfConnected()
 		}
 
 		select {
@@ -213,11 +271,20 @@ func (c *Client) drainDisconnect() {
 	}
 }
 
+func (c *Client) drainDisconnectIfConnected() {
+	if c.waCli.IsConnected() {
+		c.drainDisconnect()
+	}
+}
+
 func (c *Client) sleepCtx(ctx context.Context, d time.Duration) bool {
 	t := time.NewTimer(d)
 	defer t.Stop()
 	select {
 	case <-ctx.Done():
+		return false
+	case reason := <-c.stopCh:
+		c.log.Error("whatsmeow: permanent disconnect, stopping", "reason", reason)
 		return false
 	case <-t.C:
 		return true
