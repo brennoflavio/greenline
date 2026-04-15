@@ -115,6 +115,7 @@ Page {
                 setHandler('session-status', function(status) {
                     if (status.logged_in) {
                         isAuthenticating = false;
+                        isLoggedIn = true;
                         pageStack.clear();
                         pageStack.push(Qt.resolvedUrl("ChatListPage.qml"));
                     } else if (status.qr_image_path !== "") {

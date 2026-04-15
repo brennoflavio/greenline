@@ -61,19 +61,21 @@ Page {
                 loading = true;
                 errorMessage = "";
                 python.call('main.install_daemon', [], function(result) {
-                    if (result.success)
+                    if (result.success) {
                         python.call('main.check_daemon_version', [], function() {
-                        python.call('main.get_session_status', [], function(session) {
-                            python.call('main.start_event_loop', [], function() {
+                            python.call('main.get_session_status', [], function(session) {
+                                python.call('main.start_event_loop', [], function() {
+                                });
+                                pageStack.clear();
+                                if (session.logged_in) {
+                                    isLoggedIn = true;
+                                    pageStack.push(Qt.resolvedUrl("ChatListPage.qml"));
+                                } else {
+                                    pageStack.push(Qt.resolvedUrl("AuthorizationPage.qml"));
+                                }
                             });
-                            pageStack.clear();
-                            if (session.logged_in)
-                                pageStack.push(Qt.resolvedUrl("ChatListPage.qml"));
-                            else
-                                pageStack.push(Qt.resolvedUrl("AuthorizationPage.qml"));
                         });
-                    });
-                    else {
+                    } else {
                         errorMessage = result.message;
                         loading = false;
                     }

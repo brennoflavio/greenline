@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-09 03:48+0000\n"
+"POT-Creation-Date: 2026-04-15 19:09+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -35,7 +35,7 @@ msgstr ""
 msgid "The code refreshes automatically. Keep this screen open while scanning."
 msgstr ""
 
-#: ../qml/AuthorizationPage.qml:132
+#: ../qml/AuthorizationPage.qml:133
 msgid "Link Device"
 msgstr ""
 

@@ -23,7 +23,34 @@ MainView {
 
     property bool isAuthenticating: false
     property bool initComplete: false
+    property bool isLoggedIn: false
+    property string pendingChatUri: ""
 
+    function openChatFromUri(uri) {
+        var prefix = "greenline://chat/";
+        if (uri.indexOf(prefix) !== 0)
+            return ;
+
+        var chatJid = decodeURIComponent(uri.substring(prefix.length));
+        python.call('main.get_chat_info', [chatJid], function(result) {
+            if (result.success)
+                pageStack.push(Qt.resolvedUrl("ChatPage.qml"), {
+                "chatId": result.id,
+                "chatName": result.name,
+                "chatPhoto": result.photo,
+                "isGroup": result.is_group || false,
+                "unreadCount": result.unread_count || 0
+            });
+
+        });
+    }
+
+    onIsLoggedInChanged: {
+        if (isLoggedIn && pendingChatUri !== "") {
+            openChatFromUri(pendingChatUri);
+            pendingChatUri = "";
+        }
+    }
     objectName: 'mainView'
     applicationName: 'greenline.brennoflavio'
     automaticOrientation: true
@@ -32,6 +59,20 @@ MainView {
 
     PageStack {
         id: pageStack
+    }
+
+    Connections {
+        target: UriHandler
+        onOpened: {
+            if (uris.length === 0)
+                return ;
+
+            var uri = uris[0];
+            if (isLoggedIn)
+                openChatFromUri(uri);
+            else
+                pendingChatUri = uri;
+        }
     }
 
     Connections {
@@ -84,6 +125,14 @@ MainView {
                                 python.call('main.send_presence', [true], function() {
                                 });
                                 pageStack.push(Qt.resolvedUrl("ChatListPage.qml"));
+                                isLoggedIn = true;
+                                var args = Qt.application.arguments;
+                                for (var i = 0; i < args.length; i++) {
+                                    if (args[i].indexOf("greenline://") === 0) {
+                                        openChatFromUri(args[i]);
+                                        break;
+                                    }
+                                }
                             } else {
                                 pageStack.push(Qt.resolvedUrl("AuthorizationPage.qml"));
                             }
@@ -93,6 +142,7 @@ MainView {
                 });
                 setHandler('session-status', function(status) {
                     if (!status.logged_in && !isAuthenticating) {
+                        isLoggedIn = false;
                         pageStack.clear();
                         pageStack.push(Qt.resolvedUrl("AuthorizationPage.qml"));
                     }

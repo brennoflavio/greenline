@@ -3,6 +3,7 @@ package notify
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 
 	"github.com/godbus/dbus/v5"
 )
@@ -26,7 +27,7 @@ func New(appID string) (*Notifier, error) {
 	return &Notifier{conn: conn, appID: appID}, nil
 }
 
-func (n *Notifier) Post(summary, body, icon string) error {
+func (n *Notifier) Post(summary, body, icon, chatJID string) error {
 	if len(body) > maxBodyLen {
 		body = body[:maxBodyLen] + "…"
 	}
@@ -41,6 +42,9 @@ func (n *Notifier) Post(summary, body, icon string) error {
 	}
 	if body != "" {
 		card["body"] = body
+	}
+	if chatJID != "" {
+		card["actions"] = []string{"greenline://chat/" + url.PathEscape(chatJID)}
 	}
 	msg := map[string]interface{}{
 		"notification": map[string]interface{}{

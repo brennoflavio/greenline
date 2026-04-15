@@ -261,6 +261,26 @@ def get_chat_list() -> ChatListResponse:
 
 
 @crash_reporter
+def get_chat_info(chat_id: str) -> dict[str, object]:
+    with KV() as kv:
+        data = kv.get(f"chat:{chat_id}")
+    if not data:
+        return {"success": False}
+    try:
+        chat = ChatListItem(**data)
+    except (TypeError, KeyError):
+        return {"success": False}
+    return {
+        "success": True,
+        "id": chat.id,
+        "name": chat.name,
+        "photo": chat.photo,
+        "is_group": chat.is_group,
+        "unread_count": chat.unread_count,
+    }
+
+
+@crash_reporter
 @dataclass_to_dict
 def get_messages(chat_id: str) -> MessagesResponse:
     with KV() as kv:

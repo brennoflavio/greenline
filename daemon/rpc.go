@@ -160,14 +160,7 @@ func (s *Service) EnsureJID(args *EnsureJIDArgs, reply *EnsureJIDReply) error {
 	if err != nil {
 		return fmt.Errorf("invalid JID: %w", err)
 	}
-	if jid.Server == types.HiddenUserServer {
-		pn, err := s.client.GetPNForLID(context.Background(), jid)
-		if err == nil && !pn.IsEmpty() {
-			reply.JID = pn.String()
-			return nil
-		}
-	}
-	reply.JID = jid.String()
+	reply.JID = s.client.ResolveJID(context.Background(), jid).String()
 	return nil
 }
 

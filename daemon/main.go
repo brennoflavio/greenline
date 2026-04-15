@@ -162,11 +162,12 @@ func main() {
 			if summary == "" {
 				summary = msg.Info.Sender.User
 			}
-			icon := avatarsync.AvatarJPGPath(*cacheDir, msg.Info.Chat.String())
+			chatJID := client.ResolveJID(context.Background(), msg.Info.Chat)
+			icon := avatarsync.AvatarJPGPath(*cacheDir, chatJID.String())
 			if _, err := os.Stat(icon); err != nil {
 				icon = ""
 			}
-			if err := notifier.Post(summary, body, icon); err != nil {
+			if err := notifier.Post(summary, body, icon, chatJID.String()); err != nil {
 				logger.Error("failed to send notification", "error", err)
 			}
 		}

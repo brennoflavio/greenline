@@ -6,7 +6,8 @@
     "hooks": {
         "greenline": {
             "apparmor": "greenline.apparmor",
-            "desktop":  "greenline.desktop"
+            "desktop":  "greenline.desktop",
+            "urls":     "greenline.dispatcher"
         },
         "push": {
             "apparmor": "push.apparmor",

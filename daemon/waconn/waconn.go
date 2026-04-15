@@ -332,6 +332,15 @@ func (c *Client) GetPNForLID(ctx context.Context, lid types.JID) (types.JID, err
 	return c.waCli.Store.LIDs.GetPNForLID(ctx, lid)
 }
 
+func (c *Client) ResolveJID(ctx context.Context, jid types.JID) types.JID {
+	if jid.Server == types.HiddenUserServer {
+		if pn, err := c.GetPNForLID(ctx, jid); err == nil && !pn.IsEmpty() {
+			return pn
+		}
+	}
+	return jid
+}
+
 func (c *Client) DownloadMediaWithPath(ctx context.Context, directPath string, encFileHash, fileHash, mediaKey []byte, fileLength int, mediaType whatsmeow.MediaType, mmsType string) ([]byte, error) {
 	return c.waCli.DownloadMediaWithPath(ctx, directPath, encFileHash, fileHash, mediaKey, fileLength, mediaType, mmsType)
 }
