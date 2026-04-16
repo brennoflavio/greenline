@@ -708,3 +708,31 @@ class PairSuccessEvent:
     LID: str = ""
     BusinessName: str = ""
     Platform: str = ""
+
+
+@dataclass
+class PairErrorDetail:
+    Message: str = ""
+    DBErr: Optional[Dict[str, Any]] = None
+
+
+@dataclass
+class PairErrorEvent:
+    ID: str = ""
+    LID: str = ""
+    BusinessName: str = ""
+    Platform: str = ""
+    Error: PairErrorDetail = field(default_factory=PairErrorDetail)
+
+
+@dataclass
+class UndecryptableMessageEvent:
+    Info: MessageInfo = field(default_factory=MessageInfo)
+    IsUnavailable: bool = False
+    UnavailableType: str = ""
+    DecryptFailMode: str = ""
+
+
+@dataclass
+class KeepAliveRestoredEvent:
+    pass

@@ -412,11 +412,14 @@ def _dispatch_event_inner(
         "AppStateSyncComplete",
         "AppStateSyncError",
         "Connected",
+        "KeepAliveRestored",
         "KeepAliveTimeout",
         "OfflineSyncCompleted",
         "OfflineSyncPreview",
+        "PairError",
         "PairSuccess",
         "QR",
+        "UndecryptableMessage",
     ):
         pass
     else:
