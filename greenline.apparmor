@@ -1,5 +1,7 @@
 {
-    "policy_groups": [],
+    "policy_groups": [
+        "usermetrics"
+    ],
     "policy_version": "@APPARMOR_POLICY@",
     "template": "unconfined"
 }

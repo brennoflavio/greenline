@@ -4,6 +4,7 @@ import Lomiri.Content 1.3
 import QtGraphicalEffects 1.0
 import QtQuick 2.7
 import QtQuick.Layouts 1.3
+import UserMetrics 0.1
 import "components"
 import io.thp.pyotherside 1.4
 import "ut_components"
@@ -174,6 +175,15 @@ Page {
             python.call('main.send_text_message', [chatId, text, tempId], function() {
             });
         }
+    }
+
+    Metric {
+        id: messagesReadMetric
+
+        name: "greenline_messages_read"
+        format: "%1 " + i18n.tr("WhatsApp messages read today")
+        emptyFormat: i18n.tr("No WhatsApp messages read today")
+        domain: "greenline.brennoflavio"
     }
 
     ListView {
@@ -576,6 +586,9 @@ Page {
                 python.call('main.get_messages', [chatId], function(result) {
                     if (result.success) {
                         messages = result.messages;
+                        if (unreadCount > 0)
+                            messagesReadMetric.increment(unreadCount);
+
                         python.call('main.mark_messages_as_read', [chatId], function() {
                         });
                     }
@@ -612,10 +625,11 @@ Page {
                     }
                     messages = updated;
                     messagesChanged();
-                    if (hasNewIncoming)
+                    if (hasNewIncoming) {
+                        messagesReadMetric.increment(1);
                         python.call('main.mark_messages_as_read', [chatId], function() {
-                    });
-
+                        });
+                    }
                 });
                 setHandler('presence-update', function(presenceList) {
                     for (var i = 0; i < presenceList.length; i++) {
