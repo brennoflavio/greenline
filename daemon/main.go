@@ -15,6 +15,7 @@ import (
 	"reflect"
 	"syscall"
 
+	waBinary "go.mau.fi/whatsmeow/binary"
 	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
 	"greenline.brennoflavio/daemon/avatarsync"
@@ -22,6 +23,18 @@ import (
 	"greenline.brennoflavio/daemon/notify"
 	"greenline.brennoflavio/daemon/waconn"
 )
+
+func isVideoCall(data *waBinary.Node) bool {
+	if data == nil {
+		return false
+	}
+	for _, child := range data.GetChildren() {
+		if child.Tag == "video" {
+			return true
+		}
+	}
+	return false
+}
 
 func extractBody(msg *events.Message) string {
 	if msg.Message == nil {
@@ -172,6 +185,27 @@ func main() {
 			}
 			if err := notifier.Post(summary, body, icon, chatJID.String()); err != nil {
 				logger.Error("failed to send notification", "error", err)
+			}
+		}
+		if call, ok := evt.(*events.CallOffer); ok {
+			ctx := context.Background()
+			callerJID := client.ResolveJID(ctx, call.CallCreator)
+			summary := callerJID.User
+			if contact, err := client.GetContact(ctx, callerJID); err == nil {
+				if name := contactDisplayName(callerJID.String(), contact.FullName, contact.PushName, contact.BusinessName); name != callerJID.String() {
+					summary = name
+				}
+			}
+			body := "Incoming audio call — answer on your primary phone"
+			if isVideoCall(call.Data) {
+				body = "Incoming video call — answer on your primary phone"
+			}
+			icon := avatarsync.AvatarJPGPath(*cacheDir, callerJID.String())
+			if _, err := os.Stat(icon); err != nil {
+				icon = ""
+			}
+			if err := notifier.Post(summary, body, icon, callerJID.String()); err != nil {
+				logger.Error("failed to send call notification", "error", err)
 			}
 		}
 	})

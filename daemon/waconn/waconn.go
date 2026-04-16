@@ -316,6 +316,10 @@ func (c *Client) GetAllContacts(ctx context.Context) (map[types.JID]types.Contac
 	return c.waCli.Store.Contacts.GetAllContacts(ctx)
 }
 
+func (c *Client) GetContact(ctx context.Context, jid types.JID) (types.ContactInfo, error) {
+	return c.waCli.Store.Contacts.GetContact(ctx, jid)
+}
+
 func (c *Client) GetJoinedGroups(ctx context.Context) ([]*types.GroupInfo, error) {
 	return c.waCli.GetJoinedGroups(ctx)
 }

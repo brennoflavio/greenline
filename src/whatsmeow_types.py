@@ -736,3 +736,65 @@ class UndecryptableMessageEvent:
 @dataclass
 class KeepAliveRestoredEvent:
     pass
+
+
+@dataclass
+class CallOfferEvent:
+    From: str = ""
+    Timestamp: str = ""
+    CallCreator: str = ""
+    CallCreatorAlt: str = ""
+    CallID: str = ""
+    GroupJID: str = ""
+    RemotePlatform: str = ""
+    RemoteVersion: str = ""
+    Data: Optional[Dict[str, Any]] = None
+
+
+@dataclass
+class CallAcceptEvent:
+    From: str = ""
+    Timestamp: str = ""
+    CallCreator: str = ""
+    CallCreatorAlt: str = ""
+    CallID: str = ""
+    GroupJID: str = ""
+    RemotePlatform: str = ""
+    RemoteVersion: str = ""
+    Data: Optional[Dict[str, Any]] = None
+
+
+@dataclass
+class CallTerminateEvent:
+    From: str = ""
+    Timestamp: str = ""
+    CallCreator: str = ""
+    CallCreatorAlt: str = ""
+    CallID: str = ""
+    GroupJID: str = ""
+    Reason: str = ""
+    Data: Optional[Dict[str, Any]] = None
+
+
+@dataclass
+class CallRelayLatencyEvent:
+    From: str = ""
+    Timestamp: str = ""
+    CallCreator: str = ""
+    CallCreatorAlt: str = ""
+    CallID: str = ""
+    GroupJID: str = ""
+    Data: Optional[Dict[str, Any]] = None
+
+
+@dataclass
+class CallOfferNoticeEvent:
+    From: str = ""
+    Timestamp: str = ""
+    CallCreator: str = ""
+    CallCreatorAlt: str = ""
+    CallID: str = ""
+    GroupJID: str = ""
+    Media: str = ""
+    Type: str = ""
+    Data: Optional[Dict[str, Any]] = None
