@@ -6,6 +6,7 @@ from typing import Any, Dict, Optional
 
 from constants import GROUP_JID_SUFFIX, WHATSAPP_JID_SUFFIX
 from models import ChatListItem, Message, MessageType, ReadReceipt
+from unread_counter import increment_unread_total
 from ut_components.config import get_cache_path
 from ut_components.kv import KV
 from whatsmeow_types import MessageContent, MessageEvent, MessageInfo
@@ -265,6 +266,7 @@ def upsert_chat(msg: Message, info: MessageInfo) -> ChatListItem:
             else:
                 chat.read_receipt = ReadReceipt.NONE
                 chat.unread_count += 1
+                increment_unread_total()
         if not is_group:
             update_chat_name(
                 chat,
@@ -290,6 +292,8 @@ def upsert_chat(msg: Message, info: MessageInfo) -> ChatListItem:
             business_name=business_name if not is_group else "",
             name_updated_at=msg.timestamp_unix,
         )
+        if not msg.is_outgoing:
+            increment_unread_total()
 
     with KV() as kv:
         kv.put(chat_key, asdict(chat))

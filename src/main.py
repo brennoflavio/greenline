@@ -54,6 +54,11 @@ from models import (
     ReadReceipt,
 )
 from rpc import DaemonRPC
+from unread_counter import (
+    decrement_unread_total,
+    get_unread_total,
+    reconcile_unread_total,
+)
 from ut_components.config import get_cache_path, get_config_path
 from ut_components.crash import crash_reporter
 from ut_components.event import get_event_dispatcher
@@ -86,6 +91,7 @@ def get_sync_status() -> bool:
 
 
 def start_event_loop() -> None:
+    reconcile_unread_total()
     dispatcher = get_event_dispatcher()
     dispatcher.register_event(SessionStatusEvent())
     dispatcher.register_event(DaemonEventHandler())
@@ -328,9 +334,19 @@ def mark_messages_as_read(chat_id: str) -> SuccessResponse:
         existing = kv.get(f"chat:{chat_id}")
         if existing:
             chat = ChatListItem(**existing)
+            prev_unread = chat.unread_count
             chat.unread_count = 0
             kv.put(f"chat:{chat_id}", asdict(chat))
             pyotherside.send("chat-list-update", [_enum_to_str(asdict(chat))])  # type: ignore[no-untyped-call]
+            if prev_unread > 0:
+                decrement_unread_total(prev_unread)
+
+    try:
+        rpc.clear_chat_notifications([chat_id])
+        total = get_unread_total()
+        rpc.set_notification_counter(total, total > 0)
+    except Exception:
+        pass
 
     return SuccessResponse(success=True, message="")
 

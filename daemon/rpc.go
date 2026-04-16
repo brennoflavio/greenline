@@ -20,6 +20,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"greenline.brennoflavio/daemon/avatarsync"
 	"greenline.brennoflavio/daemon/eventstore"
+	"greenline.brennoflavio/daemon/notify"
 	"greenline.brennoflavio/daemon/waconn"
 
 	"go.mau.fi/whatsmeow/types"
@@ -29,6 +30,7 @@ type Service struct {
 	client     *waconn.Client
 	eventStore *eventstore.Store
 	syncer     *avatarsync.Syncer
+	notifier   *notify.Notifier
 	cacheDir   string
 	mu         sync.RWMutex
 	qrCode     string
@@ -679,4 +681,27 @@ func (s *Service) DownloadMedia(args *DownloadMediaArgs, reply *DownloadMediaRep
 
 	reply.FilePath = filePath
 	return nil
+}
+
+type SetNotificationCounterArgs struct {
+	Count   int32
+	Visible bool
+}
+
+func (s *Service) SetNotificationCounter(args *SetNotificationCounterArgs, reply *struct{}) error {
+	if s.notifier == nil {
+		return nil
+	}
+	return s.notifier.SetCounter(args.Count, args.Visible)
+}
+
+type ClearChatNotificationsArgs struct {
+	Tags []string
+}
+
+func (s *Service) ClearChatNotifications(args *ClearChatNotificationsArgs, reply *struct{}) error {
+	if s.notifier == nil {
+		return nil
+	}
+	return s.notifier.ClearPersistentList(args.Tags)
 }

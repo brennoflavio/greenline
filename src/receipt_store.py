@@ -76,6 +76,9 @@ def _update_chat(chat_id: str, new_status: ReadReceipt, is_from_me: bool) -> Opt
                 changed = True
 
         if new_status == ReadReceipt.READ and chat.unread_count > 0:
+            from unread_counter import decrement_unread_total
+
+            decrement_unread_total(chat.unread_count)
             chat.unread_count = 0
             changed = True
 

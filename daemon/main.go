@@ -211,7 +211,7 @@ func main() {
 	})
 
 	syncer := avatarsync.New(client, *cacheDir, logger)
-	svc := &Service{client: client, eventStore: evStore, syncer: syncer, cacheDir: *cacheDir}
+	svc := &Service{client: client, eventStore: evStore, syncer: syncer, notifier: notifier, cacheDir: *cacheDir}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	restartCh := make(chan struct{})

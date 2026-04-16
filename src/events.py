@@ -14,6 +14,7 @@ from message_store import store_message, update_chat_name
 from models import ChatListItem, Message, MessageType, ReadReceipt
 from receipt_store import process_receipt
 from rpc import DaemonNotReadyError, DaemonRPC, RateLimitError
+from unread_counter import get_unread_total, reconcile_unread_total
 from ut_components.config import get_cache_path
 from ut_components.event import Event
 from ut_components.kv import KV
@@ -410,6 +411,7 @@ def _dispatch_event_inner(
     elif event.event_type == "HistorySync":
         updated = handle_history_sync(event)
         chat_updates.update(updated)
+        reconcile_unread_total()
     elif event.event_type in (
         "AppState",
         "AppStateSyncComplete",
@@ -460,6 +462,13 @@ def process_events_once(batch_limit: int = 50) -> None:
             )
             if event.id > max_id:
                 max_id = event.id
+
+        if chat_updates:
+            try:
+                total = get_unread_total()
+                DaemonRPC().set_notification_counter(total, total > 0)
+            except Exception:
+                pass
 
         if max_id > last_id:
             DaemonRPC().delete_events(up_to_id=max_id)
@@ -520,6 +529,11 @@ class DaemonEventHandler(Event):
 
                 if chat_updates:
                     pyotherside.send("chat-list-update", list(chat_updates.values()))
+                    try:
+                        total = get_unread_total()
+                        DaemonRPC().set_notification_counter(total, total > 0)
+                    except Exception:
+                        pass
 
                 if photo_updates:
                     pyotherside.send("sender-photo-update", photo_updates)

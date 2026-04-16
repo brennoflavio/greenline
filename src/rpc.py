@@ -175,3 +175,12 @@ class DaemonRPC:
             },
         )
         return str(result.get("FilePath", ""))
+
+    def set_notification_counter(self, count: int, visible: bool) -> None:
+        self._call(
+            "Service.SetNotificationCounter",
+            {"Count": count, "Visible": visible},
+        )
+
+    def clear_chat_notifications(self, tags: list[str]) -> None:
+        self._call("Service.ClearChatNotifications", {"Tags": tags})

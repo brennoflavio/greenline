@@ -46,19 +46,39 @@ func (n *Notifier) Post(summary, body, icon, chatJID string) error {
 	if chatJID != "" {
 		card["actions"] = []string{"greenline://chat/" + url.PathEscape(chatJID)}
 	}
+	notification := map[string]interface{}{
+		"card":    card,
+		"sound":   true,
+		"vibrate": true,
+	}
+	if chatJID != "" {
+		notification["tag"] = chatJID
+	}
 	msg := map[string]interface{}{
-		"notification": map[string]interface{}{
-			"card":    card,
-			"sound":   true,
-			"vibrate": true,
-		},
+		"notification": notification,
 	}
 	data, err := json.Marshal(msg)
 	if err != nil {
 		return fmt.Errorf("notify: marshal: %w", err)
 	}
+	if chatJID != "" {
+		n.ClearPersistentList([]string{chatJID})
+	}
 	obj := n.conn.Object(postalService, makePath(n.appID))
 	return obj.Call(postalIface+".Post", 0, n.appID, string(data)).Err
+}
+
+func (n *Notifier) SetCounter(count int32, visible bool) error {
+	obj := n.conn.Object(postalService, makePath(n.appID))
+	return obj.Call(postalIface+".SetCounter", 0, n.appID, count, visible).Err
+}
+
+func (n *Notifier) ClearPersistentList(tags []string) error {
+	if len(tags) == 0 {
+		return nil
+	}
+	obj := n.conn.Object(postalService, makePath(n.appID))
+	return obj.Call(postalIface+".ClearPersistentList", 0, n.appID, tags).Err
 }
 
 func (n *Notifier) Close() {
