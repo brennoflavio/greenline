@@ -35,6 +35,7 @@ def enum_to_str(obj: Dict[str, Any]) -> Dict[str, Any]:
 
 QR_IMAGE_PATH = os.path.join(get_cache_path(), "qr.png")
 STATUS_BROADCAST_JID = "status@broadcast"
+NEWSLETTER_SERVER = "@newsletter"
 
 
 @dataclass
@@ -136,6 +137,8 @@ def _handle_message(
     raw = json.loads(event.payload or "{}")
     evt = from_dict(data_class=MessageEvent, data=raw)
     if evt.Info.Chat == STATUS_BROADCAST_JID:
+        return
+    if evt.Info.Chat.endswith(NEWSLETTER_SERVER):
         return
     evt.Info.Chat = DaemonRPC().ensure_jid(evt.Info.Chat)
     stored = store_message(evt, raw=raw)

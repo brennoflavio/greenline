@@ -26,6 +26,7 @@ from whatsmeow_types import (
 )
 
 STATUS_BROADCAST_JID = "status@broadcast"
+NEWSLETTER_SERVER = "@newsletter"
 
 _STATUS_TO_RECEIPT = {
     0: ReadReceipt.NONE,
@@ -59,6 +60,8 @@ def handle_history_sync(event: Any) -> Dict[str, Dict[str, Any]]:
         for conv in conversations:
             chat_jid = jid_map.get(conv.ID, conv.ID)
             if chat_jid == STATUS_BROADCAST_JID:
+                continue
+            if chat_jid.endswith(NEWSLETTER_SERVER):
                 continue
 
             _process_messages(kv, conv, chat_jid, jid_map)

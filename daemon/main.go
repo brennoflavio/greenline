@@ -151,6 +151,9 @@ func main() {
 			if msg.Info.Chat == types.StatusBroadcastJID {
 				return
 			}
+			if msg.Info.Chat.Server == types.NewsletterServer {
+				return
+			}
 			if client.IsMuted(context.Background(), msg.Info.Chat) {
 				return
 			}
