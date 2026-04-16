@@ -12,6 +12,7 @@ class MessageType(StrEnum):
     AUDIO = "audio"
     DOCUMENT = "document"
     STICKER = "sticker"
+    LINK_PREVIEW = "link_preview"
 
 
 class ReadReceipt(StrEnum):
@@ -73,6 +74,9 @@ class Message:
     reply_to_id: str = ""
     reply_to_sender: str = ""
     reply_to_text: str = ""
+    link_title: str = ""
+    link_description: str = ""
+    link_url: str = ""
 
 
 @dataclass

@@ -107,7 +107,10 @@ def _build_jid_map(evt: HistorySyncEvent) -> Dict[str, str]:
 
 
 def _derive_type_from_content(content: Dict[str, Any]) -> Optional[MessageType]:
-    if content.get("conversation") or content.get("extendedTextMessage"):
+    ext = content.get("extendedTextMessage")
+    if ext and (ext.get("matchedText") or ext.get("title")):
+        return MessageType.LINK_PREVIEW
+    if content.get("conversation") or ext:
         return MessageType.TEXT
     if content.get("imageMessage"):
         return MessageType.IMAGE
@@ -163,6 +166,13 @@ def _extract_content_fields(content: Dict[str, Any]) -> Tuple[str, str, str, str
         mimetype = stk.get("mimetype", "")
 
     return text, caption, mimetype, file_name, duration
+
+
+def _extract_link_preview_fields(content: Dict[str, Any]) -> Tuple[str, str, str]:
+    ext = content.get("extendedTextMessage")
+    if not ext:
+        return "", "", ""
+    return ext.get("title", ""), ext.get("description", ""), ext.get("matchedText", "")
 
 
 def _message_preview(content: Dict[str, Any]) -> str:
@@ -276,6 +286,10 @@ def _process_messages(
 
         reply_to_id, reply_to_sender, reply_to_text = _extract_context_info_from_dict(content, jid_map)
 
+        link_title, link_description, link_url = (
+            _extract_link_preview_fields(content) if msg_type == MessageType.LINK_PREVIEW else ("", "", "")
+        )
+
         msg = Message(
             id=msg_id,
             chat_id=chat_jid,
@@ -294,6 +308,9 @@ def _process_messages(
             reply_to_id=reply_to_id,
             reply_to_sender=reply_to_sender,
             reply_to_text=reply_to_text,
+            link_title=link_title,
+            link_description=link_description,
+            link_url=link_url,
         )
 
         msg.thumbnail_path = _extract_thumbnail({"Message": content}, msg_id)

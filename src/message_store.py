@@ -121,6 +121,11 @@ def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
     if msg_type is None:
         return None
 
+    if msg_type == MessageType.TEXT and content.extendedTextMessage:
+        ext = content.extendedTextMessage
+        if ext.matchedText or ext.title:
+            msg_type = MessageType.LINK_PREVIEW
+
     text = ""
     caption = ""
     duration = ""
@@ -155,6 +160,15 @@ def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
     elif content.stickerMessage:
         mimetype = content.stickerMessage.mimetype
 
+    link_title = ""
+    link_description = ""
+    link_url = ""
+    if msg_type == MessageType.LINK_PREVIEW and content.extendedTextMessage:
+        ext = content.extendedTextMessage
+        link_title = ext.title
+        link_description = ext.description
+        link_url = ext.matchedText
+
     reply_to_id, reply_to_sender, reply_to_text = _extract_context_info(content)
 
     ts = datetime.fromisoformat(info.Timestamp)
@@ -185,6 +199,9 @@ def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
         reply_to_id=reply_to_id,
         reply_to_sender=reply_to_sender,
         reply_to_text=reply_to_text,
+        link_title=link_title,
+        link_description=link_description,
+        link_url=link_url,
     )
 
 
@@ -202,6 +219,8 @@ def _derive_message_type(info_type: str, media_type: str) -> Optional[MessageTyp
             return MessageType.DOCUMENT
         if media_type in ("sticker", "user_created_sticker"):
             return MessageType.STICKER
+        if media_type == "url":
+            return MessageType.LINK_PREVIEW
         return None
     return None
 
@@ -217,6 +236,7 @@ def _message_preview(msg: Message) -> str:
         MessageType.AUDIO: "🎵 Audio",
         MessageType.DOCUMENT: "📄 Document",
         MessageType.STICKER: "🏷️ Sticker",
+        MessageType.LINK_PREVIEW: "🔗 Link",
     }
     return previews.get(msg.type, msg.type)
 
@@ -287,7 +307,7 @@ def _extract_thumbnail(raw: Optional[Dict[str, Any]], message_id: str) -> str:
         return ""
     msg_content = raw.get("Message", {})
     thumbnail_b64 = ""
-    for field_name in ("imageMessage", "videoMessage", "documentMessage"):
+    for field_name in ("imageMessage", "videoMessage", "documentMessage", "extendedTextMessage"):
         sub = msg_content.get(field_name)
         if sub and sub.get("JPEGThumbnail"):
             thumbnail_b64 = sub["JPEGThumbnail"]

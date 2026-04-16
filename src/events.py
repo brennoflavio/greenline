@@ -139,18 +139,20 @@ def _handle_message(
         return
     evt.Info.Chat = DaemonRPC().ensure_jid(evt.Info.Chat)
     stored = store_message(evt, raw=raw)
-    if stored is not None:
-        if stored.message.type == MessageType.STICKER:
-            media_path = _auto_download_sticker(stored.message, raw)
-            if media_path:
-                stored.message.media_path = media_path
-        if stored.message.sender and not stored.message.is_outgoing:
-            with KV() as kv:
-                sender_data = kv.get(f"chat:{stored.message.sender}")
-            if sender_data:
-                stored.message.sender_photo = sender_data.get("photo", "")
-        message_upserts.append(enum_to_str(asdict(stored.message)))
-        chat_updates[stored.chat.id] = enum_to_str(asdict(stored.chat))
+    if stored is None:
+        _save_unhandled_message(event, raw)
+        return
+    if stored.message.type == MessageType.STICKER:
+        media_path = _auto_download_sticker(stored.message, raw)
+        if media_path:
+            stored.message.media_path = media_path
+    if stored.message.sender and not stored.message.is_outgoing:
+        with KV() as kv:
+            sender_data = kv.get(f"chat:{stored.message.sender}")
+        if sender_data:
+            stored.message.sender_photo = sender_data.get("photo", "")
+    message_upserts.append(enum_to_str(asdict(stored.message)))
+    chat_updates[stored.chat.id] = enum_to_str(asdict(stored.chat))
 
 
 def _handle_receipt(
@@ -326,6 +328,24 @@ def _handle_presence(
     )
 
 
+def _save_unhandled_message(event: Any, raw: Dict[str, Any]) -> None:
+    info = raw.get("Info", {})
+    with KV() as kv:
+        kv.put(
+            f"unhandled_message:{event.id}",
+            {
+                "event_id": event.id,
+                "info_type": info.get("Type", ""),
+                "media_type": info.get("MediaType", ""),
+                "chat": info.get("Chat", ""),
+                "sender": info.get("Sender", ""),
+                "message_id": info.get("ID", ""),
+                "timestamp": info.get("Timestamp", ""),
+                "payload": event.payload or "",
+            },
+        )
+
+
 def _handle_unknown(event: Any) -> None:
     with KV() as kv:
         kv.put(
@@ -338,6 +358,29 @@ def _handle_unknown(event: Any) -> None:
 
 
 def _dispatch_event(
+    event: Any,
+    chat_updates: dict[str, dict[str, Any]],
+    message_upserts: list[dict[str, Any]],
+    message_updates: list[dict[str, Any]],
+    photo_updates: list[dict[str, str]],
+    presence_updates: list[dict[str, Any]],
+) -> None:
+    try:
+        _dispatch_event_inner(
+            event,
+            chat_updates,
+            message_upserts,
+            message_updates,
+            photo_updates,
+            presence_updates,
+        )
+    except (ConnectionRefusedError, DaemonNotReadyError):
+        raise
+    except Exception:
+        _handle_unknown(event)
+
+
+def _dispatch_event_inner(
     event: Any,
     chat_updates: dict[str, dict[str, Any]],
     message_upserts: list[dict[str, Any]],

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-16 02:49+0000\n"
+"POT-Creation-Date: 2026-04-16 03:33+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -55,55 +55,55 @@ msgstr ""
 msgid "No chats found"
 msgstr ""
 
-#: ../qml/ChatPage.qml:28
+#: ../qml/ChatPage.qml:184
 msgid "WhatsApp messages read today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:29
+#: ../qml/ChatPage.qml:185
 msgid "No WhatsApp messages read today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:253
+#: ../qml/ChatPage.qml:257
 msgid "Copy"
 msgstr ""
 
-#: ../qml/ChatPage.qml:257
+#: ../qml/ChatPage.qml:261
 msgid "Copied to clipboard"
 msgstr ""
 
-#: ../qml/ChatPage.qml:556
+#: ../qml/ChatPage.qml:584
 msgid "Type a message..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:677
+#: ../qml/ChatPage.qml:705
 msgid "Send Attachment"
 msgstr ""
 
-#: ../qml/ChatPage.qml:680
+#: ../qml/ChatPage.qml:708
 msgid "Photo"
 msgstr ""
 
-#: ../qml/ChatPage.qml:688 ../qml/VideoPreviewPage.qml:331
+#: ../qml/ChatPage.qml:716 ../qml/VideoPreviewPage.qml:331
 msgid "Video"
 msgstr ""
 
-#: ../qml/ChatPage.qml:696
+#: ../qml/ChatPage.qml:724
 msgid "Sticker"
 msgstr ""
 
-#: ../qml/ChatPage.qml:704 ../qml/SettingsPage.qml:176
+#: ../qml/ChatPage.qml:732 ../qml/SettingsPage.qml:176
 msgid "Cancel"
 msgstr ""
 
-#: ../qml/ChatPage.qml:757
+#: ../qml/ChatPage.qml:785
 msgid "Send Photo"
 msgstr ""
 
-#: ../qml/ChatPage.qml:819
+#: ../qml/ChatPage.qml:847
 msgid "Send Video"
 msgstr ""
 
-#: ../qml/ChatPage.qml:852 ../qml/DocumentPreviewPage.qml:223
+#: ../qml/ChatPage.qml:880 ../qml/DocumentPreviewPage.qml:223
 #: ../qml/ImagePreviewPage.qml:190 ../qml/VideoPreviewPage.qml:335
 #: ../qml/ut_components/AppHeader.qml:78
 msgid "Back"

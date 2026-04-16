@@ -243,6 +243,9 @@ Page {
                     if (msg.type === "sticker")
                         return stickerComponent;
 
+                    if (msg.type === "link_preview")
+                        return linkPreviewComponent;
+
                     return textComponent;
                 }
             }
@@ -399,6 +402,30 @@ Page {
             onReplyClicked: scrollToMessage(messageId)
             downloading: downloadingIds[msg.id] || false
             onDownloadRequested: triggerDownload(msg.id, "document")
+        }
+
+    }
+
+    Component {
+        id: linkPreviewComponent
+
+        LinkPreviewMessage {
+            text: msg.text || ""
+            linkTitle: msg.link_title || ""
+            linkDescription: msg.link_description || ""
+            linkUrl: msg.link_url || ""
+            thumbnailSource: msg.thumbnail_path || ""
+            isOutgoing: msg.is_outgoing || false
+            isGroup: chatPage.isGroup
+            timestamp: msg.timestamp || ""
+            readReceipt: msg.read_receipt || ""
+            sendStatus: msg.send_status || ""
+            senderName: msg.sender_name || ""
+            senderPhoto: msg.sender_photo || ""
+            replyToId: msg.reply_to_id || ""
+            replyToSender: msg.reply_to_sender || ""
+            replyToText: msg.reply_to_text || ""
+            onReplyClicked: scrollToMessage(messageId)
         }
 
     }

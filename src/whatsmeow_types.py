@@ -150,6 +150,10 @@ class VideoMessage:
 @dataclass
 class ExtendedTextMessage:
     text: str = ""
+    matchedText: str = ""
+    title: str = ""
+    description: str = ""
+    JPEGThumbnail: str = ""
     contextInfo: Optional[ContextInfo] = None
 
 
