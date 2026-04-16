@@ -337,6 +337,84 @@ def _handle_unknown(event: Any) -> None:
         )
 
 
+def _dispatch_event(
+    event: Any,
+    chat_updates: dict[str, dict[str, Any]],
+    message_upserts: list[dict[str, Any]],
+    message_updates: list[dict[str, Any]],
+    photo_updates: list[dict[str, str]],
+    presence_updates: list[dict[str, Any]],
+) -> None:
+    if event.event_type == "Message":
+        _handle_message(event, chat_updates, message_upserts)
+    elif event.event_type == "Receipt":
+        _handle_receipt(event, chat_updates, message_updates)
+    elif event.event_type == "Contact":
+        _handle_contact(event, chat_updates)
+    elif event.event_type == "Mute":
+        _handle_mute(event, chat_updates)
+    elif event.event_type == "Picture":
+        _handle_picture(event, chat_updates, photo_updates)
+    elif event.event_type == "PushName":
+        _handle_push_name(event, chat_updates)
+    elif event.event_type == "BusinessName":
+        _handle_business_name(event, chat_updates)
+    elif event.event_type == "Presence":
+        _handle_presence(event, presence_updates)
+    elif event.event_type == "HistorySync":
+        updated = handle_history_sync(event)
+        chat_updates.update(updated)
+    elif event.event_type in (
+        "AppState",
+        "AppStateSyncComplete",
+        "AppStateSyncError",
+        "Connected",
+        "KeepAliveTimeout",
+        "OfflineSyncCompleted",
+        "OfflineSyncPreview",
+        "PairSuccess",
+        "QR",
+    ):
+        pass
+    else:
+        _handle_unknown(event)
+
+
+def process_events_once(batch_limit: int = 50) -> None:
+    try:
+        with KV() as kv:
+            last_id = kv.get(LAST_EVENT_ID_KEY, default=0)
+
+        reply = DaemonRPC().list_events(after_id=last_id, limit=batch_limit)
+        if not reply.Events:
+            return
+
+        max_id = last_id
+        chat_updates: dict[str, dict[str, Any]] = {}
+        message_upserts: list[dict[str, Any]] = []
+        message_updates: list[dict[str, Any]] = []
+        photo_updates: list[dict[str, str]] = []
+        presence_updates: list[dict[str, Any]] = []
+        for event in reply.Events:
+            _dispatch_event(
+                event,
+                chat_updates,
+                message_upserts,
+                message_updates,
+                photo_updates,
+                presence_updates,
+            )
+            if event.id > max_id:
+                max_id = event.id
+
+        if max_id > last_id:
+            DaemonRPC().delete_events(up_to_id=max_id)
+            with KV() as kv:
+                kv.put(LAST_EVENT_ID_KEY, max_id)
+    except (ConnectionRefusedError, DaemonNotReadyError):
+        return
+
+
 class DaemonEventHandler(Event):
     def __init__(self) -> None:
         super().__init__(id="daemon-event", execution_interval=timedelta(seconds=2))
@@ -371,39 +449,14 @@ class DaemonEventHandler(Event):
                 photo_updates: list[dict[str, str]] = []
                 presence_updates: list[dict[str, Any]] = []
                 for event in reply.Events:
-                    if event.event_type == "Message":
-                        _handle_message(event, chat_updates, message_upserts)
-                    elif event.event_type == "Receipt":
-                        _handle_receipt(event, chat_updates, message_updates)
-                    elif event.event_type == "Contact":
-                        _handle_contact(event, chat_updates)
-                    elif event.event_type == "Mute":
-                        _handle_mute(event, chat_updates)
-                    elif event.event_type == "Picture":
-                        _handle_picture(event, chat_updates, photo_updates)
-                    elif event.event_type == "PushName":
-                        _handle_push_name(event, chat_updates)
-                    elif event.event_type == "BusinessName":
-                        _handle_business_name(event, chat_updates)
-                    elif event.event_type == "Presence":
-                        _handle_presence(event, presence_updates)
-                    elif event.event_type == "HistorySync":
-                        updated = handle_history_sync(event)
-                        chat_updates.update(updated)
-                    elif event.event_type in (
-                        "AppState",
-                        "AppStateSyncComplete",
-                        "AppStateSyncError",
-                        "Connected",
-                        "KeepAliveTimeout",
-                        "OfflineSyncCompleted",
-                        "OfflineSyncPreview",
-                        "PairSuccess",
-                        "QR",
-                    ):
-                        pass
-                    else:
-                        _handle_unknown(event)
+                    _dispatch_event(
+                        event,
+                        chat_updates,
+                        message_upserts,
+                        message_updates,
+                        photo_updates,
+                        presence_updates,
+                    )
                     if event.id > max_id:
                         max_id = event.id
 

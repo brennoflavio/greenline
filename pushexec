@@ -2,8 +2,30 @@
 
 import sys
 
-out = sys.argv[2]
 in_, out = sys.argv[1:3]
 
 with open(in_) as f1, open(out, "w") as f2:
     f2.write(f1.read())
+
+try:
+    import os
+    import types
+
+    _mock = types.ModuleType("pyotherside")
+    _mock.send = lambda *a, **kw: None  # type: ignore[attr-defined]
+    sys.modules["pyotherside"] = _mock
+
+    src_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "src")
+    if src_dir not in sys.path:
+        sys.path.insert(0, src_dir)
+
+    from constants import APP_NAME
+    from ut_components import setup
+
+    setup(APP_NAME)
+
+    from events import process_events_once
+
+    process_events_once()
+except Exception:
+    pass
