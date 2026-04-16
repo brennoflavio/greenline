@@ -174,11 +174,23 @@ func main() {
 			if body == "" {
 				return
 			}
-			summary := msg.Info.PushName
-			if summary == "" {
-				summary = msg.Info.Sender.User
+			ctx := context.Background()
+			senderName := msg.Info.PushName
+			if senderName == "" {
+				senderName = msg.Info.Sender.User
 			}
-			chatJID := client.ResolveJID(context.Background(), msg.Info.Chat)
+			summary := senderName
+			if msg.Info.Chat.Server == types.GroupServer {
+				groupName := msg.Info.Chat.User
+				if contact, err := client.GetContact(ctx, msg.Info.Chat); err == nil {
+					if name := contactDisplayName(msg.Info.Chat.String(), contact.FullName, contact.PushName, contact.BusinessName); name != msg.Info.Chat.String() {
+						groupName = name
+					}
+				}
+				summary = groupName
+				body = senderName + ": " + body
+			}
+			chatJID := client.ResolveJID(ctx, msg.Info.Chat)
 			icon := avatarsync.AvatarJPGPath(*cacheDir, chatJID.String())
 			if _, err := os.Stat(icon); err != nil {
 				icon = ""
