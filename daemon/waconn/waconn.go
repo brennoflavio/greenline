@@ -324,6 +324,10 @@ func (c *Client) GetJoinedGroups(ctx context.Context) ([]*types.GroupInfo, error
 	return c.waCli.GetJoinedGroups(ctx)
 }
 
+func (c *Client) GetGroupInfo(ctx context.Context, jid types.JID) (*types.GroupInfo, error) {
+	return c.waCli.GetGroupInfo(ctx, jid)
+}
+
 func (c *Client) MarkRead(ctx context.Context, ids []types.MessageID, timestamp time.Time, chat, sender types.JID) error {
 	return c.waCli.MarkRead(ctx, ids, timestamp, chat, sender)
 }

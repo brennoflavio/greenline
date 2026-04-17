@@ -182,10 +182,8 @@ func main() {
 			summary := senderName
 			if msg.Info.Chat.Server == types.GroupServer {
 				groupName := msg.Info.Chat.User
-				if contact, err := client.GetContact(ctx, msg.Info.Chat); err == nil {
-					if name := contactDisplayName(msg.Info.Chat.String(), contact.FullName, contact.PushName, contact.BusinessName); name != msg.Info.Chat.String() {
-						groupName = name
-					}
+				if groupInfo, err := client.GetGroupInfo(ctx, msg.Info.Chat); err == nil && groupInfo.Name != "" {
+					groupName = groupInfo.Name
 				}
 				summary = groupName
 				body = senderName + ": " + body
