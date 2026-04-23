@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-23 00:32+0000\n"
+"POT-Creation-Date: 2026-04-23 00:46+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,85 +17,29 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../qml/AuthorizationPage.qml:48
+#: ../qml/AuthorizationPage.qml:37
 msgid "Scan QR Code"
 msgstr ""
 
-#: ../qml/AuthorizationPage.qml:56
+#: ../qml/AuthorizationPage.qml:45
 msgid ""
 "Open WhatsApp on your phone, go to Settings → Linked Devices → Link a "
 "Device, then scan the code below."
 msgstr ""
 
-#: ../qml/AuthorizationPage.qml:96
+#: ../qml/AuthorizationPage.qml:85
 msgid "Loading QR Code..."
 msgstr ""
 
-#: ../qml/AuthorizationPage.qml:108
+#: ../qml/AuthorizationPage.qml:97
 msgid "The code refreshes automatically. Keep this screen open while scanning."
 msgstr ""
 
-#: ../qml/AuthorizationPage.qml:117
+#: ../qml/AuthorizationPage.qml:106
 msgid "Login with phone number"
 msgstr ""
 
-#: ../qml/AuthorizationPage.qml:139
-msgid "Login with Phone Number"
-msgstr ""
-
-#: ../qml/AuthorizationPage.qml:147
-msgid ""
-"Enter your phone number with country code, digits only (e.g. 5511999999999)."
-msgstr ""
-
-#: ../qml/AuthorizationPage.qml:158
-msgid "Phone Number"
-msgstr ""
-
-#: ../qml/AuthorizationPage.qml:161
-msgid "Enter digits only, no leading zero (e.g. 5511999999999)"
-msgstr ""
-
-#: ../qml/AuthorizationPage.qml:177
-msgid "Get Pairing Code"
-msgstr ""
-
-#: ../qml/AuthorizationPage.qml:188
-msgid "Failed to get pairing code"
-msgstr ""
-
-#: ../qml/AuthorizationPage.qml:197 ../qml/AuthorizationPage.qml:300
-msgid "Back to QR code"
-msgstr ""
-
-#: ../qml/AuthorizationPage.qml:218
-msgid "Requesting Pairing Code"
-msgstr ""
-
-#: ../qml/AuthorizationPage.qml:231
-msgid "Please wait..."
-msgstr ""
-
-#: ../qml/AuthorizationPage.qml:239 ../qml/ChatPage.qml:732
-#: ../qml/SettingsPage.qml:176
-msgid "Cancel"
-msgstr ""
-
-#: ../qml/AuthorizationPage.qml:260
-msgid "Enter Code on Your Phone"
-msgstr ""
-
-#: ../qml/AuthorizationPage.qml:268
-msgid ""
-"Open WhatsApp on your phone, go to Settings → Linked Devices → Link with "
-"phone number, then enter the code below."
-msgstr ""
-
-#: ../qml/AuthorizationPage.qml:292
-msgid "Waiting for confirmation..."
-msgstr ""
-
-#: ../qml/AuthorizationPage.qml:341
+#: ../qml/AuthorizationPage.qml:143
 msgid "Link Device"
 msgstr ""
 
@@ -151,6 +95,11 @@ msgstr ""
 msgid "Sticker"
 msgstr ""
 
+#: ../qml/ChatPage.qml:732 ../qml/PhonePairingPage.qml:120
+#: ../qml/SettingsPage.qml:102
+msgid "Cancel"
+msgstr ""
+
 #: ../qml/ChatPage.qml:785
 msgid "Send Photo"
 msgstr ""
@@ -165,19 +114,23 @@ msgstr ""
 msgid "Back"
 msgstr ""
 
-#: ../qml/DaemonSetupPage.qml:38
+#: ../qml/DaemonSetupPage.qml:14
+msgid "Setup"
+msgstr ""
+
+#: ../qml/DaemonSetupPage.qml:54
 msgid "The background service is installed but not running."
 msgstr ""
 
-#: ../qml/DaemonSetupPage.qml:38
+#: ../qml/DaemonSetupPage.qml:54
 msgid "The background service needs to be installed to sync your messages."
 msgstr ""
 
-#: ../qml/DaemonSetupPage.qml:57
+#: ../qml/DaemonSetupPage.qml:73
 msgid "Install & Start"
 msgstr ""
 
-#: ../qml/DaemonSetupPage.qml:57
+#: ../qml/DaemonSetupPage.qml:73
 msgid "Start Service"
 msgstr ""
 
@@ -210,11 +163,50 @@ msgstr ""
 msgid "Image"
 msgstr ""
 
+#: ../qml/PhonePairingPage.qml:48
+msgid ""
+"Enter your phone number with country code, digits only (e.g. 5511999999999)."
+msgstr ""
+
+#: ../qml/PhonePairingPage.qml:59
+msgid "Phone Number"
+msgstr ""
+
+#: ../qml/PhonePairingPage.qml:62
+msgid "Enter digits only, no leading zero (e.g. 5511999999999)"
+msgstr ""
+
+#: ../qml/PhonePairingPage.qml:78
+msgid "Get Pairing Code"
+msgstr ""
+
+#: ../qml/PhonePairingPage.qml:89
+msgid "Failed to get pairing code"
+msgstr ""
+
+#: ../qml/PhonePairingPage.qml:112
+msgid "Requesting pairing code..."
+msgstr ""
+
+#: ../qml/PhonePairingPage.qml:138
+msgid ""
+"Open WhatsApp on your phone, go to Settings → Linked Devices → Link with "
+"phone number, then enter the code below."
+msgstr ""
+
+#: ../qml/PhonePairingPage.qml:162
+msgid "Waiting for confirmation..."
+msgstr ""
+
+#: ../qml/PhonePairingPage.qml:196
+msgid "Login with Phone Number"
+msgstr ""
+
 #: ../qml/ProfilePage.qml:88
 msgid "Group"
 msgstr ""
 
-#: ../qml/ProfilePage.qml:102 ../qml/SettingsPage.qml:194
+#: ../qml/ProfilePage.qml:102 ../qml/SettingsPage.qml:126
 #: ../qml/ut_components/AppHeader.qml:94
 msgid "Settings"
 msgstr ""
@@ -231,52 +223,30 @@ msgstr ""
 msgid "Profile"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:43
-msgid "Daemon"
-msgstr ""
-
-#: ../qml/SettingsPage.qml:57
-msgid "Status"
-msgstr ""
-
-#: ../qml/SettingsPage.qml:70
-msgid "Not installed"
-msgstr ""
-
-#: ../qml/SettingsPage.qml:70
-msgid "Running"
-msgstr ""
-
-#: ../qml/SettingsPage.qml:70
-msgid "Stopped"
-msgstr ""
-
-#: ../qml/SettingsPage.qml:84
-msgid "Install Daemon"
-msgstr ""
-
-#: ../qml/SettingsPage.qml:84
-msgid "Uninstall Daemon"
-msgstr ""
-
-#: ../qml/SettingsPage.qml:110
+#: ../qml/SettingsPage.qml:41
 msgid "Data"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:124
-msgid "Clear all local data including messages and settings"
-msgstr ""
-
-#: ../qml/SettingsPage.qml:139 ../qml/SettingsPage.qml:172
-#: ../qml/SettingsPage.qml:181
-msgid "Clear Data"
-msgstr ""
-
-#: ../qml/SettingsPage.qml:173
+#: ../qml/SettingsPage.qml:55
 msgid ""
-"This will log out from WhatsApp, delete all local data including messages, "
-"settings and cache, and uninstall the daemon. You will need to reinstall the "
-"daemon and scan the QR code again to reconnect."
+"Uninstall the daemon, log out from WhatsApp, and delete all local data "
+"including messages, settings and cache."
+msgstr ""
+
+#: ../qml/SettingsPage.qml:70 ../qml/SettingsPage.qml:98
+#: ../qml/SettingsPage.qml:107
+msgid "Reset App"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:99
+msgid ""
+"This will uninstall the daemon, log out from WhatsApp, and delete all local "
+"data. You will need to reinstall the daemon and scan the QR code again to "
+"reconnect."
+msgstr ""
+
+#: ../qml/SettingsPage.qml:122
+msgid "Resetting app..."
 msgstr ""
 
 #: ../qml/StickerPickerPage.qml:54

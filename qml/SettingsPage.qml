@@ -8,12 +8,10 @@ import "ut_components"
 Page {
     id: settingsPage
 
-    property bool daemonInstalled: false
-    property bool daemonActive: false
-    property bool checkingDaemon: true
-
-    function clearData() {
+    function resetApp() {
+        loadToast.showing = true;
         python.call('main.clear_data', [], function(result) {
+            loadToast.showing = false;
             if (result.success) {
                 pageStack.clear();
                 pageStack.push(Qt.resolvedUrl("DaemonSetupPage.qml"));
@@ -40,73 +38,6 @@ Page {
             topPadding: units.gu(1)
 
             ConfigurationGroup {
-                title: i18n.tr("Daemon")
-
-                Item {
-                    width: parent.width
-                    height: units.gu(6)
-
-                    RowLayout {
-                        anchors {
-                            fill: parent
-                            leftMargin: units.gu(2)
-                            rightMargin: units.gu(2)
-                        }
-
-                        Label {
-                            text: i18n.tr("Status")
-                            fontSize: "medium"
-                            Layout.fillWidth: true
-                        }
-
-                        LoadingSpinner {
-                            running: checkingDaemon
-                            visible: checkingDaemon
-                            Layout.alignment: Qt.AlignRight
-                        }
-
-                        Label {
-                            visible: !checkingDaemon
-                            text: daemonActive ? i18n.tr("Running") : (daemonInstalled ? i18n.tr("Stopped") : i18n.tr("Not installed"))
-                            fontSize: "medium"
-                            color: daemonActive ? LomiriColors.green : LomiriColors.red
-                            Layout.alignment: Qt.AlignRight
-                        }
-
-                    }
-
-                }
-
-            }
-
-            ActionButton {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: daemonInstalled ? i18n.tr("Uninstall Daemon") : i18n.tr("Install Daemon")
-                iconName: daemonInstalled ? "delete" : "import"
-                backgroundColor: daemonInstalled ? theme.palette.normal.negative : theme.palette.normal.positive
-                enabled: !checkingDaemon
-                onClicked: {
-                    checkingDaemon = true;
-                    if (daemonInstalled) {
-                        python.call('main.uninstall_daemon', [], function(result) {
-                            if (result.success) {
-                                pageStack.clear();
-                                pageStack.push(Qt.resolvedUrl("DaemonSetupPage.qml"));
-                            } else {
-                                checkingDaemon = false;
-                            }
-                        });
-                    } else {
-                        python.call('main.install_daemon', [], function(result) {
-                            daemonInstalled = result.success;
-                            daemonActive = result.success;
-                            checkingDaemon = false;
-                        });
-                    }
-                }
-            }
-
-            ConfigurationGroup {
                 title: i18n.tr("Data")
 
                 Item {
@@ -121,7 +52,7 @@ Page {
                         }
 
                         Label {
-                            text: i18n.tr("Clear all local data including messages and settings")
+                            text: i18n.tr("Uninstall the daemon, log out from WhatsApp, and delete all local data including messages, settings and cache.")
                             fontSize: "small"
                             color: theme.palette.normal.backgroundTertiaryText
                             wrapMode: Text.WordWrap
@@ -136,11 +67,11 @@ Page {
 
             ActionButton {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: i18n.tr("Clear Data")
+                text: i18n.tr("Reset App")
                 iconName: "reset"
                 backgroundColor: theme.palette.normal.negative
                 onClicked: {
-                    PopupUtils.open(confirmClearDataDialog);
+                    PopupUtils.open(confirmResetDialog);
                 }
             }
 
@@ -154,23 +85,18 @@ Page {
         Component.onCompleted: {
             addImportPath(Qt.resolvedUrl('../src/'));
             importModule('main', function() {
-                python.call('main.check_daemon_status', [], function(result) {
-                    daemonInstalled = result.installed;
-                    daemonActive = result.active;
-                    checkingDaemon = false;
-                });
             });
         }
     }
 
     Component {
-        id: confirmClearDataDialog
+        id: confirmResetDialog
 
         Dialog {
             id: dialog
 
-            title: i18n.tr("Clear Data")
-            text: i18n.tr("This will log out from WhatsApp, delete all local data including messages, settings and cache, and uninstall the daemon. You will need to reinstall the daemon and scan the QR code again to reconnect.")
+            title: i18n.tr("Reset App")
+            text: i18n.tr("This will uninstall the daemon, log out from WhatsApp, and delete all local data. You will need to reinstall the daemon and scan the QR code again to reconnect.")
 
             Button {
                 text: i18n.tr("Cancel")
@@ -178,16 +104,23 @@ Page {
             }
 
             Button {
-                text: i18n.tr("Clear Data")
+                text: i18n.tr("Reset App")
                 color: theme.palette.normal.negative
                 onClicked: {
                     PopupUtils.close(dialog);
-                    settingsPage.clearData();
+                    settingsPage.resetApp();
                 }
             }
 
         }
 
+    }
+
+    LoadToast {
+        id: loadToast
+
+        showing: false
+        message: i18n.tr("Resetting app...")
     }
 
     header: AppHeader {

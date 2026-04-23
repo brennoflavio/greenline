@@ -195,6 +195,8 @@ Page {
     header: AppHeader {
         pageTitle: i18n.tr("Login with Phone Number")
         isRootPage: false
+        showSettingsButton: true
+        onSettingsClicked: pageStack.push(Qt.resolvedUrl("SettingsPage.qml"))
     }
 
 }

@@ -143,6 +143,8 @@ Page {
         pageTitle: i18n.tr("Link Device")
         isRootPage: true
         appIconName: "call-start"
+        showSettingsButton: true
+        onSettingsClicked: pageStack.push(Qt.resolvedUrl("SettingsPage.qml"))
     }
 
 }
