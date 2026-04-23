@@ -526,7 +526,7 @@ Page {
     Rectangle {
         id: inputBar
 
-        height: inputRowLayout.height + units.gu(1)
+        height: messageInput.height + units.gu(2)
         color: theme.palette.normal.background
 
         anchors {
@@ -553,12 +553,8 @@ Page {
             spacing: units.gu(1)
 
             anchors {
-                left: parent.left
-                right: parent.right
-                bottom: parent.bottom
-                leftMargin: units.gu(1)
-                rightMargin: units.gu(1)
-                bottomMargin: units.gu(0.5)
+                fill: parent
+                margins: units.gu(1)
             }
 
             Icon {
@@ -581,6 +577,7 @@ Page {
                 id: messageInput
 
                 Layout.fillWidth: true
+                Layout.fillHeight: true
                 placeholderText: i18n.tr("Type a message...")
                 autoSize: true
                 maximumLineCount: 5

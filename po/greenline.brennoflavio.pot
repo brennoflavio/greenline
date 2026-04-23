@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-23 00:46+0000\n"
+"POT-Creation-Date: 2026-04-23 17:28+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -75,63 +75,63 @@ msgstr ""
 msgid "Copied to clipboard"
 msgstr ""
 
-#: ../qml/ChatPage.qml:584
+#: ../qml/ChatPage.qml:580
 msgid "Type a message..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:705
+#: ../qml/ChatPage.qml:701
 msgid "Send Attachment"
 msgstr ""
 
-#: ../qml/ChatPage.qml:708
+#: ../qml/ChatPage.qml:704
 msgid "Photo"
 msgstr ""
 
-#: ../qml/ChatPage.qml:716 ../qml/VideoPreviewPage.qml:331
+#: ../qml/ChatPage.qml:712 ../qml/VideoPreviewPage.qml:331
 msgid "Video"
 msgstr ""
 
-#: ../qml/ChatPage.qml:724
+#: ../qml/ChatPage.qml:720
 msgid "Sticker"
 msgstr ""
 
-#: ../qml/ChatPage.qml:732 ../qml/PhonePairingPage.qml:120
-#: ../qml/SettingsPage.qml:102
+#: ../qml/ChatPage.qml:728 ../qml/PhonePairingPage.qml:120
+#: ../qml/SettingsPage.qml:127
 msgid "Cancel"
 msgstr ""
 
-#: ../qml/ChatPage.qml:785
+#: ../qml/ChatPage.qml:781
 msgid "Send Photo"
 msgstr ""
 
-#: ../qml/ChatPage.qml:847
+#: ../qml/ChatPage.qml:843
 msgid "Send Video"
 msgstr ""
 
-#: ../qml/ChatPage.qml:880 ../qml/DocumentPreviewPage.qml:223
+#: ../qml/ChatPage.qml:876 ../qml/DocumentPreviewPage.qml:223
 #: ../qml/ImagePreviewPage.qml:190 ../qml/VideoPreviewPage.qml:335
 #: ../qml/ut_components/AppHeader.qml:78
 msgid "Back"
 msgstr ""
 
-#: ../qml/DaemonSetupPage.qml:14
-msgid "Setup"
-msgstr ""
-
-#: ../qml/DaemonSetupPage.qml:54
+#: ../qml/DaemonSetupPage.qml:46
 msgid "The background service is installed but not running."
 msgstr ""
 
-#: ../qml/DaemonSetupPage.qml:54
+#: ../qml/DaemonSetupPage.qml:46
 msgid "The background service needs to be installed to sync your messages."
 msgstr ""
 
-#: ../qml/DaemonSetupPage.qml:73
+#: ../qml/DaemonSetupPage.qml:65
 msgid "Install & Start"
 msgstr ""
 
-#: ../qml/DaemonSetupPage.qml:73
+#: ../qml/DaemonSetupPage.qml:65
 msgid "Start Service"
+msgstr ""
+
+#: ../qml/DaemonSetupPage.qml:121
+msgid "Setup"
 msgstr ""
 
 #: ../qml/DocumentPreviewPage.qml:42 ../qml/DocumentPreviewPage.qml:219
@@ -206,7 +206,7 @@ msgstr ""
 msgid "Group"
 msgstr ""
 
-#: ../qml/ProfilePage.qml:102 ../qml/SettingsPage.qml:126
+#: ../qml/ProfilePage.qml:102 ../qml/SettingsPage.qml:152
 #: ../qml/ut_components/AppHeader.qml:94
 msgid "Settings"
 msgstr ""
@@ -224,28 +224,40 @@ msgid "Profile"
 msgstr ""
 
 #: ../qml/SettingsPage.qml:41
+msgid "Notifications"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:46
+msgid "Enable Notifications"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:47
+msgid "Show notifications for new messages and calls"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:61
 msgid "Data"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:55
+#: ../qml/SettingsPage.qml:75
 msgid ""
 "Uninstall the daemon, log out from WhatsApp, and delete all local data "
 "including messages, settings and cache."
 msgstr ""
 
-#: ../qml/SettingsPage.qml:70 ../qml/SettingsPage.qml:98
-#: ../qml/SettingsPage.qml:107
+#: ../qml/SettingsPage.qml:90 ../qml/SettingsPage.qml:123
+#: ../qml/SettingsPage.qml:132
 msgid "Reset App"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:99
+#: ../qml/SettingsPage.qml:124
 msgid ""
 "This will uninstall the daemon, log out from WhatsApp, and delete all local "
 "data. You will need to reinstall the daemon and scan the QR code again to "
 "reconnect."
 msgstr ""
 
-#: ../qml/SettingsPage.qml:122
+#: ../qml/SettingsPage.qml:148
 msgid "Resetting app..."
 msgstr ""
 
