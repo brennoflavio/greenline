@@ -9,6 +9,7 @@ from daemon_types import (
     GetChatSettingsReply,
     GetContactsReply,
     GetGroupsReply,
+    GetNotificationsSuppressedReply,
     ListEventsReply,
     PairPhoneReply,
     SessionStatusReply,
@@ -189,3 +190,10 @@ class DaemonRPC:
     def pair_phone(self, phone: str) -> PairPhoneReply:
         data = self._call("Service.PairPhone", {"Phone": phone})
         return from_dict(data_class=PairPhoneReply, data=data)
+
+    def get_notifications_suppressed(self) -> GetNotificationsSuppressedReply:
+        data = self._call("Service.GetNotificationsSuppressed")
+        return from_dict(data_class=GetNotificationsSuppressedReply, data=data)
+
+    def set_notifications_suppressed(self, suppressed: bool) -> None:
+        self._call("Service.SetNotificationsSuppressed", {"Suppressed": suppressed})

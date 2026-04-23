@@ -19,6 +19,7 @@ import (
 	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
 	"greenline.brennoflavio/daemon/avatarsync"
+	"greenline.brennoflavio/daemon/configstore"
 	"greenline.brennoflavio/daemon/eventstore"
 	"greenline.brennoflavio/daemon/notify"
 	"greenline.brennoflavio/daemon/waconn"
@@ -123,6 +124,19 @@ func main() {
 		log.Fatal(err)
 	}
 
+	configDBPath := filepath.Join(*dataDir, "config.db")
+	cfgStore, err := configstore.New(configDBPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	notifSuppressed := false
+	if v, ok, err := cfgStore.Get("notifications_suppressed"); err != nil {
+		log.Fatalf("failed to read notifications_suppressed: %v", err)
+	} else if ok && v == "true" {
+		notifSuppressed = true
+	}
+
 	var notifier *notify.Notifier
 	if *appID != "" {
 		n, err := notify.New(*appID)
@@ -132,6 +146,9 @@ func main() {
 			notifier = n
 		}
 	}
+
+	syncer := avatarsync.New(client, *cacheDir, logger)
+	svc := &Service{client: client, eventStore: evStore, configStore: cfgStore, syncer: syncer, notifier: notifier, cacheDir: *cacheDir, notifSuppressed: notifSuppressed}
 
 	client.AddEventHandler(func(evt interface{}) {
 		switch evt.(type) {
@@ -167,6 +184,12 @@ func main() {
 			if msg.Info.Chat.Server == types.NewsletterServer {
 				return
 			}
+			svc.mu.RLock()
+			suppressed := svc.notifSuppressed
+			svc.mu.RUnlock()
+			if suppressed {
+				return
+			}
 			if client.IsMuted(context.Background(), msg.Info.Chat) {
 				return
 			}
@@ -198,6 +221,12 @@ func main() {
 			}
 		}
 		if call, ok := evt.(*events.CallOffer); ok {
+			svc.mu.RLock()
+			suppressed := svc.notifSuppressed
+			svc.mu.RUnlock()
+			if suppressed {
+				return
+			}
 			ctx := context.Background()
 			callerJID := client.ResolveJID(ctx, call.CallCreator)
 			summary := callerJID.User
@@ -219,9 +248,6 @@ func main() {
 			}
 		}
 	})
-
-	syncer := avatarsync.New(client, *cacheDir, logger)
-	svc := &Service{client: client, eventStore: evStore, syncer: syncer, notifier: notifier, cacheDir: *cacheDir}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	restartCh := make(chan struct{})
@@ -260,6 +286,7 @@ func main() {
 		cancel()
 		client.Disconnect()
 		evStore.Close()
+		cfgStore.Close()
 		if notifier != nil {
 			notifier.Close()
 		}

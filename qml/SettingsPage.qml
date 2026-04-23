@@ -38,6 +38,26 @@ Page {
             topPadding: units.gu(1)
 
             ConfigurationGroup {
+                title: i18n.tr("Notifications")
+
+                ToggleOption {
+                    id: notificationsToggle
+
+                    title: i18n.tr("Enable Notifications")
+                    subtitle: i18n.tr("Show notifications for new messages and calls")
+                    checked: true
+                    onToggled: function(newChecked) {
+                        python.call('main.set_notifications_suppressed', [!newChecked], function(result) {
+                            if (!result.success)
+                                notificationsToggle.checked = !notificationsToggle.checked;
+
+                        });
+                    }
+                }
+
+            }
+
+            ConfigurationGroup {
                 title: i18n.tr("Data")
 
                 Item {
@@ -85,6 +105,11 @@ Page {
         Component.onCompleted: {
             addImportPath(Qt.resolvedUrl('../src/'));
             importModule('main', function() {
+                call('main.get_settings', [], function(result) {
+                    if (result.success)
+                        notificationsToggle.checked = !result.notifications_suppressed;
+
+                });
             });
         }
     }

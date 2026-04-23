@@ -229,6 +229,32 @@ def get_contact_list() -> ContactListResponse:
         return ContactListResponse(success=False, contacts=[], message=str(e))
 
 
+@dataclass
+class SettingsResponse:
+    success: bool
+    notifications_suppressed: bool
+
+
+@crash_reporter
+@dataclass_to_dict
+def get_settings() -> SettingsResponse:
+    try:
+        reply = DaemonRPC().get_notifications_suppressed()
+        return SettingsResponse(success=True, notifications_suppressed=reply.Suppressed)
+    except Exception:
+        return SettingsResponse(success=False, notifications_suppressed=False)
+
+
+@crash_reporter
+@dataclass_to_dict
+def set_notifications_suppressed(suppressed: bool) -> SuccessResponse:
+    try:
+        DaemonRPC().set_notifications_suppressed(suppressed)
+        return SuccessResponse(success=True, message="")
+    except Exception as e:
+        return SuccessResponse(success=False, message=str(e))
+
+
 @crash_reporter
 @dataclass_to_dict
 def clear_data() -> ClearDataResponse:

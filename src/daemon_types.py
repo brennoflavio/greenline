@@ -77,3 +77,8 @@ class GetChatSettingsReply:
 @dataclass
 class PairPhoneReply:
     Code: str = ""
+
+
+@dataclass
+class GetNotificationsSuppressedReply:
+    Suppressed: bool = False
