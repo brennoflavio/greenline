@@ -798,3 +798,18 @@ class CallOfferNoticeEvent:
     Media: str = ""
     Type: str = ""
     Data: Optional[Dict[str, Any]] = None
+
+
+@dataclass
+class ChatPresenceEvent:
+    Chat: str = ""
+    Sender: str = ""
+    IsFromMe: bool = False
+    IsGroup: bool = False
+    AddressingMode: str = ""
+    SenderAlt: str = ""
+    RecipientAlt: str = ""
+    BroadcastListOwner: str = ""
+    BroadcastRecipients: Optional[List[Any]] = None
+    State: str = ""
+    Media: str = ""

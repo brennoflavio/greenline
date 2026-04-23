@@ -21,6 +21,9 @@ Page {
     })
     property int unreadCount: 0
     property string chatStatus: ""
+    property string presenceStatus: ""
+    property var activeTypers: ({
+    })
 
     function scrollToMessage(messageId) {
         var model = messageList.model;
@@ -174,6 +177,18 @@ Page {
             messageInput.text = "";
             python.call('main.send_text_message', [chatId, text, tempId], function() {
             });
+        }
+    }
+
+    Timer {
+        id: typingTimer
+
+        interval: 5000
+        repeat: false
+        onTriggered: {
+            activeTypers = {
+            };
+            chatStatus = presenceStatus;
         }
     }
 
@@ -658,9 +673,40 @@ Page {
                 setHandler('presence-update', function(presenceList) {
                     for (var i = 0; i < presenceList.length; i++) {
                         if (presenceList[i].jid === chatId) {
-                            chatStatus = presenceList[i].status;
+                            presenceStatus = presenceList[i].status;
+                            if (!typingTimer.running)
+                                chatStatus = presenceStatus;
+
                             break;
                         }
+                    }
+                });
+                setHandler('chat-presence', function(chatPresenceList) {
+                    var typers = activeTypers;
+                    for (var i = 0; i < chatPresenceList.length; i++) {
+                        var entry = chatPresenceList[i];
+                        if (entry.chat === chatId) {
+                            if (entry.state === "composing")
+                                typers[entry.sender] = entry.media === "audio" ? "audio" : "typing";
+                            else
+                                delete typers[entry.sender];
+                        }
+                    }
+                    activeTypers = typers;
+                    var keys = Object.keys(activeTypers);
+                    if (keys.length > 0) {
+                        var hasAudio = false;
+                        for (var j = 0; j < keys.length; j++) {
+                            if (activeTypers[keys[j]] === "audio") {
+                                hasAudio = true;
+                                break;
+                            }
+                        }
+                        chatStatus = hasAudio ? i18n.tr("recording audio...") : i18n.tr("typing...");
+                        typingTimer.restart();
+                    } else {
+                        typingTimer.stop();
+                        chatStatus = presenceStatus;
                     }
                 });
                 setHandler('sender-photo-update', function(photoList) {

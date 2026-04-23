@@ -21,6 +21,7 @@ from ut_components.kv import KV
 from ut_components.utils import enum_to_str as _enum_to_str
 from whatsmeow_types import (
     BusinessNameEvent,
+    ChatPresenceEvent,
     ContactEvent,
     MessageEvent,
     PictureEvent,
@@ -332,6 +333,28 @@ def _handle_presence(
     )
 
 
+def _handle_chat_presence(
+    event: Any,
+    chat_presence_updates: list[dict[str, Any]],
+) -> None:
+    raw = json.loads(event.payload or "{}")
+    evt = from_dict(data_class=ChatPresenceEvent, data=raw)
+    if evt.IsFromMe:
+        return
+    jid = DaemonRPC().ensure_jid(evt.Chat)
+    if not jid:
+        return
+    chat_presence_updates.append(
+        {
+            "chat": jid,
+            "sender": evt.Sender,
+            "state": evt.State,
+            "media": evt.Media,
+            "is_group": evt.IsGroup,
+        }
+    )
+
+
 def _save_unhandled_message(event: Any, raw: Dict[str, Any]) -> None:
     info = raw.get("Info", {})
     with KV() as kv:
@@ -368,6 +391,7 @@ def _dispatch_event(
     message_updates: list[dict[str, Any]],
     photo_updates: list[dict[str, str]],
     presence_updates: list[dict[str, Any]],
+    chat_presence_updates: list[dict[str, Any]],
 ) -> None:
     try:
         _dispatch_event_inner(
@@ -377,6 +401,7 @@ def _dispatch_event(
             message_updates,
             photo_updates,
             presence_updates,
+            chat_presence_updates,
         )
     except (ConnectionRefusedError, DaemonNotReadyError):
         raise
@@ -391,6 +416,7 @@ def _dispatch_event_inner(
     message_updates: list[dict[str, Any]],
     photo_updates: list[dict[str, str]],
     presence_updates: list[dict[str, Any]],
+    chat_presence_updates: list[dict[str, Any]],
 ) -> None:
     if event.event_type == "Message":
         _handle_message(event, chat_updates, message_upserts)
@@ -408,6 +434,8 @@ def _dispatch_event_inner(
         _handle_business_name(event, chat_updates)
     elif event.event_type == "Presence":
         _handle_presence(event, presence_updates)
+    elif event.event_type == "ChatPresence":
+        _handle_chat_presence(event, chat_presence_updates)
     elif event.event_type == "HistorySync":
         updated = handle_history_sync(event)
         chat_updates.update(updated)
@@ -451,6 +479,7 @@ def process_events_once(batch_limit: int = 50) -> None:
         message_updates: list[dict[str, Any]] = []
         photo_updates: list[dict[str, str]] = []
         presence_updates: list[dict[str, Any]] = []
+        chat_presence_updates: list[dict[str, Any]] = []
         for event in reply.Events:
             _dispatch_event(
                 event,
@@ -459,6 +488,7 @@ def process_events_once(batch_limit: int = 50) -> None:
                 message_updates,
                 photo_updates,
                 presence_updates,
+                chat_presence_updates,
             )
             if event.id > max_id:
                 max_id = event.id
@@ -511,6 +541,7 @@ class DaemonEventHandler(Event):
                 message_updates: list[dict[str, Any]] = []
                 photo_updates: list[dict[str, str]] = []
                 presence_updates: list[dict[str, Any]] = []
+                chat_presence_updates: list[dict[str, Any]] = []
                 for event in reply.Events:
                     _dispatch_event(
                         event,
@@ -519,6 +550,7 @@ class DaemonEventHandler(Event):
                         message_updates,
                         photo_updates,
                         presence_updates,
+                        chat_presence_updates,
                     )
                     if event.id > max_id:
                         max_id = event.id
@@ -540,6 +572,9 @@ class DaemonEventHandler(Event):
 
                 if presence_updates:
                     pyotherside.send("presence-update", presence_updates)
+
+                if chat_presence_updates:
+                    pyotherside.send("chat-presence", chat_presence_updates)
 
                 if max_id > last_id:
                     DaemonRPC().delete_events(up_to_id=max_id)
