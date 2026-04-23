@@ -101,6 +101,16 @@ Page {
                 horizontalAlignment: Text.AlignHCenter
             }
 
+            ActionButton {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: i18n.tr("Login with phone number")
+                iconName: "phone-smartphone-symbolic"
+                backgroundColor: "#333333"
+                textColor: "white"
+                iconColor: "white"
+                onClicked: pageStack.push(Qt.resolvedUrl("PhonePairingPage.qml"))
+            }
+
         }
 
     }

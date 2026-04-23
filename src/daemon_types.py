@@ -72,3 +72,8 @@ class SyncAvatarReply:
 @dataclass
 class GetChatSettingsReply:
     MutedUntil: int = 0
+
+
+@dataclass
+class PairPhoneReply:
+    Code: str = ""

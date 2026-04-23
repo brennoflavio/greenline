@@ -683,6 +683,25 @@ func (s *Service) DownloadMedia(args *DownloadMediaArgs, reply *DownloadMediaRep
 	return nil
 }
 
+type PairPhoneArgs struct {
+	Phone string
+}
+
+type PairPhoneReply struct {
+	Code string
+}
+
+func (s *Service) PairPhone(args *PairPhoneArgs, reply *PairPhoneReply) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	code, err := s.client.PairPhone(ctx, args.Phone)
+	if err != nil {
+		return fmt.Errorf("pair phone: %w", err)
+	}
+	reply.Code = code
+	return nil
+}
+
 type SetNotificationCounterArgs struct {
 	Count   int32
 	Visible bool

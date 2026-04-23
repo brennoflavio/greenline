@@ -10,6 +10,7 @@ from daemon_types import (
     GetContactsReply,
     GetGroupsReply,
     ListEventsReply,
+    PairPhoneReply,
     SessionStatusReply,
     SyncAvatarReply,
     VersionReply,
@@ -184,3 +185,7 @@ class DaemonRPC:
 
     def clear_chat_notifications(self, tags: list[str]) -> None:
         self._call("Service.ClearChatNotifications", {"Tags": tags})
+
+    def pair_phone(self, phone: str) -> PairPhoneReply:
+        data = self._call("Service.PairPhone", {"Phone": phone})
+        return from_dict(data_class=PairPhoneReply, data=data)

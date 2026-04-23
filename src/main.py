@@ -166,6 +166,23 @@ def get_session_status() -> SessionStatusResponse:
         return SessionStatusResponse(logged_in=False, qr_image_path="")
 
 
+@dataclass
+class PairPhoneResponse:
+    success: bool
+    code: str
+    message: str
+
+
+@crash_reporter
+@dataclass_to_dict
+def pair_phone(phone_number: str) -> PairPhoneResponse:
+    try:
+        reply = DaemonRPC().pair_phone(phone_number)
+        return PairPhoneResponse(success=True, code=reply.Code, message="")
+    except Exception as e:
+        return PairPhoneResponse(success=False, code="", message=str(e))
+
+
 @crash_reporter
 @dataclass_to_dict
 def install_daemon() -> SuccessResponse:

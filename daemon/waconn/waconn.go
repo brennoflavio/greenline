@@ -369,6 +369,10 @@ func (c *Client) SendPresence(ctx context.Context, state types.Presence) error {
 	return c.waCli.SendPresence(ctx, state)
 }
 
+func (c *Client) PairPhone(ctx context.Context, phone string) (string, error) {
+	return c.waCli.PairPhone(ctx, phone, true, whatsmeow.PairClientChrome, "Chrome (Linux)")
+}
+
 func (c *Client) GetChatSettings(ctx context.Context, chat types.JID) (types.LocalChatSettings, error) {
 	if c.waCli.Store.ChatSettings == nil {
 		return types.LocalChatSettings{}, nil
