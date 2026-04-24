@@ -103,29 +103,23 @@ Page {
         replyToSender = message.is_outgoing ? i18n.tr("You") : (message.sender_name || chatName || message.sender || "");
         replyToText = messagePreview(message);
         replyToParticipant = message.is_outgoing ? "" : (message.sender || "");
-        messageInput.forceActiveFocus();
+        chatComposer.focusInput();
     }
 
     function scrollToMessage(messageId) {
-        var model = messageList.model;
-        for (var i = 0; i < model.length; i++) {
-            if (model[i].id === messageId) {
-                messageList.positionViewAtIndex(i, ListView.Center);
-                return ;
-            }
-        }
+        chatMessageList.scrollToMessage(messageId);
     }
 
     function triggerDownload(messageId, mediaType) {
-        var d = downloadingIds;
+        var d = Object.assign({
+        }, downloadingIds);
         d[messageId] = true;
         downloadingIds = d;
-        messagesChanged();
         python.call('main.download_media', [chatId, messageId, mediaType], function(result) {
-            var d2 = downloadingIds;
+            var d2 = Object.assign({
+            }, downloadingIds);
             delete d2[messageId];
             downloadingIds = d2;
-            messagesChanged();
         });
     }
 
@@ -160,7 +154,6 @@ Page {
         var newMessages = messages.slice();
         newMessages.push(pendingMsg);
         messages = newMessages;
-        messagesChanged();
         python.call('main.send_video_message', [chatId, filePath, "", tempId, replyContext], function() {
         });
     }
@@ -196,7 +189,6 @@ Page {
         var newMessages = messages.slice();
         newMessages.push(pendingMsg);
         messages = newMessages;
-        messagesChanged();
         var cleanPath = filePath.toString().replace("file://", "");
         python.call('main.send_sticker_message', [chatId, cleanPath, tempId, replyContext], function() {
         });
@@ -233,7 +225,6 @@ Page {
         var newMessages = messages.slice();
         newMessages.push(pendingMsg);
         messages = newMessages;
-        messagesChanged();
         python.call('main.send_image_message', [chatId, filePath, "", tempId, replyContext], function() {
         });
     }
@@ -269,7 +260,6 @@ Page {
         var newMessages = messages.slice();
         newMessages.push(pendingMsg);
         messages = newMessages;
-        messagesChanged();
         python.call('main.send_contact_message', [chatId, filePath, tempId, replyContext], function(result) {
             if (result && !result.success)
                 toast.show(result.message || i18n.tr("Failed to send contact"));
@@ -279,8 +269,8 @@ Page {
 
     function sendMessage() {
         Qt.inputMethod.commit();
-        if (messageInput.text.length > 0) {
-            var text = messageInput.text;
+        if (chatComposer.text.length > 0) {
+            var text = chatComposer.text;
             var tempId = "pending-" + Date.now();
             var now = new Date();
             var hours = now.getHours().toString();
@@ -309,8 +299,7 @@ Page {
             var newMessages = messages.slice();
             newMessages.push(pendingMsg);
             messages = newMessages;
-            messagesChanged();
-            messageInput.text = "";
+            chatComposer.text = "";
             python.call('main.send_text_message', [chatId, text, tempId, replyContext], function() {
             });
         }
@@ -337,358 +326,26 @@ Page {
         domain: "greenline.brennoflavio"
     }
 
-    ListView {
-        id: messageList
+    ChatMessageList {
+        id: chatMessageList
 
-        clip: true
-        verticalLayoutDirection: ListView.BottomToTop
-        spacing: units.gu(0.5)
-        model: messages.slice().reverse()
-        onAtYEndChanged: {
-            if (atYEnd)
-                chatPage.unreadCount = 0;
-
+        messages: chatPage.messages
+        downloadingIds: chatPage.downloadingIds
+        isGroup: chatPage.isGroup
+        unreadCount: chatPage.unreadCount
+        onBottomReached: chatPage.unreadCount = 0
+        onReplyRequested: chatPage.startReply(message)
+        onCopyRequested: {
+            Clipboard.push(text);
+            toast.show(i18n.tr("Copied to clipboard"));
         }
+        onDownloadRequested: chatPage.triggerDownload(messageId, mediaType)
 
         anchors {
             top: chatHeader.bottom
             left: parent.left
             right: parent.right
-            bottom: inputBar.top
-        }
-
-        delegate: ListItem {
-            id: messageDelegate
-
-            width: parent ? parent.width : 0
-            height: messageLoader.item ? messageLoader.item.height : 0
-            color: "transparent"
-            highlightColor: "transparent"
-            divider.visible: false
-
-            Loader {
-                id: messageLoader
-
-                property var msg: modelData
-
-                width: parent.width
-                sourceComponent: {
-                    if (msg.type === "text")
-                        return textComponent;
-
-                    if (msg.type === "image")
-                        return imageComponent;
-
-                    if (msg.type === "image_gallery")
-                        return galleryComponent;
-
-                    if (msg.type === "video")
-                        return videoComponent;
-
-                    if (msg.type === "voice" || msg.type === "audio")
-                        return voiceComponent;
-
-                    if (msg.type === "document")
-                        return documentComponent;
-
-                    if (msg.type === "contact")
-                        return contactComponent;
-
-                    if (msg.type === "sticker")
-                        return stickerComponent;
-
-                    if (msg.type === "link_preview")
-                        return linkPreviewComponent;
-
-                    return textComponent;
-                }
-            }
-
-            trailingActions: ListItemActions {
-                actions: [
-                    Action {
-                        iconName: "mail-reply"
-                        text: i18n.tr("Reply")
-                        enabled: chatPage.canReplyToMessage(modelData)
-                        onTriggered: chatPage.startReply(modelData)
-                    },
-                    Action {
-                        iconName: "edit-copy"
-                        text: i18n.tr("Copy")
-                        enabled: messageLoader.item && messageLoader.item.copyableText
-                        onTriggered: {
-                            Clipboard.push(messageLoader.item.copyableText);
-                            toast.show(i18n.tr("Copied to clipboard"));
-                        }
-                    }
-                ]
-            }
-
-        }
-
-    }
-
-    Component {
-        id: textComponent
-
-        TextMessage {
-            text: msg.text || ""
-            isOutgoing: msg.is_outgoing || false
-            isGroup: chatPage.isGroup
-            timestamp: msg.timestamp || ""
-            readReceipt: msg.read_receipt || ""
-            sendStatus: msg.send_status || ""
-            senderName: msg.sender_name || ""
-            senderPhoto: msg.sender_photo || ""
-            replyToId: msg.reply_to_id || ""
-            replyToSender: msg.reply_to_sender || ""
-            replyToText: msg.reply_to_text || ""
-            onReplyClicked: scrollToMessage(messageId)
-        }
-
-    }
-
-    Component {
-        id: imageComponent
-
-        ImageMessage {
-            imageSource: msg.image_source || ""
-            thumbnailSource: msg.thumbnail_path || ""
-            mediaPath: msg.media_path || ""
-            caption: msg.caption || ""
-            isOutgoing: msg.is_outgoing || false
-            isGroup: chatPage.isGroup
-            timestamp: msg.timestamp || ""
-            readReceipt: msg.read_receipt || ""
-            sendStatus: msg.send_status || ""
-            senderName: msg.sender_name || ""
-            senderPhoto: msg.sender_photo || ""
-            replyToId: msg.reply_to_id || ""
-            replyToSender: msg.reply_to_sender || ""
-            replyToText: msg.reply_to_text || ""
-            onReplyClicked: scrollToMessage(messageId)
-            downloading: downloadingIds[msg.id] || false
-            onDownloadRequested: triggerDownload(msg.id, "image")
-        }
-
-    }
-
-    Component {
-        id: galleryComponent
-
-        ImageGalleryMessage {
-            images: msg.images || []
-            caption: msg.caption || ""
-            isOutgoing: msg.is_outgoing || false
-            isGroup: chatPage.isGroup
-            timestamp: msg.timestamp || ""
-            readReceipt: msg.read_receipt || ""
-            sendStatus: msg.send_status || ""
-            senderName: msg.sender_name || ""
-            senderPhoto: msg.sender_photo || ""
-            replyToId: msg.reply_to_id || ""
-            replyToSender: msg.reply_to_sender || ""
-            replyToText: msg.reply_to_text || ""
-            onReplyClicked: scrollToMessage(messageId)
-        }
-
-    }
-
-    Component {
-        id: videoComponent
-
-        VideoMessage {
-            thumbnailSource: msg.thumbnail_path || ""
-            mediaPath: msg.media_path || ""
-            caption: msg.caption || ""
-            duration: msg.duration || ""
-            isOutgoing: msg.is_outgoing || false
-            isGroup: chatPage.isGroup
-            timestamp: msg.timestamp || ""
-            readReceipt: msg.read_receipt || ""
-            sendStatus: msg.send_status || ""
-            senderName: msg.sender_name || ""
-            senderPhoto: msg.sender_photo || ""
-            replyToId: msg.reply_to_id || ""
-            replyToSender: msg.reply_to_sender || ""
-            replyToText: msg.reply_to_text || ""
-            onReplyClicked: scrollToMessage(messageId)
-            downloading: downloadingIds[msg.id] || false
-            onDownloadRequested: triggerDownload(msg.id, "video")
-        }
-
-    }
-
-    Component {
-        id: voiceComponent
-
-        VoiceMessage {
-            duration: msg.duration || "0:00"
-            mediaPath: msg.media_path || ""
-            isOutgoing: msg.is_outgoing || false
-            isGroup: chatPage.isGroup
-            timestamp: msg.timestamp || ""
-            readReceipt: msg.read_receipt || ""
-            sendStatus: msg.send_status || ""
-            senderName: msg.sender_name || ""
-            senderPhoto: msg.sender_photo || ""
-            replyToId: msg.reply_to_id || ""
-            replyToSender: msg.reply_to_sender || ""
-            replyToText: msg.reply_to_text || ""
-            onReplyClicked: scrollToMessage(messageId)
-            downloading: downloadingIds[msg.id] || false
-            onDownloadRequested: triggerDownload(msg.id, "audio")
-        }
-
-    }
-
-    Component {
-        id: documentComponent
-
-        DocumentMessage {
-            fileName: msg.file_name || ""
-            caption: msg.caption || ""
-            mediaPath: msg.media_path || ""
-            isOutgoing: msg.is_outgoing || false
-            isGroup: chatPage.isGroup
-            timestamp: msg.timestamp || ""
-            readReceipt: msg.read_receipt || ""
-            sendStatus: msg.send_status || ""
-            senderName: msg.sender_name || ""
-            senderPhoto: msg.sender_photo || ""
-            replyToId: msg.reply_to_id || ""
-            replyToSender: msg.reply_to_sender || ""
-            replyToText: msg.reply_to_text || ""
-            onReplyClicked: scrollToMessage(messageId)
-            downloading: downloadingIds[msg.id] || false
-            onDownloadRequested: triggerDownload(msg.id, "document")
-        }
-
-    }
-
-    Component {
-        id: contactComponent
-
-        ContactMessage {
-            contactName: msg.file_name || ""
-            mediaPath: msg.media_path || ""
-            isOutgoing: msg.is_outgoing || false
-            isGroup: chatPage.isGroup
-            timestamp: msg.timestamp || ""
-            readReceipt: msg.read_receipt || ""
-            sendStatus: msg.send_status || ""
-            senderName: msg.sender_name || ""
-            senderPhoto: msg.sender_photo || ""
-            replyToId: msg.reply_to_id || ""
-            replyToSender: msg.reply_to_sender || ""
-            replyToText: msg.reply_to_text || ""
-            onReplyClicked: scrollToMessage(messageId)
-        }
-
-    }
-
-    Component {
-        id: linkPreviewComponent
-
-        LinkPreviewMessage {
-            text: msg.text || ""
-            linkTitle: msg.link_title || ""
-            linkDescription: msg.link_description || ""
-            linkUrl: msg.link_url || ""
-            thumbnailSource: msg.thumbnail_path || ""
-            isOutgoing: msg.is_outgoing || false
-            isGroup: chatPage.isGroup
-            timestamp: msg.timestamp || ""
-            readReceipt: msg.read_receipt || ""
-            sendStatus: msg.send_status || ""
-            senderName: msg.sender_name || ""
-            senderPhoto: msg.sender_photo || ""
-            replyToId: msg.reply_to_id || ""
-            replyToSender: msg.reply_to_sender || ""
-            replyToText: msg.reply_to_text || ""
-            onReplyClicked: scrollToMessage(messageId)
-        }
-
-    }
-
-    Component {
-        id: stickerComponent
-
-        StickerMessage {
-            stickerSource: msg.sticker_source || ""
-            thumbnailSource: msg.thumbnail_path || ""
-            mediaPath: msg.media_path || ""
-            isOutgoing: msg.is_outgoing || false
-            isGroup: chatPage.isGroup
-            timestamp: msg.timestamp || ""
-            senderName: msg.sender_name || ""
-            senderPhoto: msg.sender_photo || ""
-            replyToId: msg.reply_to_id || ""
-            replyToSender: msg.reply_to_sender || ""
-            replyToText: msg.reply_to_text || ""
-            onReplyClicked: scrollToMessage(messageId)
-        }
-
-    }
-
-    Rectangle {
-        id: scrollToBottomButton
-
-        width: units.gu(4.5)
-        height: units.gu(4.5)
-        radius: width / 2
-        color: Qt.rgba(0, 0, 0, 0.6)
-        visible: !messageList.atYEnd
-        opacity: visible ? 1 : 0
-        z: 1
-
-        anchors {
-            right: parent.right
-            rightMargin: units.gu(2)
-            bottom: inputBar.top
-            bottomMargin: units.gu(1.5)
-        }
-
-        Icon {
-            anchors.centerIn: parent
-            name: "down"
-            width: units.gu(2.5)
-            height: units.gu(2.5)
-            color: "white"
-        }
-
-        Rectangle {
-            visible: chatPage.unreadCount > 0
-            width: Math.max(units.gu(2.5), badgeLabel.implicitWidth + units.gu(1))
-            height: units.gu(2.5)
-            radius: height / 2
-            color: LomiriColors.green
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.bottom: parent.top
-            anchors.bottomMargin: units.gu(0.3)
-
-            Label {
-                id: badgeLabel
-
-                anchors.centerIn: parent
-                text: chatPage.unreadCount
-                fontSize: "x-small"
-                font.weight: Font.Medium
-                color: "white"
-            }
-
-        }
-
-        MouseArea {
-            anchors.fill: parent
-            onClicked: messageList.positionViewAtIndex(0, ListView.End)
-        }
-
-        Behavior on opacity {
-            NumberAnimation {
-                duration: 150
-            }
-
+            bottom: chatComposer.top
         }
 
     }
@@ -708,162 +365,20 @@ Page {
 
     }
 
-    Rectangle {
-        id: inputBar
+    ChatComposer {
+        id: chatComposer
 
-        height: inputColumn.implicitHeight + units.gu(2)
-        color: theme.palette.normal.background
+        replyToMessageId: chatPage.replyToMessageId
+        replyToSender: chatPage.replyToSender
+        replyToText: chatPage.replyToText
+        onClearReplyRequested: chatPage.clearReply()
+        onAttachmentRequested: PopupUtils.open(attachmentDialog)
+        onSendRequested: chatPage.sendMessage()
 
         anchors {
             left: parent.left
             right: parent.right
             bottom: keyboardSpacer.top
-        }
-
-        Rectangle {
-            height: units.dp(1)
-            color: theme.palette.normal.base
-
-            anchors {
-                top: parent.top
-                left: parent.left
-                right: parent.right
-            }
-
-        }
-
-        Column {
-            id: inputColumn
-
-            spacing: units.gu(0.5)
-
-            anchors {
-                top: parent.top
-                left: parent.left
-                right: parent.right
-                margins: units.gu(1)
-            }
-
-            Rectangle {
-                width: parent.width
-                height: replyPreviewColumn.height + units.gu(1)
-                radius: units.gu(0.6)
-                color: theme.palette.normal.base
-                visible: chatPage.replyToMessageId !== ""
-
-                Rectangle {
-                    width: units.gu(0.3)
-                    height: parent.height
-                    radius: units.gu(0.15)
-                    color: LomiriColors.blue
-                }
-
-                Column {
-                    id: replyPreviewColumn
-
-                    spacing: units.gu(0.1)
-
-                    anchors {
-                        left: parent.left
-                        right: clearReplyIcon.left
-                        top: parent.top
-                        leftMargin: units.gu(0.8)
-                        rightMargin: units.gu(0.6)
-                        topMargin: units.gu(0.5)
-                    }
-
-                    Label {
-                        text: chatPage.replyToSender
-                        fontSize: "small"
-                        font.bold: true
-                        color: LomiriColors.blue
-                        elide: Text.ElideRight
-                        width: parent.width
-                    }
-
-                    Label {
-                        text: chatPage.replyToText
-                        fontSize: "small"
-                        color: theme.palette.normal.backgroundSecondaryText
-                        elide: Text.ElideRight
-                        maximumLineCount: 1
-                        wrapMode: Text.NoWrap
-                        width: parent.width
-                    }
-
-                }
-
-                Icon {
-                    id: clearReplyIcon
-
-                    name: "close"
-                    width: units.gu(2.2)
-                    height: units.gu(2.2)
-                    color: theme.palette.normal.backgroundSecondaryText
-
-                    anchors {
-                        right: parent.right
-                        rightMargin: units.gu(0.8)
-                        verticalCenter: parent.verticalCenter
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: clearReply()
-                    }
-
-                }
-
-            }
-
-            RowLayout {
-                id: inputRowLayout
-
-                width: parent.width
-                spacing: units.gu(1)
-
-                Icon {
-                    id: attachmentIcon
-
-                    name: "attachment"
-                    width: units.gu(3)
-                    height: units.gu(3)
-                    color: theme.palette.normal.backgroundSecondaryText
-                    Layout.alignment: Qt.AlignVCenter
-
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: PopupUtils.open(attachmentDialog)
-                    }
-
-                }
-
-                TextArea {
-                    id: messageInput
-
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    placeholderText: i18n.tr("Type a message...")
-                    autoSize: true
-                    maximumLineCount: 5
-                }
-
-                Icon {
-                    name: "send"
-                    width: units.gu(3)
-                    height: units.gu(3)
-                    color: LomiriColors.green
-                    Layout.alignment: Qt.AlignVCenter
-
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: sendMessage()
-                    }
-
-                }
-
-            }
-
         }
 
     }
@@ -908,14 +423,13 @@ Page {
                             updated.push(message);
                             if (!message.is_outgoing) {
                                 hasNewIncoming = true;
-                                if (!messageList.atYEnd)
+                                if (!chatMessageList.atBottom)
                                     chatPage.unreadCount += 1;
 
                             }
                         }
                     }
                     messages = updated;
-                    messagesChanged();
                     if (hasNewIncoming) {
                         messagesReadMetric.increment(1);
                         python.call('main.mark_messages_as_read', [chatId], function() {
@@ -934,7 +448,8 @@ Page {
                     }
                 });
                 setHandler('chat-presence', function(chatPresenceList) {
-                    var typers = activeTypers;
+                    var typers = Object.assign({
+                    }, activeTypers);
                     for (var i = 0; i < chatPresenceList.length; i++) {
                         var entry = chatPresenceList[i];
                         if (entry.chat === chatId) {
@@ -976,67 +491,22 @@ Page {
                             }
                         }
                     }
-                    if (changed) {
+                    if (changed)
                         messages = updated;
-                        messagesChanged();
-                    }
+
                 });
             });
         }
     }
 
-    ContentStore {
-        id: contentStore
-
-        scope: ContentScope.App
-    }
-
     Component {
         id: attachmentDialog
 
-        Dialog {
-            id: attachDialog
-
-            title: i18n.tr("Send Attachment")
-
-            Button {
-                text: i18n.tr("Photo")
-                onClicked: {
-                    PopupUtils.close(attachDialog);
-                    pageStack.push(mediaPickerPage);
-                }
-            }
-
-            Button {
-                text: i18n.tr("Video")
-                onClicked: {
-                    PopupUtils.close(attachDialog);
-                    pageStack.push(videoPickerPage);
-                }
-            }
-
-            Button {
-                text: i18n.tr("Sticker")
-                onClicked: {
-                    PopupUtils.close(attachDialog);
-                    pageStack.push(stickerPickerComponent);
-                }
-            }
-
-            Button {
-                text: i18n.tr("Contact")
-                onClicked: {
-                    PopupUtils.close(attachDialog);
-                    pageStack.push(contactPickerPage);
-                }
-            }
-
-            Button {
-                text: i18n.tr("Cancel")
-                color: theme.palette.normal.base
-                onClicked: PopupUtils.close(attachDialog)
-            }
-
+        ChatAttachmentDialog {
+            onPhotoRequested: pageStack.push(mediaPickerPage)
+            onVideoRequested: pageStack.push(videoPickerPage)
+            onStickerRequested: pageStack.push(stickerPickerComponent)
+            onContactRequested: pageStack.push(contactPickerPage)
         }
 
     }
@@ -1044,61 +514,10 @@ Page {
     Component {
         id: mediaPickerPage
 
-        Page {
-            id: pickerPageInstance
-
-            property var activeTransfer
-
-            ContentPeerPicker {
-                contentType: ContentType.Pictures
-                handler: ContentHandler.Source
-                onPeerSelected: {
-                    pickerPageInstance.activeTransfer = peer.request(contentStore);
-                    pickerPageInstance.activeTransfer.selectionType = ContentTransfer.Single;
-                    pickerPageInstance.activeTransfer.stateChanged.connect(function() {
-                        if (pickerPageInstance.activeTransfer.state === ContentTransfer.Charged) {
-                            if (pickerPageInstance.activeTransfer.items.length > 0) {
-                                var fileUrl = pickerPageInstance.activeTransfer.items[0].url.toString();
-                                var filePath = fileUrl.replace("file://", "");
-                                pageStack.pop();
-                                sendImageMessage(filePath);
-                            }
-                        }
-                    });
-                }
-                onCancelPressed: {
-                    if (pickerPageInstance.activeTransfer)
-                        pickerPageInstance.activeTransfer.state = ContentTransfer.Aborted;
-
-                    pageStack.pop();
-                }
-
-                anchors {
-                    top: pickerHeader.bottom
-                    left: parent.left
-                    right: parent.right
-                    bottom: parent.bottom
-                }
-
-            }
-
-            header: PageHeader {
-                id: pickerHeader
-
-                title: i18n.tr("Send Photo")
-                leadingActionBar.actions: [
-                    Action {
-                        iconName: "back"
-                        onTriggered: {
-                            if (pickerPageInstance.activeTransfer)
-                                pickerPageInstance.activeTransfer.state = ContentTransfer.Aborted;
-
-                            pageStack.pop();
-                        }
-                    }
-                ]
-            }
-
+        ChatAttachmentPickerPage {
+            pickerTitle: i18n.tr("Send Photo")
+            pickerContentType: ContentType.Pictures
+            onFileSelected: sendImageMessage(filePath)
         }
 
     }
@@ -1106,61 +525,10 @@ Page {
     Component {
         id: videoPickerPage
 
-        Page {
-            id: videoPickerPageInstance
-
-            property var activeTransfer
-
-            ContentPeerPicker {
-                contentType: ContentType.Videos
-                handler: ContentHandler.Source
-                onPeerSelected: {
-                    videoPickerPageInstance.activeTransfer = peer.request(contentStore);
-                    videoPickerPageInstance.activeTransfer.selectionType = ContentTransfer.Single;
-                    videoPickerPageInstance.activeTransfer.stateChanged.connect(function() {
-                        if (videoPickerPageInstance.activeTransfer.state === ContentTransfer.Charged) {
-                            if (videoPickerPageInstance.activeTransfer.items.length > 0) {
-                                var fileUrl = videoPickerPageInstance.activeTransfer.items[0].url.toString();
-                                var filePath = fileUrl.replace("file://", "");
-                                pageStack.pop();
-                                sendVideoMessage(filePath);
-                            }
-                        }
-                    });
-                }
-                onCancelPressed: {
-                    if (videoPickerPageInstance.activeTransfer)
-                        videoPickerPageInstance.activeTransfer.state = ContentTransfer.Aborted;
-
-                    pageStack.pop();
-                }
-
-                anchors {
-                    top: videoPickerHeader.bottom
-                    left: parent.left
-                    right: parent.right
-                    bottom: parent.bottom
-                }
-
-            }
-
-            header: PageHeader {
-                id: videoPickerHeader
-
-                title: i18n.tr("Send Video")
-                leadingActionBar.actions: [
-                    Action {
-                        iconName: "back"
-                        onTriggered: {
-                            if (videoPickerPageInstance.activeTransfer)
-                                videoPickerPageInstance.activeTransfer.state = ContentTransfer.Aborted;
-
-                            pageStack.pop();
-                        }
-                    }
-                ]
-            }
-
+        ChatAttachmentPickerPage {
+            pickerTitle: i18n.tr("Send Video")
+            pickerContentType: ContentType.Videos
+            onFileSelected: sendVideoMessage(filePath)
         }
 
     }
@@ -1168,61 +536,10 @@ Page {
     Component {
         id: contactPickerPage
 
-        Page {
-            id: contactPickerPageInstance
-
-            property var activeTransfer
-
-            ContentPeerPicker {
-                contentType: ContentType.Contacts
-                handler: ContentHandler.Source
-                onPeerSelected: {
-                    contactPickerPageInstance.activeTransfer = peer.request(contentStore);
-                    contactPickerPageInstance.activeTransfer.selectionType = ContentTransfer.Single;
-                    contactPickerPageInstance.activeTransfer.stateChanged.connect(function() {
-                        if (contactPickerPageInstance.activeTransfer.state === ContentTransfer.Charged) {
-                            if (contactPickerPageInstance.activeTransfer.items.length > 0) {
-                                var fileUrl = contactPickerPageInstance.activeTransfer.items[0].url.toString();
-                                var filePath = fileUrl.replace("file://", "");
-                                pageStack.pop();
-                                sendContactMessage(filePath);
-                            }
-                        }
-                    });
-                }
-                onCancelPressed: {
-                    if (contactPickerPageInstance.activeTransfer)
-                        contactPickerPageInstance.activeTransfer.state = ContentTransfer.Aborted;
-
-                    pageStack.pop();
-                }
-
-                anchors {
-                    top: contactPickerHeader.bottom
-                    left: parent.left
-                    right: parent.right
-                    bottom: parent.bottom
-                }
-
-            }
-
-            header: PageHeader {
-                id: contactPickerHeader
-
-                title: i18n.tr("Send Contact")
-                leadingActionBar.actions: [
-                    Action {
-                        iconName: "back"
-                        onTriggered: {
-                            if (contactPickerPageInstance.activeTransfer)
-                                contactPickerPageInstance.activeTransfer.state = ContentTransfer.Aborted;
-
-                            pageStack.pop();
-                        }
-                    }
-                ]
-            }
-
+        ChatAttachmentPickerPage {
+            pickerTitle: i18n.tr("Send Contact")
+            pickerContentType: ContentType.Contacts
+            onFileSelected: sendContactMessage(filePath)
         }
 
     }
