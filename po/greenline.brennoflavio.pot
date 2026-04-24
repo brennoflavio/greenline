@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-24 13:39+0000\n"
+"POT-Creation-Date: 2026-04-24 22:56+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -86,27 +86,27 @@ msgstr ""
 msgid "Copied to clipboard"
 msgstr ""
 
-#: ../qml/ChatPage.qml:470
+#: ../qml/ChatPage.qml:472
 msgid "recording audio..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:470
+#: ../qml/ChatPage.qml:472
 msgid "typing..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:515
+#: ../qml/ChatPage.qml:518
 msgid "Send Photo"
 msgstr ""
 
-#: ../qml/ChatPage.qml:526
+#: ../qml/ChatPage.qml:529
 msgid "Send Video"
 msgstr ""
 
-#: ../qml/ChatPage.qml:537
+#: ../qml/ChatPage.qml:540
 msgid "Send Contact"
 msgstr ""
 
-#: ../qml/ChatPage.qml:559 ../qml/ContactPreviewPage.qml:223
+#: ../qml/ChatPage.qml:562 ../qml/ContactPreviewPage.qml:223
 #: ../qml/DocumentPreviewPage.qml:223 ../qml/ImagePreviewPage.qml:190
 #: ../qml/VideoPreviewPage.qml:335 ../qml/ut_components/AppHeader.qml:78
 msgid "Back"
@@ -300,11 +300,11 @@ msgstr ""
 msgid "Type a message..."
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:97
+#: ../qml/components/ChatMessageList.qml:112
 msgid "Reply"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:103
+#: ../qml/components/ChatMessageList.qml:118
 msgid "Copy"
 msgstr ""
 

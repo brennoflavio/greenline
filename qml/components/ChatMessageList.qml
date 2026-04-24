@@ -5,6 +5,7 @@ Item {
     id: root
 
     property var messages: []
+    property var preparedMessages: []
     property var downloadingIds: ({
     })
     property bool isGroup: false
@@ -30,6 +31,12 @@ Item {
         messageList.positionViewAtEnd();
     }
 
+    onMessagesChanged: {
+        var nextPrepared = messages.slice();
+        nextPrepared.reverse();
+        preparedMessages = nextPrepared;
+    }
+
     ListView {
         id: messageList
 
@@ -37,7 +44,7 @@ Item {
         clip: true
         verticalLayoutDirection: ListView.BottomToTop
         spacing: units.gu(0.5)
-        model: root.messages.slice().reverse()
+        model: root.preparedMessages
         onAtYEndChanged: {
             if (atYEnd)
                 root.bottomReached();
@@ -60,32 +67,39 @@ Item {
 
                 width: parent.width
                 sourceComponent: {
-                    if (msg.type === "text")
-                        return textComponent;
+                    var type = msg.type || "text";
+                    if (type === "text") {
+                        if (msg.reply_to_id || (root.isGroup && !msg.is_outgoing && (msg.sender_name || "") !== ""))
+                            return richTextComponent;
 
-                    if (msg.type === "image")
+                        return textComponent;
+                    }
+                    if (type === "image")
                         return imageComponent;
 
-                    if (msg.type === "image_gallery")
+                    if (type === "image_gallery")
                         return galleryComponent;
 
-                    if (msg.type === "video")
+                    if (type === "video")
                         return videoComponent;
 
-                    if (msg.type === "voice" || msg.type === "audio")
+                    if (type === "voice" || type === "audio")
                         return voiceComponent;
 
-                    if (msg.type === "document")
+                    if (type === "document")
                         return documentComponent;
 
-                    if (msg.type === "contact")
+                    if (type === "contact")
                         return contactComponent;
 
-                    if (msg.type === "sticker")
+                    if (type === "sticker")
                         return stickerComponent;
 
-                    if (msg.type === "link_preview")
+                    if (type === "link_preview")
                         return linkPreviewComponent;
+
+                    if (msg.reply_to_id || (root.isGroup && !msg.is_outgoing && (msg.sender_name || "") !== ""))
+                        return richTextComponent;
 
                     return textComponent;
                 }
@@ -118,6 +132,19 @@ Item {
         TextMessage {
             text: msg.text || ""
             isOutgoing: msg.is_outgoing || false
+            timestamp: msg.timestamp || ""
+            readReceipt: msg.read_receipt || ""
+            sendStatus: msg.send_status || ""
+        }
+
+    }
+
+    Component {
+        id: richTextComponent
+
+        MessageBubble {
+            copyableText: msg.text || ""
+            isOutgoing: msg.is_outgoing || false
             isGroup: root.isGroup
             timestamp: msg.timestamp || ""
             readReceipt: msg.read_receipt || ""
@@ -128,6 +155,20 @@ Item {
             replyToSender: msg.reply_to_sender || ""
             replyToText: msg.reply_to_text || ""
             onReplyClicked: root.scrollToMessage(messageId)
+
+            Label {
+                text: msg.text || ""
+                fontSize: "small"
+                color: "#303030"
+                wrapMode: Text.WordWrap
+                width: parent.width
+            }
+
+            Item {
+                width: 1
+                height: units.gu(1.5)
+            }
+
         }
 
     }
