@@ -15,6 +15,7 @@ You should have received a copy of the GNU General Public License
 """
 
 from constants import APP_NAME, CRASH_REPORT_URL
+from ut_components import mimetypes as mime_types
 from ut_components import setup
 
 setup(APP_NAME, CRASH_REPORT_URL)
@@ -503,6 +504,38 @@ def _apply_reply_context(message: Message, reply_context: dict[str, object] | No
     message.reply_to_text = str(reply_context.get("text") or "")
 
 
+def _extract_contact_display_name(vcard: str, file_path: str) -> str:
+    unfolded_lines: list[str] = []
+    for raw_line in vcard.replace("\r\n", "\n").replace("\r", "\n").split("\n"):
+        if (raw_line.startswith(" ") or raw_line.startswith("\t")) and unfolded_lines:
+            unfolded_lines[-1] += raw_line[1:]
+        else:
+            unfolded_lines.append(raw_line)
+
+    for line in unfolded_lines:
+        key, separator, value = line.partition(":")
+        if separator and key.split(";", 1)[0].upper() == "FN":
+            name = value.strip()
+            if name:
+                return name
+
+    fallback = os.path.splitext(os.path.basename(file_path))[0].strip()
+    return fallback or "Contact"
+
+
+def _guess_contact_extension(file_path: str) -> str:
+    return (
+        os.path.splitext(file_path)[1]
+        or mime_types.guess_extension("text/x-vcard")  # type: ignore[no-untyped-call]
+        or ".vcf"
+    )
+
+
+def _guess_contact_mimetype(file_path: str) -> str:
+    guessed = mime_types.guess_type(file_path)[0]  # type: ignore[no-untyped-call]
+    return guessed or "text/x-vcard"
+
+
 @crash_reporter
 @dataclass_to_dict
 def send_text_message(
@@ -608,7 +641,11 @@ def send_image_message(
     try:
         rpc = DaemonRPC()
         result = rpc.send_message(
-            chat_id, "image", file_path=cached_path, caption=caption, reply_context=resolved_reply_context
+            chat_id,
+            "image",
+            file_path=cached_path,
+            caption=caption,
+            reply_context=resolved_reply_context,
         )
     except Exception:
         pending_msg.send_status = "failed"
@@ -686,7 +723,11 @@ def send_video_message(
     try:
         rpc = DaemonRPC()
         result = rpc.send_message(
-            chat_id, "video", file_path=cached_path, caption=caption, reply_context=resolved_reply_context
+            chat_id,
+            "video",
+            file_path=cached_path,
+            caption=caption,
+            reply_context=resolved_reply_context,
         )
     except Exception:
         pending_msg.send_status = "failed"
@@ -761,7 +802,12 @@ def send_sticker_message(
 
     try:
         rpc = DaemonRPC()
-        result = rpc.send_message(chat_id, "sticker", file_path=cached_path, reply_context=resolved_reply_context)
+        result = rpc.send_message(
+            chat_id,
+            "sticker",
+            file_path=cached_path,
+            reply_context=resolved_reply_context,
+        )
     except Exception:
         pending_msg.send_status = "failed"
         pyotherside.send("message-upsert", [_enum_to_str(asdict(pending_msg))])  # type: ignore[no-untyped-call]
@@ -784,6 +830,99 @@ def send_sticker_message(
     key = f"message:{chat_id}:{msg.timestamp_unix}:{msg.id}"
     with KV() as kv:
         kv.put(key, asdict(msg))
+
+    chat = upsert_chat(msg, MessageInfo())
+    pyotherside.send("message-upsert", [_enum_to_str(asdict(msg))])  # type: ignore[no-untyped-call]
+    pyotherside.send("chat-list-update", [_enum_to_str(asdict(chat))])  # type: ignore[no-untyped-call]
+
+    return SuccessResponse(success=True, message="")
+
+
+@crash_reporter
+@dataclass_to_dict
+def send_contact_message(
+    chat_id: str,
+    file_path: str,
+    temp_id: str = "",
+    reply_context: dict[str, object] | None = None,
+) -> SuccessResponse:
+    from datetime import datetime
+
+    import pyotherside
+
+    resolved_reply_context = _resolve_reply_context(chat_id, reply_context)
+
+    with open(file_path, encoding="utf-8-sig") as f:
+        vcard = f.read()
+
+    cache_dir = os.path.join(get_cache_path(), "outgoing")
+    os.makedirs(cache_dir, exist_ok=True)
+    ext = _guess_contact_extension(file_path)
+    cached_path = os.path.join(cache_dir, f"{temp_id or int(datetime.now().timestamp())}{ext}")
+    shutil.copy2(file_path, cached_path)
+
+    display_name = _extract_contact_display_name(vcard, file_path)
+
+    now = datetime.now()
+    pending_msg = Message(
+        id=temp_id or f"pending-{int(now.timestamp())}",
+        chat_id=chat_id,
+        type=MessageType.CONTACT,
+        is_outgoing=True,
+        timestamp=now.strftime("%H:%M"),
+        timestamp_unix=int(now.timestamp()),
+        read_receipt=ReadReceipt.NONE,
+        media_path="file://" + cached_path,
+        mimetype=_guess_contact_mimetype(cached_path),
+        file_name=display_name,
+        send_status="pending",
+        temp_id=temp_id,
+    )
+    _apply_reply_context(pending_msg, resolved_reply_context)
+    pyotherside.send("message-upsert", [_enum_to_str(asdict(pending_msg))])  # type: ignore[no-untyped-call]
+
+    try:
+        rpc = DaemonRPC()
+        result = rpc.send_message(
+            chat_id,
+            "contact",
+            text=display_name,
+            file_path=cached_path,
+            reply_context=resolved_reply_context,
+        )
+    except Exception:
+        pending_msg.send_status = "failed"
+        pyotherside.send("message-upsert", [_enum_to_str(asdict(pending_msg))])  # type: ignore[no-untyped-call]
+        return SuccessResponse(success=False, message="Failed to send contact")
+
+    ts = result["Timestamp"]
+    msg = Message(
+        id=result["MessageID"],
+        chat_id=chat_id,
+        type=MessageType.CONTACT,
+        is_outgoing=True,
+        timestamp=datetime.fromtimestamp(ts).strftime("%H:%M"),
+        timestamp_unix=ts,
+        read_receipt=ReadReceipt.SENT,
+        media_path="file://" + cached_path,
+        mimetype=_guess_contact_mimetype(cached_path),
+        file_name=display_name,
+        temp_id=temp_id,
+    )
+    _apply_reply_context(msg, resolved_reply_context)
+
+    key = f"message:{chat_id}:{msg.timestamp_unix}:{msg.id}"
+    data = asdict(msg)
+    data["raw"] = {
+        "Message": {
+            "contactMessage": {
+                "displayName": display_name,
+                "vcard": vcard,
+            }
+        }
+    }
+    with KV() as kv:
+        kv.put(key, data)
 
     chat = upsert_chat(msg, MessageInfo())
     pyotherside.send("message-upsert", [_enum_to_str(asdict(msg))])  # type: ignore[no-untyped-call]

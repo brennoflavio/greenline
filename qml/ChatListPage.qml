@@ -17,6 +17,9 @@ Page {
         if (msg.caption)
             return msg.caption;
 
+        if (msg.type === "contact")
+            return "👤 " + (msg.file_name || i18n.tr("Contact"));
+
         var previews = {
             "image": "📷 Photo",
             "image_gallery": "📷 Photo",

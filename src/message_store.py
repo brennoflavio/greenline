@@ -16,6 +16,26 @@ def _get_thumbnail_dir() -> str:
     return os.path.join(get_cache_path(), "thumbnails")
 
 
+def _get_contact_dir(chat_id: str) -> str:
+    return os.path.join(get_cache_path(), "contacts", chat_id)
+
+
+def _contact_preview(display_name: str) -> str:
+    name = display_name.strip()
+    return f"👤 {name}" if name else "👤 Contact"
+
+
+def persist_contact_vcard(chat_id: str, message_id: str, display_name: str, vcard: str) -> str:
+    if not vcard:
+        return ""
+    contact_dir = _get_contact_dir(chat_id)
+    os.makedirs(contact_dir, exist_ok=True)
+    file_path = os.path.join(contact_dir, f"{message_id or 'contact'}.vcf")
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write(vcard)
+    return "file://" + file_path
+
+
 def update_chat_name(
     chat: ChatListItem,
     timestamp: int,
@@ -70,6 +90,9 @@ def _quoted_message_preview(quoted: Optional[Dict[str, Any]]) -> str:
         return "🎵 Audio"
     if quoted.get("documentMessage"):
         return quoted["documentMessage"].get("caption") or "📄 Document"
+    contact = quoted.get("contactMessage")
+    if contact:
+        return _contact_preview(contact.get("displayName", ""))
     if quoted.get("stickerMessage"):
         return "🏷️ Sticker"
     return ""
@@ -83,6 +106,7 @@ def _extract_context_info(content: MessageContent) -> tuple[str, str, str]:
         content.videoMessage,
         content.audioMessage,
         content.documentMessage,
+        content.contactMessage,
         content.stickerMessage,
     ):
         if sub is not None and getattr(sub, "contextInfo", None) is not None:
@@ -113,6 +137,7 @@ def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
         and content.videoMessage is None
         and content.audioMessage is None
         and content.documentMessage is None
+        and content.contactMessage is None
         and content.stickerMessage is None
     )
     if is_protocol_only:
@@ -138,6 +163,7 @@ def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
 
     mimetype = ""
     file_name = ""
+    media_path = ""
 
     if content.imageMessage:
         if content.imageMessage.caption:
@@ -158,6 +184,10 @@ def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
             caption = content.documentMessage.caption
         mimetype = content.documentMessage.mimetype
         file_name = content.documentMessage.fileName
+    elif content.contactMessage:
+        file_name = content.contactMessage.displayName
+        mimetype = "text/x-vcard"
+        media_path = persist_contact_vcard(info.Chat, info.ID, file_name, content.contactMessage.vcard)
     elif content.stickerMessage:
         mimetype = content.stickerMessage.mimetype
 
@@ -194,6 +224,7 @@ def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
         sender_name=sender_name,
         text=text,
         caption=caption,
+        media_path=media_path,
         mimetype=mimetype,
         file_name=file_name,
         duration=duration,
@@ -218,6 +249,8 @@ def _derive_message_type(info_type: str, media_type: str) -> Optional[MessageTyp
             return MessageType.AUDIO
         if media_type == "document":
             return MessageType.DOCUMENT
+        if media_type == "vcard":
+            return MessageType.CONTACT
         if media_type in ("sticker", "user_created_sticker"):
             return MessageType.STICKER
         if media_type == "url":
@@ -231,6 +264,8 @@ def _message_preview(msg: Message) -> str:
         return msg.text
     if msg.caption:
         return msg.caption
+    if msg.type == MessageType.CONTACT:
+        return _contact_preview(msg.file_name)
     previews = {
         MessageType.IMAGE: "📷 Photo",
         MessageType.VIDEO: "🎥 Video",

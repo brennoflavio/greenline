@@ -30,14 +30,14 @@ import (
 )
 
 type Service struct {
-	client      *waconn.Client
-	eventStore  *eventstore.Store
-	configStore *configstore.Store
-	syncer      *avatarsync.Syncer
-	notifier    *notify.Notifier
-	cacheDir    string
-	mu          sync.RWMutex
-	qrCode      string
+	client          *waconn.Client
+	eventStore      *eventstore.Store
+	configStore     *configstore.Store
+	syncer          *avatarsync.Syncer
+	notifier        *notify.Notifier
+	cacheDir        string
+	mu              sync.RWMutex
+	qrCode          string
 	notifSuppressed bool
 }
 
@@ -452,7 +452,7 @@ func extensionFromMimetype(mimetype string) string {
 
 type SendMessageArgs struct {
 	ChatJID             string
-	Type                string // "text", "image", "video", "audio", "sticker", "document"
+	Type                string // "text", "image", "video", "audio", "sticker", "document", "contact"
 	Text                string
 	FilePath            string
 	Caption             string
@@ -624,6 +624,29 @@ func (s *Service) sendStickerMessage(args *SendMessageArgs, replyContext *waE2E.
 	return msg, nil
 }
 
+func (s *Service) sendContactMessage(args *SendMessageArgs, replyContext *waE2E.ContextInfo) (*waE2E.Message, error) {
+	vcard, err := os.ReadFile(args.FilePath)
+	if err != nil {
+		return nil, fmt.Errorf("read file: %w", err)
+	}
+
+	displayName := strings.TrimSpace(args.Text)
+	if displayName == "" {
+		displayName = strings.TrimSuffix(filepath.Base(args.FilePath), filepath.Ext(args.FilePath))
+	}
+	if displayName == "" {
+		displayName = "Contact"
+	}
+
+	return &waE2E.Message{
+		ContactMessage: &waE2E.ContactMessage{
+			DisplayName: proto.String(displayName),
+			Vcard:       proto.String(string(vcard)),
+			ContextInfo: replyContext,
+		},
+	}, nil
+}
+
 func (s *Service) SendMessage(args *SendMessageArgs, reply *SendMessageReply) error {
 	if err := s.requireLogin(); err != nil {
 		return err
@@ -678,6 +701,15 @@ func (s *Service) SendMessage(args *SendMessageArgs, reply *SendMessageReply) er
 		msg, err := s.sendStickerMessage(args, replyContext)
 		if err != nil {
 			return fmt.Errorf("sticker message: %w", err)
+		}
+		message = msg
+	case "contact":
+		if args.FilePath == "" {
+			return fmt.Errorf("file path required for contact message")
+		}
+		msg, err := s.sendContactMessage(args, replyContext)
+		if err != nil {
+			return fmt.Errorf("contact message: %w", err)
 		}
 		message = msg
 	default:

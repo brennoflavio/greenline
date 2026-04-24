@@ -11,6 +11,7 @@ class MessageType(StrEnum):
     VOICE = "voice"
     AUDIO = "audio"
     DOCUMENT = "document"
+    CONTACT = "contact"
     STICKER = "sticker"
     LINK_PREVIEW = "link_preview"
 

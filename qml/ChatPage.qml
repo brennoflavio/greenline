@@ -39,6 +39,9 @@ Page {
         if (message.caption)
             return message.caption;
 
+        if (message.type === "contact")
+            return "👤 " + (message.file_name || i18n.tr("Contact"));
+
         var previews = {
             "image": "📷 Photo",
             "image_gallery": "📷 Photo",
@@ -50,6 +53,17 @@ Page {
             "link_preview": "🔗 Link"
         };
         return previews[message.type] || message.type || "";
+    }
+
+    function contactNameFromPath(filePath) {
+        var cleanPath = filePath.toString().replace("file://", "");
+        var parts = cleanPath.split("/");
+        var name = parts.length > 0 ? parts[parts.length - 1] : "";
+        var dotIndex = name.lastIndexOf(".");
+        if (dotIndex > 0)
+            name = name.slice(0, dotIndex);
+
+        return name || i18n.tr("Contact");
     }
 
     function canReplyToMessage(message) {
@@ -224,6 +238,45 @@ Page {
         });
     }
 
+    function sendContactMessage(filePath) {
+        var tempId = "pending-" + Date.now();
+        var now = new Date();
+        var hours = now.getHours().toString();
+        if (hours.length < 2)
+            hours = "0" + hours;
+
+        var minutes = now.getMinutes().toString();
+        if (minutes.length < 2)
+            minutes = "0" + minutes;
+
+        var replyContext = consumeReplyContext();
+        var pendingMsg = {
+            "id": tempId,
+            "chat_id": chatId,
+            "type": "contact",
+            "is_outgoing": true,
+            "text": "",
+            "timestamp": hours + ":" + minutes,
+            "read_receipt": "",
+            "send_status": "pending",
+            "temp_id": tempId,
+            "file_name": contactNameFromPath(filePath),
+            "media_path": "file://" + filePath,
+            "reply_to_id": replyContext ? replyContext.id : "",
+            "reply_to_sender": replyContext ? replyContext.sender : "",
+            "reply_to_text": replyContext ? replyContext.text : ""
+        };
+        var newMessages = messages.slice();
+        newMessages.push(pendingMsg);
+        messages = newMessages;
+        messagesChanged();
+        python.call('main.send_contact_message', [chatId, filePath, tempId, replyContext], function(result) {
+            if (result && !result.success)
+                toast.show(result.message || i18n.tr("Failed to send contact"));
+
+        });
+    }
+
     function sendMessage() {
         Qt.inputMethod.commit();
         if (messageInput.text.length > 0) {
@@ -337,6 +390,9 @@ Page {
 
                     if (msg.type === "document")
                         return documentComponent;
+
+                    if (msg.type === "contact")
+                        return contactComponent;
 
                     if (msg.type === "sticker")
                         return stickerComponent;
@@ -506,6 +562,27 @@ Page {
             onReplyClicked: scrollToMessage(messageId)
             downloading: downloadingIds[msg.id] || false
             onDownloadRequested: triggerDownload(msg.id, "document")
+        }
+
+    }
+
+    Component {
+        id: contactComponent
+
+        ContactMessage {
+            contactName: msg.file_name || ""
+            mediaPath: msg.media_path || ""
+            isOutgoing: msg.is_outgoing || false
+            isGroup: chatPage.isGroup
+            timestamp: msg.timestamp || ""
+            readReceipt: msg.read_receipt || ""
+            sendStatus: msg.send_status || ""
+            senderName: msg.sender_name || ""
+            senderPhoto: msg.sender_photo || ""
+            replyToId: msg.reply_to_id || ""
+            replyToSender: msg.reply_to_sender || ""
+            replyToText: msg.reply_to_text || ""
+            onReplyClicked: scrollToMessage(messageId)
         }
 
     }
@@ -947,6 +1024,14 @@ Page {
             }
 
             Button {
+                text: i18n.tr("Contact")
+                onClicked: {
+                    PopupUtils.close(attachDialog);
+                    pageStack.push(contactPickerPage);
+                }
+            }
+
+            Button {
                 text: i18n.tr("Cancel")
                 color: theme.palette.normal.base
                 onClicked: PopupUtils.close(attachDialog)
@@ -1069,6 +1154,68 @@ Page {
                         onTriggered: {
                             if (videoPickerPageInstance.activeTransfer)
                                 videoPickerPageInstance.activeTransfer.state = ContentTransfer.Aborted;
+
+                            pageStack.pop();
+                        }
+                    }
+                ]
+            }
+
+        }
+
+    }
+
+    Component {
+        id: contactPickerPage
+
+        Page {
+            id: contactPickerPageInstance
+
+            property var activeTransfer
+
+            ContentPeerPicker {
+                contentType: ContentType.Contacts
+                handler: ContentHandler.Source
+                onPeerSelected: {
+                    contactPickerPageInstance.activeTransfer = peer.request(contentStore);
+                    contactPickerPageInstance.activeTransfer.selectionType = ContentTransfer.Single;
+                    contactPickerPageInstance.activeTransfer.stateChanged.connect(function() {
+                        if (contactPickerPageInstance.activeTransfer.state === ContentTransfer.Charged) {
+                            if (contactPickerPageInstance.activeTransfer.items.length > 0) {
+                                var fileUrl = contactPickerPageInstance.activeTransfer.items[0].url.toString();
+                                var filePath = fileUrl.replace("file://", "");
+                                pageStack.pop();
+                                sendContactMessage(filePath);
+                            }
+                        }
+                    });
+                }
+                onCancelPressed: {
+                    if (contactPickerPageInstance.activeTransfer)
+                        contactPickerPageInstance.activeTransfer.state = ContentTransfer.Aborted;
+
+                    pageStack.pop();
+                }
+
+                anchors {
+                    top: contactPickerHeader.bottom
+                    left: parent.left
+                    right: parent.right
+                    bottom: parent.bottom
+                }
+
+            }
+
+            header: PageHeader {
+                id: contactPickerHeader
+
+                title: i18n.tr("Send Contact")
+                leadingActionBar.actions: [
+                    Action {
+                        iconName: "back"
+                        onTriggered: {
+                            if (contactPickerPageInstance.activeTransfer)
+                                contactPickerPageInstance.activeTransfer.state = ContentTransfer.Aborted;
 
                             pageStack.pop();
                         }

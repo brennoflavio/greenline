@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-24 02:42+0000\n"
+"POT-Creation-Date: 2026-04-24 04:10+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -43,91 +43,126 @@ msgstr ""
 msgid "Link Device"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:75
+#: ../qml/ChatListPage.qml:21 ../qml/ChatPage.qml:43 ../qml/ChatPage.qml:66
+#: ../qml/ChatPage.qml:1027 ../qml/ContactPreviewPage.qml:42
+#: ../qml/ContactPreviewPage.qml:219 ../qml/components/ContactMessage.qml:47
+msgid "Contact"
+msgstr ""
+
+#: ../qml/ChatListPage.qml:78
 msgid "Search chats..."
 msgstr ""
 
-#: ../qml/ChatListPage.qml:257
+#: ../qml/ChatListPage.qml:260
 msgid "Mute"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:257
+#: ../qml/ChatListPage.qml:260
 msgid "Unmute"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:272
+#: ../qml/ChatListPage.qml:275
 msgid "No chats found"
 msgstr ""
 
-#: ../qml/ChatPage.qml:89
+#: ../qml/ChatPage.qml:103
 msgid "You"
 msgstr ""
 
-#: ../qml/ChatPage.qml:282
+#: ../qml/ChatPage.qml:275
+msgid "Failed to send contact"
+msgstr ""
+
+#: ../qml/ChatPage.qml:335
 msgid "WhatsApp messages read today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:283
+#: ../qml/ChatPage.qml:336
 msgid "No WhatsApp messages read today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:355
+#: ../qml/ChatPage.qml:411
 msgid "Reply"
 msgstr ""
 
-#: ../qml/ChatPage.qml:361
+#: ../qml/ChatPage.qml:417
 msgid "Copy"
 msgstr ""
 
-#: ../qml/ChatPage.qml:365
+#: ../qml/ChatPage.qml:421
 msgid "Copied to clipboard"
 msgstr ""
 
-#: ../qml/ChatPage.qml:769
+#: ../qml/ChatPage.qml:846
 msgid "Type a message..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:880
+#: ../qml/ChatPage.qml:957
 msgid "recording audio..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:880
+#: ../qml/ChatPage.qml:957
 msgid "typing..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:923
+#: ../qml/ChatPage.qml:1000
 msgid "Send Attachment"
 msgstr ""
 
-#: ../qml/ChatPage.qml:926
+#: ../qml/ChatPage.qml:1003
 msgid "Photo"
 msgstr ""
 
-#: ../qml/ChatPage.qml:934 ../qml/VideoPreviewPage.qml:331
+#: ../qml/ChatPage.qml:1011 ../qml/VideoPreviewPage.qml:331
 msgid "Video"
 msgstr ""
 
-#: ../qml/ChatPage.qml:942
+#: ../qml/ChatPage.qml:1019
 msgid "Sticker"
 msgstr ""
 
-#: ../qml/ChatPage.qml:950 ../qml/PhonePairingPage.qml:120
+#: ../qml/ChatPage.qml:1035 ../qml/PhonePairingPage.qml:120
 #: ../qml/SettingsPage.qml:127
 msgid "Cancel"
 msgstr ""
 
-#: ../qml/ChatPage.qml:1003
+#: ../qml/ChatPage.qml:1088
 msgid "Send Photo"
 msgstr ""
 
-#: ../qml/ChatPage.qml:1065
+#: ../qml/ChatPage.qml:1150
 msgid "Send Video"
 msgstr ""
 
-#: ../qml/ChatPage.qml:1098 ../qml/DocumentPreviewPage.qml:223
-#: ../qml/ImagePreviewPage.qml:190 ../qml/VideoPreviewPage.qml:335
-#: ../qml/ut_components/AppHeader.qml:78
+#: ../qml/ChatPage.qml:1212
+msgid "Send Contact"
+msgstr ""
+
+#: ../qml/ChatPage.qml:1245 ../qml/ContactPreviewPage.qml:223
+#: ../qml/DocumentPreviewPage.qml:223 ../qml/ImagePreviewPage.qml:190
+#: ../qml/VideoPreviewPage.qml:335 ../qml/ut_components/AppHeader.qml:78
 msgid "Back"
+msgstr ""
+
+#: ../qml/ContactPreviewPage.qml:50
+msgid "Ready to export"
+msgstr ""
+
+#: ../qml/ContactPreviewPage.qml:70 ../qml/DocumentPreviewPage.qml:70
+#: ../qml/ImagePreviewPage.qml:37 ../qml/VideoPreviewPage.qml:180
+msgid "Save"
+msgstr ""
+
+#: ../qml/ContactPreviewPage.qml:80 ../qml/ContactPreviewPage.qml:198
+#: ../qml/DocumentPreviewPage.qml:80 ../qml/DocumentPreviewPage.qml:198
+#: ../qml/ImagePreviewPage.qml:47 ../qml/ImagePreviewPage.qml:165
+#: ../qml/VideoPreviewPage.qml:191 ../qml/VideoPreviewPage.qml:310
+msgid "Share"
+msgstr ""
+
+#: ../qml/ContactPreviewPage.qml:135 ../qml/DocumentPreviewPage.qml:135
+#: ../qml/ImagePreviewPage.qml:102 ../qml/VideoPreviewPage.qml:247
+msgid "Save to"
 msgstr ""
 
 #: ../qml/DaemonSetupPage.qml:46
@@ -157,22 +192,6 @@ msgstr ""
 
 #: ../qml/DocumentPreviewPage.qml:50
 msgid "Downloaded"
-msgstr ""
-
-#: ../qml/DocumentPreviewPage.qml:70 ../qml/ImagePreviewPage.qml:37
-#: ../qml/VideoPreviewPage.qml:180
-msgid "Save"
-msgstr ""
-
-#: ../qml/DocumentPreviewPage.qml:80 ../qml/DocumentPreviewPage.qml:198
-#: ../qml/ImagePreviewPage.qml:47 ../qml/ImagePreviewPage.qml:165
-#: ../qml/VideoPreviewPage.qml:191 ../qml/VideoPreviewPage.qml:310
-msgid "Share"
-msgstr ""
-
-#: ../qml/DocumentPreviewPage.qml:135 ../qml/ImagePreviewPage.qml:102
-#: ../qml/VideoPreviewPage.qml:247
-msgid "Save to"
 msgstr ""
 
 #: ../qml/ImagePreviewPage.qml:186
@@ -287,16 +306,21 @@ msgstr ""
 msgid "Send Sticker"
 msgstr ""
 
+#: ../qml/components/ContactMessage.qml:55
+#: ../qml/components/DocumentMessage.qml:66
+msgid "Tap to open"
+msgstr ""
+
+#: ../qml/components/ContactMessage.qml:55
+msgid "Unavailable"
+msgstr ""
+
 #: ../qml/components/DocumentMessage.qml:66
 msgid "Downloading..."
 msgstr ""
 
 #: ../qml/components/DocumentMessage.qml:66
 msgid "Tap to download"
-msgstr ""
-
-#: ../qml/components/DocumentMessage.qml:66
-msgid "Tap to open"
 msgstr ""
 
 #: ../qml/ut_components/ActionableList.qml:92

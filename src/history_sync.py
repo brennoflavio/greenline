@@ -9,8 +9,10 @@ from dacite import from_dict
 
 from constants import GROUP_JID_SUFFIX, WHATSAPP_JID_SUFFIX
 from message_store import (
+    _contact_preview,
     _extract_thumbnail,
     _quoted_message_preview,
+    persist_contact_vcard,
     resolve_sender_name,
 )
 from models import ChatListItem, Message, MessageType, ReadReceipt
@@ -123,18 +125,23 @@ def _derive_type_from_content(content: Dict[str, Any]) -> Optional[MessageType]:
         return MessageType.AUDIO
     if content.get("documentMessage"):
         return MessageType.DOCUMENT
+    if content.get("contactMessage"):
+        return MessageType.CONTACT
     if content.get("stickerMessage"):
         return MessageType.STICKER
     return None
 
 
-def _extract_content_fields(content: Dict[str, Any]) -> Tuple[str, str, str, str, str]:
-    """Returns (text, caption, mimetype, file_name, duration)."""
+def _extract_content_fields(
+    content: Dict[str, Any], chat_id: str, message_id: str
+) -> Tuple[str, str, str, str, str, str]:
+    """Returns (text, caption, mimetype, file_name, duration, media_path)."""
     text = ""
     caption = ""
     mimetype = ""
     file_name = ""
     duration = ""
+    media_path = ""
 
     if content.get("conversation"):
         text = content["conversation"]
@@ -145,6 +152,7 @@ def _extract_content_fields(content: Dict[str, Any]) -> Tuple[str, str, str, str
     vid = content.get("videoMessage")
     aud = content.get("audioMessage")
     doc = content.get("documentMessage")
+    contact = content.get("contactMessage")
     stk = content.get("stickerMessage")
 
     if img:
@@ -165,10 +173,14 @@ def _extract_content_fields(content: Dict[str, Any]) -> Tuple[str, str, str, str
         caption = doc.get("caption", "")
         mimetype = doc.get("mimetype", "")
         file_name = doc.get("fileName", "")
+    elif contact:
+        file_name = contact.get("displayName", "")
+        mimetype = "text/x-vcard"
+        media_path = persist_contact_vcard(chat_id, message_id, file_name, contact.get("vcard", ""))
     elif stk:
         mimetype = stk.get("mimetype", "")
 
-    return text, caption, mimetype, file_name, duration
+    return text, caption, mimetype, file_name, duration, media_path
 
 
 def _extract_link_preview_fields(content: Dict[str, Any]) -> Tuple[str, str, str]:
@@ -195,12 +207,17 @@ def _message_preview(content: Dict[str, Any]) -> str:
     doc = content.get("documentMessage")
     if doc:
         return doc.get("caption") or "📄 Document"
+    contact = content.get("contactMessage")
+    if contact:
+        return _contact_preview(contact.get("displayName", ""))
     if content.get("stickerMessage"):
         return "🏷️ Sticker"
     return ""
 
 
-def _find_latest_message(conv: HistorySyncConversation) -> Optional[HistorySyncInnerMessage]:
+def _find_latest_message(
+    conv: HistorySyncConversation,
+) -> Optional[HistorySyncInnerMessage]:
     latest: Optional[HistorySyncInnerMessage] = None
     latest_ts = 0
     for msg_wrap in conv.messages or []:
@@ -222,6 +239,7 @@ def _extract_context_info_from_dict(content: Dict[str, Any], jid_map: Dict[str, 
         "videoMessage",
         "audioMessage",
         "documentMessage",
+        "contactMessage",
         "stickerMessage",
     ):
         sub = content.get(field_name)
@@ -272,7 +290,7 @@ def _process_messages(
             continue
 
         ts_display = datetime.fromtimestamp(ts_unix).strftime("%H:%M")
-        text, caption, mimetype, file_name, duration = _extract_content_fields(content)
+        text, caption, mimetype, file_name, duration, media_path = _extract_content_fields(content, chat_jid, msg_id)
 
         is_outgoing = inner.key.fromMe
         read_receipt = ReadReceipt.NONE
@@ -305,6 +323,7 @@ def _process_messages(
             sender_name=sender_name,
             text=text,
             caption=caption,
+            media_path=media_path,
             mimetype=mimetype,
             file_name=file_name,
             duration=duration,

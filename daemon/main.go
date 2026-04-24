@@ -13,6 +13,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"syscall"
 
 	waBinary "go.mau.fi/whatsmeow/binary"
@@ -73,7 +74,10 @@ func extractBody(msg *events.Message) string {
 	if msg.Message.GetStickerMessage() != nil {
 		return "🏷️ Sticker"
 	}
-	if msg.Message.GetContactMessage() != nil {
+	if cm := msg.Message.GetContactMessage(); cm != nil {
+		if name := strings.TrimSpace(cm.GetDisplayName()); name != "" {
+			return "👤 " + name
+		}
 		return "👤 Contact"
 	}
 	if msg.Message.GetLocationMessage() != nil {

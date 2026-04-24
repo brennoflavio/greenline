@@ -273,6 +273,14 @@ class DocumentMessage:
 
 
 @dataclass
+class ContactMessage:
+    displayName: str = ""
+    vcard: str = ""
+    contextInfo: Optional[ContextInfo] = None
+    isSelfContact: bool = False
+
+
+@dataclass
 class StickerMessage:
     URL: str = ""
     fileSHA256: str = ""
@@ -309,6 +317,7 @@ class MessageContent:
     videoMessage: Optional[VideoMessage] = None
     audioMessage: Optional[AudioMessage] = None
     documentMessage: Optional[DocumentMessage] = None
+    contactMessage: Optional[ContactMessage] = None
     stickerMessage: Optional[StickerMessage] = None
     reactionMessage: Optional[ReactionMessage] = None
     senderKeyDistributionMessage: Optional[SenderKeyDistributionMessage] = None
