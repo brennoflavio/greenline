@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"mime"
@@ -17,6 +18,7 @@ import (
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/store"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"greenline.brennoflavio/daemon/avatarsync"
 	"greenline.brennoflavio/daemon/configstore"
@@ -449,11 +451,14 @@ func extensionFromMimetype(mimetype string) string {
 // SendMessage types
 
 type SendMessageArgs struct {
-	ChatJID  string
-	Type     string // "text", "image", "video", "audio", "sticker", "document"
-	Text     string
-	FilePath string
-	Caption  string
+	ChatJID             string
+	Type                string // "text", "image", "video", "audio", "sticker", "document"
+	Text                string
+	FilePath            string
+	Caption             string
+	ReplyToMessageID    string
+	ReplyParticipantJID string
+	ReplyQuotedMessage  map[string]any
 }
 
 type SendMessageReply struct {
@@ -461,7 +466,49 @@ type SendMessageReply struct {
 	Timestamp int64
 }
 
-func (s *Service) sendImageMessage(jid types.JID, args *SendMessageArgs) (*waE2E.Message, error) {
+func (s *Service) buildReplyContext(args *SendMessageArgs) (*waE2E.ContextInfo, error) {
+	if args.ReplyToMessageID == "" {
+		return nil, nil
+	}
+
+	ctxInfo := &waE2E.ContextInfo{
+		StanzaID: proto.String(args.ReplyToMessageID),
+	}
+
+	participant := args.ReplyParticipantJID
+	if participant == "" {
+		ownJID := s.client.GetOwnJID()
+		if !ownJID.IsEmpty() {
+			participant = ownJID.String()
+		}
+	} else {
+		participantJID, err := types.ParseJID(participant)
+		if err != nil {
+			return nil, fmt.Errorf("invalid reply participant JID: %w", err)
+		}
+		participant = s.client.ResolveJID(context.Background(), participantJID).String()
+	}
+	if participant != "" {
+		ctxInfo.Participant = proto.String(participant)
+	}
+
+	if len(args.ReplyQuotedMessage) > 0 {
+		quotedBytes, err := json.Marshal(args.ReplyQuotedMessage)
+		if err != nil {
+			return nil, fmt.Errorf("marshal quoted message: %w", err)
+		}
+		quotedMessage := &waE2E.Message{}
+		unmarshal := protojson.UnmarshalOptions{DiscardUnknown: true}
+		if err := unmarshal.Unmarshal(quotedBytes, quotedMessage); err != nil {
+			return nil, fmt.Errorf("unmarshal quoted message: %w", err)
+		}
+		ctxInfo.QuotedMessage = quotedMessage
+	}
+
+	return ctxInfo, nil
+}
+
+func (s *Service) sendImageMessage(args *SendMessageArgs, replyContext *waE2E.ContextInfo) (*waE2E.Message, error) {
 	data, err := os.ReadFile(args.FilePath)
 	if err != nil {
 		return nil, fmt.Errorf("read file: %w", err)
@@ -491,6 +538,7 @@ func (s *Service) sendImageMessage(jid types.JID, args *SendMessageArgs) (*waE2E
 			FileEncSHA256: uploadResp.FileEncSHA256,
 			FileSHA256:    uploadResp.FileSHA256,
 			FileLength:    &uploadResp.FileLength,
+			ContextInfo:   replyContext,
 		},
 	}
 	if args.Caption != "" {
@@ -503,7 +551,7 @@ func (s *Service) sendImageMessage(jid types.JID, args *SendMessageArgs) (*waE2E
 	return msg, nil
 }
 
-func (s *Service) sendVideoMessage(jid types.JID, args *SendMessageArgs) (*waE2E.Message, error) {
+func (s *Service) sendVideoMessage(args *SendMessageArgs, replyContext *waE2E.ContextInfo) (*waE2E.Message, error) {
 	data, err := os.ReadFile(args.FilePath)
 	if err != nil {
 		return nil, fmt.Errorf("read file: %w", err)
@@ -531,6 +579,7 @@ func (s *Service) sendVideoMessage(jid types.JID, args *SendMessageArgs) (*waE2E
 			FileEncSHA256: uploadResp.FileEncSHA256,
 			FileSHA256:    uploadResp.FileSHA256,
 			FileLength:    &uploadResp.FileLength,
+			ContextInfo:   replyContext,
 		},
 	}
 	if args.Caption != "" {
@@ -540,7 +589,7 @@ func (s *Service) sendVideoMessage(jid types.JID, args *SendMessageArgs) (*waE2E
 	return msg, nil
 }
 
-func (s *Service) sendStickerMessage(jid types.JID, args *SendMessageArgs) (*waE2E.Message, error) {
+func (s *Service) sendStickerMessage(args *SendMessageArgs, replyContext *waE2E.ContextInfo) (*waE2E.Message, error) {
 	data, err := os.ReadFile(args.FilePath)
 	if err != nil {
 		return nil, fmt.Errorf("read file: %w", err)
@@ -568,6 +617,7 @@ func (s *Service) sendStickerMessage(jid types.JID, args *SendMessageArgs) (*waE
 			FileEncSHA256: uploadResp.FileEncSHA256,
 			FileSHA256:    uploadResp.FileSHA256,
 			FileLength:    &uploadResp.FileLength,
+			ContextInfo:   replyContext,
 		},
 	}
 
@@ -583,17 +633,31 @@ func (s *Service) SendMessage(args *SendMessageArgs, reply *SendMessageReply) er
 		return fmt.Errorf("invalid chat JID: %w", err)
 	}
 
+	replyContext, err := s.buildReplyContext(args)
+	if err != nil {
+		return fmt.Errorf("reply context: %w", err)
+	}
+
 	var message *waE2E.Message
 	switch args.Type {
 	case "text":
-		message = &waE2E.Message{
-			Conversation: proto.String(args.Text),
+		if replyContext != nil {
+			message = &waE2E.Message{
+				ExtendedTextMessage: &waE2E.ExtendedTextMessage{
+					Text:        proto.String(args.Text),
+					ContextInfo: replyContext,
+				},
+			}
+		} else {
+			message = &waE2E.Message{
+				Conversation: proto.String(args.Text),
+			}
 		}
 	case "image":
 		if args.FilePath == "" {
 			return fmt.Errorf("file path required for image message")
 		}
-		msg, err := s.sendImageMessage(jid, args)
+		msg, err := s.sendImageMessage(args, replyContext)
 		if err != nil {
 			return fmt.Errorf("image message: %w", err)
 		}
@@ -602,7 +666,7 @@ func (s *Service) SendMessage(args *SendMessageArgs, reply *SendMessageReply) er
 		if args.FilePath == "" {
 			return fmt.Errorf("file path required for video message")
 		}
-		msg, err := s.sendVideoMessage(jid, args)
+		msg, err := s.sendVideoMessage(args, replyContext)
 		if err != nil {
 			return fmt.Errorf("video message: %w", err)
 		}
@@ -611,7 +675,7 @@ func (s *Service) SendMessage(args *SendMessageArgs, reply *SendMessageReply) er
 		if args.FilePath == "" {
 			return fmt.Errorf("file path required for sticker message")
 		}
-		msg, err := s.sendStickerMessage(jid, args)
+		msg, err := s.sendStickerMessage(args, replyContext)
 		if err != nil {
 			return fmt.Errorf("sticker message: %w", err)
 		}

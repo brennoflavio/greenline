@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-23 20:40+0000\n"
+"POT-Creation-Date: 2026-04-24 02:42+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -59,64 +59,72 @@ msgstr ""
 msgid "No chats found"
 msgstr ""
 
-#: ../qml/ChatPage.qml:196
+#: ../qml/ChatPage.qml:89
+msgid "You"
+msgstr ""
+
+#: ../qml/ChatPage.qml:282
 msgid "WhatsApp messages read today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:197
+#: ../qml/ChatPage.qml:283
 msgid "No WhatsApp messages read today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:269
+#: ../qml/ChatPage.qml:355
+msgid "Reply"
+msgstr ""
+
+#: ../qml/ChatPage.qml:361
 msgid "Copy"
 msgstr ""
 
-#: ../qml/ChatPage.qml:273
+#: ../qml/ChatPage.qml:365
 msgid "Copied to clipboard"
 msgstr ""
 
-#: ../qml/ChatPage.qml:593
+#: ../qml/ChatPage.qml:769
 msgid "Type a message..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:703
+#: ../qml/ChatPage.qml:880
 msgid "recording audio..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:703
+#: ../qml/ChatPage.qml:880
 msgid "typing..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:746
+#: ../qml/ChatPage.qml:923
 msgid "Send Attachment"
 msgstr ""
 
-#: ../qml/ChatPage.qml:749
+#: ../qml/ChatPage.qml:926
 msgid "Photo"
 msgstr ""
 
-#: ../qml/ChatPage.qml:757 ../qml/VideoPreviewPage.qml:331
+#: ../qml/ChatPage.qml:934 ../qml/VideoPreviewPage.qml:331
 msgid "Video"
 msgstr ""
 
-#: ../qml/ChatPage.qml:765
+#: ../qml/ChatPage.qml:942
 msgid "Sticker"
 msgstr ""
 
-#: ../qml/ChatPage.qml:773 ../qml/PhonePairingPage.qml:120
+#: ../qml/ChatPage.qml:950 ../qml/PhonePairingPage.qml:120
 #: ../qml/SettingsPage.qml:127
 msgid "Cancel"
 msgstr ""
 
-#: ../qml/ChatPage.qml:826
+#: ../qml/ChatPage.qml:1003
 msgid "Send Photo"
 msgstr ""
 
-#: ../qml/ChatPage.qml:888
+#: ../qml/ChatPage.qml:1065
 msgid "Send Video"
 msgstr ""
 
-#: ../qml/ChatPage.qml:921 ../qml/DocumentPreviewPage.qml:223
+#: ../qml/ChatPage.qml:1098 ../qml/DocumentPreviewPage.qml:223
 #: ../qml/ImagePreviewPage.qml:190 ../qml/VideoPreviewPage.qml:335
 #: ../qml/ut_components/AppHeader.qml:78
 msgid "Back"

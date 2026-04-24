@@ -15,7 +15,12 @@ Item {
     property string mediaPath: ""
     property string senderName: ""
     property string senderPhoto: ""
+    property string replyToId: ""
+    property string replyToSender: ""
+    property string replyToText: ""
     property bool showSender: isGroup && !isOutgoing && senderName !== ""
+
+    signal replyClicked(string messageId)
 
     width: parent.width
     height: stickerContainer.height + units.gu(0.5)
@@ -82,12 +87,74 @@ Item {
             leftMargin: isOutgoing ? units.gu(8) : (root.showSender ? units.gu(5.5) : units.gu(2))
         }
 
+        Rectangle {
+            visible: root.replyToId !== ""
+            width: units.gu(16)
+            height: replyColumn.height + units.gu(0.8)
+            radius: units.gu(0.5)
+            color: Qt.rgba(0, 0, 0, 0.06)
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: root.replyClicked(root.replyToId)
+            }
+
+            Rectangle {
+                id: replyBar
+
+                width: units.gu(0.3)
+                height: parent.height
+                radius: units.gu(0.15)
+                color: LomiriColors.blue
+            }
+
+            Column {
+                id: replyColumn
+
+                spacing: units.gu(0.1)
+
+                anchors {
+                    left: replyBar.right
+                    right: parent.right
+                    top: parent.top
+                    leftMargin: units.gu(0.6)
+                    rightMargin: units.gu(0.5)
+                    topMargin: units.gu(0.4)
+                }
+
+                Label {
+                    text: root.replyToSender
+                    fontSize: "small"
+                    font.bold: true
+                    color: LomiriColors.blue
+                    elide: Text.ElideRight
+                    width: parent.width
+                    visible: text !== ""
+                }
+
+                Label {
+                    text: root.replyToText
+                    fontSize: "small"
+                    color: "#666666"
+                    elide: Text.ElideRight
+                    maximumLineCount: 1
+                    wrapMode: Text.NoWrap
+                    width: parent.width
+                    visible: text !== ""
+                }
+
+            }
+
+        }
+
         Label {
             text: root.senderName
             fontSize: "x-small"
             font.bold: true
             color: LomiriColors.blue
             visible: root.showSender
+            elide: Text.ElideRight
+            width: units.gu(16)
         }
 
         Rectangle {

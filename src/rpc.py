@@ -119,17 +119,23 @@ class DaemonRPC:
         text: str = "",
         file_path: str = "",
         caption: str = "",
+        reply_context: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        result: Dict[str, Any] = self._call(
-            "Service.SendMessage",
-            {
-                "ChatJID": chat_jid,
-                "Type": msg_type,
-                "Text": text,
-                "FilePath": file_path,
-                "Caption": caption,
-            },
-        )
+        payload: Dict[str, Any] = {
+            "ChatJID": chat_jid,
+            "Type": msg_type,
+            "Text": text,
+            "FilePath": file_path,
+            "Caption": caption,
+        }
+        if reply_context:
+            payload["ReplyToMessageID"] = str(reply_context.get("id") or "")
+            payload["ReplyParticipantJID"] = str(reply_context.get("participant") or "")
+            quoted_message = reply_context.get("quoted_message")
+            if quoted_message is not None:
+                payload["ReplyQuotedMessage"] = quoted_message
+
+        result: Dict[str, Any] = self._call("Service.SendMessage", payload)
         return result
 
     def get_chat_settings(self, chat_jid: str) -> GetChatSettingsReply:

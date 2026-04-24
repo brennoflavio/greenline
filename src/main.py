@@ -42,7 +42,12 @@ from events import (
     SessionStatusEvent,
     SessionStatusResponse,
 )
-from message_store import upsert_chat
+from message_store import (
+    _message_preview,
+    _quoted_message_preview,
+    resolve_sender_name,
+    upsert_chat,
+)
 from models import (
     ChatListItem,
     ChatListResponse,
@@ -435,16 +440,86 @@ def toggle_mute(chat_id: str) -> SuccessResponse:
     return SuccessResponse(success=True, message="")
 
 
+def _resolve_reply_context(chat_id: str, reply_context: dict[str, object] | None) -> dict[str, object] | None:
+    if not isinstance(reply_context, dict):
+        return None
+
+    reply_id = str(reply_context.get("id") or reply_context.get("reply_to_id") or "").strip()
+    if not reply_id:
+        return None
+
+    resolved: dict[str, object] = {
+        "id": reply_id,
+        "sender": str(reply_context.get("sender") or reply_context.get("reply_to_sender") or ""),
+        "text": str(reply_context.get("text") or reply_context.get("reply_to_text") or ""),
+        "participant": str(reply_context.get("participant") or reply_context.get("reply_participant") or ""),
+    }
+
+    with KV() as kv:
+        entries = kv.get_partial(f"message:{chat_id}:")
+        entry = None
+        for _key, value in entries:
+            if value.get("id") == reply_id:
+                entry = value
+                break
+
+    if entry is None:
+        return resolved
+
+    msg_fields = {f.name for f in Message.__dataclass_fields__.values()}
+    stored_msg = Message(**{k: v for k, v in entry.items() if k in msg_fields})
+
+    if stored_msg.is_outgoing:
+        if not resolved["sender"]:
+            resolved["sender"] = "You"
+    elif stored_msg.sender_name:
+        resolved["sender"] = stored_msg.sender_name
+    elif stored_msg.sender:
+        resolved["sender"] = resolve_sender_name(stored_msg.sender)
+
+    if not stored_msg.is_outgoing and stored_msg.sender:
+        resolved["participant"] = stored_msg.sender
+
+    raw = entry.get("raw")
+    quoted_message = raw.get("Message") if isinstance(raw, dict) else None
+    if isinstance(quoted_message, dict):
+        resolved["quoted_message"] = quoted_message
+        preview = _quoted_message_preview(quoted_message)
+        if preview:
+            resolved["text"] = preview
+
+    if not resolved["text"]:
+        resolved["text"] = _message_preview(stored_msg)
+
+    return resolved
+
+
+def _apply_reply_context(message: Message, reply_context: dict[str, object] | None) -> None:
+    if not reply_context:
+        return
+
+    message.reply_to_id = str(reply_context.get("id") or "")
+    message.reply_to_sender = str(reply_context.get("sender") or "")
+    message.reply_to_text = str(reply_context.get("text") or "")
+
+
 @crash_reporter
 @dataclass_to_dict
-def send_text_message(chat_id: str, text: str, temp_id: str = "") -> SuccessResponse:
+def send_text_message(
+    chat_id: str,
+    text: str,
+    temp_id: str = "",
+    reply_context: dict[str, object] | None = None,
+) -> SuccessResponse:
     from datetime import datetime
 
     import pyotherside
 
+    resolved_reply_context = _resolve_reply_context(chat_id, reply_context)
+
     try:
         rpc = DaemonRPC()
-        result = rpc.send_message(chat_id, "text", text=text)
+        result = rpc.send_message(chat_id, "text", text=text, reply_context=resolved_reply_context)
     except Exception:
         now = datetime.now()
         failed_msg = Message(
@@ -459,6 +534,7 @@ def send_text_message(chat_id: str, text: str, temp_id: str = "") -> SuccessResp
             send_status="failed",
             temp_id=temp_id,
         )
+        _apply_reply_context(failed_msg, resolved_reply_context)
         pyotherside.send("message-upsert", [_enum_to_str(asdict(failed_msg))])  # type: ignore[no-untyped-call]
         return SuccessResponse(success=False, message="Failed to send message")
 
@@ -474,6 +550,7 @@ def send_text_message(chat_id: str, text: str, temp_id: str = "") -> SuccessResp
         text=text,
         temp_id=temp_id,
     )
+    _apply_reply_context(msg, resolved_reply_context)
 
     key = f"message:{chat_id}:{msg.timestamp_unix}:{msg.id}"
     with KV() as kv:
@@ -488,11 +565,19 @@ def send_text_message(chat_id: str, text: str, temp_id: str = "") -> SuccessResp
 
 @crash_reporter
 @dataclass_to_dict
-def send_image_message(chat_id: str, file_path: str, caption: str = "", temp_id: str = "") -> SuccessResponse:
+def send_image_message(
+    chat_id: str,
+    file_path: str,
+    caption: str = "",
+    temp_id: str = "",
+    reply_context: dict[str, object] | None = None,
+) -> SuccessResponse:
     import shutil
     from datetime import datetime
 
     import pyotherside
+
+    resolved_reply_context = _resolve_reply_context(chat_id, reply_context)
 
     cache_dir = os.path.join(get_cache_path(), "outgoing")
     os.makedirs(cache_dir, exist_ok=True)
@@ -517,11 +602,14 @@ def send_image_message(chat_id: str, file_path: str, caption: str = "", temp_id:
         send_status="pending",
         temp_id=temp_id,
     )
+    _apply_reply_context(pending_msg, resolved_reply_context)
     pyotherside.send("message-upsert", [_enum_to_str(asdict(pending_msg))])  # type: ignore[no-untyped-call]
 
     try:
         rpc = DaemonRPC()
-        result = rpc.send_message(chat_id, "image", file_path=cached_path, caption=caption)
+        result = rpc.send_message(
+            chat_id, "image", file_path=cached_path, caption=caption, reply_context=resolved_reply_context
+        )
     except Exception:
         pending_msg.send_status = "failed"
         pyotherside.send("message-upsert", [_enum_to_str(asdict(pending_msg))])  # type: ignore[no-untyped-call]
@@ -540,6 +628,7 @@ def send_image_message(chat_id: str, file_path: str, caption: str = "", temp_id:
         media_path="file://" + cached_path,
         temp_id=temp_id,
     )
+    _apply_reply_context(msg, resolved_reply_context)
 
     key = f"message:{chat_id}:{msg.timestamp_unix}:{msg.id}"
     with KV() as kv:
@@ -554,11 +643,19 @@ def send_image_message(chat_id: str, file_path: str, caption: str = "", temp_id:
 
 @crash_reporter
 @dataclass_to_dict
-def send_video_message(chat_id: str, file_path: str, caption: str = "", temp_id: str = "") -> SuccessResponse:
+def send_video_message(
+    chat_id: str,
+    file_path: str,
+    caption: str = "",
+    temp_id: str = "",
+    reply_context: dict[str, object] | None = None,
+) -> SuccessResponse:
     import shutil
     from datetime import datetime
 
     import pyotherside
+
+    resolved_reply_context = _resolve_reply_context(chat_id, reply_context)
 
     cache_dir = os.path.join(get_cache_path(), "outgoing")
     os.makedirs(cache_dir, exist_ok=True)
@@ -583,11 +680,14 @@ def send_video_message(chat_id: str, file_path: str, caption: str = "", temp_id:
         send_status="pending",
         temp_id=temp_id,
     )
+    _apply_reply_context(pending_msg, resolved_reply_context)
     pyotherside.send("message-upsert", [_enum_to_str(asdict(pending_msg))])  # type: ignore[no-untyped-call]
 
     try:
         rpc = DaemonRPC()
-        result = rpc.send_message(chat_id, "video", file_path=cached_path, caption=caption)
+        result = rpc.send_message(
+            chat_id, "video", file_path=cached_path, caption=caption, reply_context=resolved_reply_context
+        )
     except Exception:
         pending_msg.send_status = "failed"
         pyotherside.send("message-upsert", [_enum_to_str(asdict(pending_msg))])  # type: ignore[no-untyped-call]
@@ -606,6 +706,7 @@ def send_video_message(chat_id: str, file_path: str, caption: str = "", temp_id:
         media_path="file://" + cached_path,
         temp_id=temp_id,
     )
+    _apply_reply_context(msg, resolved_reply_context)
 
     key = f"message:{chat_id}:{msg.timestamp_unix}:{msg.id}"
     with KV() as kv:
@@ -620,11 +721,18 @@ def send_video_message(chat_id: str, file_path: str, caption: str = "", temp_id:
 
 @crash_reporter
 @dataclass_to_dict
-def send_sticker_message(chat_id: str, file_path: str, temp_id: str = "") -> SuccessResponse:
+def send_sticker_message(
+    chat_id: str,
+    file_path: str,
+    temp_id: str = "",
+    reply_context: dict[str, object] | None = None,
+) -> SuccessResponse:
     import shutil
     from datetime import datetime
 
     import pyotherside
+
+    resolved_reply_context = _resolve_reply_context(chat_id, reply_context)
 
     cache_dir = os.path.join(get_cache_path(), "outgoing")
     os.makedirs(cache_dir, exist_ok=True)
@@ -648,11 +756,12 @@ def send_sticker_message(chat_id: str, file_path: str, temp_id: str = "") -> Suc
         send_status="pending",
         temp_id=temp_id,
     )
+    _apply_reply_context(pending_msg, resolved_reply_context)
     pyotherside.send("message-upsert", [_enum_to_str(asdict(pending_msg))])  # type: ignore[no-untyped-call]
 
     try:
         rpc = DaemonRPC()
-        result = rpc.send_message(chat_id, "sticker", file_path=cached_path)
+        result = rpc.send_message(chat_id, "sticker", file_path=cached_path, reply_context=resolved_reply_context)
     except Exception:
         pending_msg.send_status = "failed"
         pyotherside.send("message-upsert", [_enum_to_str(asdict(pending_msg))])  # type: ignore[no-untyped-call]
@@ -670,6 +779,7 @@ def send_sticker_message(chat_id: str, file_path: str, temp_id: str = "") -> Suc
         media_path="file://" + cached_path,
         temp_id=temp_id,
     )
+    _apply_reply_context(msg, resolved_reply_context)
 
     key = f"message:{chat_id}:{msg.timestamp_unix}:{msg.id}"
     with KV() as kv:

@@ -24,6 +24,73 @@ Page {
     property string presenceStatus: ""
     property var activeTypers: ({
     })
+    property string replyToMessageId: ""
+    property string replyToSender: ""
+    property string replyToText: ""
+    property string replyToParticipant: ""
+
+    function messagePreview(message) {
+        if (!message)
+            return "";
+
+        if (message.text)
+            return message.text;
+
+        if (message.caption)
+            return message.caption;
+
+        var previews = {
+            "image": "📷 Photo",
+            "image_gallery": "📷 Photo",
+            "video": "🎥 Video",
+            "audio": "🎵 Audio",
+            "voice": "🎵 Audio",
+            "document": "📄 Document",
+            "sticker": "🏷️ Sticker",
+            "link_preview": "🔗 Link"
+        };
+        return previews[message.type] || message.type || "";
+    }
+
+    function canReplyToMessage(message) {
+        return !!message && !!message.id && message.id.indexOf("pending-") !== 0;
+    }
+
+    function currentReplyContext() {
+        if (replyToMessageId === "")
+            return null;
+
+        return {
+            "id": replyToMessageId,
+            "sender": replyToSender,
+            "text": replyToText,
+            "participant": replyToParticipant
+        };
+    }
+
+    function clearReply() {
+        replyToMessageId = "";
+        replyToSender = "";
+        replyToText = "";
+        replyToParticipant = "";
+    }
+
+    function consumeReplyContext() {
+        var replyContext = currentReplyContext();
+        clearReply();
+        return replyContext;
+    }
+
+    function startReply(message) {
+        if (!canReplyToMessage(message))
+            return ;
+
+        replyToMessageId = message.id;
+        replyToSender = message.is_outgoing ? i18n.tr("You") : (message.sender_name || chatName || message.sender || "");
+        replyToText = messagePreview(message);
+        replyToParticipant = message.is_outgoing ? "" : (message.sender || "");
+        messageInput.forceActiveFocus();
+    }
 
     function scrollToMessage(messageId) {
         var model = messageList.model;
@@ -59,6 +126,7 @@ Page {
         if (minutes.length < 2)
             minutes = "0" + minutes;
 
+        var replyContext = consumeReplyContext();
         var pendingMsg = {
             "id": tempId,
             "chat_id": chatId,
@@ -70,13 +138,16 @@ Page {
             "read_receipt": "",
             "send_status": "pending",
             "temp_id": tempId,
-            "media_path": "file://" + filePath
+            "media_path": "file://" + filePath,
+            "reply_to_id": replyContext ? replyContext.id : "",
+            "reply_to_sender": replyContext ? replyContext.sender : "",
+            "reply_to_text": replyContext ? replyContext.text : ""
         };
         var newMessages = messages.slice();
         newMessages.push(pendingMsg);
         messages = newMessages;
         messagesChanged();
-        python.call('main.send_video_message', [chatId, filePath, "", tempId], function() {
+        python.call('main.send_video_message', [chatId, filePath, "", tempId, replyContext], function() {
         });
     }
 
@@ -91,6 +162,7 @@ Page {
         if (minutes.length < 2)
             minutes = "0" + minutes;
 
+        var replyContext = consumeReplyContext();
         var pendingMsg = {
             "id": tempId,
             "chat_id": chatId,
@@ -102,14 +174,17 @@ Page {
             "read_receipt": "",
             "send_status": "pending",
             "temp_id": tempId,
-            "media_path": filePath
+            "media_path": filePath,
+            "reply_to_id": replyContext ? replyContext.id : "",
+            "reply_to_sender": replyContext ? replyContext.sender : "",
+            "reply_to_text": replyContext ? replyContext.text : ""
         };
         var newMessages = messages.slice();
         newMessages.push(pendingMsg);
         messages = newMessages;
         messagesChanged();
         var cleanPath = filePath.toString().replace("file://", "");
-        python.call('main.send_sticker_message', [chatId, cleanPath, tempId], function() {
+        python.call('main.send_sticker_message', [chatId, cleanPath, tempId, replyContext], function() {
         });
     }
 
@@ -124,6 +199,7 @@ Page {
         if (minutes.length < 2)
             minutes = "0" + minutes;
 
+        var replyContext = consumeReplyContext();
         var pendingMsg = {
             "id": tempId,
             "chat_id": chatId,
@@ -135,13 +211,16 @@ Page {
             "read_receipt": "",
             "send_status": "pending",
             "temp_id": tempId,
-            "media_path": "file://" + filePath
+            "media_path": "file://" + filePath,
+            "reply_to_id": replyContext ? replyContext.id : "",
+            "reply_to_sender": replyContext ? replyContext.sender : "",
+            "reply_to_text": replyContext ? replyContext.text : ""
         };
         var newMessages = messages.slice();
         newMessages.push(pendingMsg);
         messages = newMessages;
         messagesChanged();
-        python.call('main.send_image_message', [chatId, filePath, "", tempId], function() {
+        python.call('main.send_image_message', [chatId, filePath, "", tempId, replyContext], function() {
         });
     }
 
@@ -159,6 +238,7 @@ Page {
             if (minutes.length < 2)
                 minutes = "0" + minutes;
 
+            var replyContext = consumeReplyContext();
             var pendingMsg = {
                 "id": tempId,
                 "chat_id": chatId,
@@ -168,14 +248,17 @@ Page {
                 "timestamp": hours + ":" + minutes,
                 "read_receipt": "",
                 "send_status": "pending",
-                "temp_id": tempId
+                "temp_id": tempId,
+                "reply_to_id": replyContext ? replyContext.id : "",
+                "reply_to_sender": replyContext ? replyContext.sender : "",
+                "reply_to_text": replyContext ? replyContext.text : ""
             };
             var newMessages = messages.slice();
             newMessages.push(pendingMsg);
             messages = newMessages;
             messagesChanged();
             messageInput.text = "";
-            python.call('main.send_text_message', [chatId, text, tempId], function() {
+            python.call('main.send_text_message', [chatId, text, tempId, replyContext], function() {
             });
         }
     }
@@ -267,6 +350,12 @@ Page {
 
             trailingActions: ListItemActions {
                 actions: [
+                    Action {
+                        iconName: "mail-reply"
+                        text: i18n.tr("Reply")
+                        enabled: chatPage.canReplyToMessage(modelData)
+                        onTriggered: chatPage.startReply(modelData)
+                    },
                     Action {
                         iconName: "edit-copy"
                         text: i18n.tr("Copy")
@@ -457,6 +546,10 @@ Page {
             timestamp: msg.timestamp || ""
             senderName: msg.sender_name || ""
             senderPhoto: msg.sender_photo || ""
+            replyToId: msg.reply_to_id || ""
+            replyToSender: msg.reply_to_sender || ""
+            replyToText: msg.reply_to_text || ""
+            onReplyClicked: scrollToMessage(messageId)
         }
 
     }
@@ -541,7 +634,7 @@ Page {
     Rectangle {
         id: inputBar
 
-        height: messageInput.height + units.gu(2)
+        height: inputColumn.implicitHeight + units.gu(2)
         color: theme.palette.normal.background
 
         anchors {
@@ -562,52 +655,134 @@ Page {
 
         }
 
-        RowLayout {
-            id: inputRowLayout
+        Column {
+            id: inputColumn
 
-            spacing: units.gu(1)
+            spacing: units.gu(0.5)
 
             anchors {
-                fill: parent
+                top: parent.top
+                left: parent.left
+                right: parent.right
                 margins: units.gu(1)
             }
 
-            Icon {
-                id: attachmentIcon
+            Rectangle {
+                width: parent.width
+                height: replyPreviewColumn.height + units.gu(1)
+                radius: units.gu(0.6)
+                color: theme.palette.normal.base
+                visible: chatPage.replyToMessageId !== ""
 
-                name: "attachment"
-                width: units.gu(3)
-                height: units.gu(3)
-                color: theme.palette.normal.backgroundSecondaryText
-                Layout.alignment: Qt.AlignVCenter
+                Rectangle {
+                    width: units.gu(0.3)
+                    height: parent.height
+                    radius: units.gu(0.15)
+                    color: LomiriColors.blue
+                }
 
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: PopupUtils.open(attachmentDialog)
+                Column {
+                    id: replyPreviewColumn
+
+                    spacing: units.gu(0.1)
+
+                    anchors {
+                        left: parent.left
+                        right: clearReplyIcon.left
+                        top: parent.top
+                        leftMargin: units.gu(0.8)
+                        rightMargin: units.gu(0.6)
+                        topMargin: units.gu(0.5)
+                    }
+
+                    Label {
+                        text: chatPage.replyToSender
+                        fontSize: "small"
+                        font.bold: true
+                        color: LomiriColors.blue
+                        elide: Text.ElideRight
+                        width: parent.width
+                    }
+
+                    Label {
+                        text: chatPage.replyToText
+                        fontSize: "small"
+                        color: theme.palette.normal.backgroundSecondaryText
+                        elide: Text.ElideRight
+                        maximumLineCount: 1
+                        wrapMode: Text.NoWrap
+                        width: parent.width
+                    }
+
+                }
+
+                Icon {
+                    id: clearReplyIcon
+
+                    name: "close"
+                    width: units.gu(2.2)
+                    height: units.gu(2.2)
+                    color: theme.palette.normal.backgroundSecondaryText
+
+                    anchors {
+                        right: parent.right
+                        rightMargin: units.gu(0.8)
+                        verticalCenter: parent.verticalCenter
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: clearReply()
+                    }
+
                 }
 
             }
 
-            TextArea {
-                id: messageInput
+            RowLayout {
+                id: inputRowLayout
 
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                placeholderText: i18n.tr("Type a message...")
-                autoSize: true
-                maximumLineCount: 5
-            }
+                width: parent.width
+                spacing: units.gu(1)
 
-            Icon {
-                name: "send"
-                width: units.gu(3)
-                height: units.gu(3)
-                color: LomiriColors.green
-                Layout.alignment: Qt.AlignVCenter
+                Icon {
+                    id: attachmentIcon
 
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: sendMessage()
+                    name: "attachment"
+                    width: units.gu(3)
+                    height: units.gu(3)
+                    color: theme.palette.normal.backgroundSecondaryText
+                    Layout.alignment: Qt.AlignVCenter
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: PopupUtils.open(attachmentDialog)
+                    }
+
+                }
+
+                TextArea {
+                    id: messageInput
+
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    placeholderText: i18n.tr("Type a message...")
+                    autoSize: true
+                    maximumLineCount: 5
+                }
+
+                Icon {
+                    name: "send"
+                    width: units.gu(3)
+                    height: units.gu(3)
+                    color: LomiriColors.green
+                    Layout.alignment: Qt.AlignVCenter
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: sendMessage()
+                    }
+
                 }
 
             }
