@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-27 00:34+0000\n"
+"POT-Creation-Date: 2026-04-27 20:10+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -43,26 +43,26 @@ msgstr ""
 msgid "Link Device"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:21 ../qml/ChatPage.qml:43 ../qml/ChatPage.qml:66
+#: ../qml/ChatListPage.qml:39 ../qml/ChatPage.qml:43 ../qml/ChatPage.qml:66
 #: ../qml/ContactPreviewPage.qml:42 ../qml/ContactPreviewPage.qml:219
 #: ../qml/components/ChatAttachmentDialog.qml:39
 #: ../qml/components/ContactMessage.qml:47
 msgid "Contact"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:78
+#: ../qml/ChatListPage.qml:96
 msgid "Search chats..."
 msgstr ""
 
-#: ../qml/ChatListPage.qml:260
+#: ../qml/ChatListPage.qml:278
 msgid "Mute"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:260
+#: ../qml/ChatListPage.qml:278
 msgid "Unmute"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:275
+#: ../qml/ChatListPage.qml:293
 msgid "No chats found"
 msgstr ""
 
@@ -296,7 +296,7 @@ msgstr ""
 msgid "Sticker"
 msgstr ""
 
-#: ../qml/components/ChatComposer.qml:180
+#: ../qml/components/ChatComposer.qml:172
 msgid "Type a message..."
 msgstr ""
 

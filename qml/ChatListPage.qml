@@ -9,6 +9,25 @@ Page {
     id: chatListPage
 
     property var chats: []
+    property bool pythonReady: false
+
+    function refreshChatList() {
+        python.call('main.get_chat_list', [], function(result) {
+            if (result.success)
+                chats = result.chats;
+
+        });
+    }
+
+    function refreshPageState() {
+        if (!pythonReady)
+            return ;
+
+        python.call('main.get_sync_status', [], function(syncing) {
+            loadingBar.isLoading = syncing;
+        });
+        refreshChatList();
+    }
 
     function messagePreview(msg) {
         if (msg.text)
@@ -279,20 +298,22 @@ Page {
 
     }
 
+    Connections {
+        target: Qt.application
+        onStateChanged: {
+            if (Qt.application.state === Qt.ApplicationActive)
+                refreshPageState();
+
+        }
+    }
+
     Python {
         id: python
 
         Component.onCompleted: {
             addImportPath(Qt.resolvedUrl('../src/'));
             importModule('main', function() {
-                python.call('main.get_sync_status', [], function(syncing) {
-                    loadingBar.isLoading = syncing;
-                });
-                python.call('main.get_chat_list', [], function(result) {
-                    if (result.success)
-                        chats = result.chats;
-
-                });
+                pythonReady = true;
                 setHandler('sync-status', function(syncing) {
                     loadingBar.isLoading = syncing;
                 });
@@ -328,6 +349,7 @@ Page {
                     });
                     chats = newChats;
                 });
+                refreshPageState();
             });
         }
     }
