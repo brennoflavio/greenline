@@ -1,6 +1,5 @@
 import Lomiri.Components 1.3
 import QtQuick 2.7
-import QtQuick.Layouts 1.3
 
 Rectangle {
     id: root
@@ -18,7 +17,7 @@ Rectangle {
         messageInput.forceActiveFocus();
     }
 
-    height: inputColumn.implicitHeight + units.gu(2)
+    height: inputRow.height + units.gu(2) + (replyPreview.visible ? replyPreview.height + inputColumn.spacing : 0)
     color: theme.palette.normal.background
 
     Rectangle {
@@ -48,6 +47,8 @@ Rectangle {
         }
 
         Rectangle {
+            id: replyPreview
+
             width: parent.width
             height: replyPreviewColumn.height + units.gu(1)
             radius: units.gu(0.6)
@@ -119,16 +120,24 @@ Rectangle {
 
         }
 
-        RowLayout {
+        Item {
+            id: inputRow
+
             width: parent.width
-            spacing: units.gu(1)
+            height: Math.max(messageInput.height, attachmentIcon.height, sendIcon.height)
 
             Icon {
+                id: attachmentIcon
+
                 name: "attachment"
                 width: units.gu(3)
                 height: units.gu(3)
                 color: theme.palette.normal.backgroundSecondaryText
-                Layout.alignment: Qt.AlignVCenter
+
+                anchors {
+                    left: parent.left
+                    verticalCenter: messageInput.verticalCenter
+                }
 
                 MouseArea {
                     anchors.fill: parent
@@ -137,26 +146,39 @@ Rectangle {
 
             }
 
-            TextArea {
-                id: messageInput
-
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                placeholderText: i18n.tr("Type a message...")
-                autoSize: true
-                maximumLineCount: 5
-            }
-
             Icon {
+                id: sendIcon
+
                 name: "send"
                 width: units.gu(3)
                 height: units.gu(3)
                 color: LomiriColors.green
-                Layout.alignment: Qt.AlignVCenter
+
+                anchors {
+                    right: parent.right
+                    verticalCenter: messageInput.verticalCenter
+                }
 
                 MouseArea {
                     anchors.fill: parent
                     onClicked: root.sendRequested()
+                }
+
+            }
+
+            TextArea {
+                id: messageInput
+
+                placeholderText: i18n.tr("Type a message...")
+                autoSize: true
+                maximumLineCount: 5
+
+                anchors {
+                    left: attachmentIcon.right
+                    right: sendIcon.left
+                    verticalCenter: parent.verticalCenter
+                    leftMargin: units.gu(1)
+                    rightMargin: units.gu(1)
                 }
 
             }
