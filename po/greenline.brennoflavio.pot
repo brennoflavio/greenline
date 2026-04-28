@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-28 16:04+0000\n"
+"POT-Creation-Date: 2026-04-28 19:50+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -43,7 +43,7 @@ msgstr ""
 msgid "Link Device"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:40 ../qml/ChatPage.qml:47 ../qml/ChatPage.qml:70
+#: ../qml/ChatListPage.qml:40 ../qml/ChatPage.qml:48 ../qml/ChatPage.qml:71
 #: ../qml/ContactPreviewPage.qml:42 ../qml/ContactPreviewPage.qml:219
 #: ../qml/components/ChatAttachmentDialog.qml:39
 #: ../qml/components/ContactMessage.qml:47
@@ -66,55 +66,55 @@ msgstr ""
 msgid "No chats found"
 msgstr ""
 
-#: ../qml/ChatPage.qml:107
+#: ../qml/ChatPage.qml:108
 msgid "You"
 msgstr ""
 
-#: ../qml/ChatPage.qml:180
+#: ../qml/ChatPage.qml:178
 msgid "Failed to load older messages"
 msgstr ""
 
-#: ../qml/ChatPage.qml:343
+#: ../qml/ChatPage.qml:340
 msgid "Failed to send contact"
 msgstr ""
 
-#: ../qml/ChatPage.qml:404
+#: ../qml/ChatPage.qml:401
 msgid "WhatsApp messages read today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:405
+#: ../qml/ChatPage.qml:402
 msgid "No WhatsApp messages read today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:420
+#: ../qml/ChatPage.qml:425
 msgid "Scroll up to load older messages first"
 msgstr ""
 
-#: ../qml/ChatPage.qml:424
+#: ../qml/ChatPage.qml:429
 msgid "Copied to clipboard"
 msgstr ""
 
-#: ../qml/ChatPage.qml:550
+#: ../qml/ChatPage.qml:555
 msgid "recording audio..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:550
+#: ../qml/ChatPage.qml:555
 msgid "typing..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:596
+#: ../qml/ChatPage.qml:601
 msgid "Send Photo"
 msgstr ""
 
-#: ../qml/ChatPage.qml:607
+#: ../qml/ChatPage.qml:612
 msgid "Send Video"
 msgstr ""
 
-#: ../qml/ChatPage.qml:618
+#: ../qml/ChatPage.qml:623
 msgid "Send Contact"
 msgstr ""
 
-#: ../qml/ChatPage.qml:640 ../qml/ContactPreviewPage.qml:223
+#: ../qml/ChatPage.qml:645 ../qml/ContactPreviewPage.qml:223
 #: ../qml/DocumentPreviewPage.qml:223 ../qml/ImagePreviewPage.qml:190
 #: ../qml/VideoPreviewPage.qml:335 ../qml/ut_components/AppHeader.qml:78
 msgid "Back"
@@ -308,11 +308,11 @@ msgstr ""
 msgid "Type a message..."
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:218
+#: ../qml/components/ChatMessageList.qml:142
 msgid "Reply"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:224
+#: ../qml/components/ChatMessageList.qml:148
 msgid "Copy"
 msgstr ""
 

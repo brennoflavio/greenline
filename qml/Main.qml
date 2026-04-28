@@ -39,7 +39,7 @@ MainView {
                 "chatName": result.name,
                 "chatPhoto": result.photo,
                 "isGroup": result.is_group || false,
-                "unreadCount": result.unread_count || 0
+                "initialUnreadCount": result.unread_count || 0
             });
 
         });

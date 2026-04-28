@@ -23,6 +23,7 @@ Page {
     property bool loadingOlderMessages: false
     property var downloadingIds: ({
     })
+    property int initialUnreadCount: 0
     property int unreadCount: 0
     property string chatStatus: ""
     property string presenceStatus: ""
@@ -154,8 +155,10 @@ Page {
                 nextMessagesCursor = result.next_cursor || "";
                 hasOlderMessages = !!result.has_more;
                 messages = result.messages;
-                if (unreadCount > 0) {
-                    messagesReadMetric.increment(unreadCount);
+                var unreadOnOpen = initialUnreadCount;
+                if (unreadOnOpen > 0) {
+                    initialUnreadCount = 0;
+                    messagesReadMetric.increment(unreadOnOpen);
                     python.call('main.mark_messages_as_read', [chatId], function() {
                     });
                 }
@@ -409,7 +412,15 @@ Page {
         downloadingIds: chatPage.downloadingIds
         isGroup: chatPage.isGroup
         unreadCount: chatPage.unreadCount
-        onBottomReached: chatPage.unreadCount = 0
+        onBottomReached: {
+            if (chatPage.unreadCount > 0) {
+                var unreadWhileAway = chatPage.unreadCount;
+                chatPage.unreadCount = 0;
+                messagesReadMetric.increment(unreadWhileAway);
+                python.call('main.mark_messages_as_read', [chatId], function() {
+                });
+            }
+        }
         onOlderMessagesRequested: chatPage.loadOlderMessages()
         onMessageNotLoaded: toast.show(i18n.tr("Scroll up to load older messages first"))
         onReplyRequested: chatPage.startReply(message)
@@ -474,7 +485,8 @@ Page {
 
                 setHandler('message-upsert', function(incomingMessages) {
                     var updated = messages.slice();
-                    var hasNewIncoming = false;
+                    var wasAtBottom = chatMessageList.atBottom;
+                    var visibleIncomingCount = 0;
                     for (var i = 0; i < incomingMessages.length; i++) {
                         var message = incomingMessages[i];
                         if (message.chat_id !== chatId)
@@ -492,16 +504,16 @@ Page {
                         if (!found) {
                             insertMessageSorted(updated, message);
                             if (!message.is_outgoing) {
-                                hasNewIncoming = true;
-                                if (!chatMessageList.atBottom)
+                                if (wasAtBottom)
+                                    visibleIncomingCount += 1;
+                                else
                                     chatPage.unreadCount += 1;
-
                             }
                         }
                     }
                     messages = updated;
-                    if (hasNewIncoming) {
-                        messagesReadMetric.increment(1);
+                    if (visibleIncomingCount > 0) {
+                        messagesReadMetric.increment(visibleIncomingCount);
                         python.call('main.mark_messages_as_read', [chatId], function() {
                         });
                     }
