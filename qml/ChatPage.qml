@@ -223,6 +223,7 @@ Page {
         var newMessages = messages.slice();
         newMessages.push(pendingMsg);
         messages = newMessages;
+        messagesSendAttemptsMetric.increment(1);
         python.call('main.send_video_message', [chatId, filePath, "", tempId, replyContext], function() {
         });
     }
@@ -260,6 +261,7 @@ Page {
         var newMessages = messages.slice();
         newMessages.push(pendingMsg);
         messages = newMessages;
+        messagesSendAttemptsMetric.increment(1);
         var cleanPath = filePath.toString().replace("file://", "");
         python.call('main.send_sticker_message', [chatId, cleanPath, tempId, replyContext], function() {
         });
@@ -298,6 +300,7 @@ Page {
         var newMessages = messages.slice();
         newMessages.push(pendingMsg);
         messages = newMessages;
+        messagesSendAttemptsMetric.increment(1);
         python.call('main.send_image_message', [chatId, filePath, "", tempId, replyContext], function() {
         });
     }
@@ -335,6 +338,7 @@ Page {
         var newMessages = messages.slice();
         newMessages.push(pendingMsg);
         messages = newMessages;
+        messagesSendAttemptsMetric.increment(1);
         python.call('main.send_contact_message', [chatId, filePath, tempId, replyContext], function(result) {
             if (result && !result.success)
                 toast.show(result.message || i18n.tr("Failed to send contact"));
@@ -376,6 +380,7 @@ Page {
             var newMessages = messages.slice();
             newMessages.push(pendingMsg);
             messages = newMessages;
+            messagesSendAttemptsMetric.increment(1);
             chatComposer.text = "";
             python.call('main.send_text_message', [chatId, text, tempId, replyContext], function() {
             });
@@ -400,6 +405,15 @@ Page {
         name: "greenline_messages_read"
         format: "%1 " + i18n.tr("WhatsApp messages read today")
         emptyFormat: i18n.tr("No WhatsApp messages read today")
+        domain: "greenline.brennoflavio"
+    }
+
+    Metric {
+        id: messagesSendAttemptsMetric
+
+        name: "greenline_messages_send_attempts"
+        format: "%1 " + i18n.tr("WhatsApp messages attempted today")
+        emptyFormat: i18n.tr("No WhatsApp messages attempted today")
         domain: "greenline.brennoflavio"
     }
 
