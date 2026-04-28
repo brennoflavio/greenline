@@ -17,6 +17,10 @@ Page {
     property string chatPhoto: ""
     property bool isGroup: false
     property var messages: []
+    property int messagePageSize: 100
+    property string nextMessagesCursor: ""
+    property bool hasOlderMessages: false
+    property bool loadingOlderMessages: false
     property var downloadingIds: ({
     })
     property int unreadCount: 0
@@ -123,9 +127,70 @@ Page {
         });
     }
 
+    function messageComesBefore(left, right) {
+        var leftTimestamp = left && left.timestamp_unix ? left.timestamp_unix : 0;
+        var rightTimestamp = right && right.timestamp_unix ? right.timestamp_unix : 0;
+        if (leftTimestamp !== rightTimestamp)
+            return leftTimestamp < rightTimestamp;
+
+        var leftId = left && left.id ? left.id : "";
+        var rightId = right && right.id ? right.id : "";
+        return leftId < rightId;
+    }
+
+    function insertMessageSorted(messageList, message) {
+        for (var i = 0; i < messageList.length; i++) {
+            if (messageComesBefore(message, messageList[i])) {
+                messageList.splice(i, 0, message);
+                return ;
+            }
+        }
+        messageList.push(message);
+    }
+
+    function loadInitialMessages() {
+        python.call('main.get_messages', [chatId, "", messagePageSize], function(result) {
+            if (result && result.success) {
+                nextMessagesCursor = result.next_cursor || "";
+                hasOlderMessages = !!result.has_more;
+                messages = result.messages;
+                if (unreadCount > 0) {
+                    messagesReadMetric.increment(unreadCount);
+                    python.call('main.mark_messages_as_read', [chatId], function() {
+                    });
+                }
+            }
+        });
+    }
+
+    function loadOlderMessages() {
+        if (loadingOlderMessages || !hasOlderMessages || nextMessagesCursor === "")
+            return ;
+
+        loadingOlderMessages = true;
+        var anchorMessageId = messages.length > 0 ? messages[0].id : "";
+        python.call('main.get_messages', [chatId, nextMessagesCursor, messagePageSize], function(result) {
+            loadingOlderMessages = false;
+            if (!result || !result.success) {
+                toast.show(result && result.message ? result.message : i18n.tr("Failed to load older messages"));
+                return ;
+            }
+            nextMessagesCursor = result.next_cursor || "";
+            hasOlderMessages = !!result.has_more;
+            if (!result.messages || result.messages.length === 0)
+                return ;
+
+            if (anchorMessageId !== "")
+                chatMessageList.prepareOlderMessages(anchorMessageId);
+
+            messages = result.messages.concat(messages);
+        });
+    }
+
     function sendVideoMessage(filePath) {
         var tempId = "pending-" + Date.now();
         var now = new Date();
+        var timestampUnix = Math.floor(now.getTime() / 1000);
         var hours = now.getHours().toString();
         if (hours.length < 2)
             hours = "0" + hours;
@@ -143,6 +208,7 @@ Page {
             "text": "",
             "caption": "",
             "timestamp": hours + ":" + minutes,
+            "timestamp_unix": timestampUnix,
             "read_receipt": "",
             "send_status": "pending",
             "temp_id": tempId,
@@ -161,6 +227,7 @@ Page {
     function sendStickerMessage(filePath) {
         var tempId = "pending-" + Date.now();
         var now = new Date();
+        var timestampUnix = Math.floor(now.getTime() / 1000);
         var hours = now.getHours().toString();
         if (hours.length < 2)
             hours = "0" + hours;
@@ -178,6 +245,7 @@ Page {
             "text": "",
             "caption": "",
             "timestamp": hours + ":" + minutes,
+            "timestamp_unix": timestampUnix,
             "read_receipt": "",
             "send_status": "pending",
             "temp_id": tempId,
@@ -197,6 +265,7 @@ Page {
     function sendImageMessage(filePath) {
         var tempId = "pending-" + Date.now();
         var now = new Date();
+        var timestampUnix = Math.floor(now.getTime() / 1000);
         var hours = now.getHours().toString();
         if (hours.length < 2)
             hours = "0" + hours;
@@ -214,6 +283,7 @@ Page {
             "text": "",
             "caption": "",
             "timestamp": hours + ":" + minutes,
+            "timestamp_unix": timestampUnix,
             "read_receipt": "",
             "send_status": "pending",
             "temp_id": tempId,
@@ -232,6 +302,7 @@ Page {
     function sendContactMessage(filePath) {
         var tempId = "pending-" + Date.now();
         var now = new Date();
+        var timestampUnix = Math.floor(now.getTime() / 1000);
         var hours = now.getHours().toString();
         if (hours.length < 2)
             hours = "0" + hours;
@@ -248,6 +319,7 @@ Page {
             "is_outgoing": true,
             "text": "",
             "timestamp": hours + ":" + minutes,
+            "timestamp_unix": timestampUnix,
             "read_receipt": "",
             "send_status": "pending",
             "temp_id": tempId,
@@ -273,6 +345,7 @@ Page {
             var text = chatComposer.text;
             var tempId = "pending-" + Date.now();
             var now = new Date();
+            var timestampUnix = Math.floor(now.getTime() / 1000);
             var hours = now.getHours().toString();
             if (hours.length < 2)
                 hours = "0" + hours;
@@ -289,6 +362,7 @@ Page {
                 "is_outgoing": true,
                 "text": text,
                 "timestamp": hours + ":" + minutes,
+                "timestamp_unix": timestampUnix,
                 "read_receipt": "",
                 "send_status": "pending",
                 "temp_id": tempId,
@@ -330,10 +404,14 @@ Page {
         id: chatMessageList
 
         messages: chatPage.messages
+        hasOlderMessages: chatPage.hasOlderMessages
+        loadingOlderMessages: chatPage.loadingOlderMessages
         downloadingIds: chatPage.downloadingIds
         isGroup: chatPage.isGroup
         unreadCount: chatPage.unreadCount
         onBottomReached: chatPage.unreadCount = 0
+        onOlderMessagesRequested: chatPage.loadOlderMessages()
+        onMessageNotLoaded: toast.show(i18n.tr("Scroll up to load older messages first"))
         onReplyRequested: chatPage.startReply(message)
         onCopyRequested: {
             Clipboard.push(text);
@@ -389,16 +467,7 @@ Page {
         Component.onCompleted: {
             addImportPath(Qt.resolvedUrl('../src/'));
             importModule('main', function() {
-                python.call('main.get_messages', [chatId], function(result) {
-                    if (result.success) {
-                        messages = result.messages;
-                        if (unreadCount > 0)
-                            messagesReadMetric.increment(unreadCount);
-
-                        python.call('main.mark_messages_as_read', [chatId], function() {
-                        });
-                    }
-                });
+                loadInitialMessages();
                 if (!isGroup)
                     python.call('main.subscribe_presence', [chatId], function() {
                 });
@@ -414,13 +483,14 @@ Page {
                         var found = false;
                         for (var j = 0; j < updated.length; j++) {
                             if (updated[j].id === message.id || (message.temp_id && updated[j].id === message.temp_id)) {
-                                updated[j] = message;
+                                updated.splice(j, 1);
+                                insertMessageSorted(updated, message);
                                 found = true;
                                 break;
                             }
                         }
                         if (!found) {
-                            updated.push(message);
+                            insertMessageSorted(updated, message);
                             if (!message.is_outgoing) {
                                 hasNewIncoming = true;
                                 if (!chatMessageList.atBottom)

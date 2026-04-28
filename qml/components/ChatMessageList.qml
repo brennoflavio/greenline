@@ -6,6 +6,9 @@ Item {
 
     property var messages: []
     property var preparedMessages: []
+    property bool hasOlderMessages: false
+    property bool loadingOlderMessages: false
+    property string pendingRestoreMessageId: ""
     property var downloadingIds: ({
     })
     property bool isGroup: false
@@ -16,6 +19,26 @@ Item {
     signal copyRequested(string text)
     signal downloadRequested(string messageId, string mediaType)
     signal bottomReached()
+    signal olderMessagesRequested()
+    signal messageNotLoaded(string messageId)
+
+    function prepareOlderMessages(messageId) {
+        pendingRestoreMessageId = messageId;
+    }
+
+    function restoreOlderMessages() {
+        if (pendingRestoreMessageId === "")
+            return ;
+
+        var model = messageList.model;
+        for (var i = 0; i < model.length; i++) {
+            if (model[i].id === pendingRestoreMessageId) {
+                messageList.positionViewAtIndex(i, ListView.Beginning);
+                break;
+            }
+        }
+        pendingRestoreMessageId = "";
+    }
 
     function scrollToMessage(messageId) {
         var model = messageList.model;
@@ -25,6 +48,7 @@ Item {
                 return ;
             }
         }
+        messageNotLoaded(messageId);
     }
 
     function scrollToBottom() {
@@ -45,6 +69,12 @@ Item {
         verticalLayoutDirection: ListView.BottomToTop
         spacing: units.gu(0.5)
         model: root.preparedMessages
+        onCountChanged: root.restoreOlderMessages()
+        onMovementEnded: {
+            if (atYBeginning && root.hasOlderMessages && !root.loadingOlderMessages)
+                root.olderMessagesRequested();
+
+        }
         onAtYEndChanged: {
             if (atYEnd)
                 root.bottomReached();

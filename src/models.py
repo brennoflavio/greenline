@@ -85,6 +85,8 @@ class MessagesResponse:
     success: bool
     messages: List[Message]
     message: str
+    next_cursor: str = ""
+    has_more: bool = False
 
 
 @dataclass

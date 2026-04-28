@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-27 20:10+0000\n"
+"POT-Creation-Date: 2026-04-28 16:04+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -43,70 +43,78 @@ msgstr ""
 msgid "Link Device"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:39 ../qml/ChatPage.qml:43 ../qml/ChatPage.qml:66
+#: ../qml/ChatListPage.qml:40 ../qml/ChatPage.qml:47 ../qml/ChatPage.qml:70
 #: ../qml/ContactPreviewPage.qml:42 ../qml/ContactPreviewPage.qml:219
 #: ../qml/components/ChatAttachmentDialog.qml:39
 #: ../qml/components/ContactMessage.qml:47
 msgid "Contact"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:96
+#: ../qml/ChatListPage.qml:97
 msgid "Search chats..."
 msgstr ""
 
-#: ../qml/ChatListPage.qml:278
+#: ../qml/ChatListPage.qml:279
 msgid "Mute"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:278
+#: ../qml/ChatListPage.qml:279
 msgid "Unmute"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:293
+#: ../qml/ChatListPage.qml:294
 msgid "No chats found"
 msgstr ""
 
-#: ../qml/ChatPage.qml:103
+#: ../qml/ChatPage.qml:107
 msgid "You"
 msgstr ""
 
-#: ../qml/ChatPage.qml:265
+#: ../qml/ChatPage.qml:180
+msgid "Failed to load older messages"
+msgstr ""
+
+#: ../qml/ChatPage.qml:343
 msgid "Failed to send contact"
 msgstr ""
 
-#: ../qml/ChatPage.qml:324
+#: ../qml/ChatPage.qml:404
 msgid "WhatsApp messages read today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:325
+#: ../qml/ChatPage.qml:405
 msgid "No WhatsApp messages read today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:340
+#: ../qml/ChatPage.qml:420
+msgid "Scroll up to load older messages first"
+msgstr ""
+
+#: ../qml/ChatPage.qml:424
 msgid "Copied to clipboard"
 msgstr ""
 
-#: ../qml/ChatPage.qml:472
+#: ../qml/ChatPage.qml:550
 msgid "recording audio..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:472
+#: ../qml/ChatPage.qml:550
 msgid "typing..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:518
+#: ../qml/ChatPage.qml:596
 msgid "Send Photo"
 msgstr ""
 
-#: ../qml/ChatPage.qml:529
+#: ../qml/ChatPage.qml:607
 msgid "Send Video"
 msgstr ""
 
-#: ../qml/ChatPage.qml:540
+#: ../qml/ChatPage.qml:618
 msgid "Send Contact"
 msgstr ""
 
-#: ../qml/ChatPage.qml:562 ../qml/ContactPreviewPage.qml:223
+#: ../qml/ChatPage.qml:640 ../qml/ContactPreviewPage.qml:223
 #: ../qml/DocumentPreviewPage.qml:223 ../qml/ImagePreviewPage.qml:190
 #: ../qml/VideoPreviewPage.qml:335 ../qml/ut_components/AppHeader.qml:78
 msgid "Back"
@@ -300,11 +308,11 @@ msgstr ""
 msgid "Type a message..."
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:112
+#: ../qml/components/ChatMessageList.qml:218
 msgid "Reply"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:118
+#: ../qml/components/ChatMessageList.qml:224
 msgid "Copy"
 msgstr ""
 

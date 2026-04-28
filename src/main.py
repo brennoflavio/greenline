@@ -337,12 +337,25 @@ def get_chat_info(chat_id: str) -> dict[str, object]:
 
 @crash_reporter
 @dataclass_to_dict
-def get_messages(chat_id: str) -> MessagesResponse:
+def get_messages(chat_id: str, cursor: str = "", page_size: int = 100) -> MessagesResponse:
+    next_cursor = ""
+    has_more = False
+    cursor_value = cursor or None
     with KV() as kv:
-        entries = kv.get_partial(f"message:{chat_id}:")
+        page_entries, _ = kv.get_partial_page(
+            f"message:{chat_id}:",
+            page_size=page_size + 1,
+            cursor=cursor_value,
+            reverse=True,
+        )
+        has_more = len(page_entries) > page_size
+        entries = page_entries[:page_size]
+        if has_more and entries:
+            next_cursor = entries[-1][0]
+
         msg_fields = {f.name for f in Message.__dataclass_fields__.values()}
         messages = [Message(**{k: v for k, v in value.items() if k in msg_fields}) for _, value in entries]
-        messages.sort(key=lambda m: m.timestamp_unix)
+        messages.sort(key=lambda m: (m.timestamp_unix, m.id))
 
         sender_jids = {m.sender for m in messages if m.sender and not m.is_outgoing}
         sender_photos: dict[str, str] = {}
@@ -355,7 +368,13 @@ def get_messages(chat_id: str) -> MessagesResponse:
             if m.sender and m.sender in sender_photos:
                 m.sender_photo = sender_photos[m.sender]
 
-    return MessagesResponse(success=True, messages=messages, message="")
+    return MessagesResponse(
+        success=True,
+        messages=messages,
+        message="",
+        next_cursor=next_cursor,
+        has_more=has_more,
+    )
 
 
 @crash_reporter
