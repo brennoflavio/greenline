@@ -15,6 +15,7 @@ Item {
     property string sendStatus: ""
     property string senderName: ""
     property string senderPhoto: ""
+    property real preferredBubbleWidth: -1
     property string replyToId: ""
     property string replyToSender: ""
     property string replyToText: ""
@@ -78,7 +79,7 @@ Item {
     Rectangle {
         id: wrapper
 
-        width: Math.min(innerColumn.implicitWidth + units.gu(2), parent.width - units.gu(10))
+        width: Math.min(Math.max(preferredBubbleWidth > 0 ? preferredBubbleWidth : innerColumn.implicitWidth + units.gu(2), footerRow.implicitWidth + units.gu(1)), parent.width - units.gu(10))
         height: innerColumn.implicitHeight + units.gu(1)
         color: isOutgoing ? "#dcf8c6" : "#d4e6f9"
         radius: units.gu(1)
@@ -180,6 +181,8 @@ Item {
         }
 
         Row {
+            id: footerRow
+
             spacing: units.gu(0.3)
 
             anchors {

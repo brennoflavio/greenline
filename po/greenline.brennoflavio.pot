@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-28 19:50+0000\n"
+"POT-Creation-Date: 2026-04-29 14:43+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -322,6 +322,16 @@ msgstr ""
 
 #: ../qml/components/ChatMessageList.qml:148
 msgid "Copy"
+msgstr ""
+
+#: ../qml/components/ChatMessageList.qml:283
+#: ../qml/components/TextMessage.qml:108
+msgid "Show less"
+msgstr ""
+
+#: ../qml/components/ChatMessageList.qml:283
+#: ../qml/components/TextMessage.qml:108
+msgid "Show more"
 msgstr ""
 
 #: ../qml/components/ContactMessage.qml:55
