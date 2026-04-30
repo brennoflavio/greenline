@@ -33,6 +33,9 @@ Page {
     property string replyToSender: ""
     property string replyToText: ""
     property string replyToParticipant: ""
+    property bool pythonReady: false
+    property bool refreshInProgress: false
+    property bool refreshQueued: false
 
     function messagePreview(message) {
         if (!message)
@@ -163,6 +166,94 @@ Page {
                     });
                 }
             }
+        });
+    }
+
+    function isLocalOnlyMessage(message) {
+        var messageId = message && message.id ? message.id : "";
+        return messageId.indexOf("pending-") === 0 || messageId.indexOf("failed-") === 0 || message.send_status === "pending" || message.send_status === "failed";
+    }
+
+    function mergeRefreshedMessages(refreshedMessages) {
+        var mergedMessages = refreshedMessages.slice();
+        var knownIds = {
+        };
+        var knownTempIds = {
+        };
+        for (var i = 0; i < refreshedMessages.length; i++) {
+            var refreshed = refreshedMessages[i];
+            if (refreshed.id)
+                knownIds[refreshed.id] = true;
+
+            if (refreshed.temp_id)
+                knownTempIds[refreshed.temp_id] = true;
+
+        }
+        var oldestRefreshed = refreshedMessages.length > 0 ? refreshedMessages[0] : null;
+        for (var j = 0; j < messages.length; j++) {
+            var existing = messages[j];
+            var existingId = existing.id || "";
+            var existingTempId = existing.temp_id || "";
+            if ((existingId !== "" && (knownIds[existingId] || knownTempIds[existingId])) || (existingTempId !== "" && (knownIds[existingTempId] || knownTempIds[existingTempId])))
+                continue;
+
+            if (isLocalOnlyMessage(existing) || (oldestRefreshed && messageComesBefore(existing, oldestRefreshed)))
+                insertMessageSorted(mergedMessages, existing);
+
+        }
+        return mergedMessages;
+    }
+
+    function refreshPageState() {
+        function finishRefresh() {
+            pendingCallbacks -= 1;
+            if (pendingCallbacks === 0) {
+                refreshInProgress = false;
+                if (refreshQueued)
+                    refreshPageState();
+
+            }
+        }
+
+        if (!pythonReady)
+            return ;
+
+        if (refreshInProgress) {
+            refreshQueued = true;
+            return ;
+        }
+        refreshInProgress = true;
+        refreshQueued = false;
+        var pendingCallbacks = 2;
+        var wasAtBottom = chatMessageList.atBottom;
+        python.call('main.get_chat_info', [chatId], function(result) {
+            if (result && result.success) {
+                chatName = result.name || chatName;
+                chatPhoto = result.photo || "";
+                isGroup = !!result.is_group;
+                if (wasAtBottom) {
+                    if (result.unread_count > 0) {
+                        unreadCount = 0;
+                        messagesReadMetric.increment(result.unread_count);
+                        python.call('main.mark_messages_as_read', [chatId], function() {
+                        });
+                    }
+                } else {
+                    unreadCount = result.unread_count || 0;
+                }
+            }
+            finishRefresh();
+        });
+        python.call('main.get_messages', [chatId, "", messagePageSize], function(result) {
+            if (result && result.success) {
+                nextMessagesCursor = result.next_cursor || "";
+                hasOlderMessages = !!result.has_more;
+                messages = mergeRefreshedMessages(result.messages || []);
+                if (wasAtBottom)
+                    chatMessageList.scrollToBottom();
+
+            }
+            finishRefresh();
         });
     }
 
@@ -486,12 +577,22 @@ Page {
 
     }
 
+    Connections {
+        target: Qt.application
+        onStateChanged: {
+            if (Qt.application.state === Qt.ApplicationActive)
+                refreshPageState();
+
+        }
+    }
+
     Python {
         id: python
 
         Component.onCompleted: {
             addImportPath(Qt.resolvedUrl('../src/'));
             importModule('main', function() {
+                pythonReady = true;
                 loadInitialMessages();
                 if (!isGroup)
                     python.call('main.subscribe_presence', [chatId], function() {
