@@ -506,8 +506,8 @@ Page {
         id: messagesSendAttemptsMetric
 
         name: "greenline_messages_send_attempts"
-        format: "%1 " + i18n.tr("WhatsApp messages attempted today")
-        emptyFormat: i18n.tr("No WhatsApp messages attempted today")
+        format: "%1 " + i18n.tr("WhatsApp messages sent today")
+        emptyFormat: i18n.tr("No WhatsApp messages sent today")
         domain: "greenline.brennoflavio"
     }
 
