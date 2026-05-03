@@ -33,7 +33,7 @@ Item {
         var model = messageList.model;
         for (var i = 0; i < model.length; i++) {
             if (model[i].id === pendingRestoreMessageId) {
-                messageList.positionViewAtIndex(i, ListView.Beginning);
+                messageList.positionViewAtIndex(i, ListView.End);
                 break;
             }
         }
@@ -52,7 +52,7 @@ Item {
     }
 
     function scrollToBottom() {
-        messageList.positionViewAtEnd();
+        messageList.positionViewAtBeginning();
     }
 
     function messageText(message) {
