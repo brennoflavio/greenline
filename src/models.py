@@ -35,6 +35,7 @@ class ChatListItem:
     read_receipt: ReadReceipt
     unread_count: int
     is_group: bool
+    last_message_mentioned_jids: List[str] = field(default_factory=list)
     last_message_type: str = ""
     muted: bool = False
     full_name: str = ""
@@ -63,6 +64,7 @@ class Message:
     sender_name: str = ""
     sender_photo: str = ""
     text: str = ""
+    mentioned_jids: List[str] = field(default_factory=list)
     image_source: str = ""
     caption: str = ""
     images: List[str] = field(default_factory=list)
@@ -77,6 +79,7 @@ class Message:
     reply_to_id: str = ""
     reply_to_sender: str = ""
     reply_to_text: str = ""
+    reply_to_mentioned_jids: List[str] = field(default_factory=list)
     link_title: str = ""
     link_description: str = ""
     link_url: str = ""

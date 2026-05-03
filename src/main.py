@@ -45,7 +45,8 @@ from events import (
 )
 from message_store import (
     _message_preview,
-    _quoted_message_preview,
+    render_chat_mentions,
+    render_message_mentions,
     resolve_sender_name,
     upsert_chat,
 )
@@ -301,6 +302,22 @@ def get_phone_number(jid: str) -> PhoneNumberResponse:
         return PhoneNumberResponse(success=True, phone_number="")
 
 
+def _ui_message(message: Message) -> Message:
+    return render_message_mentions(message)
+
+
+def _ui_chat(chat: ChatListItem) -> ChatListItem:
+    return render_chat_mentions(chat)
+
+
+def _ui_message_dict(message: Message) -> dict[str, object]:
+    return _enum_to_str(asdict(_ui_message(message)))  # type: ignore[no-untyped-call, no-any-return]
+
+
+def _ui_chat_dict(chat: ChatListItem) -> dict[str, object]:
+    return _enum_to_str(asdict(_ui_chat(chat)))  # type: ignore[no-untyped-call, no-any-return]
+
+
 @crash_reporter
 @dataclass_to_dict
 def get_chat_list() -> ChatListResponse:
@@ -308,7 +325,7 @@ def get_chat_list() -> ChatListResponse:
         with KV() as kv:
             entries = kv.get_partial("chat:")
 
-        chats = [ChatListItem(**value) for _, value in entries]
+        chats = [_ui_chat(ChatListItem(**value)) for _, value in entries]
         chats.sort(key=lambda c: c.last_message_timestamp, reverse=True)
         return ChatListResponse(success=True, chats=chats, message="")
     except Exception as e:
@@ -364,13 +381,15 @@ def get_messages(chat_id: str, cursor: str = "", page_size: int = 100) -> Messag
             if data:
                 sender_photos[jid] = data.get("photo", "")
 
+        rendered_messages = []
         for m in messages:
             if m.sender and m.sender in sender_photos:
                 m.sender_photo = sender_photos[m.sender]
+            rendered_messages.append(_ui_message(m))
 
     return MessagesResponse(
         success=True,
-        messages=messages,
+        messages=rendered_messages,
         message="",
         next_cursor=next_cursor,
         has_more=has_more,
@@ -405,7 +424,7 @@ def mark_messages_as_read(chat_id: str) -> SuccessResponse:
             prev_unread = chat.unread_count
             chat.unread_count = 0
             kv.put(f"chat:{chat_id}", asdict(chat))
-            pyotherside.send("chat-list-update", [_enum_to_str(asdict(chat))])  # type: ignore[no-untyped-call]
+            pyotherside.send("chat-list-update", [_ui_chat_dict(chat)])
             if prev_unread > 0:
                 decrement_unread_total(prev_unread)
 
@@ -455,7 +474,7 @@ def toggle_mute(chat_id: str) -> SuccessResponse:
             chat = ChatListItem(**data)
             chat.muted = new_muted
             kv.put(f"chat:{chat_id}", asdict(chat))
-            pyotherside.send("chat-list-update", [_enum_to_str(asdict(chat))])  # type: ignore[no-untyped-call]
+            pyotherside.send("chat-list-update", [_ui_chat_dict(chat)])
 
     return SuccessResponse(success=True, message="")
 
@@ -488,6 +507,7 @@ def _resolve_reply_context(chat_id: str, reply_context: dict[str, object] | None
 
     msg_fields = {f.name for f in Message.__dataclass_fields__.values()}
     stored_msg = Message(**{k: v for k, v in entry.items() if k in msg_fields})
+    rendered_msg = _ui_message(stored_msg)
 
     if stored_msg.is_outgoing:
         if not resolved["sender"]:
@@ -504,12 +524,9 @@ def _resolve_reply_context(chat_id: str, reply_context: dict[str, object] | None
     quoted_message = raw.get("Message") if isinstance(raw, dict) else None
     if isinstance(quoted_message, dict):
         resolved["quoted_message"] = quoted_message
-        preview = _quoted_message_preview(quoted_message)
-        if preview:
-            resolved["text"] = preview
 
     if not resolved["text"]:
-        resolved["text"] = _message_preview(stored_msg)
+        resolved["text"] = _message_preview(rendered_msg)
 
     return resolved
 
@@ -587,7 +604,7 @@ def send_text_message(
             temp_id=temp_id,
         )
         _apply_reply_context(failed_msg, resolved_reply_context)
-        pyotherside.send("message-upsert", [_enum_to_str(asdict(failed_msg))])  # type: ignore[no-untyped-call]
+        pyotherside.send("message-upsert", [_ui_message_dict(failed_msg)])
         return SuccessResponse(success=False, message="Failed to send message")
 
     ts = result["Timestamp"]
@@ -609,8 +626,8 @@ def send_text_message(
         kv.put(key, asdict(msg))
 
     chat = upsert_chat(msg, MessageInfo())
-    pyotherside.send("message-upsert", [_enum_to_str(asdict(msg))])  # type: ignore[no-untyped-call]
-    pyotherside.send("chat-list-update", [_enum_to_str(asdict(chat))])  # type: ignore[no-untyped-call]
+    pyotherside.send("message-upsert", [_ui_message_dict(msg)])
+    pyotherside.send("chat-list-update", [_ui_chat_dict(chat)])
 
     return SuccessResponse(success=True, message="")
 
@@ -655,7 +672,7 @@ def send_image_message(
         temp_id=temp_id,
     )
     _apply_reply_context(pending_msg, resolved_reply_context)
-    pyotherside.send("message-upsert", [_enum_to_str(asdict(pending_msg))])  # type: ignore[no-untyped-call]
+    pyotherside.send("message-upsert", [_ui_message_dict(pending_msg)])
 
     try:
         rpc = DaemonRPC()
@@ -668,7 +685,7 @@ def send_image_message(
         )
     except Exception:
         pending_msg.send_status = "failed"
-        pyotherside.send("message-upsert", [_enum_to_str(asdict(pending_msg))])  # type: ignore[no-untyped-call]
+        pyotherside.send("message-upsert", [_ui_message_dict(pending_msg)])
         return SuccessResponse(success=False, message="Failed to send image")
 
     ts = result["Timestamp"]
@@ -691,8 +708,8 @@ def send_image_message(
         kv.put(key, asdict(msg))
 
     chat = upsert_chat(msg, MessageInfo())
-    pyotherside.send("message-upsert", [_enum_to_str(asdict(msg))])  # type: ignore[no-untyped-call]
-    pyotherside.send("chat-list-update", [_enum_to_str(asdict(chat))])  # type: ignore[no-untyped-call]
+    pyotherside.send("message-upsert", [_ui_message_dict(msg)])
+    pyotherside.send("chat-list-update", [_ui_chat_dict(chat)])
 
     return SuccessResponse(success=True, message="")
 
@@ -737,7 +754,7 @@ def send_video_message(
         temp_id=temp_id,
     )
     _apply_reply_context(pending_msg, resolved_reply_context)
-    pyotherside.send("message-upsert", [_enum_to_str(asdict(pending_msg))])  # type: ignore[no-untyped-call]
+    pyotherside.send("message-upsert", [_ui_message_dict(pending_msg)])
 
     try:
         rpc = DaemonRPC()
@@ -750,7 +767,7 @@ def send_video_message(
         )
     except Exception:
         pending_msg.send_status = "failed"
-        pyotherside.send("message-upsert", [_enum_to_str(asdict(pending_msg))])  # type: ignore[no-untyped-call]
+        pyotherside.send("message-upsert", [_ui_message_dict(pending_msg)])
         return SuccessResponse(success=False, message="Failed to send video")
 
     ts = result["Timestamp"]
@@ -773,8 +790,8 @@ def send_video_message(
         kv.put(key, asdict(msg))
 
     chat = upsert_chat(msg, MessageInfo())
-    pyotherside.send("message-upsert", [_enum_to_str(asdict(msg))])  # type: ignore[no-untyped-call]
-    pyotherside.send("chat-list-update", [_enum_to_str(asdict(chat))])  # type: ignore[no-untyped-call]
+    pyotherside.send("message-upsert", [_ui_message_dict(msg)])
+    pyotherside.send("chat-list-update", [_ui_chat_dict(chat)])
 
     return SuccessResponse(success=True, message="")
 
@@ -817,7 +834,7 @@ def send_sticker_message(
         temp_id=temp_id,
     )
     _apply_reply_context(pending_msg, resolved_reply_context)
-    pyotherside.send("message-upsert", [_enum_to_str(asdict(pending_msg))])  # type: ignore[no-untyped-call]
+    pyotherside.send("message-upsert", [_ui_message_dict(pending_msg)])
 
     try:
         rpc = DaemonRPC()
@@ -829,7 +846,7 @@ def send_sticker_message(
         )
     except Exception:
         pending_msg.send_status = "failed"
-        pyotherside.send("message-upsert", [_enum_to_str(asdict(pending_msg))])  # type: ignore[no-untyped-call]
+        pyotherside.send("message-upsert", [_ui_message_dict(pending_msg)])
         return SuccessResponse(success=False, message="Failed to send sticker")
 
     ts = result["Timestamp"]
@@ -851,8 +868,8 @@ def send_sticker_message(
         kv.put(key, asdict(msg))
 
     chat = upsert_chat(msg, MessageInfo())
-    pyotherside.send("message-upsert", [_enum_to_str(asdict(msg))])  # type: ignore[no-untyped-call]
-    pyotherside.send("chat-list-update", [_enum_to_str(asdict(chat))])  # type: ignore[no-untyped-call]
+    pyotherside.send("message-upsert", [_ui_message_dict(msg)])
+    pyotherside.send("chat-list-update", [_ui_chat_dict(chat)])
 
     return SuccessResponse(success=True, message="")
 
@@ -898,7 +915,7 @@ def send_contact_message(
         temp_id=temp_id,
     )
     _apply_reply_context(pending_msg, resolved_reply_context)
-    pyotherside.send("message-upsert", [_enum_to_str(asdict(pending_msg))])  # type: ignore[no-untyped-call]
+    pyotherside.send("message-upsert", [_ui_message_dict(pending_msg)])
 
     try:
         rpc = DaemonRPC()
@@ -911,7 +928,7 @@ def send_contact_message(
         )
     except Exception:
         pending_msg.send_status = "failed"
-        pyotherside.send("message-upsert", [_enum_to_str(asdict(pending_msg))])  # type: ignore[no-untyped-call]
+        pyotherside.send("message-upsert", [_ui_message_dict(pending_msg)])
         return SuccessResponse(success=False, message="Failed to send contact")
 
     ts = result["Timestamp"]
@@ -944,8 +961,8 @@ def send_contact_message(
         kv.put(key, data)
 
     chat = upsert_chat(msg, MessageInfo())
-    pyotherside.send("message-upsert", [_enum_to_str(asdict(msg))])  # type: ignore[no-untyped-call]
-    pyotherside.send("chat-list-update", [_enum_to_str(asdict(chat))])  # type: ignore[no-untyped-call]
+    pyotherside.send("message-upsert", [_ui_message_dict(msg)])
+    pyotherside.send("chat-list-update", [_ui_chat_dict(chat)])
 
     return SuccessResponse(success=True, message="")
 
@@ -1039,7 +1056,7 @@ def download_media(chat_id: str, message_id: str, media_type: str) -> DownloadMe
         kv.put(entry_key, entry)
 
     msg_fields = {f.name for f in Message.__dataclass_fields__.values()}
-    msg_dict = _enum_to_str({k: v for k, v in entry.items() if k in msg_fields})  # type: ignore[no-untyped-call]
-    pyotherside.send("message-upsert", [msg_dict])
+    msg = Message(**{k: v for k, v in entry.items() if k in msg_fields})
+    pyotherside.send("message-upsert", [_ui_message_dict(msg)])
 
     return DownloadMediaResponse(success=True, media_path=media_path, message="")

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-03 02:55+0000\n"
+"POT-Creation-Date: 2026-05-03 15:18+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -115,19 +115,19 @@ msgstr ""
 msgid "typing..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:718
+#: ../qml/ChatPage.qml:726
 msgid "Send Photo"
 msgstr ""
 
-#: ../qml/ChatPage.qml:729
+#: ../qml/ChatPage.qml:737
 msgid "Send Video"
 msgstr ""
 
-#: ../qml/ChatPage.qml:740
+#: ../qml/ChatPage.qml:748
 msgid "Send Contact"
 msgstr ""
 
-#: ../qml/ChatPage.qml:762 ../qml/ContactPreviewPage.qml:223
+#: ../qml/ChatPage.qml:770 ../qml/ContactPreviewPage.qml:223
 #: ../qml/DocumentPreviewPage.qml:223 ../qml/ImagePreviewPage.qml:190
 #: ../qml/VideoPreviewPage.qml:335 ../qml/ut_components/AppHeader.qml:78
 msgid "Back"

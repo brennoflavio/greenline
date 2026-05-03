@@ -17,6 +17,7 @@ import (
 	"syscall"
 
 	waBinary "go.mau.fi/whatsmeow/binary"
+	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
 	"greenline.brennoflavio/daemon/avatarsync"
@@ -38,6 +39,87 @@ func isVideoCall(data *waBinary.Node) bool {
 	return false
 }
 
+const genericMentionPlaceholder = "@👤"
+
+func isMentionTokenChar(char byte) bool {
+	switch {
+	case char >= '0' && char <= '9':
+		return true
+	case char >= 'A' && char <= 'Z':
+		return true
+	case char >= 'a' && char <= 'z':
+		return true
+	case char == ':', char == '.', char == '_', char == '-':
+		return true
+	default:
+		return false
+	}
+}
+
+func buildMentionTokens(mentionedJIDs []string) []string {
+	tokens := make([]string, 0, len(mentionedJIDs))
+	seen := make(map[string]struct{}, len(mentionedJIDs))
+	for _, jid := range mentionedJIDs {
+		user, _, _ := strings.Cut(jid, "@")
+		if user == "" {
+			continue
+		}
+		token := "@" + user
+		if _, ok := seen[token]; ok {
+			continue
+		}
+		seen[token] = struct{}{}
+		tokens = append(tokens, token)
+	}
+	return tokens
+}
+
+func replaceMentionIDs(text string, mentionedJIDs []string) string {
+	if text == "" || len(mentionedJIDs) == 0 {
+		return text
+	}
+
+	tokens := buildMentionTokens(mentionedJIDs)
+	if len(tokens) == 0 {
+		return text
+	}
+
+	var builder strings.Builder
+	builder.Grow(len(text))
+	for i := 0; i < len(text); {
+		matchedLen := 0
+		if text[i] == '@' && (i == 0 || !isMentionTokenChar(text[i-1])) {
+			for _, token := range tokens {
+				if !strings.HasPrefix(text[i:], token) {
+					continue
+				}
+				end := i + len(token)
+				if end < len(text) && isMentionTokenChar(text[end]) {
+					continue
+				}
+				if len(token) > matchedLen {
+					matchedLen = len(token)
+				}
+			}
+		}
+		if matchedLen > 0 {
+			builder.WriteString(genericMentionPlaceholder)
+			i += matchedLen
+			continue
+		}
+		builder.WriteByte(text[i])
+		i++
+	}
+	return builder.String()
+}
+
+func mentionSafeText(text string, contextInfo *waE2E.ContextInfo) string {
+	if contextInfo == nil {
+		return text
+	}
+	return replaceMentionIDs(text, contextInfo.GetMentionedJID())
+}
+
 func extractBody(msg *events.Message) string {
 	if msg.Message == nil {
 		return ""
@@ -46,18 +128,18 @@ func extractBody(msg *events.Message) string {
 		return s
 	}
 	if etm := msg.Message.GetExtendedTextMessage(); etm != nil {
-		if s := etm.GetText(); s != "" {
+		if s := mentionSafeText(etm.GetText(), etm.GetContextInfo()); s != "" {
 			return s
 		}
 	}
 	if im := msg.Message.GetImageMessage(); im != nil {
-		if c := im.GetCaption(); c != "" {
+		if c := mentionSafeText(im.GetCaption(), im.GetContextInfo()); c != "" {
 			return "📷 " + c
 		}
 		return "📷 Photo"
 	}
 	if vm := msg.Message.GetVideoMessage(); vm != nil {
-		if c := vm.GetCaption(); c != "" {
+		if c := mentionSafeText(vm.GetCaption(), vm.GetContextInfo()); c != "" {
 			return "🎥 " + c
 		}
 		return "🎥 Video"
@@ -66,7 +148,7 @@ func extractBody(msg *events.Message) string {
 		return "🎵 Audio"
 	}
 	if dm := msg.Message.GetDocumentMessage(); dm != nil {
-		if c := dm.GetCaption(); c != "" {
+		if c := mentionSafeText(dm.GetCaption(), dm.GetContextInfo()); c != "" {
 			return "📄 " + c
 		}
 		return "📄 Document"

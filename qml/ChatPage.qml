@@ -695,6 +695,14 @@ Page {
                         messages = updated;
 
                 });
+                setHandler('chat-list-update', function(updatedChats) {
+                    for (var i = 0; i < updatedChats.length; i++) {
+                        if (updatedChats[i].id === chatId) {
+                            refreshPageState();
+                            break;
+                        }
+                    }
+                });
             });
         }
     }

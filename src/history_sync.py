@@ -11,9 +11,10 @@ from constants import GROUP_JID_SUFFIX, WHATSAPP_JID_SUFFIX
 from message_store import (
     _contact_preview,
     _extract_thumbnail,
-    _quoted_message_preview,
     persist_contact_vcard,
+    quoted_message_template,
     resolve_sender_name,
+    template_mention_text,
 )
 from models import ChatListItem, Message, MessageType, ReadReceipt
 from rpc import DaemonRPC
@@ -67,7 +68,7 @@ def handle_history_sync(event: Any) -> Dict[str, Dict[str, Any]]:
                 continue
 
             _process_messages(kv, conv, chat_jid, jid_map)
-            chat_dict = _process_conversation(kv, conv, chat_jid)
+            chat_dict = _process_conversation(kv, conv, chat_jid, jid_map)
             if chat_dict is not None:
                 chat_updates[chat_jid] = chat_dict
 
@@ -95,7 +96,7 @@ def _build_jid_map(evt: HistorySyncEvent) -> Dict[str, str]:
         if pn.ID:
             jids.add(pn.ID)
 
-    jid_map: Dict[str, str] = {}
+    jid_map: Dict[str, str] = dict(lid_to_pn)
     rpc = DaemonRPC()
     for jid in jids:
         if jid in lid_to_pn:
@@ -133,10 +134,11 @@ def _derive_type_from_content(content: Dict[str, Any]) -> Optional[MessageType]:
 
 
 def _extract_content_fields(
-    content: Dict[str, Any], chat_id: str, message_id: str
-) -> Tuple[str, str, str, str, str, str]:
-    """Returns (text, caption, mimetype, file_name, duration, media_path)."""
+    content: Dict[str, Any], chat_id: str, message_id: str, jid_map: Dict[str, str]
+) -> Tuple[str, List[str], str, str, str, str, str]:
+    """Returns (text, mentioned_jids, caption, mimetype, file_name, duration, media_path)."""
     text = ""
+    mentioned_jids: List[str] = []
     caption = ""
     mimetype = ""
     file_name = ""
@@ -146,7 +148,12 @@ def _extract_content_fields(
     if content.get("conversation"):
         text = content["conversation"]
     elif content.get("extendedTextMessage"):
-        text = content["extendedTextMessage"].get("text", "")
+        ext = content["extendedTextMessage"]
+        text, mentioned_jids = template_mention_text(
+            ext.get("text", ""),
+            (ext.get("contextInfo") or {}).get("mentionedJID"),
+            jid_map=jid_map,
+        )
 
     img = content.get("imageMessage")
     vid = content.get("videoMessage")
@@ -156,10 +163,18 @@ def _extract_content_fields(
     stk = content.get("stickerMessage")
 
     if img:
-        caption = img.get("caption", "")
+        caption, mentioned_jids = template_mention_text(
+            img.get("caption", ""),
+            (img.get("contextInfo") or {}).get("mentionedJID"),
+            jid_map=jid_map,
+        )
         mimetype = img.get("mimetype", "")
     elif vid:
-        caption = vid.get("caption", "")
+        caption, mentioned_jids = template_mention_text(
+            vid.get("caption", ""),
+            (vid.get("contextInfo") or {}).get("mentionedJID"),
+            jid_map=jid_map,
+        )
         mimetype = vid.get("mimetype", "")
         secs = vid.get("seconds", 0) or 0
         if secs:
@@ -170,7 +185,11 @@ def _extract_content_fields(
         if secs:
             duration = f"{secs // 60}:{secs % 60:02d}"
     elif doc:
-        caption = doc.get("caption", "")
+        caption, mentioned_jids = template_mention_text(
+            doc.get("caption", ""),
+            (doc.get("contextInfo") or {}).get("mentionedJID"),
+            jid_map=jid_map,
+        )
         mimetype = doc.get("mimetype", "")
         file_name = doc.get("fileName", "")
     elif contact:
@@ -180,7 +199,7 @@ def _extract_content_fields(
     elif stk:
         mimetype = stk.get("mimetype", "")
 
-    return text, caption, mimetype, file_name, duration, media_path
+    return text, mentioned_jids, caption, mimetype, file_name, duration, media_path
 
 
 def _extract_link_preview_fields(content: Dict[str, Any]) -> Tuple[str, str, str]:
@@ -190,29 +209,45 @@ def _extract_link_preview_fields(content: Dict[str, Any]) -> Tuple[str, str, str
     return ext.get("title", ""), ext.get("description", ""), ext.get("matchedText", "")
 
 
-def _message_preview(content: Dict[str, Any]) -> str:
+def _message_preview(content: Dict[str, Any], jid_map: Dict[str, str]) -> Tuple[str, List[str]]:
     if content.get("conversation"):
-        return str(content["conversation"])
+        return str(content["conversation"]), []
     ext = content.get("extendedTextMessage")
     if ext and ext.get("text"):
-        return str(ext["text"])
+        return template_mention_text(
+            str(ext["text"]),
+            (ext.get("contextInfo") or {}).get("mentionedJID"),
+            jid_map=jid_map,
+        )
     img = content.get("imageMessage")
     if img:
-        return img.get("caption") or "📷 Photo"
+        return template_mention_text(
+            img.get("caption") or "📷 Photo",
+            (img.get("contextInfo") or {}).get("mentionedJID"),
+            jid_map=jid_map,
+        )
     vid = content.get("videoMessage")
     if vid:
-        return vid.get("caption") or "🎥 Video"
+        return template_mention_text(
+            vid.get("caption") or "🎥 Video",
+            (vid.get("contextInfo") or {}).get("mentionedJID"),
+            jid_map=jid_map,
+        )
     if content.get("audioMessage"):
-        return "🎵 Audio"
+        return "🎵 Audio", []
     doc = content.get("documentMessage")
     if doc:
-        return doc.get("caption") or "📄 Document"
+        return template_mention_text(
+            doc.get("caption") or "📄 Document",
+            (doc.get("contextInfo") or {}).get("mentionedJID"),
+            jid_map=jid_map,
+        )
     contact = content.get("contactMessage")
     if contact:
-        return _contact_preview(contact.get("displayName", ""))
+        return _contact_preview(contact.get("displayName", "")), []
     if content.get("stickerMessage"):
-        return "🏷️ Sticker"
-    return ""
+        return "🏷️ Sticker", []
+    return "", []
 
 
 def _find_latest_message(
@@ -232,7 +267,9 @@ def _find_latest_message(
     return latest
 
 
-def _extract_context_info_from_dict(content: Dict[str, Any], jid_map: Dict[str, str]) -> Tuple[str, str, str]:
+def _extract_context_info_from_dict(
+    content: Dict[str, Any], jid_map: Dict[str, str]
+) -> Tuple[str, str, str, List[str]]:
     for field_name in (
         "extendedTextMessage",
         "imageMessage",
@@ -251,9 +288,12 @@ def _extract_context_info_from_dict(content: Dict[str, Any], jid_map: Dict[str, 
                 if participant:
                     participant = jid_map.get(participant, participant)
                 reply_to_sender = resolve_sender_name(participant) if participant else ""
-                reply_to_text = _quoted_message_preview(ctx.get("quotedMessage"))
-                return reply_to_id, reply_to_sender, reply_to_text
-    return "", "", ""
+                reply_to_text, reply_to_mentioned_jids = quoted_message_template(
+                    ctx.get("quotedMessage"),
+                    jid_map=jid_map,
+                )
+                return reply_to_id, reply_to_sender, reply_to_text, reply_to_mentioned_jids
+    return "", "", "", []
 
 
 def _process_messages(
@@ -290,7 +330,12 @@ def _process_messages(
             continue
 
         ts_display = datetime.fromtimestamp(ts_unix).strftime("%H:%M")
-        text, caption, mimetype, file_name, duration, media_path = _extract_content_fields(content, chat_jid, msg_id)
+        text, mentioned_jids, caption, mimetype, file_name, duration, media_path = _extract_content_fields(
+            content,
+            chat_jid,
+            msg_id,
+            jid_map,
+        )
 
         is_outgoing = inner.key.fromMe
         read_receipt = ReadReceipt.NONE
@@ -305,7 +350,9 @@ def _process_messages(
                 sender_cache[sender] = resolve_sender_name(sender)
             sender_name = sender_cache[sender]
 
-        reply_to_id, reply_to_sender, reply_to_text = _extract_context_info_from_dict(content, jid_map)
+        reply_to_id, reply_to_sender, reply_to_text, reply_to_mentioned_jids = _extract_context_info_from_dict(
+            content, jid_map
+        )
 
         link_title, link_description, link_url = (
             _extract_link_preview_fields(content) if msg_type == MessageType.LINK_PREVIEW else ("", "", "")
@@ -322,6 +369,7 @@ def _process_messages(
             sender=sender,
             sender_name=sender_name,
             text=text,
+            mentioned_jids=mentioned_jids,
             caption=caption,
             media_path=media_path,
             mimetype=mimetype,
@@ -330,6 +378,7 @@ def _process_messages(
             reply_to_id=reply_to_id,
             reply_to_sender=reply_to_sender,
             reply_to_text=reply_to_text,
+            reply_to_mentioned_jids=reply_to_mentioned_jids,
             link_title=link_title,
             link_description=link_description,
             link_url=link_url,
@@ -347,6 +396,7 @@ def _process_conversation(
     kv: KV,
     conv: HistorySyncConversation,
     chat_jid: str,
+    jid_map: Dict[str, str],
 ) -> Optional[Dict[str, Any]]:
     is_group = chat_jid.endswith(GROUP_JID_SUFFIX)
     latest_msg = _find_latest_message(conv)
@@ -359,10 +409,11 @@ def _process_conversation(
         changed = False
 
         if latest_msg is not None and latest_msg.messageTimestamp > chat.last_message_timestamp:
-            preview = _message_preview(latest_msg.message) if latest_msg.message else ""
+            preview, latest_preview_mentioned_jids = _message_preview(latest_msg.message or {}, jid_map)
             msg_type = _derive_type_from_content(latest_msg.message or {}) if latest_msg.message else None
             if preview:
                 chat.last_message = preview
+                chat.last_message_mentioned_jids = latest_preview_mentioned_jids
                 chat.last_message_type = str(msg_type or "")
                 chat.date = datetime.fromtimestamp(latest_msg.messageTimestamp).strftime("%H:%M")
                 chat.last_message_timestamp = latest_msg.messageTimestamp
@@ -389,8 +440,9 @@ def _process_conversation(
     read_receipt = ReadReceipt.NONE
 
     last_message_type = ""
+    preview_mentioned_jids: List[str] = []
     if latest_msg is not None:
-        preview = _message_preview(latest_msg.message or {})
+        preview, preview_mentioned_jids = _message_preview(latest_msg.message or {}, jid_map)
         last_message_type = str(_derive_type_from_content(latest_msg.message or {}) or "")
         last_ts = latest_msg.messageTimestamp
         date = datetime.fromtimestamp(last_ts).strftime("%H:%M")
@@ -413,6 +465,7 @@ def _process_conversation(
         read_receipt=read_receipt,
         unread_count=conv.unreadCount,
         is_group=is_group,
+        last_message_mentioned_jids=preview_mentioned_jids,
         last_message_type=last_message_type,
     )
 

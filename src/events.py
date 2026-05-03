@@ -10,7 +10,13 @@ import pyotherside
 from dacite import from_dict
 
 from history_sync import handle_history_sync
-from message_store import store_message, store_undecryptable_message, update_chat_name
+from message_store import (
+    render_chat_mentions,
+    render_message_mentions,
+    store_message,
+    store_undecryptable_message,
+    update_chat_name,
+)
 from models import ChatListItem, Message, MessageType, ReadReceipt
 from receipt_store import process_receipt
 from rpc import DaemonNotReadyError, DaemonRPC, RateLimitError
@@ -34,6 +40,18 @@ from whatsmeow_types import (
 
 def enum_to_str(obj: Dict[str, Any]) -> Dict[str, Any]:
     return _enum_to_str(obj)  # type: ignore[no-untyped-call, no-any-return]
+
+
+def _render_message_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
+    msg_fields = {f.name for f in Message.__dataclass_fields__.values()}
+    message = Message(**{k: v for k, v in payload.items() if k in msg_fields})
+    return enum_to_str(asdict(render_message_mentions(message)))
+
+
+def _render_chat_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
+    chat_fields = {f.name for f in ChatListItem.__dataclass_fields__.values()}
+    chat = ChatListItem(**{k: v for k, v in payload.items() if k in chat_fields})
+    return enum_to_str(asdict(render_chat_mentions(chat)))
 
 
 QR_IMAGE_PATH = os.path.join(get_cache_path(), "qr.png")
@@ -588,10 +606,16 @@ class DaemonEventHandler(Event):
 
                 all_message_upserts = message_upserts + message_updates
                 if all_message_upserts:
-                    pyotherside.send("message-upsert", all_message_upserts)
+                    pyotherside.send(
+                        "message-upsert",
+                        [_render_message_payload(payload) for payload in all_message_upserts],
+                    )
 
                 if chat_updates:
-                    pyotherside.send("chat-list-update", list(chat_updates.values()))
+                    pyotherside.send(
+                        "chat-list-update",
+                        [_render_chat_payload(payload) for payload in chat_updates.values()],
+                    )
                     try:
                         total = get_unread_total()
                         DaemonRPC().set_notification_counter(total, total > 0)
@@ -637,7 +661,7 @@ class ChatListUpdateEvent(Event):
             return None
 
         if chat_updates:
-            pyotherside.send("chat-list-update", chat_updates)
+            pyotherside.send("chat-list-update", [_render_chat_payload(chat) for chat in chat_updates])
 
         if photo_updates:
             pyotherside.send("sender-photo-update", photo_updates)

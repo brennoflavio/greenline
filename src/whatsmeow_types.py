@@ -91,6 +91,7 @@ class ContextInfo:
     stanzaID: str = ""
     participant: str = ""
     quotedMessage: Optional[Dict[str, Any]] = None
+    mentionedJID: Optional[List[str]] = None
     quotedType: int = 0
     pairedMediaType: int = 0
     statusSourceType: int = 0
