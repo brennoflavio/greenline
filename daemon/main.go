@@ -86,6 +86,36 @@ func extractBody(msg *events.Message) string {
 	return ""
 }
 
+func extractUndecryptableBody(msg *events.UndecryptableMessage) string {
+	if msg.IsUnavailable && msg.UnavailableType == events.UnavailableTypeViewOnce {
+		return "View-once message — open WhatsApp on your primary phone"
+	}
+	return ""
+}
+
+func postMessageNotification(client *waconn.Client, notifier *notify.Notifier, cacheDir string, info types.MessageInfo, body string) error {
+	ctx := context.Background()
+	senderName := info.PushName
+	if senderName == "" {
+		senderName = info.Sender.User
+	}
+	summary := senderName
+	if info.Chat.Server == types.GroupServer {
+		groupName := info.Chat.User
+		if groupInfo, err := client.GetGroupInfo(ctx, info.Chat); err == nil && groupInfo.Name != "" {
+			groupName = groupInfo.Name
+		}
+		summary = groupName
+		body = senderName + ": " + body
+	}
+	chatJID := client.ResolveJID(ctx, info.Chat)
+	icon := avatarsync.AvatarJPGPath(cacheDir, chatJID.String())
+	if _, err := os.Stat(icon); err != nil {
+		icon = ""
+	}
+	return notifier.Post(summary, body, icon, chatJID.String())
+}
+
 var GitCommit string
 
 func defaultSocketPath() string {
@@ -201,27 +231,35 @@ func main() {
 			if body == "" {
 				return
 			}
-			ctx := context.Background()
-			senderName := msg.Info.PushName
-			if senderName == "" {
-				senderName = msg.Info.Sender.User
-			}
-			summary := senderName
-			if msg.Info.Chat.Server == types.GroupServer {
-				groupName := msg.Info.Chat.User
-				if groupInfo, err := client.GetGroupInfo(ctx, msg.Info.Chat); err == nil && groupInfo.Name != "" {
-					groupName = groupInfo.Name
-				}
-				summary = groupName
-				body = senderName + ": " + body
-			}
-			chatJID := client.ResolveJID(ctx, msg.Info.Chat)
-			icon := avatarsync.AvatarJPGPath(*cacheDir, chatJID.String())
-			if _, err := os.Stat(icon); err != nil {
-				icon = ""
-			}
-			if err := notifier.Post(summary, body, icon, chatJID.String()); err != nil {
+			if err := postMessageNotification(client, notifier, *cacheDir, msg.Info, body); err != nil {
 				logger.Error("failed to send notification", "error", err)
+			}
+		}
+		if msg, ok := evt.(*events.UndecryptableMessage); ok {
+			if msg.Info.IsFromMe {
+				return
+			}
+			if msg.Info.Chat == types.StatusBroadcastJID {
+				return
+			}
+			if msg.Info.Chat.Server == types.NewsletterServer {
+				return
+			}
+			svc.mu.RLock()
+			suppressed := svc.notifSuppressed
+			svc.mu.RUnlock()
+			if suppressed {
+				return
+			}
+			if client.IsMuted(context.Background(), msg.Info.Chat) {
+				return
+			}
+			body := extractUndecryptableBody(msg)
+			if body == "" {
+				return
+			}
+			if err := postMessageNotification(client, notifier, *cacheDir, msg.Info, body); err != nil {
+				logger.Error("failed to send undecryptable notification", "error", err)
 			}
 		}
 		if call, ok := evt.(*events.CallOffer); ok {

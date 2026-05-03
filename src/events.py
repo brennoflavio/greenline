@@ -10,7 +10,7 @@ import pyotherside
 from dacite import from_dict
 
 from history_sync import handle_history_sync
-from message_store import store_message, update_chat_name
+from message_store import store_message, store_undecryptable_message, update_chat_name
 from models import ChatListItem, Message, MessageType, ReadReceipt
 from receipt_store import process_receipt
 from rpc import DaemonNotReadyError, DaemonRPC, RateLimitError
@@ -28,6 +28,7 @@ from whatsmeow_types import (
     PresenceEvent,
     PushNameEvent,
     ReceiptEvent,
+    UndecryptableMessageEvent,
 )
 
 
@@ -151,6 +152,35 @@ def _handle_message(
         media_path = _auto_download_sticker(stored.message, raw)
         if media_path:
             stored.message.media_path = media_path
+    if stored.message.sender and not stored.message.is_outgoing:
+        with KV() as kv:
+            sender_data = kv.get(f"chat:{stored.message.sender}")
+        if sender_data:
+            stored.message.sender_photo = sender_data.get("photo", "")
+    message_upserts.append(enum_to_str(asdict(stored.message)))
+    chat_updates[stored.chat.id] = enum_to_str(asdict(stored.chat))
+
+
+def _handle_undecryptable_message(
+    event: Any,
+    chat_updates: dict[str, dict[str, Any]],
+    message_upserts: list[dict[str, Any]],
+) -> None:
+    raw = json.loads(event.payload or "{}")
+    evt = from_dict(data_class=UndecryptableMessageEvent, data=raw)
+    if evt.Info.Chat == STATUS_BROADCAST_JID:
+        return
+    if evt.Info.Chat.endswith(NEWSLETTER_SERVER):
+        return
+    evt.Info.Chat = DaemonRPC().ensure_jid(evt.Info.Chat)
+    if evt.Info.SenderAlt:
+        evt.Info.Sender = DaemonRPC().ensure_jid(evt.Info.SenderAlt)
+    elif evt.Info.Sender:
+        evt.Info.Sender = DaemonRPC().ensure_jid(evt.Info.Sender)
+    stored = store_undecryptable_message(evt, raw=raw)
+    if stored is None:
+        _save_unhandled_message(event, raw)
+        return
     if stored.message.sender and not stored.message.is_outgoing:
         with KV() as kv:
             sender_data = kv.get(f"chat:{stored.message.sender}")
@@ -422,6 +452,8 @@ def _dispatch_event_inner(
         _handle_message(event, chat_updates, message_upserts)
     elif event.event_type == "Receipt":
         _handle_receipt(event, chat_updates, message_updates)
+    elif event.event_type == "UndecryptableMessage":
+        _handle_undecryptable_message(event, chat_updates, message_upserts)
     elif event.event_type == "Contact":
         _handle_contact(event, chat_updates)
     elif event.event_type == "Mute":
@@ -457,7 +489,6 @@ def _dispatch_event_inner(
         "PairError",
         "PairSuccess",
         "QR",
-        "UndecryptableMessage",
     ):
         pass
     else:

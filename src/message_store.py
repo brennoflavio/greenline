@@ -9,7 +9,12 @@ from models import ChatListItem, Message, MessageType, ReadReceipt
 from unread_counter import increment_unread_total
 from ut_components.config import get_cache_path
 from ut_components.kv import KV
-from whatsmeow_types import MessageContent, MessageEvent, MessageInfo
+from whatsmeow_types import (
+    MessageContent,
+    MessageEvent,
+    MessageInfo,
+    UndecryptableMessageEvent,
+)
 
 
 def _get_thumbnail_dir() -> str:
@@ -259,6 +264,34 @@ def _derive_message_type(info_type: str, media_type: str) -> Optional[MessageTyp
     return None
 
 
+def undecryptable_event_to_message(evt: UndecryptableMessageEvent) -> Optional[Message]:
+    if not evt.IsUnavailable or evt.UnavailableType != MessageType.VIEW_ONCE:
+        return None
+
+    info = evt.Info
+    ts = datetime.fromisoformat(info.Timestamp)
+    timestamp_unix = int(ts.timestamp())
+    timestamp_display = ts.strftime("%H:%M")
+    read_receipt = ReadReceipt.SENT if info.IsFromMe else ReadReceipt.NONE
+
+    sender_name = ""
+    if not info.IsFromMe and info.Sender:
+        sender_name = resolve_sender_name(info.Sender, info.PushName)
+
+    return Message(
+        id=info.ID,
+        chat_id=info.Chat,
+        type=MessageType.VIEW_ONCE,
+        is_outgoing=info.IsFromMe,
+        timestamp=timestamp_display,
+        timestamp_unix=timestamp_unix,
+        read_receipt=read_receipt,
+        sender=info.Sender,
+        sender_name=sender_name,
+        text="",
+    )
+
+
 def _message_preview(msg: Message) -> str:
     if msg.text:
         return msg.text
@@ -277,7 +310,7 @@ def _message_preview(msg: Message) -> str:
     return previews.get(msg.type, msg.type)
 
 
-def upsert_chat(msg: Message, info: MessageInfo) -> ChatListItem:
+def upsert_chat(msg: Message, info: MessageInfo, *, count_unread: bool = True) -> ChatListItem:
     chat_key = f"chat:{msg.chat_id}"
     with KV() as kv:
         existing = kv.get(chat_key)
@@ -294,14 +327,16 @@ def upsert_chat(msg: Message, info: MessageInfo) -> ChatListItem:
         chat = ChatListItem(**existing)
         if msg.timestamp_unix >= chat.last_message_timestamp:
             chat.last_message = preview
+            chat.last_message_type = str(msg.type)
             chat.date = msg.timestamp
             chat.last_message_timestamp = msg.timestamp_unix
             if msg.is_outgoing:
                 chat.read_receipt = msg.read_receipt
             else:
                 chat.read_receipt = ReadReceipt.NONE
-                chat.unread_count += 1
-                increment_unread_total()
+                if count_unread:
+                    chat.unread_count += 1
+                    increment_unread_total()
         if not is_group:
             update_chat_name(
                 chat,
@@ -321,13 +356,14 @@ def upsert_chat(msg: Message, info: MessageInfo) -> ChatListItem:
             date=msg.timestamp,
             last_message_timestamp=msg.timestamp_unix,
             read_receipt=msg.read_receipt if msg.is_outgoing else ReadReceipt.NONE,
-            unread_count=0 if msg.is_outgoing else 1,
+            unread_count=0 if msg.is_outgoing or not count_unread else 1,
             is_group=is_group,
+            last_message_type=str(msg.type),
             push_name=push_name if not is_group else "",
             business_name=business_name if not is_group else "",
             name_updated_at=msg.timestamp_unix,
         )
-        if not msg.is_outgoing:
+        if not msg.is_outgoing and count_unread:
             increment_unread_total()
 
     with KV() as kv:
@@ -381,7 +417,26 @@ def store_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = None) -> Op
     data = asdict(msg)
     data["raw"] = raw
     with KV() as kv:
+        already_stored = kv.get(key) is not None
         kv.put(key, data)
 
-    chat = upsert_chat(msg, evt.Info)
+    chat = upsert_chat(msg, evt.Info, count_unread=not already_stored)
+    return StoredMessage(message=msg, chat=chat)
+
+
+def store_undecryptable_message(
+    evt: UndecryptableMessageEvent, raw: Optional[Dict[str, Any]] = None
+) -> Optional[StoredMessage]:
+    msg = undecryptable_event_to_message(evt)
+    if msg is None:
+        return None
+
+    key = f"message:{msg.chat_id}:{msg.timestamp_unix}:{msg.id}"
+    data = asdict(msg)
+    data["raw"] = raw
+    with KV() as kv:
+        already_stored = kv.get(key) is not None
+        kv.put(key, data)
+
+    chat = upsert_chat(msg, evt.Info, count_unread=not already_stored)
     return StoredMessage(message=msg, chat=chat)

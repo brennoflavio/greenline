@@ -360,8 +360,10 @@ def _process_conversation(
 
         if latest_msg is not None and latest_msg.messageTimestamp > chat.last_message_timestamp:
             preview = _message_preview(latest_msg.message) if latest_msg.message else ""
+            msg_type = _derive_type_from_content(latest_msg.message or {}) if latest_msg.message else None
             if preview:
                 chat.last_message = preview
+                chat.last_message_type = str(msg_type or "")
                 chat.date = datetime.fromtimestamp(latest_msg.messageTimestamp).strftime("%H:%M")
                 chat.last_message_timestamp = latest_msg.messageTimestamp
                 if latest_msg.key.fromMe:
@@ -386,8 +388,10 @@ def _process_conversation(
     date = ""
     read_receipt = ReadReceipt.NONE
 
+    last_message_type = ""
     if latest_msg is not None:
         preview = _message_preview(latest_msg.message or {})
+        last_message_type = str(_derive_type_from_content(latest_msg.message or {}) or "")
         last_ts = latest_msg.messageTimestamp
         date = datetime.fromtimestamp(last_ts).strftime("%H:%M")
         if latest_msg.key.fromMe:
@@ -409,6 +413,7 @@ def _process_conversation(
         read_receipt=read_receipt,
         unread_count=conv.unreadCount,
         is_group=is_group,
+        last_message_type=last_message_type,
     )
 
     kv.put_cached(chat_key, asdict(chat))

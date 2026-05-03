@@ -41,6 +41,9 @@ Page {
         if (!message)
             return "";
 
+        if (message.type === "view_once")
+            return i18n.tr("View-once message. Open WhatsApp on your primary device to view it.");
+
         if (message.text)
             return message.text;
 

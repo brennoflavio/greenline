@@ -55,6 +55,13 @@ Item {
         messageList.positionViewAtEnd();
     }
 
+    function messageText(message) {
+        if ((message.type || "") === "view_once")
+            return i18n.tr("View-once message. Open WhatsApp on your primary device to view it.");
+
+        return message.text || "";
+    }
+
     onMessagesChanged: {
         var nextPrepared = messages.slice();
         nextPrepared.reverse();
@@ -98,7 +105,7 @@ Item {
                 width: parent.width
                 sourceComponent: {
                     var type = msg.type || "text";
-                    if (type === "text") {
+                    if (type === "text" || type === "view_once") {
                         if (msg.reply_to_id || (root.isGroup && !msg.is_outgoing && (msg.sender_name || "") !== ""))
                             return richTextComponent;
 
@@ -160,7 +167,7 @@ Item {
         id: textComponent
 
         TextMessage {
-            text: msg.text || ""
+            text: root.messageText(msg)
             isOutgoing: msg.is_outgoing || false
             timestamp: msg.timestamp || ""
             readReceipt: msg.read_receipt || ""
@@ -179,7 +186,7 @@ Item {
             readonly property real replyWidthHint: replyToId !== "" ? Math.max(replySenderMeasure.implicitWidth, replyTextMeasure.implicitWidth) + units.gu(3.5) : 0
             readonly property bool shouldCollapse: fullHeightMeasure.implicitHeight > collapsedHeightMeasure.implicitHeight + units.gu(0.1)
 
-            copyableText: msg.text || ""
+            copyableText: root.messageText(msg)
             isOutgoing: msg.is_outgoing || false
             isGroup: root.isGroup
             timestamp: msg.timestamp || ""
@@ -197,7 +204,7 @@ Item {
                 id: textMeasure
 
                 visible: false
-                text: msg.text || ""
+                text: root.messageText(msg)
                 fontSize: "small"
             }
 
@@ -231,7 +238,7 @@ Item {
                 id: fullHeightMeasure
 
                 visible: false
-                text: msg.text || ""
+                text: root.messageText(msg)
                 fontSize: "small"
                 wrapMode: Text.Wrap
                 width: parent.width
@@ -241,7 +248,7 @@ Item {
                 id: collapsedHeightMeasure
 
                 visible: false
-                text: msg.text || ""
+                text: root.messageText(msg)
                 fontSize: "small"
                 wrapMode: Text.Wrap
                 width: parent.width
@@ -250,7 +257,7 @@ Item {
             }
 
             Label {
-                text: msg.text || ""
+                text: root.messageText(msg)
                 fontSize: "small"
                 color: "#303030"
                 wrapMode: Text.Wrap

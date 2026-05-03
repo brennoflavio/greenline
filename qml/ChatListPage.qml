@@ -30,6 +30,9 @@ Page {
     }
 
     function messagePreview(msg) {
+        if (msg.type === "view_once")
+            return i18n.tr("View-once message. Open WhatsApp on your primary device to view it.");
+
         if (msg.text)
             return msg.text;
 
@@ -49,6 +52,13 @@ Page {
             "sticker": "🏷️ Sticker"
         };
         return previews[msg.type] || msg.type;
+    }
+
+    function chatPreview(chat) {
+        if ((chat.last_message_type || "") === "view_once")
+            return i18n.tr("View-once message. Open WhatsApp on your primary device to view it.");
+
+        return chat.last_message || "";
     }
 
     Column {
@@ -235,7 +245,7 @@ Page {
                                 }
 
                                 Label {
-                                    text: modelData.last_message || ""
+                                    text: chatPreview(modelData)
                                     fontSize: "small"
                                     color: theme.palette.normal.backgroundTertiaryText
                                     elide: Text.ElideRight
@@ -325,6 +335,7 @@ Page {
                             var chat = newChats[j];
                             if (chat.id === message.chat_id && message.timestamp_unix >= chat.last_message_timestamp) {
                                 chat.last_message = messagePreview(message);
+                                chat.last_message_type = message.type || "";
                                 chat.date = message.timestamp;
                                 chat.last_message_timestamp = message.timestamp_unix;
                                 chat.read_receipt = message.is_outgoing ? message.read_receipt : "";

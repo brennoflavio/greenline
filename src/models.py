@@ -5,6 +5,7 @@ from typing import List
 
 class MessageType(StrEnum):
     TEXT = "text"
+    VIEW_ONCE = "view_once"
     IMAGE = "image"
     IMAGE_GALLERY = "image_gallery"
     VIDEO = "video"
@@ -34,6 +35,7 @@ class ChatListItem:
     read_receipt: ReadReceipt
     unread_count: int
     is_group: bool
+    last_message_type: str = ""
     muted: bool = False
     full_name: str = ""
     push_name: str = ""
