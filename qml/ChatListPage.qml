@@ -55,10 +55,32 @@ Page {
     }
 
     function chatPreview(chat) {
+        if (chat.has_draft)
+            return i18n.tr("Draft: ") + (chat.draft || "");
+
         if ((chat.last_message_type || "") === "view_once")
             return i18n.tr("View-once message. Open WhatsApp on your primary device to view it.");
 
         return chat.last_message || "";
+    }
+
+    function applyDraftUpdates(updatedDrafts) {
+        var newChats = chats.slice();
+        var changed = false;
+        for (var i = 0; i < updatedDrafts.length; i++) {
+            var updatedDraft = updatedDrafts[i];
+            for (var j = 0; j < newChats.length; j++) {
+                if (newChats[j].id === updatedDraft.id) {
+                    newChats[j].draft = updatedDraft.draft || "";
+                    newChats[j].has_draft = !!updatedDraft.has_draft;
+                    changed = true;
+                    break;
+                }
+            }
+        }
+        if (changed)
+            chats = newChats;
+
     }
 
     Column {
@@ -240,7 +262,7 @@ Page {
                                     height: units.gu(1.6)
                                     width: units.gu(1.6)
                                     color: modelData.read_receipt === "read" ? LomiriColors.lightBlue : theme.palette.normal.backgroundTertiaryText
-                                    visible: modelData.read_receipt === "sent" || modelData.read_receipt === "delivered" || modelData.read_receipt === "read"
+                                    visible: !modelData.has_draft && (modelData.read_receipt === "sent" || modelData.read_receipt === "delivered" || modelData.read_receipt === "read")
                                     anchors.verticalCenter: parent.verticalCenter
                                 }
 
@@ -349,6 +371,9 @@ Page {
                 });
                 setHandler('chat-list-update', function(updatedChats) {
                     refreshChatList();
+                });
+                setHandler('chat-draft-update', function(updatedDrafts) {
+                    applyDraftUpdates(updatedDrafts);
                 });
                 refreshPageState();
             });

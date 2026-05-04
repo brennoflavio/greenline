@@ -51,6 +51,7 @@ from message_store import (
     upsert_chat,
 )
 from models import (
+    ChatListEntry,
     ChatListItem,
     ChatListResponse,
     ContactItem,
@@ -121,6 +122,12 @@ class DaemonStatusResponse:
 @dataclass
 class ClearDataResponse:
     success: bool
+
+
+@dataclass
+class ChatDraftResponse:
+    success: bool
+    text: str
 
 
 @crash_reporter
@@ -324,8 +331,13 @@ def get_chat_list() -> ChatListResponse:
     try:
         with KV() as kv:
             entries = kv.get_partial("chat:")
+            drafts = {key.removeprefix("draft:"): str(value or "") for key, value in kv.get_partial("draft:")}
 
-        chats = [_ui_chat(ChatListItem(**value)) for _, value in entries]
+        chats = []
+        for _, value in entries:
+            chat = _ui_chat(ChatListItem(**value))
+            draft = drafts.get(chat.id, "")
+            chats.append(ChatListEntry(**asdict(chat), draft=draft, has_draft=draft != ""))
         chats.sort(key=lambda c: c.last_message_timestamp, reverse=True)
         return ChatListResponse(success=True, chats=chats, message="")
     except Exception as e:
@@ -350,6 +362,32 @@ def get_chat_info(chat_id: str) -> dict[str, object]:
         "is_group": chat.is_group,
         "unread_count": chat.unread_count,
     }
+
+
+@crash_reporter
+@dataclass_to_dict
+def get_chat_draft(chat_id: str) -> ChatDraftResponse:
+    with KV() as kv:
+        draft = kv.get(f"draft:{chat_id}", default="")
+    return ChatDraftResponse(success=True, text=str(draft or ""))
+
+
+@crash_reporter
+@dataclass_to_dict
+def set_chat_draft(chat_id: str, text: str) -> SuccessResponse:
+    import pyotherside
+
+    draft_text = str(text)
+    with KV() as kv:
+        if draft_text != "":
+            kv.put(f"draft:{chat_id}", draft_text)
+        else:
+            kv.delete(f"draft:{chat_id}")
+    pyotherside.send(
+        "chat-draft-update",
+        [{"id": chat_id, "draft": draft_text, "has_draft": draft_text != ""}],
+    )
+    return SuccessResponse(success=True, message="")
 
 
 @crash_reporter

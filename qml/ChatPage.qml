@@ -36,6 +36,11 @@ Page {
     property bool pythonReady: false
     property bool refreshInProgress: false
     property bool refreshQueued: false
+    property bool draftLoaded: false
+    property bool draftTouchedBeforeLoad: false
+    property bool draftSaveInFlight: false
+    property string lastSavedDraftText: ""
+    property string pendingDraftText: ""
 
     function messagePreview(message) {
         if (!message)
@@ -170,6 +175,58 @@ Page {
                 }
             }
         });
+    }
+
+    function loadDraft() {
+        python.call('main.get_chat_draft', [chatId], function(result) {
+            var draftText = result && result.success ? (result.text || "") : "";
+            if (!draftTouchedBeforeLoad && (chatComposer.text || "") === "") {
+                lastSavedDraftText = draftText;
+                pendingDraftText = draftText;
+                draftLoaded = true;
+                chatComposer.text = draftText;
+                return ;
+            }
+            if (pendingDraftText === draftText && !draftSaveInFlight)
+                lastSavedDraftText = draftText;
+
+            draftLoaded = true;
+            if (pendingDraftText !== lastSavedDraftText)
+                saveDraft(pendingDraftText);
+
+        });
+    }
+
+    function saveDraft(text) {
+        if (!pythonReady)
+            return ;
+
+        pendingDraftText = text;
+        if (!draftLoaded && !draftTouchedBeforeLoad)
+            return ;
+
+        if (draftSaveInFlight)
+            return ;
+
+        if (pendingDraftText === lastSavedDraftText)
+            return ;
+
+        var textToSave = pendingDraftText;
+        draftSaveInFlight = true;
+        python.call('main.set_chat_draft', [chatId, textToSave], function(result) {
+            draftSaveInFlight = false;
+            if (result && result.success)
+                lastSavedDraftText = textToSave;
+
+            if (pendingDraftText !== textToSave)
+                saveDraft(pendingDraftText);
+
+        });
+    }
+
+    function flushDraft() {
+        draftSaveTimer.stop();
+        saveDraft(chatComposer.text || "");
     }
 
     function isLocalOnlyMessage(message) {
@@ -476,9 +533,21 @@ Page {
             messages = newMessages;
             messagesSendAttemptsMetric.increment(1);
             chatComposer.text = "";
+            draftSaveTimer.stop();
+            saveDraft("");
             python.call('main.send_text_message', [chatId, text, tempId, replyContext], function() {
             });
         }
+    }
+
+    Component.onDestruction: flushDraft()
+
+    Timer {
+        id: draftSaveTimer
+
+        interval: 500
+        repeat: false
+        onTriggered: chatPage.saveDraft(chatComposer.text || "")
     }
 
     Timer {
@@ -568,6 +637,13 @@ Page {
         replyToMessageId: chatPage.replyToMessageId
         replyToSender: chatPage.replyToSender
         replyToText: chatPage.replyToText
+        onTextChanged: {
+            chatPage.pendingDraftText = chatComposer.text || "";
+            if (!chatPage.draftLoaded)
+                chatPage.draftTouchedBeforeLoad = true;
+
+            draftSaveTimer.restart();
+        }
         onClearReplyRequested: chatPage.clearReply()
         onAttachmentRequested: PopupUtils.open(attachmentDialog)
         onSendRequested: chatPage.sendMessage()
@@ -585,7 +661,8 @@ Page {
         onStateChanged: {
             if (Qt.application.state === Qt.ApplicationActive)
                 refreshPageState();
-
+            else
+                flushDraft();
         }
     }
 
@@ -597,6 +674,7 @@ Page {
             importModule('main', function() {
                 pythonReady = true;
                 loadInitialMessages();
+                loadDraft();
                 if (!isGroup)
                     python.call('main.subscribe_presence', [chatId], function() {
                 });

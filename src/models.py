@@ -45,9 +45,15 @@ class ChatListItem:
 
 
 @dataclass
+class ChatListEntry(ChatListItem):
+    draft: str = ""
+    has_draft: bool = False
+
+
+@dataclass
 class ChatListResponse:
     success: bool
-    chats: List[ChatListItem]
+    chats: List[ChatListEntry]
     message: str
 
 
