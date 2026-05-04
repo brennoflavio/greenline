@@ -1095,6 +1095,11 @@ def download_media(chat_id: str, message_id: str, media_type: str) -> DownloadMe
 
     msg_fields = {f.name for f in Message.__dataclass_fields__.values()}
     msg = Message(**{k: v for k, v in entry.items() if k in msg_fields})
+    if msg.sender and not msg.is_outgoing and not msg.sender_photo:
+        with KV() as kv:
+            sender_data = kv.get(f"chat:{msg.sender}")
+        if sender_data:
+            msg.sender_photo = sender_data.get("photo", "")
     pyotherside.send("message-upsert", [_ui_message_dict(msg)])
 
     return DownloadMediaResponse(success=True, media_path=media_path, message="")
