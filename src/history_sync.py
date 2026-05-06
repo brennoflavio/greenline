@@ -13,7 +13,7 @@ from message_store import (
     _extract_thumbnail,
     persist_contact_vcard,
     quoted_message_template,
-    resolve_sender_name,
+    remember_chat,
     template_mention_text,
 )
 from models import ChatListItem, Message, MessageType, ReadReceipt
@@ -269,7 +269,7 @@ def _find_latest_message(
 
 def _extract_context_info_from_dict(
     content: Dict[str, Any], jid_map: Dict[str, str]
-) -> Tuple[str, str, str, List[str]]:
+) -> Tuple[str, str, bool, str, List[str]]:
     for field_name in (
         "extendedTextMessage",
         "imageMessage",
@@ -287,13 +287,12 @@ def _extract_context_info_from_dict(
                 participant = ctx.get("participant", "")
                 if participant:
                     participant = jid_map.get(participant, participant)
-                reply_to_sender = resolve_sender_name(participant) if participant else ""
                 reply_to_text, reply_to_mentioned_jids = quoted_message_template(
                     ctx.get("quotedMessage"),
                     jid_map=jid_map,
                 )
-                return reply_to_id, reply_to_sender, reply_to_text, reply_to_mentioned_jids
-    return "", "", "", []
+                return reply_to_id, participant, False, reply_to_text, reply_to_mentioned_jids
+    return "", "", False, "", []
 
 
 def _process_messages(
@@ -308,8 +307,6 @@ def _process_messages(
 
     existing_entries = kv.get_partial(f"message:{chat_jid}:")
     existing_ids: Set[str] = {v.get("id", "") for _, v in existing_entries}
-
-    sender_cache: Dict[str, str] = {}
 
     for msg_wrap in messages:
         inner = msg_wrap.message
@@ -343,15 +340,11 @@ def _process_messages(
             read_receipt = _STATUS_TO_RECEIPT.get(inner.status, ReadReceipt.SENT)
 
         sender = ""
-        sender_name = ""
         if not is_outgoing and inner.participant:
             sender = jid_map.get(inner.participant, inner.participant)
-            if sender not in sender_cache:
-                sender_cache[sender] = resolve_sender_name(sender)
-            sender_name = sender_cache[sender]
 
-        reply_to_id, reply_to_sender, reply_to_text, reply_to_mentioned_jids = _extract_context_info_from_dict(
-            content, jid_map
+        reply_to_id, reply_to_sender_id, reply_to_from_me, reply_to_text, reply_to_mentioned_jids = (
+            _extract_context_info_from_dict(content, jid_map)
         )
 
         link_title, link_description, link_url = (
@@ -367,7 +360,6 @@ def _process_messages(
             timestamp_unix=ts_unix,
             read_receipt=read_receipt,
             sender=sender,
-            sender_name=sender_name,
             text=text,
             mentioned_jids=mentioned_jids,
             caption=caption,
@@ -376,7 +368,8 @@ def _process_messages(
             file_name=file_name,
             duration=duration,
             reply_to_id=reply_to_id,
-            reply_to_sender=reply_to_sender,
+            reply_to_sender_id=reply_to_sender_id,
+            reply_to_from_me=reply_to_from_me,
             reply_to_text=reply_to_text,
             reply_to_mentioned_jids=reply_to_mentioned_jids,
             link_title=link_title,
@@ -429,6 +422,7 @@ def _process_conversation(
             return None
 
         kv.put_cached(chat_key, asdict(chat))
+        remember_chat(chat)
         return _enum_to_str(asdict(chat))  # type: ignore[no-any-return, no-untyped-call]
 
     last_ts = conv.conversationTimestamp or 0
@@ -470,6 +464,7 @@ def _process_conversation(
     )
 
     kv.put_cached(chat_key, asdict(chat))
+    remember_chat(chat)
     return _enum_to_str(asdict(chat))  # type: ignore[no-any-return, no-untyped-call]
 
 
@@ -486,15 +481,28 @@ def _process_pushnames(
         chat_key = f"chat:{jid}"
         existing = kv.get(chat_key)
         if existing is None:
-            continue
-        chat = ChatListItem(**existing)
-        if chat.push_name:
-            continue
-        chat.push_name = pn.pushname
-        if chat.name == jid or chat.name == jid.replace(WHATSAPP_JID_SUFFIX, ""):
-            chat.name = pn.pushname
-            kv.put_cached(chat_key, asdict(chat))
-            chat_updates[jid] = _enum_to_str(asdict(chat))  # type: ignore[no-untyped-call]
+            chat = ChatListItem(
+                id=jid,
+                name=pn.pushname,
+                photo="",
+                last_message="",
+                date="",
+                last_message_timestamp=0,
+                read_receipt=ReadReceipt.NONE,
+                unread_count=0,
+                is_group=False,
+                push_name=pn.pushname,
+            )
+        else:
+            chat = ChatListItem(**existing)
+            if chat.push_name:
+                continue
+            chat.push_name = pn.pushname
+            if chat.name == jid or chat.name == jid.replace(WHATSAPP_JID_SUFFIX, ""):
+                chat.name = pn.pushname
+        kv.put_cached(chat_key, asdict(chat))
+        remember_chat(chat)
+        chat_updates[jid] = _enum_to_str(asdict(chat))  # type: ignore[no-untyped-call]
 
 
 def _process_lid_mappings(

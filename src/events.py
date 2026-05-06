@@ -11,10 +11,12 @@ from dacite import from_dict
 
 from history_sync import handle_history_sync
 from message_store import (
+    remember_chat,
     render_chat_mentions,
-    render_message_mentions,
+    sanitize_message_payload,
     store_message,
     store_undecryptable_message,
+    to_ui_message,
     update_chat_name,
 )
 from models import ChatListItem, Message, MessageType, ReadReceipt
@@ -45,7 +47,7 @@ def enum_to_str(obj: Dict[str, Any]) -> Dict[str, Any]:
 def _render_message_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
     msg_fields = {f.name for f in Message.__dataclass_fields__.values()}
     message = Message(**{k: v for k, v in payload.items() if k in msg_fields})
-    return enum_to_str(asdict(render_message_mentions(message)))
+    return enum_to_str(asdict(to_ui_message(message)))
 
 
 def _render_chat_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -117,7 +119,7 @@ def _auto_download_sticker(msg: Message, raw: Dict[str, Any]) -> str:
                 entry = kv.get(key)
                 if entry:
                     entry["media_path"] = media_path
-                    kv.put(key, entry)
+                    kv.put(key, sanitize_message_payload(entry))
             return media_path
 
     try:
@@ -145,7 +147,7 @@ def _auto_download_sticker(msg: Message, raw: Dict[str, Any]) -> str:
         entry = kv.get(key)
         if entry:
             entry["media_path"] = media_path
-            kv.put(key, entry)
+            kv.put(key, sanitize_message_payload(entry))
 
     return media_path
 
@@ -162,6 +164,10 @@ def _handle_message(
     if evt.Info.Chat.endswith(NEWSLETTER_SERVER):
         return
     evt.Info.Chat = DaemonRPC().ensure_jid(evt.Info.Chat)
+    if evt.Info.SenderAlt:
+        evt.Info.Sender = DaemonRPC().ensure_jid(evt.Info.SenderAlt)
+    elif evt.Info.Sender:
+        evt.Info.Sender = DaemonRPC().ensure_jid(evt.Info.Sender)
     stored = store_message(evt, raw=raw)
     if stored is None:
         _save_unhandled_message(event, raw)
@@ -170,11 +176,6 @@ def _handle_message(
         media_path = _auto_download_sticker(stored.message, raw)
         if media_path:
             stored.message.media_path = media_path
-    if stored.message.sender and not stored.message.is_outgoing:
-        with KV() as kv:
-            sender_data = kv.get(f"chat:{stored.message.sender}")
-        if sender_data:
-            stored.message.sender_photo = sender_data.get("photo", "")
     message_upserts.append(enum_to_str(asdict(stored.message)))
     chat_updates[stored.chat.id] = enum_to_str(asdict(stored.chat))
 
@@ -199,11 +200,6 @@ def _handle_undecryptable_message(
     if stored is None:
         _save_unhandled_message(event, raw)
         return
-    if stored.message.sender and not stored.message.is_outgoing:
-        with KV() as kv:
-            sender_data = kv.get(f"chat:{stored.message.sender}")
-        if sender_data:
-            stored.message.sender_photo = sender_data.get("photo", "")
     message_upserts.append(enum_to_str(asdict(stored.message)))
     chat_updates[stored.chat.id] = enum_to_str(asdict(stored.chat))
 
@@ -240,6 +236,7 @@ def _handle_contact(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None
             chat = ChatListItem(**data)
             if update_chat_name(chat, ts, full_name=name):
                 kv.put(key, asdict(chat))
+                remember_chat(chat)
                 chat_updates[chat.id] = enum_to_str(asdict(chat))
         else:
             chat = ChatListItem(
@@ -256,6 +253,7 @@ def _handle_contact(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None
                 name_updated_at=ts,
             )
             kv.put(key, asdict(chat))
+            remember_chat(chat)
             chat_updates[chat.id] = enum_to_str(asdict(chat))
 
 
@@ -275,6 +273,7 @@ def _handle_push_name(event: Any, chat_updates: dict[str, dict[str, Any]]) -> No
             chat = ChatListItem(**data)
             if update_chat_name(chat, ts, push_name=evt.NewPushName):
                 kv.put(key, asdict(chat))
+                remember_chat(chat)
                 chat_updates[chat.id] = enum_to_str(asdict(chat))
 
 
@@ -294,6 +293,7 @@ def _handle_business_name(event: Any, chat_updates: dict[str, dict[str, Any]]) -
             chat = ChatListItem(**data)
             if update_chat_name(chat, ts, business_name=evt.NewBusinessName):
                 kv.put(key, asdict(chat))
+                remember_chat(chat)
                 chat_updates[chat.id] = enum_to_str(asdict(chat))
 
 
@@ -340,6 +340,7 @@ def _handle_picture(
         if chat.photo != photo:
             chat.photo = photo
             kv.put(key, asdict(chat))
+            remember_chat(chat)
             chat_updates[chat.id] = enum_to_str(asdict(chat))
             photo_updates.append({"jid": jid, "photo": photo})
 
@@ -700,6 +701,7 @@ class ChatListUpdateEvent(Event):
                         changed = True
                     if changed:
                         kv.put(key, asdict(chat))
+                        remember_chat(chat)
                         chat_updates.append(enum_to_str(asdict(chat)))
                 else:
                     chat = ChatListItem(
@@ -719,6 +721,7 @@ class ChatListUpdateEvent(Event):
                         name_updated_at=now,
                     )
                     kv.put(key, asdict(chat))
+                    remember_chat(chat)
                     chat_updates.append(enum_to_str(asdict(chat)))
 
     def _sync_groups(self, chat_updates: list[dict[str, Any]], photo_updates: list[dict[str, str]]) -> None:
@@ -754,6 +757,7 @@ class ChatListUpdateEvent(Event):
                         changed = True
                     if changed:
                         kv.put(key, asdict(chat))
+                        remember_chat(chat)
                         chat_updates.append(enum_to_str(asdict(chat)))
                 else:
                     chat = ChatListItem(
@@ -770,4 +774,5 @@ class ChatListUpdateEvent(Event):
                         name_updated_at=now,
                     )
                     kv.put(key, asdict(chat))
+                    remember_chat(chat)
                     chat_updates.append(enum_to_str(asdict(chat)))

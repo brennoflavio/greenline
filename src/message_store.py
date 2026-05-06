@@ -1,12 +1,13 @@
 import base64
 import os
 import re
+import time
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 from constants import GROUP_JID_SUFFIX, WHATSAPP_JID_SUFFIX
-from models import ChatListItem, Message, MessageType, ReadReceipt
+from models import ChatListItem, Message, MessageType, ReadReceipt, UiMessage
 from rpc import DaemonRPC
 from unread_counter import increment_unread_total
 from ut_components.config import get_cache_path
@@ -43,6 +44,86 @@ def persist_contact_vcard(chat_id: str, message_id: str, display_name: str, vcar
     return "file://" + file_path
 
 
+_CHAT_RUNTIME_CACHE: Dict[str, Dict[str, Any]] = {}
+_MESSAGE_FIELDS = set(Message.__dataclass_fields__.keys())
+_PERF_LOG_PATH = "/tmp/greenline-python-perf.log"
+_PERF_STATS: Dict[str, float] = {}
+
+
+def log_perf(message: str) -> None:
+    try:
+        with open(_PERF_LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(f"{datetime.now().isoformat(timespec='milliseconds')} {message}\n")
+    except Exception:
+        pass
+
+
+def reset_perf_stats() -> None:
+    _PERF_STATS.clear()
+    _PERF_STATS.update(
+        {
+            "chat_cache_hits": 0,
+            "chat_cache_misses": 0,
+            "chat_kv_fetches": 0,
+            "chat_kv_fetch_ms": 0.0,
+            "ui_messages_rendered": 0,
+            "ui_message_render_ms": 0.0,
+        }
+    )
+
+
+def _record_perf_stat(key: str, amount: float = 1) -> None:
+    _PERF_STATS[key] = _PERF_STATS.get(key, 0) + amount
+
+
+def snapshot_perf_stats() -> Dict[str, float]:
+    return dict(_PERF_STATS)
+
+
+reset_perf_stats()
+
+
+def clear_chat_runtime_cache() -> None:
+    _CHAT_RUNTIME_CACHE.clear()
+
+
+def remember_chat(chat: ChatListItem) -> None:
+    _CHAT_RUNTIME_CACHE[chat.id] = asdict(chat)
+
+
+def sanitize_message_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
+    sanitized = {k: v for k, v in payload.items() if k in _MESSAGE_FIELDS}
+    if "raw" in payload:
+        sanitized["raw"] = payload["raw"]
+    return sanitized
+
+
+def _get_chat_data(chat_jid: str) -> Optional[Dict[str, Any]]:
+    if not chat_jid:
+        return None
+
+    cached = _CHAT_RUNTIME_CACHE.get(chat_jid)
+    if cached is not None:
+        _record_perf_stat("chat_cache_hits")
+        return cached
+
+    _record_perf_stat("chat_cache_misses")
+    started_at = time.perf_counter()
+    with KV() as kv:
+        data = kv.get(f"chat:{chat_jid}")
+    elapsed_ms = (time.perf_counter() - started_at) * 1000
+    _record_perf_stat("chat_kv_fetches")
+    _record_perf_stat("chat_kv_fetch_ms", elapsed_ms)
+    if elapsed_ms >= 10:
+        log_perf(f"chat-lookup jid={chat_jid} found={data is not None} ms={elapsed_ms:.2f}")
+    if data is None:
+        return None
+
+    cached_data = dict(data)
+    _CHAT_RUNTIME_CACHE[chat_jid] = cached_data
+    return cached_data
+
+
 def update_chat_name(
     chat: ChatListItem,
     timestamp: int,
@@ -70,8 +151,7 @@ def update_chat_name(
 
 
 def resolve_sender_name(sender_jid: str, push_name: str = "") -> str:
-    with KV() as kv:
-        data = kv.get(f"chat:{sender_jid}")
+    data = _get_chat_data(sender_jid)
     if data is not None:
         name = str(data.get("name", ""))
         if name and name != sender_jid:
@@ -79,6 +159,60 @@ def resolve_sender_name(sender_jid: str, push_name: str = "") -> str:
     if push_name:
         return push_name
     return sender_jid.replace(WHATSAPP_JID_SUFFIX, "")
+
+
+def resolve_sender_photo(sender_jid: str) -> str:
+    data = _get_chat_data(sender_jid)
+    if data is None:
+        return ""
+    return str(data.get("photo", "") or "")
+
+
+def upsert_identity_chat(
+    chat_id: str,
+    timestamp: int,
+    *,
+    full_name: str = "",
+    push_name: str = "",
+    business_name: str = "",
+) -> None:
+    if not chat_id:
+        return
+
+    chat_key = f"chat:{chat_id}"
+    with KV() as kv:
+        existing = kv.get(chat_key)
+        if existing is not None:
+            chat = ChatListItem(**existing)
+            changed = update_chat_name(
+                chat,
+                timestamp,
+                full_name=full_name,
+                push_name=push_name,
+                business_name=business_name,
+            )
+            if changed:
+                kv.put(chat_key, asdict(chat))
+        else:
+            display_name = full_name or push_name or business_name or chat_id.replace(WHATSAPP_JID_SUFFIX, "")
+            chat = ChatListItem(
+                id=chat_id,
+                name=display_name,
+                photo="",
+                last_message="",
+                date="",
+                last_message_timestamp=0,
+                read_receipt=ReadReceipt.NONE,
+                unread_count=0,
+                is_group=chat_id.endswith(GROUP_JID_SUFFIX),
+                full_name=full_name,
+                push_name=push_name,
+                business_name=business_name,
+                name_updated_at=timestamp,
+            )
+            kv.put(chat_key, asdict(chat))
+
+    remember_chat(chat)
 
 
 _MENTION_TOKEN_RE = re.compile(r"@([0-9][0-9A-Za-z:._-]*)")
@@ -180,6 +314,41 @@ def render_chat_mentions(chat: ChatListItem) -> ChatListItem:
     return rendered
 
 
+def to_ui_message(message: Message) -> UiMessage:
+    started_at = time.perf_counter()
+    rendered = render_message_mentions(message)
+
+    sender_name = ""
+    sender_photo = ""
+    if rendered.sender and not rendered.is_outgoing:
+        sender_name = resolve_sender_name(rendered.sender)
+        sender_photo = resolve_sender_photo(rendered.sender)
+
+    reply_to_sender = ""
+    if rendered.reply_to_from_me:
+        reply_to_sender = "You"
+    elif rendered.reply_to_sender_id:
+        reply_to_sender = resolve_sender_name(rendered.reply_to_sender_id)
+
+    ui_message = UiMessage(
+        **asdict(rendered),
+        sender_name=sender_name,
+        sender_photo=sender_photo,
+        reply_to_sender=reply_to_sender,
+    )
+    elapsed_ms = (time.perf_counter() - started_at) * 1000
+    _record_perf_stat("ui_messages_rendered")
+    _record_perf_stat("ui_message_render_ms", elapsed_ms)
+    if elapsed_ms >= 5:
+        message_type = message.type.value if hasattr(message.type, "value") else str(message.type)
+        log_perf(
+            "to-ui-message "
+            f"chat={message.chat_id} id={message.id} type={message_type} "
+            f"outgoing={message.is_outgoing} ms={elapsed_ms:.2f}"
+        )
+    return ui_message
+
+
 def _template_text_from_context_info(
     text: str,
     context_info: Any,
@@ -241,7 +410,7 @@ def quoted_message_template(
     return _template_text_from_context_info(preview, context_info, jid_map=jid_map)
 
 
-def _extract_context_info(content: MessageContent) -> tuple[str, str, str, List[str]]:
+def _extract_context_info(content: MessageContent) -> tuple[str, str, bool, str, List[str]]:
     ctx = None
     for sub in (
         content.extendedTextMessage,
@@ -257,12 +426,15 @@ def _extract_context_info(content: MessageContent) -> tuple[str, str, str, List[
             break
 
     if ctx is None or not ctx.stanzaID:
-        return "", "", "", []
+        return "", "", False, "", []
 
-    reply_to_id = ctx.stanzaID
-    reply_to_sender = resolve_sender_name(ctx.participant) if ctx.participant else ""
+    reply_to_sender_id = ""
+    if ctx.participant:
+        normalized = normalize_mentioned_jids([ctx.participant])
+        reply_to_sender_id = normalized[0] if normalized else str(ctx.participant)
+
     reply_to_text, reply_to_mentioned_jids = quoted_message_template(ctx.quotedMessage)
-    return reply_to_id, reply_to_sender, reply_to_text, reply_to_mentioned_jids
+    return ctx.stanzaID, reply_to_sender_id, False, reply_to_text, reply_to_mentioned_jids
 
 
 def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
@@ -356,17 +528,15 @@ def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
         link_description = ext.description
         link_url = ext.matchedText
 
-    reply_to_id, reply_to_sender, reply_to_text, reply_to_mentioned_jids = _extract_context_info(content)
+    reply_to_id, reply_to_sender_id, reply_to_from_me, reply_to_text, reply_to_mentioned_jids = _extract_context_info(
+        content
+    )
 
     ts = datetime.fromisoformat(info.Timestamp)
     timestamp_unix = int(ts.timestamp())
     timestamp_display = ts.strftime("%H:%M")
 
     read_receipt = ReadReceipt.SENT if info.IsFromMe else ReadReceipt.NONE
-
-    sender_name = ""
-    if not info.IsFromMe and info.Sender:
-        sender_name = resolve_sender_name(info.Sender, info.PushName)
 
     return Message(
         id=info.ID,
@@ -377,7 +547,6 @@ def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
         timestamp_unix=timestamp_unix,
         read_receipt=read_receipt,
         sender=info.Sender,
-        sender_name=sender_name,
         text=text,
         mentioned_jids=mentioned_jids,
         caption=caption,
@@ -386,7 +555,8 @@ def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
         file_name=file_name,
         duration=duration,
         reply_to_id=reply_to_id,
-        reply_to_sender=reply_to_sender,
+        reply_to_sender_id=reply_to_sender_id,
+        reply_to_from_me=reply_to_from_me,
         reply_to_text=reply_to_text,
         reply_to_mentioned_jids=reply_to_mentioned_jids,
         link_title=link_title,
@@ -427,10 +597,6 @@ def undecryptable_event_to_message(evt: UndecryptableMessageEvent) -> Optional[M
     timestamp_display = ts.strftime("%H:%M")
     read_receipt = ReadReceipt.SENT if info.IsFromMe else ReadReceipt.NONE
 
-    sender_name = ""
-    if not info.IsFromMe and info.Sender:
-        sender_name = resolve_sender_name(info.Sender, info.PushName)
-
     return Message(
         id=info.ID,
         chat_id=info.Chat,
@@ -440,7 +606,6 @@ def undecryptable_event_to_message(evt: UndecryptableMessageEvent) -> Optional[M
         timestamp_unix=timestamp_unix,
         read_receipt=read_receipt,
         sender=info.Sender,
-        sender_name=sender_name,
         text="",
     )
 
@@ -528,6 +693,7 @@ def upsert_chat(msg: Message, info: MessageInfo, *, count_unread: bool = True) -
 
     with KV() as kv:
         kv.put(chat_key, asdict(chat))
+    remember_chat(chat)
     return chat
 
 
@@ -573,6 +739,17 @@ def store_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = None) -> Op
 
     msg.thumbnail_path = _extract_thumbnail(raw, msg.id)
 
+    business_name = ""
+    if evt.Info.VerifiedName and evt.Info.VerifiedName.Details:
+        business_name = evt.Info.VerifiedName.Details.verifiedName
+    if msg.sender and not msg.is_outgoing:
+        upsert_identity_chat(
+            msg.sender,
+            msg.timestamp_unix,
+            push_name=evt.Info.PushName,
+            business_name=business_name,
+        )
+
     key = f"message:{msg.chat_id}:{msg.timestamp_unix}:{msg.id}"
     data = asdict(msg)
     data["raw"] = raw
@@ -590,6 +767,13 @@ def store_undecryptable_message(
     msg = undecryptable_event_to_message(evt)
     if msg is None:
         return None
+
+    if msg.sender and not msg.is_outgoing:
+        upsert_identity_chat(
+            msg.sender,
+            msg.timestamp_unix,
+            push_name=evt.Info.PushName,
+        )
 
     key = f"message:{msg.chat_id}:{msg.timestamp_unix}:{msg.id}"
     data = asdict(msg)

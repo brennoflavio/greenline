@@ -45,9 +45,13 @@ from events import (
 )
 from message_store import (
     _message_preview,
+    clear_chat_runtime_cache,
+    log_perf,
     render_chat_mentions,
-    render_message_mentions,
-    resolve_sender_name,
+    reset_perf_stats,
+    sanitize_message_payload,
+    snapshot_perf_stats,
+    to_ui_message,
     upsert_chat,
 )
 from models import (
@@ -60,6 +64,7 @@ from models import (
     MessagesResponse,
     MessageType,
     ReadReceipt,
+    UiMessage,
 )
 from rpc import DaemonRPC
 from unread_counter import decrement_unread_total, reconcile_unread_total
@@ -284,6 +289,8 @@ def clear_data() -> ClearDataResponse:
     if os.path.exists(cache_path):
         shutil.rmtree(cache_path)
 
+    clear_chat_runtime_cache()
+
     remove_background_service_files()
 
     return ClearDataResponse(success=True)
@@ -305,8 +312,8 @@ def get_phone_number(jid: str) -> PhoneNumberResponse:
         return PhoneNumberResponse(success=True, phone_number="")
 
 
-def _ui_message(message: Message) -> Message:
-    return render_message_mentions(message)
+def _ui_message(message: Message) -> UiMessage:
+    return to_ui_message(message)
 
 
 def _ui_chat(chat: ChatListItem) -> ChatListItem:
@@ -342,14 +349,25 @@ def get_chat_list() -> ChatListResponse:
 
 @crash_reporter
 def get_chat_info(chat_id: str) -> dict[str, object]:
+    started_at = time.perf_counter()
     with KV() as kv:
         data = kv.get(f"chat:{chat_id}")
     if not data:
+        elapsed_ms = (time.perf_counter() - started_at) * 1000
+        log_perf(f"get-chat-info chat={chat_id} success=False ms={elapsed_ms:.2f}")
         return {"success": False}
     try:
         chat = ChatListItem(**data)
     except (TypeError, KeyError):
+        elapsed_ms = (time.perf_counter() - started_at) * 1000
+        log_perf(f"get-chat-info chat={chat_id} success=False invalid-payload ms={elapsed_ms:.2f}")
         return {"success": False}
+    elapsed_ms = (time.perf_counter() - started_at) * 1000
+    log_perf(
+        "get-chat-info "
+        f"chat={chat_id} success=True unread={chat.unread_count} "
+        f"is_group={chat.is_group} ms={elapsed_ms:.2f}"
+    )
     return {
         "success": True,
         "id": chat.id,
@@ -389,37 +407,50 @@ def set_chat_draft(chat_id: str, text: str) -> SuccessResponse:
 @crash_reporter
 @dataclass_to_dict
 def get_messages(chat_id: str, cursor: str = "", page_size: int = 100) -> MessagesResponse:
+    request_started_at = time.perf_counter()
+    reset_perf_stats()
     next_cursor = ""
     has_more = False
     cursor_value = cursor or None
     with KV() as kv:
+        page_started_at = time.perf_counter()
         page_entries, _ = kv.get_partial_page(
             f"message:{chat_id}:",
             page_size=page_size + 1,
             cursor=cursor_value,
             reverse=True,
         )
+        page_ms = (time.perf_counter() - page_started_at) * 1000
         has_more = len(page_entries) > page_size
         entries = page_entries[:page_size]
         if has_more and entries:
             next_cursor = entries[-1][0]
 
         msg_fields = {f.name for f in Message.__dataclass_fields__.values()}
+        hydrate_started_at = time.perf_counter()
         messages = [Message(**{k: v for k, v in value.items() if k in msg_fields}) for _, value in entries]
         messages.sort(key=lambda m: (m.timestamp_unix, m.id))
+        hydrate_ms = (time.perf_counter() - hydrate_started_at) * 1000
 
-        sender_jids = {m.sender for m in messages if m.sender and not m.is_outgoing}
-        sender_photos: dict[str, str] = {}
-        for jid in sender_jids:
-            data = kv.get(f"chat:{jid}")
-            if data:
-                sender_photos[jid] = data.get("photo", "")
+        render_started_at = time.perf_counter()
+        rendered_messages = [_ui_message(m) for m in messages]
+        render_ms = (time.perf_counter() - render_started_at) * 1000
 
-        rendered_messages = []
-        for m in messages:
-            if m.sender and m.sender in sender_photos:
-                m.sender_photo = sender_photos[m.sender]
-            rendered_messages.append(_ui_message(m))
+    total_ms = (time.perf_counter() - request_started_at) * 1000
+    perf_stats = snapshot_perf_stats()
+    log_perf(
+        "get-messages "
+        f"chat={chat_id} cursor={'initial' if not cursor else cursor} "
+        f"page_size={page_size} returned={len(entries)} has_more={has_more} "
+        f"kv_page_ms={page_ms:.2f} hydrate_ms={hydrate_ms:.2f} "
+        f"render_ms={render_ms:.2f} total_ms={total_ms:.2f} "
+        f"ui_messages={int(perf_stats.get('ui_messages_rendered', 0))} "
+        f"ui_message_render_ms={perf_stats.get('ui_message_render_ms', 0.0):.2f} "
+        f"chat_cache_hits={int(perf_stats.get('chat_cache_hits', 0))} "
+        f"chat_cache_misses={int(perf_stats.get('chat_cache_misses', 0))} "
+        f"chat_kv_fetches={int(perf_stats.get('chat_kv_fetches', 0))} "
+        f"chat_kv_fetch_ms={perf_stats.get('chat_kv_fetch_ms', 0.0):.2f}"
+    )
 
     return MessagesResponse(
         success=True,
@@ -519,11 +550,12 @@ def _resolve_reply_context(chat_id: str, reply_context: dict[str, object] | None
     if not reply_id:
         return None
 
+    participant = str(reply_context.get("participant") or reply_context.get("reply_participant") or "")
     resolved: dict[str, object] = {
         "id": reply_id,
-        "sender": str(reply_context.get("sender") or reply_context.get("reply_to_sender") or ""),
         "text": str(reply_context.get("text") or reply_context.get("reply_to_text") or ""),
-        "participant": str(reply_context.get("participant") or reply_context.get("reply_participant") or ""),
+        "participant": participant,
+        "from_me": bool(reply_context.get("from_me")) or participant == "",
     }
 
     with KV() as kv:
@@ -541,16 +573,11 @@ def _resolve_reply_context(chat_id: str, reply_context: dict[str, object] | None
     stored_msg = Message(**{k: v for k, v in entry.items() if k in msg_fields})
     rendered_msg = _ui_message(stored_msg)
 
-    if stored_msg.is_outgoing:
-        if not resolved["sender"]:
-            resolved["sender"] = "You"
-    elif stored_msg.sender_name:
-        resolved["sender"] = stored_msg.sender_name
-    elif stored_msg.sender:
-        resolved["sender"] = resolve_sender_name(stored_msg.sender)
-
+    resolved["from_me"] = stored_msg.is_outgoing
     if not stored_msg.is_outgoing and stored_msg.sender:
         resolved["participant"] = stored_msg.sender
+    else:
+        resolved["participant"] = ""
 
     raw = entry.get("raw")
     quoted_message = raw.get("Message") if isinstance(raw, dict) else None
@@ -568,7 +595,8 @@ def _apply_reply_context(message: Message, reply_context: dict[str, object] | No
         return
 
     message.reply_to_id = str(reply_context.get("id") or "")
-    message.reply_to_sender = str(reply_context.get("sender") or "")
+    message.reply_to_sender_id = str(reply_context.get("participant") or "")
+    message.reply_to_from_me = bool(reply_context.get("from_me"))
     message.reply_to_text = str(reply_context.get("text") or "")
 
 
@@ -1085,15 +1113,10 @@ def download_media(chat_id: str, message_id: str, media_type: str) -> DownloadMe
     media_path = "file://" + file_path
     entry["media_path"] = media_path
     with KV() as kv:
-        kv.put(entry_key, entry)
+        kv.put(entry_key, sanitize_message_payload(entry))
 
     msg_fields = {f.name for f in Message.__dataclass_fields__.values()}
     msg = Message(**{k: v for k, v in entry.items() if k in msg_fields})
-    if msg.sender and not msg.is_outgoing and not msg.sender_photo:
-        with KV() as kv:
-            sender_data = kv.get(f"chat:{msg.sender}")
-        if sender_data:
-            msg.sender_photo = sender_data.get("photo", "")
     pyotherside.send("message-upsert", [_ui_message_dict(msg)])
 
     return DownloadMediaResponse(success=True, media_path=media_path, message="")

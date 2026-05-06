@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import asdict
 from typing import Any, Dict, List, Optional, Tuple
 
+from message_store import sanitize_message_payload
 from models import ChatListItem, ReadReceipt
 from ut_components.kv import KV
 from whatsmeow_types import ReceiptEvent
@@ -53,8 +54,9 @@ def _update_messages(chat_id: str, message_ids: set[str], new_status: ReadReceip
             if not _is_upgrade(current, new_status):
                 continue
             value["read_receipt"] = new_status.value
-            kv.put(key, value)
-            updated_messages.append(value)
+            sanitized = sanitize_message_payload(value)
+            kv.put(key, sanitized)
+            updated_messages.append(sanitized)
 
     return updated_messages
 

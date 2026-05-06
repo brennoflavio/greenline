@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-06 06:06+0000\n"
+"POT-Creation-Date: 2026-05-06 19:22+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -75,63 +75,63 @@ msgstr ""
 msgid "No chats found"
 msgstr ""
 
-#: ../qml/ChatPage.qml:119
+#: ../qml/ChatPage.qml:123
 msgid "You"
 msgstr ""
 
-#: ../qml/ChatPage.qml:329
+#: ../qml/ChatPage.qml:351
 msgid "Failed to load older messages"
 msgstr ""
 
-#: ../qml/ChatPage.qml:495
+#: ../qml/ChatPage.qml:517
 msgid "Failed to send contact"
 msgstr ""
 
-#: ../qml/ChatPage.qml:569
+#: ../qml/ChatPage.qml:591
 msgid "WhatsApp messages read today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:570
+#: ../qml/ChatPage.qml:592
 msgid "No WhatsApp messages read today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:578
+#: ../qml/ChatPage.qml:600
 msgid "WhatsApp messages sent today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:579
+#: ../qml/ChatPage.qml:601
 msgid "No WhatsApp messages sent today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:602
+#: ../qml/ChatPage.qml:624
 msgid "Scroll up to load older messages first"
 msgstr ""
 
-#: ../qml/ChatPage.qml:606
+#: ../qml/ChatPage.qml:628
 msgid "Copied to clipboard"
 msgstr ""
 
-#: ../qml/ChatPage.qml:750
+#: ../qml/ChatPage.qml:772
 msgid "recording audio..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:750
+#: ../qml/ChatPage.qml:772
 msgid "typing..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:804
+#: ../qml/ChatPage.qml:835
 msgid "Send Photo"
 msgstr ""
 
-#: ../qml/ChatPage.qml:815
+#: ../qml/ChatPage.qml:846
 msgid "Send Video"
 msgstr ""
 
-#: ../qml/ChatPage.qml:826
+#: ../qml/ChatPage.qml:857
 msgid "Send Contact"
 msgstr ""
 
-#: ../qml/ChatPage.qml:848 ../qml/ContactPreviewPage.qml:223
+#: ../qml/ChatPage.qml:879 ../qml/ContactPreviewPage.qml:223
 #: ../qml/DocumentPreviewPage.qml:223 ../qml/ImagePreviewPage.qml:190
 #: ../qml/VideoPreviewPage.qml:335 ../qml/ut_components/AppHeader.qml:78
 msgid "Back"

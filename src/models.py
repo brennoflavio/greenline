@@ -67,8 +67,6 @@ class Message:
     timestamp_unix: int
     read_receipt: ReadReceipt
     sender: str = ""
-    sender_name: str = ""
-    sender_photo: str = ""
     text: str = ""
     mentioned_jids: List[str] = field(default_factory=list)
     image_source: str = ""
@@ -83,7 +81,8 @@ class Message:
     send_status: str = ""
     temp_id: str = ""
     reply_to_id: str = ""
-    reply_to_sender: str = ""
+    reply_to_sender_id: str = ""
+    reply_to_from_me: bool = False
     reply_to_text: str = ""
     reply_to_mentioned_jids: List[str] = field(default_factory=list)
     link_title: str = ""
@@ -92,9 +91,16 @@ class Message:
 
 
 @dataclass
+class UiMessage(Message):
+    sender_name: str = ""
+    sender_photo: str = ""
+    reply_to_sender: str = ""
+
+
+@dataclass
 class MessagesResponse:
     success: bool
-    messages: List[Message]
+    messages: List[UiMessage]
     message: str
     next_cursor: str = ""
     has_more: bool = False
