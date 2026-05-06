@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-06 05:24+0000\n"
+"POT-Creation-Date: 2026-05-06 05:55+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -360,17 +360,17 @@ msgstr ""
 msgid "Tap to download"
 msgstr ""
 
-#: ../qml/ut_components/ActionableList.qml:92
-#: ../qml/ut_components/CardList.qml:74
+#: ../qml/ut_components/ActionableList.qml:107
+#: ../qml/ut_components/CardList.qml:84
 msgid "Search"
 msgstr ""
 
-#: ../qml/ut_components/ActionableList.qml:94
-#: ../qml/ut_components/CardList.qml:72
+#: ../qml/ut_components/ActionableList.qml:109
+#: ../qml/ut_components/CardList.qml:82
 msgid "No items"
 msgstr ""
 
-#: ../qml/ut_components/Form.qml:67
+#: ../qml/ut_components/Form.qml:81
 msgid "Submit"
 msgstr ""
 

@@ -1,5 +1,6 @@
 import json
 import time
+from datetime import datetime
 from typing import Any, Dict, Optional, cast
 from urllib.parse import quote
 
@@ -12,8 +13,9 @@ from message_store import (
     template_mention_text,
 )
 from rpc import DaemonRPC
+from unread_counter import get_unread_total
 from ut_components.kv import KV
-from ut_components.notification import Notification
+from ut_components.notification import EmblemCounter, Notification
 from whatsmeow_types import CallOfferEvent, MessageEvent, UndecryptableMessageEvent
 
 MAX_BODY_LEN = 100
@@ -90,7 +92,14 @@ def _build_message_notification(
         body,
         str(envelope.get("chat_name") or ""),
     )
-    return _notification(summary, rendered_body, envelope, chat_jid)
+    return _notification(
+        summary,
+        rendered_body,
+        envelope,
+        chat_jid,
+        evt.Info.Timestamp,
+        unread_increment=0 if evt.Info.IsFromMe else 1,
+    )
 
 
 def _build_undecryptable_notification(
@@ -113,7 +122,14 @@ def _build_undecryptable_notification(
         VIEW_ONCE_BODY,
         str(envelope.get("chat_name") or ""),
     )
-    return _notification(summary, body, envelope, chat_jid)
+    return _notification(
+        summary,
+        body,
+        envelope,
+        chat_jid,
+        evt.Info.Timestamp,
+        unread_increment=0 if evt.Info.IsFromMe else 1,
+    )
 
 
 def _build_call_notification(
@@ -126,16 +142,25 @@ def _build_call_notification(
     body = "Incoming audio call — answer on your primary phone"
     if _contains_video_tag(event.get("Data")):
         body = "Incoming video call — answer on your primary phone"
-    return _notification(summary, body, envelope, chat_jid)
+    return _notification(summary, body, envelope, chat_jid, evt.Timestamp, unread_increment=0)
 
 
-def _notification(summary: str, body: str, envelope: Dict[str, Any], chat_jid: str) -> Optional[Dict[str, Any]]:
+def _notification(
+    summary: str,
+    body: str,
+    envelope: Dict[str, Any],
+    chat_jid: str,
+    timestamp: Any = None,
+    *,
+    unread_increment: int = 0,
+) -> Optional[Dict[str, Any]]:
     summary = str(summary or "").strip()
     if not summary:
         return None
 
     body = _truncate_body(body)
     icon = str(envelope.get("icon") or "") or "message"
+    actions = [f"greenline://chat/{quote(chat_jid, safe='')}"] if chat_jid else []
     notification = cast(
         Dict[str, Any],
         Notification(
@@ -146,15 +171,15 @@ def _notification(summary: str, body: str, envelope: Dict[str, Any], chat_jid: s
             persist=True,
             vibrate=True,
             sound=True,
+            actions=actions,
+            timestamp=_notification_timestamp(envelope, timestamp),
+            tag=chat_jid,
+            emblem_counter=_notification_emblem_counter(unread_increment),
         ).dict()["notification"],
     )
 
-    card = notification["card"]
     if not body:
-        card.pop("body", None)
-    if chat_jid:
-        card["actions"] = [f"greenline://chat/{quote(chat_jid, safe='')}"]
-        notification["tag"] = chat_jid
+        notification["card"].pop("body", None)
     return notification
 
 
@@ -277,6 +302,38 @@ def _truncate_body(body: str) -> str:
     if len(body) <= MAX_BODY_LEN:
         return body
     return body[:MAX_BODY_LEN] + "…"
+
+
+def _notification_timestamp(envelope: Dict[str, Any], fallback: Any) -> Optional[int]:
+    envelope_timestamp = _parse_notification_timestamp(envelope.get("timestamp"))
+    if envelope_timestamp is not None:
+        return envelope_timestamp
+    return _parse_notification_timestamp(fallback)
+
+
+def _parse_notification_timestamp(value: Any) -> Optional[int]:
+    if isinstance(value, int) and not isinstance(value, bool):
+        return value
+
+    raw_value = str(value or "").strip()
+    if not raw_value:
+        return None
+    if raw_value.isdigit():
+        return int(raw_value)
+
+    normalized = raw_value.replace("Z", "+00:00") if raw_value.endswith("Z") else raw_value
+    try:
+        return int(datetime.fromisoformat(normalized).timestamp())
+    except ValueError:
+        return None
+
+
+def _notification_emblem_counter(unread_increment: int = 0) -> Optional[EmblemCounter]:
+    try:
+        count = max(0, int(get_unread_total()) + max(0, unread_increment))
+    except Exception:
+        return None
+    return EmblemCounter(count=count, visible=count > 0)
 
 
 def _notifications_suppressed(rpc: DaemonRPC, envelope: Dict[str, Any]) -> bool:
