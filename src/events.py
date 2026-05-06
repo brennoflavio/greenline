@@ -20,7 +20,7 @@ from message_store import (
 from models import ChatListItem, Message, MessageType, ReadReceipt
 from receipt_store import process_receipt
 from rpc import DaemonNotReadyError, DaemonRPC, RateLimitError
-from unread_counter import get_unread_total, reconcile_unread_total
+from unread_counter import reconcile_unread_total
 from ut_components.config import get_cache_path
 from ut_components.event import Event
 from ut_components.kv import KV
@@ -542,13 +542,6 @@ def process_events_once(batch_limit: int = 50) -> None:
             if event.id > max_id:
                 max_id = event.id
 
-        if chat_updates:
-            try:
-                total = get_unread_total()
-                DaemonRPC().set_notification_counter(total, total > 0)
-            except Exception:
-                pass
-
         if max_id > last_id:
             DaemonRPC().delete_events(up_to_id=max_id)
             with KV() as kv:
@@ -616,11 +609,6 @@ class DaemonEventHandler(Event):
                         "chat-list-update",
                         [_render_chat_payload(payload) for payload in chat_updates.values()],
                     )
-                    try:
-                        total = get_unread_total()
-                        DaemonRPC().set_notification_counter(total, total > 0)
-                    except Exception:
-                        pass
 
                 if photo_updates:
                     pyotherside.send("sender-photo-update", photo_updates)

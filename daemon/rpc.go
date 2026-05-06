@@ -801,18 +801,6 @@ func (s *Service) PairPhone(args *PairPhoneArgs, reply *PairPhoneReply) error {
 	return nil
 }
 
-type SetNotificationCounterArgs struct {
-	Count   int32
-	Visible bool
-}
-
-func (s *Service) SetNotificationCounter(args *SetNotificationCounterArgs, reply *struct{}) error {
-	if s.notifier == nil {
-		return nil
-	}
-	return s.notifier.SetCounter(args.Count, args.Visible)
-}
-
 type ClearChatNotificationsArgs struct {
 	Tags []string
 }

@@ -62,11 +62,7 @@ from models import (
     ReadReceipt,
 )
 from rpc import DaemonRPC
-from unread_counter import (
-    decrement_unread_total,
-    get_unread_total,
-    reconcile_unread_total,
-)
+from unread_counter import decrement_unread_total, reconcile_unread_total
 from ut_components.config import get_cache_path, get_config_path
 from ut_components.crash import crash_reporter
 from ut_components.event import get_event_dispatcher
@@ -468,8 +464,6 @@ def mark_messages_as_read(chat_id: str) -> SuccessResponse:
 
     try:
         rpc.clear_chat_notifications([chat_id])
-        total = get_unread_total()
-        rpc.set_notification_counter(total, total > 0)
     except Exception:
         pass
 

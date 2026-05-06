@@ -29,11 +29,6 @@ func (n *Notifier) Post(payload []byte) error {
 	return obj.Call(postalIface+".Post", 0, n.appID, string(payload)).Err
 }
 
-func (n *Notifier) SetCounter(count int32, visible bool) error {
-	obj := n.conn.Object(postalService, makePath(n.appID))
-	return obj.Call(postalIface+".SetCounter", 0, n.appID, count, visible).Err
-}
-
 func (n *Notifier) ClearPersistentList(tags []string) error {
 	if len(tags) == 0 {
 		return nil
