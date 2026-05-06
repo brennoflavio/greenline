@@ -6,13 +6,16 @@ from urllib.parse import quote
 from dacite import from_dict
 
 from constants import GROUP_JID_SUFFIX
-from message_store import resolve_sender_name
+from message_store import (
+    render_mention_text,
+    resolve_sender_name,
+    template_mention_text,
+)
 from rpc import DaemonRPC
 from ut_components.kv import KV
 from ut_components.notification import Notification
 from whatsmeow_types import CallOfferEvent, MessageEvent, UndecryptableMessageEvent
 
-GENERIC_MENTION_PLACEHOLDER = "@👤"
 MAX_BODY_LEN = 100
 VIEW_ONCE_BODY = "View-once message — open WhatsApp on your primary phone"
 
@@ -250,7 +253,9 @@ def _mention_safe_text(text: Any, context_info: Any) -> str:
     mentioned_jids = None
     if isinstance(context_info, dict):
         mentioned_jids = context_info.get("mentionedJID")
-    return _replace_mention_ids(raw_text, mentioned_jids or [])
+
+    templated_text, normalized_jids = template_mention_text(raw_text, mentioned_jids or [])
+    return render_mention_text(templated_text, normalized_jids)
 
 
 def _contains_video_tag(data: Any) -> bool:
@@ -272,54 +277,6 @@ def _truncate_body(body: str) -> str:
     if len(body) <= MAX_BODY_LEN:
         return body
     return body[:MAX_BODY_LEN] + "…"
-
-
-def _build_mention_tokens(mentioned_jids: list[str]) -> list[str]:
-    tokens: list[str] = []
-    seen: set[str] = set()
-    for jid in mentioned_jids:
-        user = str(jid or "").split("@", 1)[0]
-        if not user:
-            continue
-        token = f"@{user}"
-        if token in seen:
-            continue
-        seen.add(token)
-        tokens.append(token)
-    return tokens
-
-
-def _is_mention_token_char(char: str) -> bool:
-    return char.isalnum() or char in ":._-"
-
-
-def _replace_mention_ids(text: str, mentioned_jids: list[str]) -> str:
-    if not text or not mentioned_jids:
-        return text
-
-    tokens = _build_mention_tokens(mentioned_jids)
-    if not tokens:
-        return text
-
-    parts: list[str] = []
-    index = 0
-    while index < len(text):
-        matched_len = 0
-        if text[index] == "@" and (index == 0 or not _is_mention_token_char(text[index - 1])):
-            for token in tokens:
-                if not text.startswith(token, index):
-                    continue
-                end = index + len(token)
-                if end < len(text) and _is_mention_token_char(text[end]):
-                    continue
-                matched_len = max(matched_len, len(token))
-        if matched_len > 0:
-            parts.append(GENERIC_MENTION_PLACEHOLDER)
-            index += matched_len
-            continue
-        parts.append(text[index])
-        index += 1
-    return "".join(parts)
 
 
 def _notifications_suppressed(rpc: DaemonRPC, envelope: Dict[str, Any]) -> bool:
