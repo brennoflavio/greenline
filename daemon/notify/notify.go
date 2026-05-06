@@ -1,9 +1,7 @@
 package notify
 
 import (
-	"encoding/json"
 	"fmt"
-	"net/url"
 
 	"github.com/godbus/dbus/v5"
 )
@@ -11,7 +9,6 @@ import (
 const (
 	postalService = "com.lomiri.Postal"
 	postalIface   = "com.lomiri.Postal"
-	maxBodyLen    = 100
 )
 
 type Notifier struct {
@@ -27,45 +24,9 @@ func New(appID string) (*Notifier, error) {
 	return &Notifier{conn: conn, appID: appID}, nil
 }
 
-func (n *Notifier) Post(summary, body, icon, chatJID string) error {
-	if len(body) > maxBodyLen {
-		body = body[:maxBodyLen] + "…"
-	}
-	if icon == "" {
-		icon = "message"
-	}
-	card := map[string]interface{}{
-		"summary": summary,
-		"popup":   true,
-		"persist": true,
-		"icon":    icon,
-	}
-	if body != "" {
-		card["body"] = body
-	}
-	if chatJID != "" {
-		card["actions"] = []string{"greenline://chat/" + url.PathEscape(chatJID)}
-	}
-	notification := map[string]interface{}{
-		"card":    card,
-		"sound":   true,
-		"vibrate": true,
-	}
-	if chatJID != "" {
-		notification["tag"] = chatJID
-	}
-	msg := map[string]interface{}{
-		"notification": notification,
-	}
-	data, err := json.Marshal(msg)
-	if err != nil {
-		return fmt.Errorf("notify: marshal: %w", err)
-	}
-	if chatJID != "" {
-		n.ClearPersistentList([]string{chatJID})
-	}
+func (n *Notifier) Post(payload []byte) error {
 	obj := n.conn.Object(postalService, makePath(n.appID))
-	return obj.Call(postalIface+".Post", 0, n.appID, string(data)).Err
+	return obj.Call(postalIface+".Post", 0, n.appID, string(payload)).Err
 }
 
 func (n *Notifier) SetCounter(count int32, visible bool) error {

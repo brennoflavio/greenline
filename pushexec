@@ -1,30 +1,40 @@
 #!/usr/bin/python3
 
+import json
+import os
 import sys
+import types
+from typing import Any
 
 in_, out = sys.argv[1:3]
-
-with open(in_) as f1, open(out, "w") as f2:
-    f2.write(f1.read())
+raw_input = open(in_, encoding="utf-8").read()
+helper_output: dict[str, Any] = {}
 
 try:
-    import os
-    import types
-
     _mock = types.ModuleType("pyotherside")
-    _mock.send = lambda *a, **kw: None  # type: ignore[attr-defined]
+    setattr(_mock, "send", lambda *a, **kw: None)
     sys.modules["pyotherside"] = _mock
 
     src_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "src")
     if src_dir not in sys.path:
         sys.path.insert(0, src_dir)
 
-    from constants import APP_NAME  # type: ignore[import-not-found]
-    from ut_components import setup  # type: ignore[import-not-found]
+    from constants import APP_NAME
+    from ut_components import setup
 
     setup(APP_NAME)
 
-    from events import process_events_once  # type: ignore[import-not-found]
+    from push_helper import build_postal_output
+
+    helper_output = build_postal_output(raw_input)
+except Exception:
+    helper_output = {}
+
+with open(out, "w", encoding="utf-8") as f:
+    f.write(json.dumps(helper_output))
+
+try:
+    from events import process_events_once
 
     process_events_once()
 except Exception:

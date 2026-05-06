@@ -13,11 +13,8 @@ import (
 	"os/signal"
 	"path/filepath"
 	"reflect"
-	"strings"
 	"syscall"
 
-	waBinary "go.mau.fi/whatsmeow/binary"
-	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
 	"greenline.brennoflavio/daemon/avatarsync"
@@ -27,175 +24,82 @@ import (
 	"greenline.brennoflavio/daemon/waconn"
 )
 
-func isVideoCall(data *waBinary.Node) bool {
-	if data == nil {
-		return false
-	}
-	for _, child := range data.GetChildren() {
-		if child.Tag == "video" {
-			return true
-		}
-	}
-	return false
+type helperNotification struct {
+	EventType  string          `json:"event_type"`
+	Event      json.RawMessage `json:"event"`
+	ChatJID    string          `json:"chat_jid,omitempty"`
+	ChatName   string          `json:"chat_name,omitempty"`
+	Icon       string          `json:"icon,omitempty"`
+	Suppressed bool            `json:"suppressed"`
+	Muted      bool            `json:"muted"`
 }
 
-const genericMentionPlaceholder = "@👤"
-
-func isMentionTokenChar(char byte) bool {
-	switch {
-	case char >= '0' && char <= '9':
-		return true
-	case char >= 'A' && char <= 'Z':
-		return true
-	case char >= 'a' && char <= 'z':
-		return true
-	case char == ':', char == '.', char == '_', char == '-':
-		return true
-	default:
-		return false
-	}
-}
-
-func buildMentionTokens(mentionedJIDs []string) []string {
-	tokens := make([]string, 0, len(mentionedJIDs))
-	seen := make(map[string]struct{}, len(mentionedJIDs))
-	for _, jid := range mentionedJIDs {
-		user, _, _ := strings.Cut(jid, "@")
-		if user == "" {
-			continue
-		}
-		token := "@" + user
-		if _, ok := seen[token]; ok {
-			continue
-		}
-		seen[token] = struct{}{}
-		tokens = append(tokens, token)
-	}
-	return tokens
-}
-
-func replaceMentionIDs(text string, mentionedJIDs []string) string {
-	if text == "" || len(mentionedJIDs) == 0 {
-		return text
-	}
-
-	tokens := buildMentionTokens(mentionedJIDs)
-	if len(tokens) == 0 {
-		return text
-	}
-
-	var builder strings.Builder
-	builder.Grow(len(text))
-	for i := 0; i < len(text); {
-		matchedLen := 0
-		if text[i] == '@' && (i == 0 || !isMentionTokenChar(text[i-1])) {
-			for _, token := range tokens {
-				if !strings.HasPrefix(text[i:], token) {
-					continue
-				}
-				end := i + len(token)
-				if end < len(text) && isMentionTokenChar(text[end]) {
-					continue
-				}
-				if len(token) > matchedLen {
-					matchedLen = len(token)
-				}
-			}
-		}
-		if matchedLen > 0 {
-			builder.WriteString(genericMentionPlaceholder)
-			i += matchedLen
-			continue
-		}
-		builder.WriteByte(text[i])
-		i++
-	}
-	return builder.String()
-}
-
-func mentionSafeText(text string, contextInfo *waE2E.ContextInfo) string {
-	if contextInfo == nil {
-		return text
-	}
-	return replaceMentionIDs(text, contextInfo.GetMentionedJID())
-}
-
-func extractBody(msg *events.Message) string {
-	if msg.Message == nil {
+func notificationIconPath(cacheDir, jid string) string {
+	if jid == "" {
 		return ""
 	}
-	if s := msg.Message.GetConversation(); s != "" {
-		return s
-	}
-	if etm := msg.Message.GetExtendedTextMessage(); etm != nil {
-		if s := mentionSafeText(etm.GetText(), etm.GetContextInfo()); s != "" {
-			return s
-		}
-	}
-	if im := msg.Message.GetImageMessage(); im != nil {
-		if c := mentionSafeText(im.GetCaption(), im.GetContextInfo()); c != "" {
-			return "📷 " + c
-		}
-		return "📷 Photo"
-	}
-	if vm := msg.Message.GetVideoMessage(); vm != nil {
-		if c := mentionSafeText(vm.GetCaption(), vm.GetContextInfo()); c != "" {
-			return "🎥 " + c
-		}
-		return "🎥 Video"
-	}
-	if msg.Message.GetAudioMessage() != nil {
-		return "🎵 Audio"
-	}
-	if dm := msg.Message.GetDocumentMessage(); dm != nil {
-		if c := mentionSafeText(dm.GetCaption(), dm.GetContextInfo()); c != "" {
-			return "📄 " + c
-		}
-		return "📄 Document"
-	}
-	if msg.Message.GetStickerMessage() != nil {
-		return "🏷️ Sticker"
-	}
-	if cm := msg.Message.GetContactMessage(); cm != nil {
-		if name := strings.TrimSpace(cm.GetDisplayName()); name != "" {
-			return "👤 " + name
-		}
-		return "👤 Contact"
-	}
-	if msg.Message.GetLocationMessage() != nil {
-		return "📍 Location"
-	}
-	return ""
-}
-
-func extractUndecryptableBody(msg *events.UndecryptableMessage) string {
-	if msg.IsUnavailable && msg.UnavailableType == events.UnavailableTypeViewOnce {
-		return "View-once message — open WhatsApp on your primary phone"
-	}
-	return ""
-}
-
-func postMessageNotification(client *waconn.Client, notifier *notify.Notifier, cacheDir string, info types.MessageInfo, body string) error {
-	ctx := context.Background()
-	senderName := info.PushName
-	if senderName == "" {
-		senderName = info.Sender.User
-	}
-	summary := senderName
-	if info.Chat.Server == types.GroupServer {
-		groupName := info.Chat.User
-		if groupInfo, err := client.GetGroupInfo(ctx, info.Chat); err == nil && groupInfo.Name != "" {
-			groupName = groupInfo.Name
-		}
-		summary = groupName
-		body = senderName + ": " + body
-	}
-	chatJID := client.ResolveJID(ctx, info.Chat)
-	icon := avatarsync.AvatarJPGPath(cacheDir, chatJID.String())
+	icon := avatarsync.AvatarJPGPath(cacheDir, jid)
 	if _, err := os.Stat(icon); err != nil {
-		icon = ""
+		return ""
 	}
-	return notifier.Post(summary, body, icon, chatJID.String())
+	return icon
+}
+
+func buildHelperNotificationPayload(client *waconn.Client, svc *Service, cacheDir string, evt interface{}, eventType string, data []byte) ([]byte, bool, error) {
+	ctx := context.Background()
+	svc.mu.RLock()
+	suppressed := svc.notifSuppressed
+	svc.mu.RUnlock()
+	envelope := helperNotification{
+		EventType:  eventType,
+		Event:      json.RawMessage(data),
+		Suppressed: suppressed,
+	}
+
+	switch msg := evt.(type) {
+	case *events.Message:
+		if msg.Info.IsFromMe || msg.Info.Chat == types.StatusBroadcastJID || msg.Info.Chat.Server == types.NewsletterServer {
+			return nil, false, nil
+		}
+		chatJID := client.ResolveJID(ctx, msg.Info.Chat).String()
+		envelope.ChatJID = chatJID
+		envelope.Icon = notificationIconPath(cacheDir, chatJID)
+		envelope.Muted = client.IsMuted(ctx, msg.Info.Chat)
+		if msg.Info.Chat.Server == types.GroupServer {
+			groupName := msg.Info.Chat.User
+			if groupInfo, err := client.GetGroupInfo(ctx, msg.Info.Chat); err == nil && groupInfo.Name != "" {
+				groupName = groupInfo.Name
+			}
+			envelope.ChatName = groupName
+		}
+	case *events.UndecryptableMessage:
+		if msg.Info.IsFromMe || msg.Info.Chat == types.StatusBroadcastJID || msg.Info.Chat.Server == types.NewsletterServer {
+			return nil, false, nil
+		}
+		chatJID := client.ResolveJID(ctx, msg.Info.Chat).String()
+		envelope.ChatJID = chatJID
+		envelope.Icon = notificationIconPath(cacheDir, chatJID)
+		envelope.Muted = client.IsMuted(ctx, msg.Info.Chat)
+		if msg.Info.Chat.Server == types.GroupServer {
+			groupName := msg.Info.Chat.User
+			if groupInfo, err := client.GetGroupInfo(ctx, msg.Info.Chat); err == nil && groupInfo.Name != "" {
+				groupName = groupInfo.Name
+			}
+			envelope.ChatName = groupName
+		}
+	case *events.CallOffer:
+		chatJID := client.ResolveJID(ctx, msg.CallCreator).String()
+		envelope.ChatJID = chatJID
+		envelope.Icon = notificationIconPath(cacheDir, chatJID)
+	default:
+		return nil, false, nil
+	}
+
+	payload, err := json.Marshal(envelope)
+	if err != nil {
+		return nil, false, err
+	}
+	return payload, true, nil
 }
 
 var GitCommit string
@@ -290,86 +194,16 @@ func main() {
 		if notifier == nil {
 			return
 		}
-		if msg, ok := evt.(*events.Message); ok {
-			if msg.Info.IsFromMe {
-				return
-			}
-			if msg.Info.Chat == types.StatusBroadcastJID {
-				return
-			}
-			if msg.Info.Chat.Server == types.NewsletterServer {
-				return
-			}
-			svc.mu.RLock()
-			suppressed := svc.notifSuppressed
-			svc.mu.RUnlock()
-			if suppressed {
-				return
-			}
-			if client.IsMuted(context.Background(), msg.Info.Chat) {
-				return
-			}
-			body := extractBody(msg)
-			if body == "" {
-				return
-			}
-			if err := postMessageNotification(client, notifier, *cacheDir, msg.Info, body); err != nil {
-				logger.Error("failed to send notification", "error", err)
-			}
+		payload, ok, err := buildHelperNotificationPayload(client, svc, *cacheDir, evt, typeName, data)
+		if err != nil {
+			logger.Error("failed to build helper notification payload", "type", typeName, "error", err)
+			return
 		}
-		if msg, ok := evt.(*events.UndecryptableMessage); ok {
-			if msg.Info.IsFromMe {
-				return
-			}
-			if msg.Info.Chat == types.StatusBroadcastJID {
-				return
-			}
-			if msg.Info.Chat.Server == types.NewsletterServer {
-				return
-			}
-			svc.mu.RLock()
-			suppressed := svc.notifSuppressed
-			svc.mu.RUnlock()
-			if suppressed {
-				return
-			}
-			if client.IsMuted(context.Background(), msg.Info.Chat) {
-				return
-			}
-			body := extractUndecryptableBody(msg)
-			if body == "" {
-				return
-			}
-			if err := postMessageNotification(client, notifier, *cacheDir, msg.Info, body); err != nil {
-				logger.Error("failed to send undecryptable notification", "error", err)
-			}
+		if !ok {
+			return
 		}
-		if call, ok := evt.(*events.CallOffer); ok {
-			svc.mu.RLock()
-			suppressed := svc.notifSuppressed
-			svc.mu.RUnlock()
-			if suppressed {
-				return
-			}
-			ctx := context.Background()
-			callerJID := client.ResolveJID(ctx, call.CallCreator)
-			summary := callerJID.User
-			if contact, err := client.GetContact(ctx, callerJID); err == nil {
-				if name := contactDisplayName(callerJID.String(), contact.FullName, contact.PushName, contact.BusinessName); name != callerJID.String() {
-					summary = name
-				}
-			}
-			body := "Incoming audio call — answer on your primary phone"
-			if isVideoCall(call.Data) {
-				body = "Incoming video call — answer on your primary phone"
-			}
-			icon := avatarsync.AvatarJPGPath(*cacheDir, callerJID.String())
-			if _, err := os.Stat(icon); err != nil {
-				icon = ""
-			}
-			if err := notifier.Post(summary, body, icon, callerJID.String()); err != nil {
-				logger.Error("failed to send call notification", "error", err)
-			}
+		if err := notifier.Post(payload); err != nil {
+			logger.Error("failed to post helper notification payload", "type", typeName, "error", err)
 		}
 	})
 

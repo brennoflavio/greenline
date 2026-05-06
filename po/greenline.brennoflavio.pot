@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-04 23:17+0000\n"
+"POT-Creation-Date: 2026-05-06 05:12+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -59,19 +59,19 @@ msgstr ""
 msgid "Draft: "
 msgstr ""
 
-#: ../qml/ChatListPage.qml:128
+#: ../qml/ChatListPage.qml:129
 msgid "Search chats..."
 msgstr ""
 
-#: ../qml/ChatListPage.qml:310
+#: ../qml/ChatListPage.qml:311
 msgid "Mute"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:310
+#: ../qml/ChatListPage.qml:311
 msgid "Unmute"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:325
+#: ../qml/ChatListPage.qml:326
 msgid "No chats found"
 msgstr ""
 
@@ -79,35 +79,35 @@ msgstr ""
 msgid "You"
 msgstr ""
 
-#: ../qml/ChatPage.qml:328
+#: ../qml/ChatPage.qml:329
 msgid "Failed to load older messages"
 msgstr ""
 
-#: ../qml/ChatPage.qml:494
+#: ../qml/ChatPage.qml:495
 msgid "Failed to send contact"
 msgstr ""
 
-#: ../qml/ChatPage.qml:566
+#: ../qml/ChatPage.qml:569
 msgid "WhatsApp messages read today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:567
+#: ../qml/ChatPage.qml:570
 msgid "No WhatsApp messages read today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:575
+#: ../qml/ChatPage.qml:578
 msgid "WhatsApp messages sent today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:576
+#: ../qml/ChatPage.qml:579
 msgid "No WhatsApp messages sent today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:599
+#: ../qml/ChatPage.qml:602
 msgid "Scroll up to load older messages first"
 msgstr ""
 
-#: ../qml/ChatPage.qml:603
+#: ../qml/ChatPage.qml:606
 msgid "Copied to clipboard"
 msgstr ""
 
