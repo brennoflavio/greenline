@@ -586,9 +586,11 @@ def upsert_chat(msg: Message, info: MessageInfo, *, count_unread: bool = True) -
     is_group = msg.chat_id.endswith(GROUP_JID_SUFFIX)
 
     push_name = info.PushName
+    direct_push_name = "" if msg.is_outgoing else push_name
     business_name = ""
     if info.VerifiedName and info.VerifiedName.Details:
         business_name = info.VerifiedName.Details.verifiedName
+    direct_business_name = "" if msg.is_outgoing else business_name
 
     if existing is not None:
         chat = ChatListItem(**existing)
@@ -609,13 +611,13 @@ def upsert_chat(msg: Message, info: MessageInfo, *, count_unread: bool = True) -
             update_chat_name(
                 chat,
                 msg.timestamp_unix,
-                push_name=push_name,
-                business_name=business_name,
+                push_name=direct_push_name,
+                business_name=direct_business_name,
             )
     else:
         display_name = msg.chat_id
         if not is_group:
-            display_name = push_name or business_name or msg.chat_id
+            display_name = direct_push_name or direct_business_name or msg.chat_id
         chat = ChatListItem(
             id=msg.chat_id,
             name=display_name,
@@ -628,8 +630,8 @@ def upsert_chat(msg: Message, info: MessageInfo, *, count_unread: bool = True) -
             is_group=is_group,
             last_message_mentioned_jids=preview_mentioned_jids,
             last_message_type=str(msg.type),
-            push_name=push_name if not is_group else "",
-            business_name=business_name if not is_group else "",
+            push_name=direct_push_name if not is_group else "",
+            business_name=direct_business_name if not is_group else "",
             name_updated_at=msg.timestamp_unix,
         )
         if not msg.is_outgoing and count_unread:
