@@ -46,11 +46,8 @@ from events import (
 from message_store import (
     _message_preview,
     clear_chat_runtime_cache,
-    log_perf,
     render_chat_mentions,
-    reset_perf_stats,
     sanitize_message_payload,
-    snapshot_perf_stats,
     to_ui_message,
     upsert_chat,
 )
@@ -349,25 +346,14 @@ def get_chat_list() -> ChatListResponse:
 
 @crash_reporter
 def get_chat_info(chat_id: str) -> dict[str, object]:
-    started_at = time.perf_counter()
     with KV() as kv:
         data = kv.get(f"chat:{chat_id}")
     if not data:
-        elapsed_ms = (time.perf_counter() - started_at) * 1000
-        log_perf(f"get-chat-info chat={chat_id} success=False ms={elapsed_ms:.2f}")
         return {"success": False}
     try:
         chat = ChatListItem(**data)
     except (TypeError, KeyError):
-        elapsed_ms = (time.perf_counter() - started_at) * 1000
-        log_perf(f"get-chat-info chat={chat_id} success=False invalid-payload ms={elapsed_ms:.2f}")
         return {"success": False}
-    elapsed_ms = (time.perf_counter() - started_at) * 1000
-    log_perf(
-        "get-chat-info "
-        f"chat={chat_id} success=True unread={chat.unread_count} "
-        f"is_group={chat.is_group} ms={elapsed_ms:.2f}"
-    )
     return {
         "success": True,
         "id": chat.id,
@@ -407,50 +393,25 @@ def set_chat_draft(chat_id: str, text: str) -> SuccessResponse:
 @crash_reporter
 @dataclass_to_dict
 def get_messages(chat_id: str, cursor: str = "", page_size: int = 100) -> MessagesResponse:
-    request_started_at = time.perf_counter()
-    reset_perf_stats()
     next_cursor = ""
     has_more = False
     cursor_value = cursor or None
     with KV() as kv:
-        page_started_at = time.perf_counter()
         page_entries, _ = kv.get_partial_page(
             f"message:{chat_id}:",
             page_size=page_size + 1,
             cursor=cursor_value,
             reverse=True,
         )
-        page_ms = (time.perf_counter() - page_started_at) * 1000
         has_more = len(page_entries) > page_size
         entries = page_entries[:page_size]
         if has_more and entries:
             next_cursor = entries[-1][0]
 
         msg_fields = {f.name for f in Message.__dataclass_fields__.values()}
-        hydrate_started_at = time.perf_counter()
         messages = [Message(**{k: v for k, v in value.items() if k in msg_fields}) for _, value in entries]
         messages.sort(key=lambda m: (m.timestamp_unix, m.id))
-        hydrate_ms = (time.perf_counter() - hydrate_started_at) * 1000
-
-        render_started_at = time.perf_counter()
         rendered_messages = [_ui_message(m) for m in messages]
-        render_ms = (time.perf_counter() - render_started_at) * 1000
-
-    total_ms = (time.perf_counter() - request_started_at) * 1000
-    perf_stats = snapshot_perf_stats()
-    log_perf(
-        "get-messages "
-        f"chat={chat_id} cursor={'initial' if not cursor else cursor} "
-        f"page_size={page_size} returned={len(entries)} has_more={has_more} "
-        f"kv_page_ms={page_ms:.2f} hydrate_ms={hydrate_ms:.2f} "
-        f"render_ms={render_ms:.2f} total_ms={total_ms:.2f} "
-        f"ui_messages={int(perf_stats.get('ui_messages_rendered', 0))} "
-        f"ui_message_render_ms={perf_stats.get('ui_message_render_ms', 0.0):.2f} "
-        f"chat_cache_hits={int(perf_stats.get('chat_cache_hits', 0))} "
-        f"chat_cache_misses={int(perf_stats.get('chat_cache_misses', 0))} "
-        f"chat_kv_fetches={int(perf_stats.get('chat_kv_fetches', 0))} "
-        f"chat_kv_fetch_ms={perf_stats.get('chat_kv_fetch_ms', 0.0):.2f}"
-    )
 
     return MessagesResponse(
         success=True,

@@ -1,7 +1,6 @@
 import base64
 import os
 import re
-import time
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
@@ -46,41 +45,6 @@ def persist_contact_vcard(chat_id: str, message_id: str, display_name: str, vcar
 
 _CHAT_RUNTIME_CACHE: Dict[str, Dict[str, Any]] = {}
 _MESSAGE_FIELDS = set(Message.__dataclass_fields__.keys())
-_PERF_LOG_PATH = "/tmp/greenline-python-perf.log"
-_PERF_STATS: Dict[str, float] = {}
-
-
-def log_perf(message: str) -> None:
-    try:
-        with open(_PERF_LOG_PATH, "a", encoding="utf-8") as f:
-            f.write(f"{datetime.now().isoformat(timespec='milliseconds')} {message}\n")
-    except Exception:
-        pass
-
-
-def reset_perf_stats() -> None:
-    _PERF_STATS.clear()
-    _PERF_STATS.update(
-        {
-            "chat_cache_hits": 0,
-            "chat_cache_misses": 0,
-            "chat_kv_fetches": 0,
-            "chat_kv_fetch_ms": 0.0,
-            "ui_messages_rendered": 0,
-            "ui_message_render_ms": 0.0,
-        }
-    )
-
-
-def _record_perf_stat(key: str, amount: float = 1) -> None:
-    _PERF_STATS[key] = _PERF_STATS.get(key, 0) + amount
-
-
-def snapshot_perf_stats() -> Dict[str, float]:
-    return dict(_PERF_STATS)
-
-
-reset_perf_stats()
 
 
 def clear_chat_runtime_cache() -> None:
@@ -104,18 +68,10 @@ def _get_chat_data(chat_jid: str) -> Optional[Dict[str, Any]]:
 
     cached = _CHAT_RUNTIME_CACHE.get(chat_jid)
     if cached is not None:
-        _record_perf_stat("chat_cache_hits")
         return cached
 
-    _record_perf_stat("chat_cache_misses")
-    started_at = time.perf_counter()
     with KV() as kv:
         data = kv.get(f"chat:{chat_jid}")
-    elapsed_ms = (time.perf_counter() - started_at) * 1000
-    _record_perf_stat("chat_kv_fetches")
-    _record_perf_stat("chat_kv_fetch_ms", elapsed_ms)
-    if elapsed_ms >= 10:
-        log_perf(f"chat-lookup jid={chat_jid} found={data is not None} ms={elapsed_ms:.2f}")
     if data is None:
         return None
 
@@ -315,7 +271,6 @@ def render_chat_mentions(chat: ChatListItem) -> ChatListItem:
 
 
 def to_ui_message(message: Message) -> UiMessage:
-    started_at = time.perf_counter()
     rendered = render_message_mentions(message)
 
     sender_name = ""
@@ -330,23 +285,12 @@ def to_ui_message(message: Message) -> UiMessage:
     elif rendered.reply_to_sender_id:
         reply_to_sender = resolve_sender_name(rendered.reply_to_sender_id)
 
-    ui_message = UiMessage(
+    return UiMessage(
         **asdict(rendered),
         sender_name=sender_name,
         sender_photo=sender_photo,
         reply_to_sender=reply_to_sender,
     )
-    elapsed_ms = (time.perf_counter() - started_at) * 1000
-    _record_perf_stat("ui_messages_rendered")
-    _record_perf_stat("ui_message_render_ms", elapsed_ms)
-    if elapsed_ms >= 5:
-        message_type = message.type.value if hasattr(message.type, "value") else str(message.type)
-        log_perf(
-            "to-ui-message "
-            f"chat={message.chat_id} id={message.id} type={message_type} "
-            f"outgoing={message.is_outgoing} ms={elapsed_ms:.2f}"
-        )
-    return ui_message
 
 
 def _template_text_from_context_info(

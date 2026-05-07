@@ -105,10 +105,6 @@ Page {
         replyToParticipant = "";
     }
 
-    function perfLog(message) {
-        console.log("[ChatPage perf][" + chatId + "][" + Date.now() + "] " + message);
-    }
-
     function consumeReplyContext() {
         var replyContext = currentReplyContext();
         clearReply();
@@ -165,10 +161,7 @@ Page {
     }
 
     function loadInitialMessages() {
-        var startedAt = Date.now();
-        perfLog("loadInitialMessages start pageSize=" + messagePageSize);
         python.call('main.get_messages', [chatId, "", messagePageSize], function(result) {
-            perfLog("loadInitialMessages done ms=" + (Date.now() - startedAt) + " success=" + (!!result && result.success) + " messages=" + ((result && result.messages) ? result.messages.length : 0) + " hasMore=" + (!!result && result.has_more));
             if (result && result.success) {
                 nextMessagesCursor = result.next_cursor || "";
                 hasOlderMessages = !!result.has_more;
@@ -277,7 +270,6 @@ Page {
             if (pendingCallbacks === 0) {
                 var queued = refreshQueued;
                 refreshInProgress = false;
-                perfLog("refreshPageState done reason=" + reason + " totalMs=" + (Date.now() - refreshStartedAt) + " queued=" + queued + " messagesNow=" + messages.length);
                 if (queued)
                     refreshPageState("queued-after-" + reason);
 
@@ -285,26 +277,18 @@ Page {
         }
 
         reason = reason || "unknown";
-        var refreshStartedAt = Date.now();
-        var chatInfoStartedAt = 0;
-        var messagesStartedAt = 0;
-        if (!pythonReady) {
-            perfLog("refreshPageState skipped reason=" + reason + " pythonReady=false");
+        if (!pythonReady)
             return ;
-        }
+
         if (refreshInProgress) {
             refreshQueued = true;
-            perfLog("refreshPageState queued reason=" + reason + " currentMessages=" + messages.length);
             return ;
         }
         refreshInProgress = true;
         refreshQueued = false;
         var pendingCallbacks = 2;
         var wasAtBottom = chatMessageList.atBottom;
-        perfLog("refreshPageState start reason=" + reason + " currentMessages=" + messages.length + " atBottom=" + wasAtBottom);
-        chatInfoStartedAt = Date.now();
         python.call('main.get_chat_info', [chatId], function(result) {
-            perfLog("refreshPageState chatInfo done reason=" + reason + " ms=" + (Date.now() - chatInfoStartedAt) + " success=" + (!!result && result.success) + " unread=" + ((result && result.unread_count) ? result.unread_count : 0));
             if (result && result.success) {
                 chatName = result.name || chatName;
                 chatPhoto = result.photo || "";
@@ -322,9 +306,7 @@ Page {
             }
             finishRefresh();
         });
-        messagesStartedAt = Date.now();
         python.call('main.get_messages', [chatId, "", messagePageSize], function(result) {
-            perfLog("refreshPageState messages done reason=" + reason + " ms=" + (Date.now() - messagesStartedAt) + " success=" + (!!result && result.success) + " returned=" + ((result && result.messages) ? result.messages.length : 0));
             if (result && result.success) {
                 nextMessagesCursor = result.next_cursor || "";
                 hasOlderMessages = !!result.has_more;
@@ -796,14 +778,12 @@ Page {
                 setHandler('chat-list-update', function(updatedChats) {
                     for (var i = 0; i < updatedChats.length; i++) {
                         if (updatedChats[i].id === chatId) {
-                            perfLog("chat-list-update triggering refresh reason=current-chat updated=" + updatedChats[i].id + " batchSize=" + updatedChats.length);
                             refreshPageState("chat-list-update:self");
                             return ;
                         }
                         for (var j = 0; j < messages.length; j++) {
                             var message = messages[j];
                             if (message.sender === updatedChats[i].id || message.reply_to_sender_id === updatedChats[i].id) {
-                                perfLog("chat-list-update triggering refresh reason=sender-match updated=" + updatedChats[i].id + " messageId=" + (message.id || "") + " batchSize=" + updatedChats.length + " messageCount=" + messages.length);
                                 refreshPageState("chat-list-update:sender-match");
                                 return ;
                             }
