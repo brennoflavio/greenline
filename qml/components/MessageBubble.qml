@@ -10,6 +10,7 @@ Item {
     property string copyableText: ""
     property bool isOutgoing: false
     property bool isGroup: false
+    property bool edited: false
     property string timestamp: ""
     property string readReceipt: ""
     property string sendStatus: ""
@@ -190,6 +191,14 @@ Item {
                 bottom: parent.bottom
                 rightMargin: units.gu(0.5)
                 bottomMargin: units.gu(0.3)
+            }
+
+            Label {
+                text: i18n.tr("edited")
+                fontSize: "xx-small"
+                color: "#999999"
+                visible: bubble.edited
+                anchors.verticalCenter: parent.verticalCenter
             }
 
             Label {

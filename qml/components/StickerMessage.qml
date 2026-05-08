@@ -9,6 +9,7 @@ Item {
     property string copyableText: ""
     property bool isOutgoing: false
     property bool isGroup: false
+    property bool edited: false
     property string timestamp: ""
     property string stickerSource: ""
     property string thumbnailSource: ""
@@ -180,10 +181,22 @@ Item {
 
         }
 
-        Label {
-            text: root.timestamp
-            fontSize: "xx-small"
-            color: "#999999"
+        Row {
+            spacing: units.gu(0.3)
+
+            Label {
+                text: i18n.tr("edited")
+                fontSize: "xx-small"
+                color: "#999999"
+                visible: root.edited
+            }
+
+            Label {
+                text: root.timestamp
+                fontSize: "xx-small"
+                color: "#999999"
+            }
+
         }
 
     }

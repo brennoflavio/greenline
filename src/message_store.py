@@ -402,14 +402,28 @@ def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
     if is_protocol_only:
         return None
 
-    msg_type = _derive_message_type(info.Type, info.MediaType)
-    if msg_type is None:
+    has_supported_content = any(
+        (
+            content.conversation,
+            content.extendedTextMessage is not None,
+            content.imageMessage is not None,
+            content.videoMessage is not None,
+            content.audioMessage is not None,
+            content.documentMessage is not None,
+            content.contactMessage is not None,
+            content.stickerMessage is not None,
+        )
+    )
+    if info.Edit == "1" and not has_supported_content:
         return None
 
-    if msg_type == MessageType.TEXT and content.extendedTextMessage:
-        ext = content.extendedTextMessage
-        if ext.matchedText or ext.title:
-            msg_type = MessageType.LINK_PREVIEW
+    msg_type = None
+    if evt.IsEdit or info.Edit == "1":
+        msg_type = _derive_message_type_from_content(content)
+    if msg_type is None:
+        msg_type = _derive_message_type(info.Type, info.MediaType)
+    if msg_type is None:
+        return None
 
     text = ""
     caption = ""
@@ -490,6 +504,7 @@ def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
         timestamp=timestamp_display,
         timestamp_unix=timestamp_unix,
         read_receipt=read_receipt,
+        edited=evt.IsEdit or info.Edit == "1",
         sender=info.Sender,
         text=text,
         mentioned_jids=mentioned_jids,
@@ -507,6 +522,29 @@ def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
         link_description=link_description,
         link_url=link_url,
     )
+
+
+def _derive_message_type_from_content(content: MessageContent) -> Optional[MessageType]:
+    if content.imageMessage:
+        return MessageType.IMAGE
+    if content.videoMessage:
+        return MessageType.VIDEO
+    if content.audioMessage:
+        return MessageType.AUDIO
+    if content.documentMessage:
+        return MessageType.DOCUMENT
+    if content.contactMessage:
+        return MessageType.CONTACT
+    if content.stickerMessage:
+        return MessageType.STICKER
+    if content.extendedTextMessage:
+        ext = content.extendedTextMessage
+        if ext.matchedText or ext.title:
+            return MessageType.LINK_PREVIEW
+        return MessageType.TEXT
+    if content.conversation:
+        return MessageType.TEXT
+    return None
 
 
 def _derive_message_type(info_type: str, media_type: str) -> Optional[MessageType]:
@@ -678,6 +716,67 @@ def _extract_thumbnail(raw: Optional[Dict[str, Any]], message_id: str) -> str:
     return "file://" + path
 
 
+def _find_message_entry(kv: KV, chat_id: str, message_id: str) -> Tuple[str, Dict[str, Any]] | tuple[None, None]:
+    for key, value in kv.get_partial(f"message:{chat_id}:"):
+        if value.get("id") == message_id:
+            return key, value
+    return None, None
+
+
+def _merge_edited_message(existing: Message, updated: Message) -> Message:
+    return replace(
+        existing,
+        type=updated.type,
+        edited=True,
+        sender=updated.sender or existing.sender,
+        text=updated.text,
+        mentioned_jids=list(updated.mentioned_jids),
+        image_source=updated.image_source or existing.image_source,
+        caption=updated.caption,
+        images=list(updated.images) or list(existing.images),
+        duration=updated.duration or existing.duration,
+        sticker_source=updated.sticker_source or existing.sticker_source,
+        media_path=updated.media_path or existing.media_path,
+        thumbnail_path=updated.thumbnail_path or existing.thumbnail_path,
+        mimetype=updated.mimetype or existing.mimetype,
+        file_name=updated.file_name or existing.file_name,
+        reply_to_id=updated.reply_to_id,
+        reply_to_sender_id=updated.reply_to_sender_id,
+        reply_to_from_me=updated.reply_to_from_me,
+        reply_to_text=updated.reply_to_text,
+        reply_to_mentioned_jids=list(updated.reply_to_mentioned_jids),
+        link_title=updated.link_title,
+        link_description=updated.link_description,
+        link_url=updated.link_url,
+    )
+
+
+def _update_chat_after_edit(kv: KV, msg: Message, info: MessageInfo) -> ChatListItem:
+    chat_key = f"chat:{msg.chat_id}"
+    existing = kv.get(chat_key)
+    if existing is None:
+        return upsert_chat(msg, info, count_unread=False)
+
+    chat = ChatListItem(**existing)
+    latest_id = ""
+    latest_sort_key = (-1, "")
+    for _, value in kv.get_partial(f"message:{msg.chat_id}:"):
+        sort_key = (int(value.get("timestamp_unix") or 0), str(value.get("id") or ""))
+        if sort_key >= latest_sort_key:
+            latest_sort_key = sort_key
+            latest_id = str(value.get("id") or "")
+
+    if latest_id == msg.id:
+        preview, preview_mentioned_jids = _message_preview_data(msg)
+        chat.last_message = preview
+        chat.last_message_mentioned_jids = preview_mentioned_jids
+        chat.last_message_type = str(msg.type)
+        kv.put(chat_key, asdict(chat))
+        remember_chat(chat)
+
+    return chat
+
+
 def store_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = None) -> Optional[StoredMessage]:
     msg = message_event_to_message(evt)
     if msg is None:
@@ -696,10 +795,22 @@ def store_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = None) -> Op
             business_name=business_name,
         )
 
-    key = f"message:{msg.chat_id}:{msg.timestamp_unix}:{msg.id}"
     data = asdict(msg)
     data["raw"] = raw
     with KV() as kv:
+        if msg.edited:
+            existing_key, existing_value = _find_message_entry(kv, msg.chat_id, msg.id)
+            if existing_key is None or existing_value is None:
+                return None
+            existing_msg = Message(**{k: v for k, v in existing_value.items() if k in _MESSAGE_FIELDS})
+            msg = _merge_edited_message(existing_msg, msg)
+            data = asdict(msg)
+            data["raw"] = raw
+            kv.put(existing_key, data)
+            chat = _update_chat_after_edit(kv, msg, evt.Info)
+            return StoredMessage(message=msg, chat=chat)
+
+        key = f"message:{msg.chat_id}:{msg.timestamp_unix}:{msg.id}"
         already_stored = kv.get(key) is not None
         kv.put(key, data)
 

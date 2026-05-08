@@ -171,10 +171,14 @@ func main() {
 	svc := &Service{client: client, eventStore: evStore, configStore: cfgStore, syncer: syncer, notifier: notifier, cacheDir: *cacheDir, notifSuppressed: notifSuppressed}
 
 	client.AddEventHandler(func(evt interface{}) {
-		switch evt.(type) {
+		switch msg := evt.(type) {
 		case *events.Disconnected, *events.LoggedOut, *events.StreamReplaced,
 			*events.ClientOutdated, *events.TemporaryBan:
 			return
+		case *events.Message:
+			if err := client.NormalizeMessageEdit(context.Background(), msg); err != nil {
+				logger.Warn("failed to normalize edited message", "message_id", msg.Info.ID, "error", err)
+			}
 		}
 
 		t := reflect.TypeOf(evt)

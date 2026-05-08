@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-06 19:22+0000\n"
+"POT-Creation-Date: 2026-05-07 22:43+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -75,63 +75,63 @@ msgstr ""
 msgid "No chats found"
 msgstr ""
 
-#: ../qml/ChatPage.qml:123
+#: ../qml/ChatPage.qml:119
 msgid "You"
 msgstr ""
 
-#: ../qml/ChatPage.qml:351
+#: ../qml/ChatPage.qml:331
 msgid "Failed to load older messages"
 msgstr ""
 
-#: ../qml/ChatPage.qml:517
+#: ../qml/ChatPage.qml:497
 msgid "Failed to send contact"
 msgstr ""
 
-#: ../qml/ChatPage.qml:591
+#: ../qml/ChatPage.qml:571
 msgid "WhatsApp messages read today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:592
+#: ../qml/ChatPage.qml:572
 msgid "No WhatsApp messages read today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:600
+#: ../qml/ChatPage.qml:580
 msgid "WhatsApp messages sent today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:601
+#: ../qml/ChatPage.qml:581
 msgid "No WhatsApp messages sent today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:624
+#: ../qml/ChatPage.qml:604
 msgid "Scroll up to load older messages first"
 msgstr ""
 
-#: ../qml/ChatPage.qml:628
+#: ../qml/ChatPage.qml:608
 msgid "Copied to clipboard"
 msgstr ""
 
-#: ../qml/ChatPage.qml:772
+#: ../qml/ChatPage.qml:752
 msgid "recording audio..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:772
+#: ../qml/ChatPage.qml:752
 msgid "typing..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:835
+#: ../qml/ChatPage.qml:813
 msgid "Send Photo"
 msgstr ""
 
-#: ../qml/ChatPage.qml:846
+#: ../qml/ChatPage.qml:824
 msgid "Send Video"
 msgstr ""
 
-#: ../qml/ChatPage.qml:857
+#: ../qml/ChatPage.qml:835
 msgid "Send Contact"
 msgstr ""
 
-#: ../qml/ChatPage.qml:879 ../qml/ContactPreviewPage.qml:223
+#: ../qml/ChatPage.qml:857 ../qml/ContactPreviewPage.qml:223
 #: ../qml/DocumentPreviewPage.qml:223 ../qml/ImagePreviewPage.qml:190
 #: ../qml/VideoPreviewPage.qml:335 ../qml/ut_components/AppHeader.qml:78
 msgid "Back"
@@ -380,6 +380,12 @@ msgstr ""
 
 #: ../qml/ut_components/InputField.qml:166
 msgid "This field is required"
+msgstr ""
+
+#: ../qml/components/MessageBubble.qml:197
+#: ../qml/components/StickerMessage.qml:188
+#: ../qml/components/TextMessage.qml:144
+msgid "edited"
 msgstr ""
 
 #: greenline.desktop.in.h:1

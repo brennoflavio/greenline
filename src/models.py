@@ -66,6 +66,7 @@ class Message:
     timestamp: str
     timestamp_unix: int
     read_receipt: ReadReceipt
+    edited: bool = False
     sender: str = ""
     text: str = ""
     mentioned_jids: List[str] = field(default_factory=list)
