@@ -33,6 +33,7 @@ Page {
     property string replyToSender: ""
     property string replyToText: ""
     property string replyToParticipant: ""
+    property int editWindowSeconds: 20 * 60
     property bool pythonReady: false
     property bool refreshInProgress: false
     property bool refreshQueued: false
@@ -120,6 +121,35 @@ Page {
         replyToText = messagePreview(message);
         replyToParticipant = message.is_outgoing ? "" : (message.sender || "");
         chatComposer.focusInput();
+    }
+
+    function canEditMessage(message) {
+        var timestampUnix = message && message.timestamp_unix ? message.timestamp_unix : 0;
+        return !!message && !!message.is_outgoing && !!message.id && message.id.indexOf("pending-") !== 0 && message.id.indexOf("failed-") !== 0 && (message.type || "") === "text" && timestampUnix > 0 && Math.floor(Date.now() / 1000) - timestampUnix <= editWindowSeconds;
+    }
+
+    function startEdit(message) {
+        if (!canEditMessage(message))
+            return ;
+
+        PopupUtils.open(editMessageDialog, chatPage, {
+            "messageId": message.id,
+            "initialText": message.text || ""
+        });
+    }
+
+    function submitEditedMessage(dialog, messageId, text) {
+        python.call('main.edit_text_message', [chatId, messageId, text], function(result) {
+            if (result && result.success) {
+                PopupUtils.close(dialog);
+                toast.show(i18n.tr("Message updated"));
+                return ;
+            }
+            if (dialog)
+                dialog.saving = false;
+
+            toast.show(result && result.message ? result.message : i18n.tr("Failed to edit message"));
+        });
     }
 
     function scrollToMessage(messageId) {
@@ -591,6 +621,7 @@ Page {
         downloadingIds: chatPage.downloadingIds
         isGroup: chatPage.isGroup
         unreadCount: chatPage.unreadCount
+        editWindowSeconds: chatPage.editWindowSeconds
         onBottomReached: {
             if (chatPage.unreadCount > 0) {
                 var unreadWhileAway = chatPage.unreadCount;
@@ -603,6 +634,7 @@ Page {
         onOlderMessagesRequested: chatPage.loadOlderMessages()
         onMessageNotLoaded: toast.show(i18n.tr("Scroll up to load older messages first"))
         onReplyRequested: chatPage.startReply(message)
+        onEditRequested: chatPage.startEdit(message)
         onCopyRequested: {
             Clipboard.push(text);
             toast.show(i18n.tr("Copied to clipboard"));
@@ -792,6 +824,52 @@ Page {
                 });
             });
         }
+    }
+
+    Component {
+        id: editMessageDialog
+
+        Dialog {
+            id: dialog
+
+            property string messageId: ""
+            property string initialText: ""
+            property bool saving: false
+
+            title: i18n.tr("Edit Message")
+
+            TextArea {
+                id: editMessageInput
+
+                text: dialog.initialText
+                autoSize: true
+                maximumLineCount: 6
+                Component.onCompleted: forceActiveFocus()
+            }
+
+            Button {
+                text: i18n.tr("Cancel")
+                enabled: !dialog.saving
+                onClicked: PopupUtils.close(dialog)
+            }
+
+            Button {
+                text: i18n.tr("Save")
+                color: theme.palette.normal.positive
+                enabled: !dialog.saving
+                onClicked: {
+                    Qt.inputMethod.commit();
+                    if (editMessageInput.text === dialog.initialText) {
+                        PopupUtils.close(dialog);
+                        return ;
+                    }
+                    dialog.saving = true;
+                    chatPage.submitEditedMessage(dialog, dialog.messageId, editMessageInput.text);
+                }
+            }
+
+        }
+
     }
 
     Component {

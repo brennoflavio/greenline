@@ -466,6 +466,20 @@ type SendMessageReply struct {
 	Timestamp int64
 }
 
+type EditMessageArgs struct {
+	ChatJID             string
+	MessageID           string
+	Text                string
+	ReplyToMessageID    string
+	ReplyParticipantJID string
+	ReplyQuotedMessage  map[string]any
+}
+
+type EditMessageReply struct {
+	MessageID string
+	Timestamp int64
+}
+
 func (s *Service) buildReplyContext(args *SendMessageArgs) (*waE2E.ContextInfo, error) {
 	if args.ReplyToMessageID == "" {
 		return nil, nil
@@ -647,6 +661,21 @@ func (s *Service) sendContactMessage(args *SendMessageArgs, replyContext *waE2E.
 	}, nil
 }
 
+func buildTextMessage(text string, replyContext *waE2E.ContextInfo) *waE2E.Message {
+	if replyContext != nil {
+		return &waE2E.Message{
+			ExtendedTextMessage: &waE2E.ExtendedTextMessage{
+				Text:        proto.String(text),
+				ContextInfo: replyContext,
+			},
+		}
+	}
+
+	return &waE2E.Message{
+		Conversation: proto.String(text),
+	}
+}
+
 func (s *Service) SendMessage(args *SendMessageArgs, reply *SendMessageReply) error {
 	if err := s.requireLogin(); err != nil {
 		return err
@@ -664,18 +693,7 @@ func (s *Service) SendMessage(args *SendMessageArgs, reply *SendMessageReply) er
 	var message *waE2E.Message
 	switch args.Type {
 	case "text":
-		if replyContext != nil {
-			message = &waE2E.Message{
-				ExtendedTextMessage: &waE2E.ExtendedTextMessage{
-					Text:        proto.String(args.Text),
-					ContextInfo: replyContext,
-				},
-			}
-		} else {
-			message = &waE2E.Message{
-				Conversation: proto.String(args.Text),
-			}
-		}
+		message = buildTextMessage(args.Text, replyContext)
 	case "image":
 		if args.FilePath == "" {
 			return fmt.Errorf("file path required for image message")
@@ -715,6 +733,45 @@ func (s *Service) SendMessage(args *SendMessageArgs, reply *SendMessageReply) er
 	default:
 		return fmt.Errorf("unsupported message type: %s", args.Type)
 	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	resp, err := s.client.SendMessage(ctx, jid, message)
+	if err != nil {
+		return fmt.Errorf("send failed: %w", err)
+	}
+
+	reply.MessageID = string(resp.ID)
+	reply.Timestamp = resp.Timestamp.Unix()
+	return nil
+}
+
+func (s *Service) EditMessage(args *EditMessageArgs, reply *EditMessageReply) error {
+	if err := s.requireLogin(); err != nil {
+		return err
+	}
+	jid, err := types.ParseJID(args.ChatJID)
+	if err != nil {
+		return fmt.Errorf("invalid chat JID: %w", err)
+	}
+	if args.MessageID == "" {
+		return fmt.Errorf("message ID required")
+	}
+	if strings.TrimSpace(args.Text) == "" {
+		return fmt.Errorf("message text cannot be empty")
+	}
+
+	replyContext, err := s.buildReplyContext(&SendMessageArgs{
+		ReplyToMessageID:    args.ReplyToMessageID,
+		ReplyParticipantJID: args.ReplyParticipantJID,
+		ReplyQuotedMessage:  args.ReplyQuotedMessage,
+	})
+	if err != nil {
+		return fmt.Errorf("reply context: %w", err)
+	}
+
+	message := s.client.BuildEdit(jid, types.MessageID(args.MessageID), buildTextMessage(args.Text, replyContext))
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()

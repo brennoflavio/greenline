@@ -45,6 +45,7 @@ from events import (
 )
 from message_store import (
     _message_preview,
+    _update_chat_after_edit,
     clear_chat_runtime_cache,
     render_chat_mentions,
     sanitize_message_payload,
@@ -109,6 +110,9 @@ def start_event_loop() -> None:
 class SuccessResponse:
     success: bool
     message: str
+
+
+EDIT_WINDOW_SECONDS = 20 * 60
 
 
 @dataclass
@@ -503,6 +507,20 @@ def toggle_mute(chat_id: str) -> SuccessResponse:
     return SuccessResponse(success=True, message="")
 
 
+def _get_message_entry_with_key(chat_id: str, message_id: str) -> tuple[str, dict[str, object]] | tuple[None, None]:
+    with KV() as kv:
+        entries = kv.get_partial(f"message:{chat_id}:")
+        for key, value in entries:
+            if value.get("id") == message_id:
+                return key, value
+    return None, None
+
+
+def _get_message_entry(chat_id: str, message_id: str) -> dict[str, object] | None:
+    _, entry = _get_message_entry_with_key(chat_id, message_id)
+    return entry
+
+
 def _resolve_reply_context(chat_id: str, reply_context: dict[str, object] | None) -> dict[str, object] | None:
     if not isinstance(reply_context, dict):
         return None
@@ -519,19 +537,12 @@ def _resolve_reply_context(chat_id: str, reply_context: dict[str, object] | None
         "from_me": bool(reply_context.get("from_me")) or participant == "",
     }
 
-    with KV() as kv:
-        entries = kv.get_partial(f"message:{chat_id}:")
-        entry = None
-        for _key, value in entries:
-            if value.get("id") == reply_id:
-                entry = value
-                break
-
+    entry = _get_message_entry(chat_id, reply_id)
     if entry is None:
         return resolved
 
     msg_fields = {f.name for f in Message.__dataclass_fields__.values()}
-    stored_msg = Message(**{k: v for k, v in entry.items() if k in msg_fields})
+    stored_msg = Message(**{k: v for k, v in entry.items() if k in msg_fields})  # type: ignore[arg-type]
     rendered_msg = _ui_message(stored_msg)
 
     resolved["from_me"] = stored_msg.is_outgoing
@@ -549,6 +560,22 @@ def _resolve_reply_context(chat_id: str, reply_context: dict[str, object] | None
         resolved["text"] = _message_preview(rendered_msg)
 
     return resolved
+
+
+def _resolve_message_reply_context(chat_id: str, entry: dict[str, object]) -> dict[str, object] | None:
+    reply_id = str(entry.get("reply_to_id") or "").strip()
+    if not reply_id:
+        return None
+
+    return _resolve_reply_context(
+        chat_id,
+        {
+            "reply_to_id": reply_id,
+            "reply_participant": str(entry.get("reply_to_sender_id") or ""),
+            "reply_to_text": str(entry.get("reply_to_text") or ""),
+            "from_me": bool(entry.get("reply_to_from_me")),
+        },
+    )
 
 
 def _apply_reply_context(message: Message, reply_context: dict[str, object] | None) -> None:
@@ -648,6 +675,55 @@ def send_text_message(
 
     chat = upsert_chat(msg, MessageInfo())
     pyotherside.send("message-upsert", [_ui_message_dict(msg)])
+    pyotherside.send("chat-list-update", [_ui_chat_dict(chat)])
+
+    return SuccessResponse(success=True, message="")
+
+
+@crash_reporter
+@dataclass_to_dict
+def edit_text_message(chat_id: str, message_id: str, text: str) -> SuccessResponse:
+    import pyotherside
+
+    normalized_text = str(text)
+    if normalized_text.strip() == "":
+        return SuccessResponse(success=False, message="Message text cannot be empty")
+
+    entry_key, entry = _get_message_entry_with_key(chat_id, message_id)
+    if entry_key is None or entry is None:
+        return SuccessResponse(success=False, message="Message not found")
+
+    if not entry.get("is_outgoing"):
+        return SuccessResponse(success=False, message="Only sent messages can be edited")
+
+    if str(entry.get("type") or "") != MessageType.TEXT.value:
+        return SuccessResponse(success=False, message="Only text messages can be edited")
+
+    raw_timestamp_unix = entry.get("timestamp_unix")
+    timestamp_unix = raw_timestamp_unix if isinstance(raw_timestamp_unix, int) else 0
+    if timestamp_unix <= 0 or int(time.time()) - timestamp_unix > EDIT_WINDOW_SECONDS:
+        return SuccessResponse(success=False, message="Message can no longer be edited")
+
+    reply_context = _resolve_message_reply_context(chat_id, entry)
+
+    try:
+        rpc = DaemonRPC()
+        rpc.edit_message(chat_id, message_id, normalized_text, reply_context=reply_context)
+    except Exception as e:
+        return SuccessResponse(success=False, message=str(e))
+
+    msg_fields = {f.name for f in Message.__dataclass_fields__.values()}
+    updated_msg = Message(**{k: v for k, v in entry.items() if k in msg_fields})  # type: ignore[arg-type]
+    updated_msg.text = normalized_text
+    updated_msg.edited = True
+
+    updated_entry = dict(entry)
+    updated_entry.update(asdict(updated_msg))
+    with KV() as kv:
+        kv.put(entry_key, updated_entry)
+        chat = _update_chat_after_edit(kv, updated_msg, MessageInfo())
+
+    pyotherside.send("message-upsert", [_ui_message_dict(updated_msg)])
     pyotherside.send("chat-list-update", [_ui_chat_dict(chat)])
 
     return SuccessResponse(success=True, message="")

@@ -13,9 +13,11 @@ Item {
     })
     property bool isGroup: false
     property int unreadCount: 0
+    property int editWindowSeconds: 20 * 60
     readonly property bool atBottom: messageList.atYEnd
 
     signal replyRequested(var message)
+    signal editRequested(var message)
     signal copyRequested(string text)
     signal downloadRequested(string messageId, string mediaType)
     signal bottomReached()
@@ -60,6 +62,12 @@ Item {
             return i18n.tr("View-once message. Open WhatsApp on your primary device to view it.");
 
         return message.text || "";
+    }
+
+    function canEditMessage(message) {
+        var messageId = message && message.id ? message.id : "";
+        var timestampUnix = message && message.timestamp_unix ? message.timestamp_unix : 0;
+        return !!message && !!message.is_outgoing && messageId !== "" && messageId.indexOf("pending-") !== 0 && messageId.indexOf("failed-") !== 0 && (message.type || "") === "text" && timestampUnix > 0 && Math.floor(Date.now() / 1000) - timestampUnix <= editWindowSeconds;
     }
 
     onMessagesChanged: {
@@ -149,6 +157,12 @@ Item {
                         text: i18n.tr("Reply")
                         enabled: !!modelData && !!modelData.id && modelData.id.indexOf("pending-") !== 0
                         onTriggered: root.replyRequested(modelData)
+                    },
+                    Action {
+                        iconName: "edit"
+                        text: i18n.tr("Edit")
+                        enabled: root.canEditMessage(modelData)
+                        onTriggered: root.editRequested(modelData)
                     },
                     Action {
                         iconName: "edit-copy"

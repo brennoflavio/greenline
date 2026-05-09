@@ -368,6 +368,10 @@ func (c *Client) SendMessage(ctx context.Context, to types.JID, message *waE2E.M
 	return c.waCli.SendMessage(ctx, to, message)
 }
 
+func (c *Client) BuildEdit(chat types.JID, id types.MessageID, newContent *waE2E.Message) *waE2E.Message {
+	return c.waCli.BuildEdit(chat, id, newContent)
+}
+
 func (c *Client) SubscribePresence(ctx context.Context, jid types.JID) error {
 	return c.waCli.SubscribePresence(ctx, jid)
 }

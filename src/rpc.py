@@ -138,6 +138,28 @@ class DaemonRPC:
         result: Dict[str, Any] = self._call("Service.SendMessage", payload)
         return result
 
+    def edit_message(
+        self,
+        chat_jid: str,
+        message_id: str,
+        text: str,
+        reply_context: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        payload: Dict[str, Any] = {
+            "ChatJID": chat_jid,
+            "MessageID": message_id,
+            "Text": text,
+        }
+        if reply_context:
+            payload["ReplyToMessageID"] = str(reply_context.get("id") or "")
+            payload["ReplyParticipantJID"] = str(reply_context.get("participant") or "")
+            quoted_message = reply_context.get("quoted_message")
+            if quoted_message is not None:
+                payload["ReplyQuotedMessage"] = quoted_message
+
+        result: Dict[str, Any] = self._call("Service.EditMessage", payload)
+        return result
+
     def get_chat_settings(self, chat_jid: str) -> GetChatSettingsReply:
         data = self._call("Service.GetChatSettings", {"ChatJID": chat_jid})
         return from_dict(data_class=GetChatSettingsReply, data=data)
