@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(greenline C CXX)
 
+find_package(Qt5 REQUIRED COMPONENTS Core Qml Multimedia)
+
 # Automatically create moc files
 set(CMAKE_AUTOMOC ON)
 
@@ -74,6 +76,13 @@ install(DIRECTORY src DESTINATION ${DATA_DIR})
 
 install(DIRECTORY qml DESTINATION ${DATA_DIR})
 
+add_library(audiocaptureplugin MODULE
+    plugin/audiocapture/audiocapturerecorder.cpp
+    plugin/audiocapture/plugin.cpp
+)
+target_link_libraries(audiocaptureplugin PRIVATE Qt5::Core Qt5::Qml Qt5::Multimedia)
+install(TARGETS audiocaptureplugin LIBRARY DESTINATION ${DATA_DIR}qml/AudioCapture)
+
 # Golang Daemon
 install(FILES "build-daemon.sh" DESTINATION ${DATA_DIR})
 install(DIRECTORY daemon DESTINATION ${DATA_DIR})
@@ -116,7 +125,12 @@ file(GLOB_RECURSE PROJECT_SRC_FILES
     RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
     qml/*.qml
     qml/*.js
+    qml/*/qmldir
     src/*
+    plugin/*.cpp
+    plugin/*.h
+    plugin/*/*.cpp
+    plugin/*/*.h
     *.json
     *.json.in
     *.apparmor

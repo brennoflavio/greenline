@@ -411,6 +411,48 @@ Page {
         });
     }
 
+    function sendAudioMessage(filePath, durationSeconds) {
+        var tempId = "pending-" + Date.now();
+        var now = new Date();
+        var timestampUnix = Math.floor(now.getTime() / 1000);
+        var hours = now.getHours().toString();
+        if (hours.length < 2)
+            hours = "0" + hours;
+
+        var minutes = now.getMinutes().toString();
+        if (minutes.length < 2)
+            minutes = "0" + minutes;
+
+        var totalSeconds = Math.max(0, Math.floor(durationSeconds || 0));
+        var replyContext = consumeReplyContext();
+        var pendingMsg = {
+            "id": tempId,
+            "chat_id": chatId,
+            "type": "audio",
+            "is_outgoing": true,
+            "text": "",
+            "timestamp": hours + ":" + minutes,
+            "timestamp_unix": timestampUnix,
+            "read_receipt": "",
+            "send_status": "pending",
+            "temp_id": tempId,
+            "media_path": "file://" + filePath,
+            "duration": Math.floor(totalSeconds / 60) + ":" + ((totalSeconds % 60) < 10 ? "0" : "") + (totalSeconds % 60),
+            "reply_to_id": replyContext ? replyContext.id : "",
+            "reply_to_sender": replyContext ? replyContext.sender : "",
+            "reply_to_text": replyContext ? replyContext.text : ""
+        };
+        var newMessages = messages.slice();
+        newMessages.push(pendingMsg);
+        messages = newMessages;
+        messagesSendAttemptsMetric.increment(1);
+        python.call('main.send_audio_message', [chatId, filePath, totalSeconds, tempId, replyContext], function(result) {
+            if (result && !result.success)
+                toast.show(result.message || i18n.tr("Failed to send audio"));
+
+        });
+    }
+
     function sendStickerMessage(filePath) {
         var tempId = "pending-" + Date.now();
         var now = new Date();
@@ -572,6 +614,11 @@ Page {
         }
     }
 
+    onMessagesChanged: {
+        if (chatMessageList)
+            chatMessageList.messages = messages;
+
+    }
     Component.onDestruction: flushDraft()
 
     Timer {
@@ -615,7 +662,6 @@ Page {
     ChatMessageList {
         id: chatMessageList
 
-        messages: chatPage.messages
         hasOlderMessages: chatPage.hasOlderMessages
         loadingOlderMessages: chatPage.loadingOlderMessages
         downloadingIds: chatPage.downloadingIds
@@ -878,8 +924,18 @@ Page {
         ChatAttachmentDialog {
             onPhotoRequested: pageStack.push(mediaPickerPage)
             onVideoRequested: pageStack.push(videoPickerPage)
+            onAudioRequested: PopupUtils.open(voiceMessageRecorderDialog, chatPage)
             onStickerRequested: pageStack.push(stickerPickerComponent)
             onContactRequested: pageStack.push(contactPickerPage)
+        }
+
+    }
+
+    Component {
+        id: voiceMessageRecorderDialog
+
+        VoiceMessageRecorderDialog {
+            onRecordingAccepted: sendAudioMessage(filePath, durationSeconds)
         }
 
     }

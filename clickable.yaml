@@ -7,6 +7,10 @@ dependencies_host:
   - libc6-arm64-cross
   - build-essential
   - libsqlite3-dev
+dependencies_target:
+  - qtbase5-dev
+  - qtdeclarative5-dev
+  - qtmultimedia5-dev
 env_vars:
   UV_INSTALL_DIR: /usr/local
 image_setup:

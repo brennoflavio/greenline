@@ -456,6 +456,8 @@ type SendMessageArgs struct {
 	Text                string
 	FilePath            string
 	Caption             string
+	DurationSeconds     int
+	PTT                 bool
 	ReplyToMessageID    string
 	ReplyParticipantJID string
 	ReplyQuotedMessage  map[string]any
@@ -603,6 +605,62 @@ func (s *Service) sendVideoMessage(args *SendMessageArgs, replyContext *waE2E.Co
 	return msg, nil
 }
 
+func voiceMessageMimetype(filePath string) (string, error) {
+	ext := strings.ToLower(filepath.Ext(filePath))
+	switch ext {
+	case ".ogg", ".oga":
+		return "audio/ogg; codecs=opus", nil
+	default:
+		return "", fmt.Errorf("unsupported audio format for voice note: %s (expected OGG/Opus .ogg recording)", ext)
+	}
+}
+
+func (s *Service) sendAudioMessage(args *SendMessageArgs, replyContext *waE2E.ContextInfo) (*waE2E.Message, error) {
+	if !args.PTT {
+		return nil, fmt.Errorf("only push-to-talk voice notes are supported")
+	}
+
+	data, err := os.ReadFile(args.FilePath)
+	if err != nil {
+		return nil, fmt.Errorf("read file: %w", err)
+	}
+
+	mimetype, err := voiceMessageMimetype(args.FilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	uploadResp, err := s.client.Upload(ctx, data, whatsmeow.MediaAudio)
+	if err != nil {
+		return nil, fmt.Errorf("upload: %w", err)
+	}
+
+	seconds := args.DurationSeconds
+	if seconds < 0 {
+		seconds = 0
+	}
+
+	msg := &waE2E.Message{
+		AudioMessage: &waE2E.AudioMessage{
+			Mimetype:      proto.String(mimetype),
+			URL:           &uploadResp.URL,
+			DirectPath:    &uploadResp.DirectPath,
+			MediaKey:      uploadResp.MediaKey,
+			FileEncSHA256: uploadResp.FileEncSHA256,
+			FileSHA256:    uploadResp.FileSHA256,
+			FileLength:    &uploadResp.FileLength,
+			Seconds:       proto.Uint32(uint32(seconds)),
+			PTT:           proto.Bool(true),
+			ContextInfo:   replyContext,
+		},
+	}
+
+	return msg, nil
+}
+
 func (s *Service) sendStickerMessage(args *SendMessageArgs, replyContext *waE2E.ContextInfo) (*waE2E.Message, error) {
 	data, err := os.ReadFile(args.FilePath)
 	if err != nil {
@@ -710,6 +768,15 @@ func (s *Service) SendMessage(args *SendMessageArgs, reply *SendMessageReply) er
 		msg, err := s.sendVideoMessage(args, replyContext)
 		if err != nil {
 			return fmt.Errorf("video message: %w", err)
+		}
+		message = msg
+	case "audio":
+		if args.FilePath == "" {
+			return fmt.Errorf("file path required for audio message")
+		}
+		msg, err := s.sendAudioMessage(args, replyContext)
+		if err != nil {
+			return fmt.Errorf("audio message: %w", err)
 		}
 		message = msg
 	case "sticker":

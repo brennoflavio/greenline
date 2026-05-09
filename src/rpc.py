@@ -120,6 +120,8 @@ class DaemonRPC:
         file_path: str = "",
         caption: str = "",
         reply_context: Optional[Dict[str, Any]] = None,
+        duration_seconds: int = 0,
+        ptt: bool = False,
     ) -> Dict[str, Any]:
         payload: Dict[str, Any] = {
             "ChatJID": chat_jid,
@@ -127,6 +129,8 @@ class DaemonRPC:
             "Text": text,
             "FilePath": file_path,
             "Caption": caption,
+            "DurationSeconds": int(duration_seconds),
+            "PTT": bool(ptt),
         }
         if reply_context:
             payload["ReplyToMessageID"] = str(reply_context.get("id") or "")

@@ -11,8 +11,35 @@ MessageBubble {
     property string mediaPath: ""
     property bool playing: false
     property bool downloading: false
+    property string playbackTimeText: duration
 
     signal downloadRequested()
+
+    function progressRatio() {
+        if (audioPlayer.duration <= 0)
+            return 0;
+
+        return Math.max(0, Math.min(1, audioPlayer.position / audioPlayer.duration));
+    }
+
+    function formatPlaybackTime(positionMs) {
+        var secs = Math.floor(positionMs / 1000);
+        var mins = Math.floor(secs / 60);
+        secs = secs % 60;
+        return mins + ":" + (secs < 10 ? "0" : "") + secs;
+    }
+
+    function updatePlaybackTime() {
+        if (root.playing && audioPlayer.duration > 0) {
+            root.playbackTimeText = root.formatPlaybackTime(audioPlayer.position);
+            return ;
+        }
+        root.playbackTimeText = root.duration;
+    }
+
+    preferredBubbleWidth: units.gu(36)
+    onPlayingChanged: updatePlaybackTime()
+    onDurationChanged: updatePlaybackTime()
 
     Item {
         width: 0
@@ -22,6 +49,8 @@ MessageBubble {
             id: audioPlayer
 
             source: root.mediaPath
+            onPositionChanged: root.updatePlaybackTime()
+            onDurationChanged: root.updatePlaybackTime()
             onStatusChanged: {
                 if (status === Audio.EndOfMedia) {
                     root.playing = false;
@@ -75,29 +104,18 @@ MessageBubble {
         Rectangle {
             id: progressBar
 
-            property real progress: audioPlayer.duration > 0 ? audioPlayer.position / audioPlayer.duration : 0
-
             Layout.fillWidth: true
+            Layout.minimumWidth: units.gu(10)
             height: units.gu(0.4)
             radius: height / 2
             color: "#c0c0c0"
             Layout.alignment: Qt.AlignVCenter
 
             Rectangle {
-                width: parent.width * progressBar.progress
+                width: parent.width * root.progressRatio()
                 height: parent.height
                 radius: height / 2
                 color: LomiriColors.green
-            }
-
-            Rectangle {
-                x: parent.width * progressBar.progress - width / 2
-                width: units.gu(1.2)
-                height: units.gu(1.2)
-                radius: width / 2
-                color: LomiriColors.green
-                anchors.verticalCenter: parent.verticalCenter
-                visible: root.mediaPath !== ""
             }
 
             MouseArea {
@@ -117,15 +135,7 @@ MessageBubble {
         Label {
             Layout.preferredWidth: units.gu(4)
             horizontalAlignment: Text.AlignRight
-            text: {
-                if (root.playing && audioPlayer.duration > 0) {
-                    var secs = Math.floor(audioPlayer.position / 1000);
-                    var mins = Math.floor(secs / 60);
-                    secs = secs % 60;
-                    return mins + ":" + (secs < 10 ? "0" : "") + secs;
-                }
-                return root.duration;
-            }
+            text: root.playbackTimeText
             fontSize: "x-small"
             color: "#999999"
             Layout.alignment: Qt.AlignVCenter

@@ -620,6 +620,20 @@ def _guess_contact_mimetype(file_path: str) -> str:
     return guessed or "text/x-vcard"
 
 
+def _format_duration(seconds: int) -> str:
+    safe_seconds = max(0, int(seconds))
+    return f"{safe_seconds // 60}:{safe_seconds % 60:02d}"
+
+
+def _guess_audio_mimetype(file_path: str) -> str:
+    ext = os.path.splitext(file_path)[1].lower()
+    if ext in {".ogg", ".oga", ".opus"}:
+        return "audio/ogg; codecs=opus"
+
+    guessed = mime_types.guess_type(file_path)[0]  # type: ignore[no-untyped-call]
+    return guessed or "audio/ogg; codecs=opus"
+
+
 @crash_reporter
 @dataclass_to_dict
 def send_text_message(
@@ -878,6 +892,112 @@ def send_video_message(
         read_receipt=ReadReceipt.SENT,
         caption=caption,
         media_path="file://" + cached_path,
+        temp_id=temp_id,
+    )
+    _apply_reply_context(msg, resolved_reply_context)
+
+    key = f"message:{chat_id}:{msg.timestamp_unix}:{msg.id}"
+    with KV() as kv:
+        kv.put(key, asdict(msg))
+
+    chat = upsert_chat(msg, MessageInfo())
+    pyotherside.send("message-upsert", [_ui_message_dict(msg)])
+    pyotherside.send("chat-list-update", [_ui_chat_dict(chat)])
+
+    return SuccessResponse(success=True, message="")
+
+
+@crash_reporter
+@dataclass_to_dict
+def send_audio_message(
+    chat_id: str,
+    file_path: str,
+    duration_seconds: int = 0,
+    temp_id: str = "",
+    reply_context: dict[str, object] | None = None,
+) -> SuccessResponse:
+    from datetime import datetime
+
+    import pyotherside
+
+    resolved_reply_context = _resolve_reply_context(chat_id, reply_context)
+    duration_value = max(0, int(duration_seconds))
+    duration = _format_duration(duration_value)
+    now = datetime.now()
+
+    cache_dir = os.path.join(get_cache_path(), "outgoing")
+    os.makedirs(cache_dir, exist_ok=True)
+    ext = os.path.splitext(file_path)[1] or ".ogg"
+    cached_path = os.path.join(cache_dir, f"{temp_id or int(now.timestamp())}{ext}")
+
+    try:
+        if os.path.abspath(file_path) != os.path.abspath(cached_path):
+            shutil.move(file_path, cached_path)
+    except Exception as e:
+        failed_msg = Message(
+            id=temp_id or f"failed-{int(now.timestamp())}",
+            chat_id=chat_id,
+            type=MessageType.AUDIO,
+            is_outgoing=True,
+            timestamp=now.strftime("%H:%M"),
+            timestamp_unix=int(now.timestamp()),
+            read_receipt=ReadReceipt.NONE,
+            duration=duration,
+            media_path="file://" + file_path,
+            mimetype=_guess_audio_mimetype(file_path),
+            send_status="failed",
+            temp_id=temp_id,
+        )
+        _apply_reply_context(failed_msg, resolved_reply_context)
+        pyotherside.send("message-upsert", [_ui_message_dict(failed_msg)])
+        return SuccessResponse(success=False, message=str(e) or "Failed to prepare audio")
+
+    mimetype = _guess_audio_mimetype(cached_path)
+
+    pending_msg = Message(
+        id=temp_id or f"pending-{int(now.timestamp())}",
+        chat_id=chat_id,
+        type=MessageType.AUDIO,
+        is_outgoing=True,
+        timestamp=now.strftime("%H:%M"),
+        timestamp_unix=int(now.timestamp()),
+        read_receipt=ReadReceipt.NONE,
+        duration=duration,
+        media_path="file://" + cached_path,
+        mimetype=mimetype,
+        send_status="pending",
+        temp_id=temp_id,
+    )
+    _apply_reply_context(pending_msg, resolved_reply_context)
+    pyotherside.send("message-upsert", [_ui_message_dict(pending_msg)])
+
+    try:
+        rpc = DaemonRPC()
+        result = rpc.send_message(
+            chat_id,
+            "audio",
+            file_path=cached_path,
+            reply_context=resolved_reply_context,
+            duration_seconds=duration_value,
+            ptt=True,
+        )
+    except Exception as e:
+        pending_msg.send_status = "failed"
+        pyotherside.send("message-upsert", [_ui_message_dict(pending_msg)])
+        return SuccessResponse(success=False, message=str(e) or "Failed to send audio")
+
+    ts = result["Timestamp"]
+    msg = Message(
+        id=result["MessageID"],
+        chat_id=chat_id,
+        type=MessageType.AUDIO,
+        is_outgoing=True,
+        timestamp=datetime.fromtimestamp(ts).strftime("%H:%M"),
+        timestamp_unix=ts,
+        read_receipt=ReadReceipt.SENT,
+        duration=duration,
+        media_path="file://" + cached_path,
+        mimetype=mimetype,
         temp_id=temp_id,
     )
     _apply_reply_context(msg, resolved_reply_context)
