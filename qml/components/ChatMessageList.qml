@@ -336,6 +336,8 @@ Item {
             thumbnailSource: msg.thumbnail_path || ""
             mediaPath: msg.media_path || ""
             caption: msg.caption || ""
+            buttonText: msg.button_text || ""
+            buttonUrl: msg.button_url || ""
             isOutgoing: msg.is_outgoing || false
             isGroup: root.isGroup
             timestamp: msg.timestamp || ""

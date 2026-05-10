@@ -9,11 +9,23 @@ MessageBubble {
     property string thumbnailSource: ""
     property string mediaPath: ""
     property string caption: ""
+    property string buttonText: ""
+    property string buttonUrl: ""
+    readonly property bool hasOpenableButton: buttonText !== "" && (buttonUrl.indexOf("https://") === 0 || buttonUrl.indexOf("http://") === 0)
     property bool downloading: false
 
     signal downloadRequested()
 
-    copyableText: caption
+    copyableText: {
+        var parts = [];
+        if (caption)
+            parts.push(caption);
+
+        if (buttonUrl)
+            parts.push(buttonUrl);
+
+        return parts.join("\n");
+    }
 
     Rectangle {
         id: imageContainer
@@ -90,6 +102,13 @@ MessageBubble {
         wrapMode: Text.WordWrap
         width: parent.width
         visible: text !== ""
+    }
+
+    Button {
+        text: root.buttonText
+        width: parent.width
+        visible: root.hasOpenableButton
+        onClicked: Qt.openUrlExternally(root.buttonUrl)
     }
 
     Item {

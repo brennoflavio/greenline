@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-09 22:11+0000\n"
+"POT-Creation-Date: 2026-05-10 03:33+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -43,12 +43,12 @@ msgstr ""
 msgid "Link Device"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:34 ../qml/ChatListPage.qml:62 ../qml/ChatPage.qml:56
+#: ../qml/ChatListPage.qml:34 ../qml/ChatListPage.qml:62 ../qml/ChatPage.qml:51
 #: ../qml/components/ChatMessageList.qml:62
 msgid "View-once message. Open WhatsApp on your primary device to view it."
 msgstr ""
 
-#: ../qml/ChatListPage.qml:43 ../qml/ChatPage.qml:65 ../qml/ChatPage.qml:88
+#: ../qml/ChatListPage.qml:43 ../qml/ChatPage.qml:60 ../qml/ChatPage.qml:83
 #: ../qml/ContactPreviewPage.qml:42 ../qml/ContactPreviewPage.qml:219
 #: ../qml/components/ChatAttachmentDialog.qml:48
 #: ../qml/components/ContactMessage.qml:47
@@ -75,27 +75,27 @@ msgstr ""
 msgid "No chats found"
 msgstr ""
 
-#: ../qml/ChatPage.qml:125
+#: ../qml/ChatPage.qml:120
 msgid "You"
 msgstr ""
 
-#: ../qml/ChatPage.qml:150
+#: ../qml/ChatPage.qml:145
 msgid "Message updated"
 msgstr ""
 
-#: ../qml/ChatPage.qml:156
+#: ../qml/ChatPage.qml:151
 msgid "Failed to edit message"
 msgstr ""
 
-#: ../qml/ChatPage.qml:366
+#: ../qml/ChatPage.qml:361
 msgid "Failed to load older messages"
 msgstr ""
 
-#: ../qml/ChatPage.qml:456
+#: ../qml/ChatPage.qml:451
 msgid "Failed to send audio"
 msgstr ""
 
-#: ../qml/ChatPage.qml:574
+#: ../qml/ChatPage.qml:569
 msgid "Failed to send contact"
 msgstr ""
 

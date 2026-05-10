@@ -302,6 +302,81 @@ def _template_text_from_context_info(
     return template_mention_text(text, _context_mentioned_jids(context_info), jid_map=jid_map)
 
 
+def _hydrated_template(message_content: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    if not message_content:
+        return None
+    template = message_content.get("templateMessage")
+    if not isinstance(template, dict):
+        return None
+    hydrated = template.get("hydratedTemplate")
+    return hydrated if isinstance(hydrated, dict) else None
+
+
+def resolve_media_message_content(
+    message_content: Optional[Dict[str, Any]],
+    field_name: str,
+) -> Optional[Dict[str, Any]]:
+    if not message_content:
+        return None
+
+    media = message_content.get(field_name)
+    if isinstance(media, dict):
+        return media
+
+    if field_name != "imageMessage":
+        return None
+
+    hydrated = _hydrated_template(message_content)
+    if not hydrated:
+        return None
+
+    title = hydrated.get("Title")
+    if not isinstance(title, dict):
+        return None
+
+    image = title.get("ImageMessage")
+    return image if isinstance(image, dict) else None
+
+
+def template_message_caption(message_content: Optional[Dict[str, Any]]) -> str:
+    hydrated = _hydrated_template(message_content)
+    if not hydrated:
+        return ""
+
+    parts = []
+    for field_name in ("hydratedContentText", "hydratedFooterText"):
+        value = str(hydrated.get(field_name) or "").strip()
+        if value:
+            parts.append(value)
+    return "\n\n".join(parts)
+
+
+def template_message_button(message_content: Optional[Dict[str, Any]]) -> Tuple[str, str]:
+    hydrated = _hydrated_template(message_content)
+    if not hydrated:
+        return "", ""
+
+    buttons = hydrated.get("hydratedButtons")
+    if not isinstance(buttons, list):
+        return "", ""
+
+    for button in buttons:
+        if not isinstance(button, dict):
+            continue
+        hydrated_button = button.get("HydratedButton")
+        if not isinstance(hydrated_button, dict):
+            continue
+        url_button = hydrated_button.get("UrlButton")
+        if not isinstance(url_button, dict):
+            continue
+        display_text = str(url_button.get("displayText") or "").strip()
+        url = str(url_button.get("URL") or url_button.get("url") or "").strip()
+        if display_text and url:
+            return display_text, url
+
+    return "", ""
+
+
 def _quoted_message_preview(quoted: Optional[Dict[str, Any]]) -> str:
     if not quoted:
         return ""
@@ -323,6 +398,9 @@ def _quoted_message_preview(quoted: Optional[Dict[str, Any]]) -> str:
         return _contact_preview(contact.get("displayName", ""))
     if quoted.get("stickerMessage"):
         return "🏷️ Sticker"
+    template_image = resolve_media_message_content(quoted, "imageMessage")
+    if template_image:
+        return template_message_caption(quoted) or "📷 Photo"
     return ""
 
 
@@ -381,9 +459,11 @@ def _extract_context_info(content: MessageContent) -> tuple[str, str, bool, str,
     return ctx.stanzaID, reply_to_sender_id, False, reply_to_text, reply_to_mentioned_jids
 
 
-def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
+def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = None) -> Optional[Message]:
     info = evt.Info
     content = evt.Message
+    raw_content = raw.get("Message", {}) if raw else {}
+    template_image = resolve_media_message_content(raw_content, "imageMessage")
 
     if info.Type == "reaction":
         return None
@@ -412,14 +492,13 @@ def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
             content.documentMessage is not None,
             content.contactMessage is not None,
             content.stickerMessage is not None,
+            template_image is not None,
         )
     )
     if info.Edit == "1" and not has_supported_content:
         return None
 
-    msg_type = None
-    if evt.IsEdit or info.Edit == "1":
-        msg_type = _derive_message_type_from_content(content)
+    msg_type = _derive_message_type_from_content(content, raw_content)
     if msg_type is None:
         msg_type = _derive_message_type(info.Type, info.MediaType)
     if msg_type is None:
@@ -429,6 +508,8 @@ def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
     caption = ""
     mentioned_jids: List[str] = []
     duration = ""
+    button_text = ""
+    button_url = ""
 
     if content.conversation:
         text = content.conversation
@@ -449,6 +530,10 @@ def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
                 content.imageMessage.contextInfo,
             )
         mimetype = content.imageMessage.mimetype
+    elif template_image:
+        caption = template_message_caption(raw_content)
+        mimetype = str(template_image.get("mimetype", ""))
+        button_text, button_url = template_message_button(raw_content)
     elif content.videoMessage:
         if content.videoMessage.caption:
             caption, mentioned_jids = _template_text_from_context_info(
@@ -518,14 +603,19 @@ def message_event_to_message(evt: MessageEvent) -> Optional[Message]:
         reply_to_from_me=reply_to_from_me,
         reply_to_text=reply_to_text,
         reply_to_mentioned_jids=reply_to_mentioned_jids,
+        button_text=button_text,
+        button_url=button_url,
         link_title=link_title,
         link_description=link_description,
         link_url=link_url,
     )
 
 
-def _derive_message_type_from_content(content: MessageContent) -> Optional[MessageType]:
-    if content.imageMessage:
+def _derive_message_type_from_content(
+    content: MessageContent,
+    raw_content: Optional[Dict[str, Any]] = None,
+) -> Optional[MessageType]:
+    if content.imageMessage or resolve_media_message_content(raw_content, "imageMessage"):
         return MessageType.IMAGE
     if content.videoMessage:
         return MessageType.VIDEO
@@ -693,7 +783,11 @@ def _extract_thumbnail(raw: Optional[Dict[str, Any]], message_id: str) -> str:
     msg_content = raw.get("Message", {})
     thumbnail_b64 = ""
     for field_name in ("imageMessage", "videoMessage", "documentMessage", "extendedTextMessage"):
-        sub = msg_content.get(field_name)
+        sub = (
+            resolve_media_message_content(msg_content, field_name)
+            if field_name == "imageMessage"
+            else msg_content.get(field_name)
+        )
         if sub and sub.get("JPEGThumbnail"):
             thumbnail_b64 = sub["JPEGThumbnail"]
             break
@@ -745,6 +839,8 @@ def _merge_edited_message(existing: Message, updated: Message) -> Message:
         reply_to_from_me=updated.reply_to_from_me,
         reply_to_text=updated.reply_to_text,
         reply_to_mentioned_jids=list(updated.reply_to_mentioned_jids),
+        button_text=updated.button_text,
+        button_url=updated.button_url,
         link_title=updated.link_title,
         link_description=updated.link_description,
         link_url=updated.link_url,
@@ -778,7 +874,7 @@ def _update_chat_after_edit(kv: KV, msg: Message, info: MessageInfo) -> ChatList
 
 
 def store_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = None) -> Optional[StoredMessage]:
-    msg = message_event_to_message(evt)
+    msg = message_event_to_message(evt, raw)
     if msg is None:
         return None
 

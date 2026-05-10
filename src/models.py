@@ -86,6 +86,8 @@ class Message:
     reply_to_from_me: bool = False
     reply_to_text: str = ""
     reply_to_mentioned_jids: List[str] = field(default_factory=list)
+    button_text: str = ""
+    button_url: str = ""
     link_title: str = ""
     link_description: str = ""
     link_url: str = ""

@@ -48,6 +48,7 @@ from message_store import (
     _update_chat_after_edit,
     clear_chat_runtime_cache,
     render_chat_mentions,
+    resolve_media_message_content,
     sanitize_message_payload,
     to_ui_message,
     upsert_chat,
@@ -1236,7 +1237,7 @@ def download_media(chat_id: str, message_id: str, media_type: str) -> DownloadMe
     if not field_name:
         return DownloadMediaResponse(success=False, media_path="", message=f"Unknown media type: {media_type}")
 
-    media_msg = msg_content.get(field_name)
+    media_msg = resolve_media_message_content(msg_content, field_name)
     if not media_msg:
         return DownloadMediaResponse(success=False, media_path="", message="No media content in message")
 

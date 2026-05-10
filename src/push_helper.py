@@ -9,8 +9,10 @@ from dacite import from_dict
 from constants import GROUP_JID_SUFFIX
 from message_store import (
     render_mention_text,
+    resolve_media_message_content,
     resolve_sender_name,
     template_mention_text,
+    template_message_caption,
 )
 from rpc import DaemonRPC
 from unread_counter import get_unread_total
@@ -232,9 +234,13 @@ def _extract_message_body(event: Dict[str, Any]) -> str:
         if text:
             return text
 
-    image = message.get("imageMessage")
+    image = resolve_media_message_content(message, "imageMessage")
     if isinstance(image, dict):
-        caption = _mention_safe_text(image.get("caption"), image.get("contextInfo"))
+        raw_image = message.get("imageMessage")
+        if isinstance(raw_image, dict):
+            caption = _mention_safe_text(raw_image.get("caption"), raw_image.get("contextInfo"))
+        else:
+            caption = template_message_caption(message)
         if caption:
             return f"📷 {caption}"
         return "📷 Photo"

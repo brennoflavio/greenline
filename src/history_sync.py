@@ -14,7 +14,10 @@ from message_store import (
     persist_contact_vcard,
     quoted_message_template,
     remember_chat,
+    resolve_media_message_content,
     template_mention_text,
+    template_message_button,
+    template_message_caption,
 )
 from models import ChatListItem, Message, MessageType, ReadReceipt
 from rpc import DaemonRPC
@@ -118,7 +121,7 @@ def _derive_type_from_content(content: Dict[str, Any]) -> Optional[MessageType]:
         return MessageType.LINK_PREVIEW
     if content.get("conversation") or ext:
         return MessageType.TEXT
-    if content.get("imageMessage"):
+    if resolve_media_message_content(content, "imageMessage"):
         return MessageType.IMAGE
     if content.get("videoMessage"):
         return MessageType.VIDEO
@@ -155,7 +158,7 @@ def _extract_content_fields(
             jid_map=jid_map,
         )
 
-    img = content.get("imageMessage")
+    img = resolve_media_message_content(content, "imageMessage")
     vid = content.get("videoMessage")
     aud = content.get("audioMessage")
     doc = content.get("documentMessage")
@@ -163,11 +166,15 @@ def _extract_content_fields(
     stk = content.get("stickerMessage")
 
     if img:
-        caption, mentioned_jids = template_mention_text(
-            img.get("caption", ""),
-            (img.get("contextInfo") or {}).get("mentionedJID"),
-            jid_map=jid_map,
-        )
+        raw_img = content.get("imageMessage")
+        if raw_img:
+            caption, mentioned_jids = template_mention_text(
+                raw_img.get("caption", ""),
+                (raw_img.get("contextInfo") or {}).get("mentionedJID"),
+                jid_map=jid_map,
+            )
+        else:
+            caption = template_message_caption(content)
         mimetype = img.get("mimetype", "")
     elif vid:
         caption, mentioned_jids = template_mention_text(
@@ -219,13 +226,16 @@ def _message_preview(content: Dict[str, Any], jid_map: Dict[str, str]) -> Tuple[
             (ext.get("contextInfo") or {}).get("mentionedJID"),
             jid_map=jid_map,
         )
-    img = content.get("imageMessage")
+    img = resolve_media_message_content(content, "imageMessage")
     if img:
-        return template_mention_text(
-            img.get("caption") or "📷 Photo",
-            (img.get("contextInfo") or {}).get("mentionedJID"),
-            jid_map=jid_map,
-        )
+        raw_img = content.get("imageMessage")
+        if raw_img:
+            return template_mention_text(
+                raw_img.get("caption") or "📷 Photo",
+                (raw_img.get("contextInfo") or {}).get("mentionedJID"),
+                jid_map=jid_map,
+            )
+        return template_message_caption(content) or "📷 Photo", []
     vid = content.get("videoMessage")
     if vid:
         return template_mention_text(
@@ -351,6 +361,8 @@ def _process_messages(
             _extract_link_preview_fields(content) if msg_type == MessageType.LINK_PREVIEW else ("", "", "")
         )
 
+        button_text, button_url = template_message_button(content) if msg_type == MessageType.IMAGE else ("", "")
+
         msg = Message(
             id=msg_id,
             chat_id=chat_jid,
@@ -372,6 +384,8 @@ def _process_messages(
             reply_to_from_me=reply_to_from_me,
             reply_to_text=reply_to_text,
             reply_to_mentioned_jids=reply_to_mentioned_jids,
+            button_text=button_text,
+            button_url=button_url,
             link_title=link_title,
             link_description=link_description,
             link_url=link_url,
