@@ -164,12 +164,13 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
             }
 
-            Icon {
-                name: root.readReceipt === "sent" ? "message-sent" : "tick"
+            MessageReceiptIcon {
                 height: units.gu(1.4)
                 width: units.gu(1.4)
-                color: root.readReceipt === "read" ? LomiriColors.lightBlue : "#999999"
-                visible: root.isOutgoing && root.sendStatus !== "failed" && root.readReceipt !== ""
+                readReceipt: root.readReceipt
+                inactiveColor: "#999999"
+                activeColor: LomiriColors.lightBlue
+                indicatorVisible: root.isOutgoing && root.sendStatus !== "failed"
                 anchors.verticalCenter: parent.verticalCenter
             }
 

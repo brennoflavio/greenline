@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-10 03:33+0000\n"
+"POT-Creation-Date: 2026-05-11 22:19+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -43,35 +43,35 @@ msgstr ""
 msgid "Link Device"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:34 ../qml/ChatListPage.qml:62 ../qml/ChatPage.qml:51
+#: ../qml/ChatListPage.qml:35 ../qml/ChatListPage.qml:63 ../qml/ChatPage.qml:51
 #: ../qml/components/ChatMessageList.qml:62
 msgid "View-once message. Open WhatsApp on your primary device to view it."
 msgstr ""
 
-#: ../qml/ChatListPage.qml:43 ../qml/ChatPage.qml:60 ../qml/ChatPage.qml:83
+#: ../qml/ChatListPage.qml:44 ../qml/ChatPage.qml:60 ../qml/ChatPage.qml:83
 #: ../qml/ContactPreviewPage.qml:42 ../qml/ContactPreviewPage.qml:219
 #: ../qml/components/ChatAttachmentDialog.qml:48
 #: ../qml/components/ContactMessage.qml:47
 msgid "Contact"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:59
+#: ../qml/ChatListPage.qml:60
 msgid "Draft: "
 msgstr ""
 
-#: ../qml/ChatListPage.qml:129
+#: ../qml/ChatListPage.qml:130
 msgid "Search chats..."
 msgstr ""
 
-#: ../qml/ChatListPage.qml:311
+#: ../qml/ChatListPage.qml:313
 msgid "Mute"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:311
+#: ../qml/ChatListPage.qml:313
 msgid "Unmute"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:326
+#: ../qml/ChatListPage.qml:328
 msgid "No chats found"
 msgstr ""
 

@@ -2,6 +2,7 @@ import Lomiri.Components 1.3
 import QtGraphicalEffects 1.0
 import QtQuick 2.7
 import QtQuick.Layouts 1.3
+import "components"
 import io.thp.pyotherside 1.4
 import "ut_components"
 
@@ -255,14 +256,15 @@ Page {
                                 spacing: units.gu(0.3)
                                 Layout.fillWidth: true
 
-                                Icon {
+                                MessageReceiptIcon {
                                     id: receiptIcon
 
-                                    name: modelData.read_receipt === "sent" ? "message-sent" : "tick"
                                     height: units.gu(1.6)
                                     width: units.gu(1.6)
-                                    color: modelData.read_receipt === "read" ? LomiriColors.lightBlue : theme.palette.normal.backgroundTertiaryText
-                                    visible: !modelData.has_draft && (modelData.read_receipt === "sent" || modelData.read_receipt === "delivered" || modelData.read_receipt === "read")
+                                    readReceipt: modelData.read_receipt
+                                    inactiveColor: theme.palette.normal.backgroundTertiaryText
+                                    activeColor: LomiriColors.lightBlue
+                                    indicatorVisible: !modelData.has_draft
                                     anchors.verticalCenter: parent.verticalCenter
                                 }
 

@@ -217,12 +217,13 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
             }
 
-            Icon {
-                name: bubble.readReceipt === "sent" ? "message-sent" : "tick"
+            MessageReceiptIcon {
                 height: units.gu(1.4)
                 width: units.gu(1.4)
-                color: bubble.readReceipt === "read" ? LomiriColors.lightBlue : "#999999"
-                visible: bubble.isOutgoing && bubble.sendStatus !== "failed" && bubble.readReceipt !== ""
+                readReceipt: bubble.readReceipt
+                inactiveColor: "#999999"
+                activeColor: LomiriColors.lightBlue
+                indicatorVisible: bubble.isOutgoing && bubble.sendStatus !== "failed"
                 anchors.verticalCenter: parent.verticalCenter
             }
 
