@@ -40,6 +40,15 @@ MessageBubble {
     preferredBubbleWidth: units.gu(36)
     onPlayingChanged: updatePlaybackTime()
     onDurationChanged: updatePlaybackTime()
+    onMediaPathChanged: {
+        if (audioPlayer.loadedMediaPath !== "" && audioPlayer.loadedMediaPath !== root.mediaPath) {
+            audioPlayer.stop();
+            audioPlayer.source = "";
+            audioPlayer.loadedMediaPath = "";
+            root.playing = false;
+            root.updatePlaybackTime();
+        }
+    }
 
     Item {
         width: 0
@@ -48,7 +57,9 @@ MessageBubble {
         Audio {
             id: audioPlayer
 
-            source: root.mediaPath
+            property string loadedMediaPath: ""
+
+            source: ""
             onPositionChanged: root.updatePlaybackTime()
             onDurationChanged: root.updatePlaybackTime()
             onStatusChanged: {
@@ -92,6 +103,10 @@ MessageBubble {
                             audioPlayer.pause();
                             root.playing = false;
                         } else {
+                            if (audioPlayer.loadedMediaPath !== root.mediaPath) {
+                                audioPlayer.source = root.mediaPath;
+                                audioPlayer.loadedMediaPath = root.mediaPath;
+                            }
                             audioPlayer.play();
                             root.playing = true;
                         }
