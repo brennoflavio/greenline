@@ -164,6 +164,14 @@ class DaemonRPC:
         result: Dict[str, Any] = self._call("Service.EditMessage", payload)
         return result
 
+    def delete_message(self, chat_jid: str, message_id: str) -> Dict[str, Any]:
+        payload: Dict[str, Any] = {
+            "ChatJID": chat_jid,
+            "MessageID": message_id,
+        }
+        result: Dict[str, Any] = self._call("Service.DeleteMessage", payload)
+        return result
+
     def get_chat_settings(self, chat_jid: str) -> GetChatSettingsReply:
         data = self._call("Service.GetChatSettings", {"ChatJID": chat_jid})
         return from_dict(data_class=GetChatSettingsReply, data=data)

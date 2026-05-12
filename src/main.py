@@ -44,6 +44,7 @@ from events import (
     SessionStatusResponse,
 )
 from message_store import (
+    _merge_deleted_message,
     _message_preview,
     _update_chat_after_edit,
     clear_chat_runtime_cache,
@@ -522,6 +523,12 @@ def _get_message_entry(chat_id: str, message_id: str) -> dict[str, object] | Non
     return entry
 
 
+def _is_local_only_message_entry(entry: dict[str, object]) -> bool:
+    message_id = str(entry.get("id") or "")
+    send_status = str(entry.get("send_status") or "")
+    return message_id.startswith("pending-") or message_id.startswith("failed-") or send_status in ("pending", "failed")
+
+
 def _resolve_reply_context(chat_id: str, reply_context: dict[str, object] | None) -> dict[str, object] | None:
     if not isinstance(reply_context, dict):
         return None
@@ -713,6 +720,9 @@ def edit_text_message(chat_id: str, message_id: str, text: str) -> SuccessRespon
     if not entry.get("is_outgoing"):
         return SuccessResponse(success=False, message="Only sent messages can be edited")
 
+    if _is_local_only_message_entry(entry):
+        return SuccessResponse(success=False, message="Message has not been sent yet")
+
     if str(entry.get("type") or "") != MessageType.TEXT.value:
         return SuccessResponse(success=False, message="Only text messages can be edited")
 
@@ -741,6 +751,45 @@ def edit_text_message(chat_id: str, message_id: str, text: str) -> SuccessRespon
         chat = _update_chat_after_edit(kv, updated_msg, MessageInfo())
 
     pyotherside.send("message-upsert", [_ui_message_dict(updated_msg)])
+    pyotherside.send("chat-list-update", [_ui_chat_dict(chat)])
+
+    return SuccessResponse(success=True, message="")
+
+
+@crash_reporter
+@dataclass_to_dict
+def delete_message(chat_id: str, message_id: str) -> SuccessResponse:
+    import pyotherside
+
+    entry_key, entry = _get_message_entry_with_key(chat_id, message_id)
+    if entry_key is None or entry is None:
+        return SuccessResponse(success=False, message="Message not found")
+
+    if not entry.get("is_outgoing"):
+        return SuccessResponse(success=False, message="Only sent messages can be deleted")
+
+    if _is_local_only_message_entry(entry):
+        return SuccessResponse(success=False, message="Message has not been sent yet")
+
+    if str(entry.get("type") or "") == MessageType.DELETED.value:
+        return SuccessResponse(success=False, message="Message already deleted")
+
+    try:
+        DaemonRPC().delete_message(chat_id, message_id)
+    except Exception as e:
+        return SuccessResponse(success=False, message=str(e))
+
+    msg_fields = {f.name for f in Message.__dataclass_fields__.values()}
+    existing_msg = Message(**{k: v for k, v in entry.items() if k in msg_fields})  # type: ignore[arg-type]
+    deleted_msg = _merge_deleted_message(existing_msg, existing_msg.sender)
+
+    updated_entry = dict(entry)
+    updated_entry.update(asdict(deleted_msg))
+    with KV() as kv:
+        kv.put(entry_key, updated_entry)
+        chat = _update_chat_after_edit(kv, deleted_msg, MessageInfo())
+
+    pyotherside.send("message-upsert", [_ui_message_dict(deleted_msg)])
     pyotherside.send("chat-list-update", [_ui_chat_dict(chat)])
 
     return SuccessResponse(success=True, message="")

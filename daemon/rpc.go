@@ -482,6 +482,16 @@ type EditMessageReply struct {
 	Timestamp int64
 }
 
+type DeleteMessageArgs struct {
+	ChatJID   string
+	MessageID string
+}
+
+type DeleteMessageReply struct {
+	MessageID string
+	Timestamp int64
+}
+
 func (s *Service) buildReplyContext(args *SendMessageArgs) (*waE2E.ContextInfo, error) {
 	if args.ReplyToMessageID == "" {
 		return nil, nil
@@ -839,6 +849,33 @@ func (s *Service) EditMessage(args *EditMessageArgs, reply *EditMessageReply) er
 	}
 
 	message := s.client.BuildEdit(jid, types.MessageID(args.MessageID), buildTextMessage(args.Text, replyContext))
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	resp, err := s.client.SendMessage(ctx, jid, message)
+	if err != nil {
+		return fmt.Errorf("send failed: %w", err)
+	}
+
+	reply.MessageID = string(resp.ID)
+	reply.Timestamp = resp.Timestamp.Unix()
+	return nil
+}
+
+func (s *Service) DeleteMessage(args *DeleteMessageArgs, reply *DeleteMessageReply) error {
+	if err := s.requireLogin(); err != nil {
+		return err
+	}
+	jid, err := types.ParseJID(args.ChatJID)
+	if err != nil {
+		return fmt.Errorf("invalid chat JID: %w", err)
+	}
+	if args.MessageID == "" {
+		return fmt.Errorf("message ID required")
+	}
+
+	message := s.client.BuildRevoke(jid, types.EmptyJID, types.MessageID(args.MessageID))
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()

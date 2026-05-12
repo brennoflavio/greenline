@@ -18,6 +18,7 @@ Item {
 
     signal replyRequested(var message)
     signal editRequested(var message)
+    signal deleteRequested(var message)
     signal copyRequested(string text)
     signal downloadRequested(string messageId, string mediaType)
     signal bottomReached()
@@ -72,6 +73,12 @@ Item {
         var messageId = message && message.id ? message.id : "";
         var timestampUnix = message && message.timestamp_unix ? message.timestamp_unix : 0;
         return !!message && !!message.is_outgoing && messageId !== "" && messageId.indexOf("pending-") !== 0 && messageId.indexOf("failed-") !== 0 && (message.type || "") === "text" && timestampUnix > 0 && Math.floor(Date.now() / 1000) - timestampUnix <= editWindowSeconds;
+    }
+
+    function canDeleteMessage(message) {
+        var messageId = message && message.id ? message.id : "";
+        var sendStatus = message && message.send_status ? message.send_status : "";
+        return !!message && !!message.is_outgoing && messageId !== "" && messageId.indexOf("pending-") !== 0 && messageId.indexOf("failed-") !== 0 && sendStatus !== "pending" && sendStatus !== "failed" && (message.type || "") !== "deleted";
     }
 
     onMessagesChanged: {
@@ -152,6 +159,17 @@ Item {
 
                     return textComponent;
                 }
+            }
+
+            leadingActions: ListItemActions {
+                actions: [
+                    Action {
+                        iconName: "delete"
+                        text: i18n.tr("Delete")
+                        enabled: root.canDeleteMessage(modelData)
+                        onTriggered: root.deleteRequested(modelData)
+                    }
+                ]
             }
 
             trailingActions: ListItemActions {

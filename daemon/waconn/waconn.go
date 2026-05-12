@@ -372,6 +372,10 @@ func (c *Client) BuildEdit(chat types.JID, id types.MessageID, newContent *waE2E
 	return c.waCli.BuildEdit(chat, id, newContent)
 }
 
+func (c *Client) BuildRevoke(chat, sender types.JID, id types.MessageID) *waE2E.Message {
+	return c.waCli.BuildRevoke(chat, sender, id)
+}
+
 func (c *Client) SubscribePresence(ctx context.Context, jid types.JID) error {
 	return c.waCli.SubscribePresence(ctx, jid)
 }

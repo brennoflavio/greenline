@@ -131,6 +131,11 @@ Page {
         return !!message && !!message.is_outgoing && !!message.id && message.id.indexOf("pending-") !== 0 && message.id.indexOf("failed-") !== 0 && (message.type || "") === "text" && timestampUnix > 0 && Math.floor(Date.now() / 1000) - timestampUnix <= editWindowSeconds;
     }
 
+    function canDeleteMessage(message) {
+        var sendStatus = message && message.send_status ? message.send_status : "";
+        return !!message && !!message.is_outgoing && !!message.id && message.id.indexOf("pending-") !== 0 && message.id.indexOf("failed-") !== 0 && sendStatus !== "pending" && sendStatus !== "failed" && (message.type || "") !== "deleted";
+    }
+
     function startEdit(message) {
         if (!canEditMessage(message))
             return ;
@@ -152,6 +157,19 @@ Page {
                 dialog.saving = false;
 
             toast.show(result && result.message ? result.message : i18n.tr("Failed to edit message"));
+        });
+    }
+
+    function deleteSelectedMessage(message) {
+        if (!canDeleteMessage(message))
+            return ;
+
+        python.call('main.delete_message', [chatId, message.id], function(result) {
+            if (result && result.success) {
+                toast.show(i18n.tr("Message deleted"));
+                return ;
+            }
+            toast.show(result && result.message ? result.message : i18n.tr("Failed to delete message"));
         });
     }
 
@@ -684,6 +702,7 @@ Page {
         onMessageNotLoaded: toast.show(i18n.tr("Scroll up to load older messages first"))
         onReplyRequested: chatPage.startReply(message)
         onEditRequested: chatPage.startEdit(message)
+        onDeleteRequested: chatPage.deleteSelectedMessage(message)
         onCopyRequested: {
             Clipboard.push(text);
             toast.show(i18n.tr("Copied to clipboard"));
