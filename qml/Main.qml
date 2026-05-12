@@ -90,7 +90,7 @@ MainView {
     Rectangle {
         anchors.fill: parent
         z: 100
-        color: theme.palette.normal.background
+        color: "#30a05a"
         visible: !initComplete
 
         Image {
