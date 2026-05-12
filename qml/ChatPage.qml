@@ -47,6 +47,9 @@ Page {
         if (!message)
             return "";
 
+        if (message.type === "deleted")
+            return i18n.tr("Deleted message");
+
         if (message.type === "view_once")
             return i18n.tr("View-once message. Open WhatsApp on your primary device to view it.");
 
@@ -767,6 +770,9 @@ Page {
                         var message = incomingMessages[i];
                         if (message.chat_id !== chatId)
                             continue;
+
+                        if (message.id === replyToMessageId && message.type === "deleted")
+                            replyToText = messagePreview(message);
 
                         var found = false;
                         for (var j = 0; j < updated.length; j++) {

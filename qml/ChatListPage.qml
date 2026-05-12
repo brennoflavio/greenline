@@ -31,6 +31,9 @@ Page {
     }
 
     function messagePreview(msg) {
+        if (msg.type === "deleted")
+            return i18n.tr("Deleted message");
+
         if (msg.type === "view_once")
             return i18n.tr("View-once message. Open WhatsApp on your primary device to view it.");
 
@@ -58,6 +61,9 @@ Page {
     function chatPreview(chat) {
         if (chat.has_draft)
             return i18n.tr("Draft: ") + (chat.draft || "");
+
+        if ((chat.last_message_type || "") === "deleted")
+            return i18n.tr("Deleted message");
 
         if ((chat.last_message_type || "") === "view_once")
             return i18n.tr("View-once message. Open WhatsApp on your primary device to view it.");

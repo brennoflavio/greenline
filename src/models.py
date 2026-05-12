@@ -6,6 +6,7 @@ from typing import List
 class MessageType(StrEnum):
     TEXT = "text"
     VIEW_ONCE = "view_once"
+    DELETED = "deleted"
     IMAGE = "image"
     IMAGE_GALLERY = "image_gallery"
     VIDEO = "video"

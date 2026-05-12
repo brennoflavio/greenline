@@ -58,7 +58,11 @@ Item {
     }
 
     function messageText(message) {
-        if ((message.type || "") === "view_once")
+        var type = message.type || "";
+        if (type === "deleted")
+            return i18n.tr("Deleted message");
+
+        if (type === "view_once")
             return i18n.tr("View-once message. Open WhatsApp on your primary device to view it.");
 
         return message.text || "";
@@ -113,7 +117,7 @@ Item {
                 width: parent.width
                 sourceComponent: {
                     var type = msg.type || "text";
-                    if (type === "text" || type === "view_once") {
+                    if (type === "text" || type === "view_once" || type === "deleted") {
                         if (msg.reply_to_id || (root.isGroup && !msg.is_outgoing && (msg.sender_name || "") !== ""))
                             return richTextComponent;
 

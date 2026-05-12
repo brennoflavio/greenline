@@ -45,6 +45,7 @@ def persist_contact_vcard(chat_id: str, message_id: str, display_name: str, vcar
 
 _CHAT_RUNTIME_CACHE: Dict[str, Dict[str, Any]] = {}
 _MESSAGE_FIELDS = set(Message.__dataclass_fields__.keys())
+_DELETED_MESSAGE_PREVIEW = "Deleted message"
 
 
 def clear_chat_runtime_cache() -> None:
@@ -285,8 +286,11 @@ def to_ui_message(message: Message) -> UiMessage:
     elif rendered.reply_to_sender_id:
         reply_to_sender = resolve_sender_name(rendered.reply_to_sender_id)
 
+    payload = asdict(rendered)
+    payload["reply_to_text"] = _resolve_reply_preview_text(rendered)
+
     return UiMessage(
-        **asdict(rendered),
+        **payload,
         sender_name=sender_name,
         sender_photo=sender_photo,
         reply_to_sender=reply_to_sender,
@@ -683,6 +687,8 @@ def undecryptable_event_to_message(evt: UndecryptableMessageEvent) -> Optional[M
 
 
 def _message_preview_data(msg: Message) -> tuple[str, List[str]]:
+    if msg.type == MessageType.DELETED:
+        return _DELETED_MESSAGE_PREVIEW, []
     if msg.text:
         return msg.text, list(msg.mentioned_jids)
     if msg.caption:
@@ -817,6 +823,45 @@ def _find_message_entry(kv: KV, chat_id: str, message_id: str) -> Tuple[str, Dic
     return None, None
 
 
+def _get_stored_message(chat_id: str, message_id: str) -> Optional[Message]:
+    if not chat_id or not message_id:
+        return None
+
+    with KV() as kv:
+        _, value = _find_message_entry(kv, chat_id, message_id)
+    if value is None:
+        return None
+
+    return Message(**{k: v for k, v in value.items() if k in _MESSAGE_FIELDS})
+
+
+def _resolve_reply_preview_text(message: Message) -> str:
+    if not message.reply_to_id:
+        return message.reply_to_text
+
+    replied_to = _get_stored_message(message.chat_id, message.reply_to_id)
+    if replied_to is None or replied_to.type != MessageType.DELETED:
+        return message.reply_to_text
+
+    return _DELETED_MESSAGE_PREVIEW
+
+
+def _deleted_message_target_id(evt: MessageEvent, raw: Optional[Dict[str, Any]]) -> str:
+    target_id = evt.Info.MsgBotInfo.EditTargetID or evt.Info.MsgMetaInfo.TargetID
+    if target_id:
+        return str(target_id)
+
+    protocol_message = (raw or {}).get("Message", {}).get("protocolMessage") or {}
+    if not isinstance(protocol_message, dict):
+        return ""
+
+    key = protocol_message.get("key") or {}
+    if not isinstance(key, dict):
+        return ""
+
+    return str(key.get("ID") or key.get("id") or "")
+
+
 def _merge_edited_message(existing: Message, updated: Message) -> Message:
     return replace(
         existing,
@@ -847,6 +892,33 @@ def _merge_edited_message(existing: Message, updated: Message) -> Message:
     )
 
 
+def _merge_deleted_message(existing: Message, sender: str) -> Message:
+    return replace(
+        existing,
+        type=MessageType.DELETED,
+        edited=False,
+        sender=sender or existing.sender,
+        text="",
+        mentioned_jids=[],
+        image_source="",
+        caption="",
+        images=[],
+        duration="",
+        sticker_source="",
+        media_path="",
+        thumbnail_path="",
+        mimetype="",
+        file_name="",
+        send_status="",
+        temp_id="",
+        button_text="",
+        button_url="",
+        link_title="",
+        link_description="",
+        link_url="",
+    )
+
+
 def _update_chat_after_edit(kv: KV, msg: Message, info: MessageInfo) -> ChatListItem:
     chat_key = f"chat:{msg.chat_id}"
     existing = kv.get(chat_key)
@@ -874,6 +946,23 @@ def _update_chat_after_edit(kv: KV, msg: Message, info: MessageInfo) -> ChatList
 
 
 def store_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = None) -> Optional[StoredMessage]:
+    if evt.Info.Edit == "7":
+        target_id = _deleted_message_target_id(evt, raw)
+        if not target_id:
+            return None
+
+        with KV() as kv:
+            existing_key, existing_value = _find_message_entry(kv, evt.Info.Chat, target_id)
+            if existing_key is None or existing_value is None:
+                return None
+            existing_msg = Message(**{k: v for k, v in existing_value.items() if k in _MESSAGE_FIELDS})
+            deleted_msg = _merge_deleted_message(existing_msg, evt.Info.Sender)
+            data = asdict(deleted_msg)
+            data["raw"] = raw
+            kv.put(existing_key, data)
+            chat = _update_chat_after_edit(kv, deleted_msg, evt.Info)
+            return StoredMessage(message=deleted_msg, chat=chat)
+
     msg = message_event_to_message(evt, raw)
     if msg is None:
         return None

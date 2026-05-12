@@ -557,7 +557,9 @@ def _resolve_reply_context(chat_id: str, reply_context: dict[str, object] | None
     if isinstance(quoted_message, dict):
         resolved["quoted_message"] = quoted_message
 
-    if not resolved["text"]:
+    if stored_msg.type == MessageType.DELETED:
+        resolved["text"] = _message_preview(rendered_msg)
+    elif not resolved["text"]:
         resolved["text"] = _message_preview(rendered_msg)
 
     return resolved
