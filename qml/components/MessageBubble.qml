@@ -221,6 +221,7 @@ Item {
                 height: units.gu(1.4)
                 width: units.gu(1.4)
                 readReceipt: bubble.readReceipt
+                sendStatus: bubble.sendStatus
                 inactiveColor: "#999999"
                 activeColor: LomiriColors.lightBlue
                 indicatorVisible: bubble.isOutgoing && bubble.sendStatus !== "failed"

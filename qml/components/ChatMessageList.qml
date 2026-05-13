@@ -533,6 +533,8 @@ Item {
             isGroup: root.isGroup
             timestamp: msg.timestamp || ""
             edited: msg.edited || false
+            readReceipt: msg.read_receipt || ""
+            sendStatus: msg.send_status || ""
             senderName: msg.sender_name || ""
             senderPhoto: msg.sender_photo || ""
             replyToId: msg.reply_to_id || ""

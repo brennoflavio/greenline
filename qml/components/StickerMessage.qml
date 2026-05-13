@@ -11,6 +11,8 @@ Item {
     property bool isGroup: false
     property bool edited: false
     property string timestamp: ""
+    property string readReceipt: ""
+    property string sendStatus: ""
     property string stickerSource: ""
     property string thumbnailSource: ""
     property string mediaPath: ""
@@ -195,6 +197,24 @@ Item {
                 text: root.timestamp
                 fontSize: "xx-small"
                 color: "#999999"
+            }
+
+            Icon {
+                name: "close"
+                height: units.gu(1.4)
+                width: units.gu(1.4)
+                color: LomiriColors.lightRed
+                visible: root.isOutgoing && root.sendStatus === "failed"
+            }
+
+            MessageReceiptIcon {
+                height: units.gu(1.4)
+                width: units.gu(1.4)
+                readReceipt: root.readReceipt
+                sendStatus: root.sendStatus
+                inactiveColor: "#999999"
+                activeColor: LomiriColors.lightBlue
+                indicatorVisible: root.isOutgoing && root.sendStatus !== "failed"
             }
 
         }

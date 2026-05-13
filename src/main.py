@@ -25,6 +25,7 @@ import os
 import shutil
 import time
 from dataclasses import asdict, dataclass
+from datetime import datetime
 
 from daemon import (
     ensure_daemon_version,
@@ -52,7 +53,6 @@ from message_store import (
     resolve_media_message_content,
     sanitize_message_payload,
     to_ui_message,
-    upsert_chat,
 )
 from models import (
     ChatListEntry,
@@ -66,6 +66,7 @@ from models import (
     ReadReceipt,
     UiMessage,
 )
+from pending_outbox import PendingMessageRetryEvent, queue_and_attempt_send
 from rpc import DaemonRPC
 from unread_counter import decrement_unread_total, reconcile_unread_total
 from ut_components.config import get_cache_path, get_config_path
@@ -105,6 +106,7 @@ def start_event_loop() -> None:
     dispatcher.register_event(SessionStatusEvent())
     dispatcher.register_event(DaemonEventHandler())
     dispatcher.register_event(ChatListUpdateEvent())
+    dispatcher.register_event(PendingMessageRetryEvent(_resolve_reply_context))
     dispatcher.start()
 
 
@@ -652,54 +654,24 @@ def send_text_message(
     temp_id: str = "",
     reply_context: dict[str, object] | None = None,
 ) -> SuccessResponse:
-    from datetime import datetime
-
-    import pyotherside
-
     resolved_reply_context = _resolve_reply_context(chat_id, reply_context)
+    now = datetime.now()
+    pending_id = temp_id or f"pending-{int(now.timestamp())}"
 
-    try:
-        rpc = DaemonRPC()
-        result = rpc.send_message(chat_id, "text", text=text, reply_context=resolved_reply_context)
-    except Exception:
-        now = datetime.now()
-        failed_msg = Message(
-            id=temp_id or f"failed-{int(now.timestamp())}",
-            chat_id=chat_id,
-            type=MessageType.TEXT,
-            is_outgoing=True,
-            timestamp=now.strftime("%H:%M"),
-            timestamp_unix=int(now.timestamp()),
-            read_receipt=ReadReceipt.NONE,
-            text=text,
-            send_status="failed",
-            temp_id=temp_id,
-        )
-        _apply_reply_context(failed_msg, resolved_reply_context)
-        pyotherside.send("message-upsert", [_ui_message_dict(failed_msg)])
-        return SuccessResponse(success=False, message="Failed to send message")
-
-    ts = result["Timestamp"]
-    msg = Message(
-        id=result["MessageID"],
+    pending_msg = Message(
+        id=pending_id,
         chat_id=chat_id,
         type=MessageType.TEXT,
         is_outgoing=True,
-        timestamp=datetime.fromtimestamp(ts).strftime("%H:%M"),
-        timestamp_unix=ts,
-        read_receipt=ReadReceipt.SENT,
+        timestamp=now.strftime("%H:%M"),
+        timestamp_unix=int(now.timestamp()),
+        read_receipt=ReadReceipt.NONE,
         text=text,
-        temp_id=temp_id,
+        send_status="pending",
+        temp_id=pending_id,
     )
-    _apply_reply_context(msg, resolved_reply_context)
-
-    key = f"message:{chat_id}:{msg.timestamp_unix}:{msg.id}"
-    with KV() as kv:
-        kv.put(key, asdict(msg))
-
-    chat = upsert_chat(msg, MessageInfo())
-    pyotherside.send("message-upsert", [_ui_message_dict(msg)])
-    pyotherside.send("chat-list-update", [_ui_chat_dict(chat)])
+    _apply_reply_context(pending_msg, resolved_reply_context)
+    queue_and_attempt_send(pending_msg, _resolve_reply_context)
 
     return SuccessResponse(success=True, message="")
 
@@ -804,11 +776,6 @@ def send_image_message(
     temp_id: str = "",
     reply_context: dict[str, object] | None = None,
 ) -> SuccessResponse:
-    import shutil
-    from datetime import datetime
-
-    import pyotherside
-
     resolved_reply_context = _resolve_reply_context(chat_id, reply_context)
 
     cache_dir = os.path.join(get_cache_path(), "outgoing")
@@ -818,61 +785,22 @@ def send_image_message(
     shutil.copy2(file_path, cached_path)
 
     now = datetime.now()
-    hours = now.strftime("%H")
-    minutes = now.strftime("%M")
-
+    pending_id = temp_id or f"pending-{int(now.timestamp())}"
     pending_msg = Message(
-        id=temp_id or f"pending-{int(now.timestamp())}",
+        id=pending_id,
         chat_id=chat_id,
         type=MessageType.IMAGE,
         is_outgoing=True,
-        timestamp=f"{hours}:{minutes}",
+        timestamp=now.strftime("%H:%M"),
         timestamp_unix=int(now.timestamp()),
         read_receipt=ReadReceipt.NONE,
         caption=caption,
         media_path="file://" + cached_path,
         send_status="pending",
-        temp_id=temp_id,
+        temp_id=pending_id,
     )
     _apply_reply_context(pending_msg, resolved_reply_context)
-    pyotherside.send("message-upsert", [_ui_message_dict(pending_msg)])
-
-    try:
-        rpc = DaemonRPC()
-        result = rpc.send_message(
-            chat_id,
-            "image",
-            file_path=cached_path,
-            caption=caption,
-            reply_context=resolved_reply_context,
-        )
-    except Exception:
-        pending_msg.send_status = "failed"
-        pyotherside.send("message-upsert", [_ui_message_dict(pending_msg)])
-        return SuccessResponse(success=False, message="Failed to send image")
-
-    ts = result["Timestamp"]
-    msg = Message(
-        id=result["MessageID"],
-        chat_id=chat_id,
-        type=MessageType.IMAGE,
-        is_outgoing=True,
-        timestamp=datetime.fromtimestamp(ts).strftime("%H:%M"),
-        timestamp_unix=ts,
-        read_receipt=ReadReceipt.SENT,
-        caption=caption,
-        media_path="file://" + cached_path,
-        temp_id=temp_id,
-    )
-    _apply_reply_context(msg, resolved_reply_context)
-
-    key = f"message:{chat_id}:{msg.timestamp_unix}:{msg.id}"
-    with KV() as kv:
-        kv.put(key, asdict(msg))
-
-    chat = upsert_chat(msg, MessageInfo())
-    pyotherside.send("message-upsert", [_ui_message_dict(msg)])
-    pyotherside.send("chat-list-update", [_ui_chat_dict(chat)])
+    queue_and_attempt_send(pending_msg, _resolve_reply_context)
 
     return SuccessResponse(success=True, message="")
 
@@ -886,11 +814,6 @@ def send_video_message(
     temp_id: str = "",
     reply_context: dict[str, object] | None = None,
 ) -> SuccessResponse:
-    import shutil
-    from datetime import datetime
-
-    import pyotherside
-
     resolved_reply_context = _resolve_reply_context(chat_id, reply_context)
 
     cache_dir = os.path.join(get_cache_path(), "outgoing")
@@ -900,61 +823,22 @@ def send_video_message(
     shutil.copy2(file_path, cached_path)
 
     now = datetime.now()
-    hours = now.strftime("%H")
-    minutes = now.strftime("%M")
-
+    pending_id = temp_id or f"pending-{int(now.timestamp())}"
     pending_msg = Message(
-        id=temp_id or f"pending-{int(now.timestamp())}",
+        id=pending_id,
         chat_id=chat_id,
         type=MessageType.VIDEO,
         is_outgoing=True,
-        timestamp=f"{hours}:{minutes}",
+        timestamp=now.strftime("%H:%M"),
         timestamp_unix=int(now.timestamp()),
         read_receipt=ReadReceipt.NONE,
         caption=caption,
         media_path="file://" + cached_path,
         send_status="pending",
-        temp_id=temp_id,
+        temp_id=pending_id,
     )
     _apply_reply_context(pending_msg, resolved_reply_context)
-    pyotherside.send("message-upsert", [_ui_message_dict(pending_msg)])
-
-    try:
-        rpc = DaemonRPC()
-        result = rpc.send_message(
-            chat_id,
-            "video",
-            file_path=cached_path,
-            caption=caption,
-            reply_context=resolved_reply_context,
-        )
-    except Exception:
-        pending_msg.send_status = "failed"
-        pyotherside.send("message-upsert", [_ui_message_dict(pending_msg)])
-        return SuccessResponse(success=False, message="Failed to send video")
-
-    ts = result["Timestamp"]
-    msg = Message(
-        id=result["MessageID"],
-        chat_id=chat_id,
-        type=MessageType.VIDEO,
-        is_outgoing=True,
-        timestamp=datetime.fromtimestamp(ts).strftime("%H:%M"),
-        timestamp_unix=ts,
-        read_receipt=ReadReceipt.SENT,
-        caption=caption,
-        media_path="file://" + cached_path,
-        temp_id=temp_id,
-    )
-    _apply_reply_context(msg, resolved_reply_context)
-
-    key = f"message:{chat_id}:{msg.timestamp_unix}:{msg.id}"
-    with KV() as kv:
-        kv.put(key, asdict(msg))
-
-    chat = upsert_chat(msg, MessageInfo())
-    pyotherside.send("message-upsert", [_ui_message_dict(msg)])
-    pyotherside.send("chat-list-update", [_ui_chat_dict(chat)])
+    queue_and_attempt_send(pending_msg, _resolve_reply_context)
 
     return SuccessResponse(success=True, message="")
 
@@ -968,8 +852,6 @@ def send_audio_message(
     temp_id: str = "",
     reply_context: dict[str, object] | None = None,
 ) -> SuccessResponse:
-    from datetime import datetime
-
     import pyotherside
 
     resolved_reply_context = _resolve_reply_context(chat_id, reply_context)
@@ -986,8 +868,9 @@ def send_audio_message(
         if os.path.abspath(file_path) != os.path.abspath(cached_path):
             shutil.move(file_path, cached_path)
     except Exception as e:
+        failed_id = temp_id or f"failed-{int(now.timestamp())}"
         failed_msg = Message(
-            id=temp_id or f"failed-{int(now.timestamp())}",
+            id=failed_id,
             chat_id=chat_id,
             type=MessageType.AUDIO,
             is_outgoing=True,
@@ -998,16 +881,15 @@ def send_audio_message(
             media_path="file://" + file_path,
             mimetype=_guess_audio_mimetype(file_path),
             send_status="failed",
-            temp_id=temp_id,
+            temp_id=failed_id,
         )
         _apply_reply_context(failed_msg, resolved_reply_context)
         pyotherside.send("message-upsert", [_ui_message_dict(failed_msg)])
         return SuccessResponse(success=False, message=str(e) or "Failed to prepare audio")
 
-    mimetype = _guess_audio_mimetype(cached_path)
-
+    pending_id = temp_id or f"pending-{int(now.timestamp())}"
     pending_msg = Message(
-        id=temp_id or f"pending-{int(now.timestamp())}",
+        id=pending_id,
         chat_id=chat_id,
         type=MessageType.AUDIO,
         is_outgoing=True,
@@ -1016,51 +898,12 @@ def send_audio_message(
         read_receipt=ReadReceipt.NONE,
         duration=duration,
         media_path="file://" + cached_path,
-        mimetype=mimetype,
+        mimetype=_guess_audio_mimetype(cached_path),
         send_status="pending",
-        temp_id=temp_id,
+        temp_id=pending_id,
     )
     _apply_reply_context(pending_msg, resolved_reply_context)
-    pyotherside.send("message-upsert", [_ui_message_dict(pending_msg)])
-
-    try:
-        rpc = DaemonRPC()
-        result = rpc.send_message(
-            chat_id,
-            "audio",
-            file_path=cached_path,
-            reply_context=resolved_reply_context,
-            duration_seconds=duration_value,
-            ptt=True,
-        )
-    except Exception as e:
-        pending_msg.send_status = "failed"
-        pyotherside.send("message-upsert", [_ui_message_dict(pending_msg)])
-        return SuccessResponse(success=False, message=str(e) or "Failed to send audio")
-
-    ts = result["Timestamp"]
-    msg = Message(
-        id=result["MessageID"],
-        chat_id=chat_id,
-        type=MessageType.AUDIO,
-        is_outgoing=True,
-        timestamp=datetime.fromtimestamp(ts).strftime("%H:%M"),
-        timestamp_unix=ts,
-        read_receipt=ReadReceipt.SENT,
-        duration=duration,
-        media_path="file://" + cached_path,
-        mimetype=mimetype,
-        temp_id=temp_id,
-    )
-    _apply_reply_context(msg, resolved_reply_context)
-
-    key = f"message:{chat_id}:{msg.timestamp_unix}:{msg.id}"
-    with KV() as kv:
-        kv.put(key, asdict(msg))
-
-    chat = upsert_chat(msg, MessageInfo())
-    pyotherside.send("message-upsert", [_ui_message_dict(msg)])
-    pyotherside.send("chat-list-update", [_ui_chat_dict(chat)])
+    queue_and_attempt_send(pending_msg, _resolve_reply_context)
 
     return SuccessResponse(success=True, message="")
 
@@ -1073,11 +916,6 @@ def send_sticker_message(
     temp_id: str = "",
     reply_context: dict[str, object] | None = None,
 ) -> SuccessResponse:
-    import shutil
-    from datetime import datetime
-
-    import pyotherside
-
     resolved_reply_context = _resolve_reply_context(chat_id, reply_context)
 
     cache_dir = os.path.join(get_cache_path(), "outgoing")
@@ -1087,58 +925,21 @@ def send_sticker_message(
     shutil.copy2(file_path, cached_path)
 
     now = datetime.now()
-    hours = now.strftime("%H")
-    minutes = now.strftime("%M")
-
+    pending_id = temp_id or f"pending-{int(now.timestamp())}"
     pending_msg = Message(
-        id=temp_id or f"pending-{int(now.timestamp())}",
+        id=pending_id,
         chat_id=chat_id,
         type=MessageType.STICKER,
         is_outgoing=True,
-        timestamp=f"{hours}:{minutes}",
+        timestamp=now.strftime("%H:%M"),
         timestamp_unix=int(now.timestamp()),
         read_receipt=ReadReceipt.NONE,
         media_path="file://" + cached_path,
         send_status="pending",
-        temp_id=temp_id,
+        temp_id=pending_id,
     )
     _apply_reply_context(pending_msg, resolved_reply_context)
-    pyotherside.send("message-upsert", [_ui_message_dict(pending_msg)])
-
-    try:
-        rpc = DaemonRPC()
-        result = rpc.send_message(
-            chat_id,
-            "sticker",
-            file_path=cached_path,
-            reply_context=resolved_reply_context,
-        )
-    except Exception:
-        pending_msg.send_status = "failed"
-        pyotherside.send("message-upsert", [_ui_message_dict(pending_msg)])
-        return SuccessResponse(success=False, message="Failed to send sticker")
-
-    ts = result["Timestamp"]
-    msg = Message(
-        id=result["MessageID"],
-        chat_id=chat_id,
-        type=MessageType.STICKER,
-        is_outgoing=True,
-        timestamp=datetime.fromtimestamp(ts).strftime("%H:%M"),
-        timestamp_unix=ts,
-        read_receipt=ReadReceipt.SENT,
-        media_path="file://" + cached_path,
-        temp_id=temp_id,
-    )
-    _apply_reply_context(msg, resolved_reply_context)
-
-    key = f"message:{chat_id}:{msg.timestamp_unix}:{msg.id}"
-    with KV() as kv:
-        kv.put(key, asdict(msg))
-
-    chat = upsert_chat(msg, MessageInfo())
-    pyotherside.send("message-upsert", [_ui_message_dict(msg)])
-    pyotherside.send("chat-list-update", [_ui_chat_dict(chat)])
+    queue_and_attempt_send(pending_msg, _resolve_reply_context)
 
     return SuccessResponse(success=True, message="")
 
@@ -1151,10 +952,6 @@ def send_contact_message(
     temp_id: str = "",
     reply_context: dict[str, object] | None = None,
 ) -> SuccessResponse:
-    from datetime import datetime
-
-    import pyotherside
-
     resolved_reply_context = _resolve_reply_context(chat_id, reply_context)
 
     with open(file_path, encoding="utf-8-sig") as f:
@@ -1166,11 +963,10 @@ def send_contact_message(
     cached_path = os.path.join(cache_dir, f"{temp_id or int(datetime.now().timestamp())}{ext}")
     shutil.copy2(file_path, cached_path)
 
-    display_name = _extract_contact_display_name(vcard, file_path)
-
     now = datetime.now()
+    pending_id = temp_id or f"pending-{int(now.timestamp())}"
     pending_msg = Message(
-        id=temp_id or f"pending-{int(now.timestamp())}",
+        id=pending_id,
         chat_id=chat_id,
         type=MessageType.CONTACT,
         is_outgoing=True,
@@ -1179,59 +975,12 @@ def send_contact_message(
         read_receipt=ReadReceipt.NONE,
         media_path="file://" + cached_path,
         mimetype=_guess_contact_mimetype(cached_path),
-        file_name=display_name,
+        file_name=_extract_contact_display_name(vcard, file_path),
         send_status="pending",
-        temp_id=temp_id,
+        temp_id=pending_id,
     )
     _apply_reply_context(pending_msg, resolved_reply_context)
-    pyotherside.send("message-upsert", [_ui_message_dict(pending_msg)])
-
-    try:
-        rpc = DaemonRPC()
-        result = rpc.send_message(
-            chat_id,
-            "contact",
-            text=display_name,
-            file_path=cached_path,
-            reply_context=resolved_reply_context,
-        )
-    except Exception:
-        pending_msg.send_status = "failed"
-        pyotherside.send("message-upsert", [_ui_message_dict(pending_msg)])
-        return SuccessResponse(success=False, message="Failed to send contact")
-
-    ts = result["Timestamp"]
-    msg = Message(
-        id=result["MessageID"],
-        chat_id=chat_id,
-        type=MessageType.CONTACT,
-        is_outgoing=True,
-        timestamp=datetime.fromtimestamp(ts).strftime("%H:%M"),
-        timestamp_unix=ts,
-        read_receipt=ReadReceipt.SENT,
-        media_path="file://" + cached_path,
-        mimetype=_guess_contact_mimetype(cached_path),
-        file_name=display_name,
-        temp_id=temp_id,
-    )
-    _apply_reply_context(msg, resolved_reply_context)
-
-    key = f"message:{chat_id}:{msg.timestamp_unix}:{msg.id}"
-    data = asdict(msg)
-    data["raw"] = {
-        "Message": {
-            "contactMessage": {
-                "displayName": display_name,
-                "vcard": vcard,
-            }
-        }
-    }
-    with KV() as kv:
-        kv.put(key, data)
-
-    chat = upsert_chat(msg, MessageInfo())
-    pyotherside.send("message-upsert", [_ui_message_dict(msg)])
-    pyotherside.send("chat-list-update", [_ui_chat_dict(chat)])
+    queue_and_attempt_send(pending_msg, _resolve_reply_context)
 
     return SuccessResponse(success=True, message="")
 

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-12 23:42+0000\n"
+"POT-Creation-Date: 2026-05-13 03:20+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -404,7 +404,7 @@ msgid "Tap to download"
 msgstr ""
 
 #: ../qml/components/MessageBubble.qml:197
-#: ../qml/components/StickerMessage.qml:188
+#: ../qml/components/StickerMessage.qml:190
 #: ../qml/components/TextMessage.qml:144
 msgid "edited"
 msgstr ""

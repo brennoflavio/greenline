@@ -6,17 +6,25 @@ Item {
     id: root
 
     property string readReceipt: ""
+    property string sendStatus: ""
     property color inactiveColor: "#999999"
     property color activeColor: LomiriColors.lightBlue
     property bool indicatorVisible: true
 
-    visible: indicatorVisible && (readReceipt === "sent" || readReceipt === "delivered" || readReceipt === "read")
+    visible: indicatorVisible && (sendStatus === "pending" || readReceipt === "sent" || readReceipt === "delivered" || readReceipt === "read")
+
+    Icon {
+        anchors.fill: parent
+        name: "emoji-recent-symbolic"
+        color: root.inactiveColor
+        visible: root.sendStatus === "pending"
+    }
 
     Icon {
         anchors.fill: parent
         name: "ok"
         color: root.inactiveColor
-        visible: root.readReceipt === "sent"
+        visible: root.sendStatus !== "pending" && root.readReceipt === "sent"
     }
 
     Image {
@@ -35,7 +43,7 @@ Item {
         anchors.fill: doubleCheckIcon
         source: doubleCheckIcon
         color: root.readReceipt === "read" ? root.activeColor : root.inactiveColor
-        visible: root.readReceipt === "delivered" || root.readReceipt === "read"
+        visible: root.sendStatus !== "pending" && (root.readReceipt === "delivered" || root.readReceipt === "read")
     }
 
 }

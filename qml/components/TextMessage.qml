@@ -168,6 +168,7 @@ Item {
                 height: units.gu(1.4)
                 width: units.gu(1.4)
                 readReceipt: root.readReceipt
+                sendStatus: root.sendStatus
                 inactiveColor: "#999999"
                 activeColor: LomiriColors.lightBlue
                 indicatorVisible: root.isOutgoing && root.sendStatus !== "failed"
