@@ -20,9 +20,21 @@ Item {
         visible: root.sendStatus === "pending"
     }
 
-    Icon {
+    Image {
+        id: singleCheckIcon
+
         anchors.fill: parent
-        name: "ok"
+        source: Qt.resolvedUrl("../assets/message-status-check.svg")
+        sourceSize.width: width
+        sourceSize.height: height
+        fillMode: Image.PreserveAspectFit
+        asynchronous: true
+        visible: false
+    }
+
+    ColorOverlay {
+        anchors.fill: singleCheckIcon
+        source: singleCheckIcon
         color: root.inactiveColor
         visible: root.sendStatus !== "pending" && root.readReceipt === "sent"
     }
