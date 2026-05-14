@@ -21,7 +21,7 @@ from message_store import (
 )
 from models import ChatListItem, Message, MessageType, ReadReceipt
 from receipt_store import process_receipt
-from rpc import DaemonNotReadyError, DaemonRPC, RateLimitError
+from rpc import DaemonNotReadyError, DaemonRPC, DaemonTimeoutError, RateLimitError
 from unread_counter import reconcile_unread_total
 from ut_components.config import get_cache_path
 from ut_components.event import Event
@@ -77,7 +77,7 @@ class SessionStatusEvent(Event):
     def trigger(self, metadata: Optional[Dict[str, Any]]) -> Optional[SessionStatusResponse]:
         try:
             result = DaemonRPC().get_session_status()
-        except (ConnectionRefusedError, DaemonNotReadyError):
+        except (ConnectionRefusedError, DaemonNotReadyError, DaemonTimeoutError):
             return None
         qr_image_path = ""
 
@@ -452,7 +452,7 @@ def _dispatch_event(
             presence_updates,
             chat_presence_updates,
         )
-    except (ConnectionRefusedError, DaemonNotReadyError):
+    except (ConnectionRefusedError, DaemonNotReadyError, DaemonTimeoutError):
         raise
     except Exception:
         _handle_unknown(event)
@@ -547,7 +547,7 @@ def process_events_once(batch_limit: int = 50) -> None:
             DaemonRPC().delete_events(up_to_id=max_id)
             with KV() as kv:
                 kv.put(LAST_EVENT_ID_KEY, max_id)
-    except (ConnectionRefusedError, DaemonNotReadyError):
+    except (ConnectionRefusedError, DaemonNotReadyError, DaemonTimeoutError):
         return
 
 
@@ -558,7 +558,7 @@ class DaemonEventHandler(Event):
     def trigger(self, metadata: Optional[Dict[str, Any]]) -> None:
         try:
             return self._do_trigger()
-        except (ConnectionRefusedError, DaemonNotReadyError):
+        except (ConnectionRefusedError, DaemonNotReadyError, DaemonTimeoutError):
             return None
 
     def _do_trigger(self) -> None:
@@ -645,9 +645,13 @@ class ChatListUpdateEvent(Event):
 
         try:
             self._sync_contacts(chat_updates, photo_updates)
-            self._sync_groups(chat_updates, photo_updates)
-        except (RateLimitError, ConnectionRefusedError, DaemonNotReadyError):
+        except (RateLimitError, ConnectionRefusedError, DaemonNotReadyError, DaemonTimeoutError):
             return None
+
+        try:
+            self._sync_groups(chat_updates, photo_updates)
+        except (RateLimitError, ConnectionRefusedError, DaemonNotReadyError, DaemonTimeoutError):
+            pass
 
         if chat_updates:
             pyotherside.send("chat-list-update", [_render_chat_payload(chat) for chat in chat_updates])
