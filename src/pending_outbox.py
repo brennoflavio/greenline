@@ -5,7 +5,17 @@ from dataclasses import asdict, replace
 from datetime import datetime, timedelta
 from typing import Callable
 
-from message_store import render_chat_mentions, to_ui_message, upsert_chat
+from message_store import (
+    delete_message_index,
+)
+from message_store import get_message_entry_with_key as _lookup_message_entry_with_key
+from message_store import message_storage_key as _message_storage_key
+from message_store import (
+    put_message_index,
+    render_chat_mentions,
+    to_ui_message,
+    upsert_chat,
+)
 from models import ChatListItem, Message, MessageType, ReadReceipt
 from rpc import DaemonRPC
 from ut_components.event import Event
@@ -30,10 +40,6 @@ def _ui_chat_dict(chat: ChatListItem) -> dict[str, object]:
     return _enum_to_str(asdict(render_chat_mentions(chat)))  # type: ignore[no-untyped-call, no-any-return]
 
 
-def _message_storage_key(message: Message) -> str:
-    return f"message:{message.chat_id}:{message.timestamp_unix}:{message.id}"
-
-
 def _pending_outbox_key(chat_id: str, message_id: str) -> str:
     return f"{PENDING_OUTBOX_KEY_PREFIX}{chat_id}:{message_id}"
 
@@ -44,11 +50,7 @@ def _pending_send_token(chat_id: str, message_id: str) -> str:
 
 def _get_message_entry_with_key(chat_id: str, message_id: str) -> tuple[str, dict[str, object]] | tuple[None, None]:
     with KV() as kv:
-        entries = kv.get_partial(f"message:{chat_id}:")
-        for key, value in entries:
-            if value.get("id") == message_id:
-                return key, value
-    return None, None
+        return _lookup_message_entry_with_key(kv, chat_id, message_id)
 
 
 def _message_from_entry(entry: dict[str, object]) -> Message:
@@ -126,8 +128,10 @@ def _emit_message_change(message: Message, chat: ChatListItem | None = None) -> 
 
 
 def _store_pending_message(message: Message) -> ChatListItem:
+    storage_key = _message_storage_key(message.chat_id, message.timestamp_unix, message.id)
     with KV() as kv:
-        kv.put(_message_storage_key(message), _message_storage_payload(message))
+        kv.put(storage_key, _message_storage_payload(message))
+        put_message_index(kv, message.chat_id, message.id, storage_key)
         kv.put(
             _pending_outbox_key(message.chat_id, message.id),
             {
@@ -263,10 +267,13 @@ def _complete_pending_send(entry_key: str, pending_message: Message, result: dic
         temp_id=pending_message.id,
     )
 
+    sent_storage_key = _message_storage_key(sent_message.chat_id, sent_message.timestamp_unix, sent_message.id)
     with KV() as kv:
         kv.delete(entry_key)
+        delete_message_index(kv, pending_message.chat_id, pending_message.id)
         kv.delete(_pending_outbox_key(pending_message.chat_id, pending_message.id))
-        kv.put(_message_storage_key(sent_message), _message_storage_payload(sent_message))
+        kv.put(sent_storage_key, _message_storage_payload(sent_message))
+        put_message_index(kv, sent_message.chat_id, sent_message.id, sent_storage_key)
 
     chat = upsert_chat(sent_message, MessageInfo())
     _emit_message_change(sent_message, chat)

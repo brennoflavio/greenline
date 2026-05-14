@@ -11,6 +11,8 @@ from constants import GROUP_JID_SUFFIX, WHATSAPP_JID_SUFFIX
 from message_store import (
     _contact_preview,
     _extract_thumbnail,
+    message_index_key,
+    message_storage_key,
     persist_contact_vcard,
     quoted_message_template,
     remember_chat,
@@ -393,10 +395,11 @@ def _process_messages(
 
         msg.thumbnail_path = _extract_thumbnail({"Message": content}, msg_id)
 
-        key = f"message:{chat_jid}:{ts_unix}:{msg_id}"
+        key = message_storage_key(chat_jid, ts_unix, msg_id)
         data = asdict(msg)
         data["raw"] = {"Message": content}
         kv.put_cached(key, data)
+        kv.put_cached(message_index_key(chat_jid, msg_id), key)
 
 
 def _process_conversation(

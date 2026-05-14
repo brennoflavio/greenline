@@ -49,6 +49,9 @@ from message_store import (
     _message_preview,
     _update_chat_after_edit,
     clear_chat_runtime_cache,
+)
+from message_store import get_message_entry_with_key as _lookup_message_entry_with_key
+from message_store import (
     render_chat_mentions,
     resolve_media_message_content,
     sanitize_message_payload,
@@ -513,11 +516,7 @@ def toggle_mute(chat_id: str) -> SuccessResponse:
 
 def _get_message_entry_with_key(chat_id: str, message_id: str) -> tuple[str, dict[str, object]] | tuple[None, None]:
     with KV() as kv:
-        entries = kv.get_partial(f"message:{chat_id}:")
-        for key, value in entries:
-            if value.get("id") == message_id:
-                return key, value
-    return None, None
+        return _lookup_message_entry_with_key(kv, chat_id, message_id)
 
 
 def _get_message_entry(chat_id: str, message_id: str) -> dict[str, object] | None:
@@ -1018,20 +1017,15 @@ class DownloadMediaResponse:
 def download_media(chat_id: str, message_id: str, media_type: str) -> DownloadMediaResponse:
     import pyotherside
 
-    with KV() as kv:
-        entries = kv.get_partial(f"message:{chat_id}:")
-        entry = None
-        entry_key = ""
-        for key, value in entries:
-            if value.get("id") == message_id:
-                entry = value
-                entry_key = key
-                break
+    entry_key, entry = _get_message_entry_with_key(chat_id, message_id)
 
     if entry is None or entry.get("raw") is None:
         return DownloadMediaResponse(success=False, media_path="", message="Message not found")
 
     raw = entry["raw"]
+    if not isinstance(raw, dict):
+        return DownloadMediaResponse(success=False, media_path="", message="Message not found")
+
     msg_content = raw.get("Message", {})
     field_name = _MEDIA_TYPE_MAP.get(media_type)
     if not field_name:
@@ -1074,7 +1068,7 @@ def download_media(chat_id: str, message_id: str, media_type: str) -> DownloadMe
         kv.put(entry_key, sanitize_message_payload(entry))
 
     msg_fields = {f.name for f in Message.__dataclass_fields__.values()}
-    msg = Message(**{k: v for k, v in entry.items() if k in msg_fields})
+    msg = Message(**{k: v for k, v in entry.items() if k in msg_fields})  # type: ignore[arg-type]
     pyotherside.send("message-upsert", [_ui_message_dict(msg)])
 
     return DownloadMediaResponse(success=True, media_path=media_path, message="")

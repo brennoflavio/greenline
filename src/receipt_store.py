@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import asdict
 from typing import Any, Dict, List, Optional, Tuple
 
-from message_store import sanitize_message_payload
+from message_store import get_message_entry_with_key, sanitize_message_payload
 from models import ChatListItem, ReadReceipt
 from ut_components.kv import KV
 from whatsmeow_types import ReceiptEvent
@@ -46,9 +46,9 @@ def _update_messages(chat_id: str, message_ids: set[str], new_status: ReadReceip
     updated_messages: List[Dict[str, Any]] = []
 
     with KV() as kv:
-        entries = kv.get_partial(f"message:{chat_id}:")
-        for key, value in entries:
-            if value["id"] not in message_ids:
+        for message_id in message_ids:
+            key, value = get_message_entry_with_key(kv, chat_id, message_id)
+            if key is None or value is None:
                 continue
             current = ReadReceipt(value.get("read_receipt", ""))
             if not _is_upgrade(current, new_status):

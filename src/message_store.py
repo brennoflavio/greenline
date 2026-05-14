@@ -63,6 +63,47 @@ def sanitize_message_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
     return sanitized
 
 
+def message_storage_key(chat_id: str, timestamp_unix: int, message_id: str) -> str:
+    return f"message:{chat_id}:{timestamp_unix}:{message_id}"
+
+
+def message_index_key(chat_id: str, message_id: str) -> str:
+    return f"message_index:{chat_id}:{message_id}"
+
+
+def put_message_index(kv: KV, chat_id: str, message_id: str, storage_key: str) -> None:
+    if not chat_id or not message_id or not storage_key:
+        return
+    kv.put(message_index_key(chat_id, message_id), storage_key)
+
+
+def delete_message_index(kv: KV, chat_id: str, message_id: str) -> None:
+    if not chat_id or not message_id:
+        return
+    kv.delete(message_index_key(chat_id, message_id))
+
+
+def get_message_entry_with_key(kv: KV, chat_id: str, message_id: str) -> Tuple[str, Dict[str, Any]] | tuple[None, None]:
+    if not chat_id or not message_id:
+        return None, None
+
+    indexed_key = kv.get(message_index_key(chat_id, message_id))
+    if not isinstance(indexed_key, str) or not indexed_key:
+        return None, None
+
+    indexed_value = kv.get(indexed_key)
+    if (
+        indexed_key.startswith(f"message:{chat_id}:")
+        and isinstance(indexed_value, dict)
+        and indexed_value.get("id") == message_id
+        and indexed_value.get("chat_id") == chat_id
+    ):
+        return indexed_key, indexed_value
+
+    delete_message_index(kv, chat_id, message_id)
+    return None, None
+
+
 def _get_chat_data(chat_jid: str) -> Optional[Dict[str, Any]]:
     if not chat_jid:
         return None
@@ -817,10 +858,7 @@ def _extract_thumbnail(raw: Optional[Dict[str, Any]], message_id: str) -> str:
 
 
 def _find_message_entry(kv: KV, chat_id: str, message_id: str) -> Tuple[str, Dict[str, Any]] | tuple[None, None]:
-    for key, value in kv.get_partial(f"message:{chat_id}:"):
-        if value.get("id") == message_id:
-            return key, value
-    return None, None
+    return get_message_entry_with_key(kv, chat_id, message_id)
 
 
 def _get_stored_message(chat_id: str, message_id: str) -> Optional[Message]:
@@ -926,13 +964,8 @@ def _update_chat_after_edit(kv: KV, msg: Message, info: MessageInfo) -> ChatList
         return upsert_chat(msg, info, count_unread=False)
 
     chat = ChatListItem(**existing)
-    latest_id = ""
-    latest_sort_key = (-1, "")
-    for _, value in kv.get_partial(f"message:{msg.chat_id}:"):
-        sort_key = (int(value.get("timestamp_unix") or 0), str(value.get("id") or ""))
-        if sort_key >= latest_sort_key:
-            latest_sort_key = sort_key
-            latest_id = str(value.get("id") or "")
+    latest_entries, _ = kv.get_partial_page(f"message:{msg.chat_id}:", page_size=1, reverse=True)
+    latest_id = str(latest_entries[0][1].get("id") or "") if latest_entries else ""
 
     if latest_id == msg.id:
         preview, preview_mentioned_jids = _message_preview_data(msg)
@@ -992,12 +1025,14 @@ def store_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = None) -> Op
             data = asdict(msg)
             data["raw"] = raw
             kv.put(existing_key, data)
+            put_message_index(kv, msg.chat_id, msg.id, existing_key)
             chat = _update_chat_after_edit(kv, msg, evt.Info)
             return StoredMessage(message=msg, chat=chat)
 
-        key = f"message:{msg.chat_id}:{msg.timestamp_unix}:{msg.id}"
+        key = message_storage_key(msg.chat_id, msg.timestamp_unix, msg.id)
         already_stored = kv.get(key) is not None
         kv.put(key, data)
+        put_message_index(kv, msg.chat_id, msg.id, key)
 
     chat = upsert_chat(msg, evt.Info, count_unread=not already_stored)
     return StoredMessage(message=msg, chat=chat)
@@ -1017,12 +1052,13 @@ def store_undecryptable_message(
             push_name=evt.Info.PushName,
         )
 
-    key = f"message:{msg.chat_id}:{msg.timestamp_unix}:{msg.id}"
+    key = message_storage_key(msg.chat_id, msg.timestamp_unix, msg.id)
     data = asdict(msg)
     data["raw"] = raw
     with KV() as kv:
         already_stored = kv.get(key) is not None
         kv.put(key, data)
+        put_message_index(kv, msg.chat_id, msg.id, key)
 
     chat = upsert_chat(msg, evt.Info, count_unread=not already_stored)
     return StoredMessage(message=msg, chat=chat)
