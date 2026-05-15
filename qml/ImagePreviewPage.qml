@@ -1,7 +1,6 @@
 import Lomiri.Components 1.3
 import Lomiri.Content 1.3
 import QtQuick 2.7
-import io.thp.pyotherside 1.4
 import "ut_components"
 
 Page {
@@ -9,10 +8,10 @@ Page {
 
     property string imagePath: ""
 
-    Image {
-        source: previewPage.imagePath || ""
-        fillMode: Image.PreserveAspectFit
-        asynchronous: true
+    ImageViewer {
+        currentItem: previewPage.imagePath
+        navigationEnabled: false
+        showNavigationButtons: false
 
         anchors {
             top: previewHeader.bottom

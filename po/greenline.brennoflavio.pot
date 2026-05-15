@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-14 22:01+0000\n"
+"POT-Creation-Date: 2026-05-15 03:55+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -155,8 +155,8 @@ msgid "Cancel"
 msgstr ""
 
 #: ../qml/ChatPage.qml:928 ../qml/ContactPreviewPage.qml:70
-#: ../qml/DocumentPreviewPage.qml:70 ../qml/ImagePreviewPage.qml:37
-#: ../qml/VideoPreviewPage.qml:180
+#: ../qml/DocumentPreviewPage.qml:70 ../qml/ImagePreviewPage.qml:36
+#: ../qml/VideoPreviewPage.qml:38
 msgid "Save"
 msgstr ""
 
@@ -173,8 +173,8 @@ msgid "Send Contact"
 msgstr ""
 
 #: ../qml/ChatPage.qml:1016 ../qml/ContactPreviewPage.qml:223
-#: ../qml/DocumentPreviewPage.qml:223 ../qml/ImagePreviewPage.qml:190
-#: ../qml/VideoPreviewPage.qml:335 ../qml/ut_components/AppHeader.qml:78
+#: ../qml/DocumentPreviewPage.qml:223 ../qml/ImagePreviewPage.qml:189
+#: ../qml/VideoPreviewPage.qml:193 ../qml/ut_components/AppHeader.qml:78
 msgid "Back"
 msgstr ""
 
@@ -184,13 +184,13 @@ msgstr ""
 
 #: ../qml/ContactPreviewPage.qml:80 ../qml/ContactPreviewPage.qml:198
 #: ../qml/DocumentPreviewPage.qml:80 ../qml/DocumentPreviewPage.qml:198
-#: ../qml/ImagePreviewPage.qml:47 ../qml/ImagePreviewPage.qml:165
-#: ../qml/VideoPreviewPage.qml:191 ../qml/VideoPreviewPage.qml:310
+#: ../qml/ImagePreviewPage.qml:46 ../qml/ImagePreviewPage.qml:164
+#: ../qml/VideoPreviewPage.qml:49 ../qml/VideoPreviewPage.qml:168
 msgid "Share"
 msgstr ""
 
 #: ../qml/ContactPreviewPage.qml:135 ../qml/DocumentPreviewPage.qml:135
-#: ../qml/ImagePreviewPage.qml:102 ../qml/VideoPreviewPage.qml:247
+#: ../qml/ImagePreviewPage.qml:101 ../qml/VideoPreviewPage.qml:105
 msgid "Save to"
 msgstr ""
 
@@ -223,7 +223,7 @@ msgstr ""
 msgid "Downloaded"
 msgstr ""
 
-#: ../qml/ImagePreviewPage.qml:186
+#: ../qml/ImagePreviewPage.qml:185
 msgid "Image"
 msgstr ""
 
@@ -335,7 +335,7 @@ msgstr ""
 msgid "Send Sticker"
 msgstr ""
 
-#: ../qml/VideoPreviewPage.qml:331
+#: ../qml/VideoPreviewPage.qml:189
 #: ../qml/components/ChatAttachmentDialog.qml:24
 msgid "Video"
 msgstr ""
@@ -471,12 +471,28 @@ msgstr ""
 msgid "Submit"
 msgstr ""
 
+#: ../qml/ut_components/ImageViewer.qml:388
+msgid "Failed to load image"
+msgstr ""
+
+#: ../qml/ut_components/ImageViewer.qml:483
+msgid "No image to display"
+msgstr ""
+
 #: ../qml/ut_components/InputField.qml:91
 msgid "Invalid input"
 msgstr ""
 
 #: ../qml/ut_components/InputField.qml:166
 msgid "This field is required"
+msgstr ""
+
+#: ../qml/ut_components/VideoViewer.qml:438
+msgid "Failed to load video"
+msgstr ""
+
+#: ../qml/ut_components/VideoViewer.qml:640
+msgid "No video to display"
 msgstr ""
 
 #: greenline.desktop.in.h:1

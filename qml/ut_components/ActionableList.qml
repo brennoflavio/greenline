@@ -282,6 +282,8 @@ Column {
                         Layout.alignment: Qt.AlignVCenter
 
                         Repeater {
+                            id: actionsRepeater
+
                             model: {
                                 var visibleActions = [];
                                 for (var i = 0; i < listItemDelegate.actions.length; i++) {
@@ -317,7 +319,7 @@ Column {
                     id: itemMouseArea
 
                     anchors.fill: parent
-                    enabled: actionsRow.children.length === 0
+                    enabled: actionsRepeater.count === 0
                     onClicked: actionableList.itemClicked(listItemDelegate.itemData)
                 }
 
