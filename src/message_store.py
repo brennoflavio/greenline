@@ -177,6 +177,7 @@ def upsert_identity_chat(
     if not chat_id:
         return
 
+    chat_id = canonicalize_contact_jid(chat_id)
     chat_key = f"chat:{chat_id}"
     with KV() as kv:
         existing = kv.get(chat_key)
@@ -215,10 +216,65 @@ def upsert_identity_chat(
 
 _MENTION_TOKEN_RE = re.compile(r"@([0-9][0-9A-Za-z:._-]*)")
 _MENTION_PLACEHOLDER_RE = re.compile("\ue000(\\d+)\ue001")
+_STATUS_BROADCAST_JID = "status@broadcast"
+_NEWSLETTER_JID_SUFFIX = "@newsletter"
+_LID_JID_SUFFIX = "@lid"
 
 
 def _mention_placeholder(index: int) -> str:
     return f"\ue000{index}\ue001"
+
+
+def _is_contact_identity_jid(jid: str) -> bool:
+    return (
+        bool(jid)
+        and jid != _STATUS_BROADCAST_JID
+        and not jid.endswith(GROUP_JID_SUFFIX)
+        and not jid.endswith(_NEWSLETTER_JID_SUFFIX)
+    )
+
+
+def _strip_device_suffix(jid: str) -> str:
+    if not jid or "@" not in jid:
+        return jid
+
+    user, server = jid.split("@", 1)
+    base_user, separator, device = user.rpartition(":")
+    if separator and base_user and device.isdigit():
+        user = base_user
+    return f"{user}@{server}"
+
+
+def canonicalize_contact_jid(
+    jid: str,
+    *,
+    jid_map: Optional[Dict[str, str]] = None,
+    kv: Optional[KV] = None,
+    rpc: Optional[DaemonRPC] = None,
+) -> str:
+    if not _is_contact_identity_jid(jid):
+        return jid
+
+    stripped_jid = _strip_device_suffix(str(jid))
+    resolved = jid_map.get(stripped_jid) or jid_map.get(jid) if jid_map is not None else None
+
+    if not resolved and stripped_jid.endswith(_LID_JID_SUFFIX):
+        cached = None
+        if kv is None:
+            with KV() as lid_kv:
+                cached = lid_kv.get(f"lid_map:{stripped_jid}") or lid_kv.get(f"lid_map:{jid}")
+        else:
+            cached = kv.get(f"lid_map:{stripped_jid}") or kv.get(f"lid_map:{jid}")
+        if cached:
+            resolved = str(cached)
+
+    if not resolved and stripped_jid.endswith(_LID_JID_SUFFIX):
+        try:
+            resolved = rpc.ensure_jid(stripped_jid) if rpc is not None else DaemonRPC().ensure_jid(stripped_jid)
+        except Exception:
+            resolved = stripped_jid
+
+    return _strip_device_suffix(str(resolved or stripped_jid))
 
 
 def _context_mentioned_jids(context_info: Any) -> List[str]:
@@ -241,24 +297,12 @@ def normalize_mentioned_jids(
     if not mentioned_jids:
         return []
 
-    normalized: List[str] = []
-    rpc: Optional[DaemonRPC] = None
+    needs_rpc = any(_strip_device_suffix(str(jid)).endswith(_LID_JID_SUFFIX) for jid in mentioned_jids if jid)
+    rpc = DaemonRPC() if needs_rpc else None
     with KV() as kv:
-        for jid in mentioned_jids:
-            resolved = jid_map.get(jid) if jid_map is not None else None
-            if not resolved and "@lid" in jid:
-                cached = kv.get(f"lid_map:{jid}")
-                if cached:
-                    resolved = str(cached)
-            if not resolved:
-                try:
-                    if rpc is None:
-                        rpc = DaemonRPC()
-                    resolved = rpc.ensure_jid(jid)
-                except Exception:
-                    resolved = jid
-            normalized.append(str(resolved or jid))
-    return normalized
+        return [
+            canonicalize_contact_jid(str(jid), jid_map=jid_map, kv=kv, rpc=rpc) if jid else "" for jid in mentioned_jids
+        ]
 
 
 def template_mention_text(
@@ -477,7 +521,7 @@ def quoted_message_template(
     return _template_text_from_context_info(preview, context_info, jid_map=jid_map)
 
 
-def _extract_context_info(content: MessageContent) -> tuple[str, str, bool, str, List[str]]:
+def _extract_context_info(content: MessageContent) -> tuple[str, str, str, bool, str, List[str]]:
     ctx = None
     for sub in (
         content.extendedTextMessage,
@@ -493,21 +537,20 @@ def _extract_context_info(content: MessageContent) -> tuple[str, str, bool, str,
             break
 
     if ctx is None or not ctx.stanzaID:
-        return "", "", False, "", []
+        return "", "", "", False, "", []
 
-    reply_to_sender_id = ""
-    if ctx.participant:
-        normalized = normalize_mentioned_jids([ctx.participant])
-        reply_to_sender_id = normalized[0] if normalized else str(ctx.participant)
-
+    reply_to_sender_raw = str(ctx.participant) if ctx.participant else ""
+    reply_to_sender_id = canonicalize_contact_jid(reply_to_sender_raw) if reply_to_sender_raw else ""
     reply_to_text, reply_to_mentioned_jids = quoted_message_template(ctx.quotedMessage)
-    return ctx.stanzaID, reply_to_sender_id, False, reply_to_text, reply_to_mentioned_jids
+    return ctx.stanzaID, reply_to_sender_id, reply_to_sender_raw, False, reply_to_text, reply_to_mentioned_jids
 
 
 def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = None) -> Optional[Message]:
     info = evt.Info
     content = evt.Message
+    raw_info = raw.get("Info", {}) if raw else {}
     raw_content = raw.get("Message", {}) if raw else {}
+    chat_id = canonicalize_contact_jid(str(info.Chat or "")) if info.Chat else ""
     template_image = resolve_media_message_content(raw_content, "imageMessage")
 
     if info.Type == "reaction":
@@ -603,7 +646,7 @@ def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = 
     elif content.contactMessage:
         file_name = content.contactMessage.displayName
         mimetype = "text/x-vcard"
-        media_path = persist_contact_vcard(info.Chat, info.ID, file_name, content.contactMessage.vcard)
+        media_path = persist_contact_vcard(chat_id, info.ID, file_name, content.contactMessage.vcard)
     elif content.stickerMessage:
         mimetype = content.stickerMessage.mimetype
 
@@ -616,8 +659,8 @@ def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = 
         link_description = ext.description
         link_url = ext.matchedText
 
-    reply_to_id, reply_to_sender_id, reply_to_from_me, reply_to_text, reply_to_mentioned_jids = _extract_context_info(
-        content
+    reply_to_id, reply_to_sender_id, reply_to_sender_raw, reply_to_from_me, reply_to_text, reply_to_mentioned_jids = (
+        _extract_context_info(content)
     )
 
     ts = datetime.fromisoformat(info.Timestamp)
@@ -626,16 +669,20 @@ def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = 
 
     read_receipt = ReadReceipt.SENT if info.IsFromMe else ReadReceipt.NONE
 
+    sender_raw = str(raw_info.get("SenderAlt") or raw_info.get("Sender") or info.Sender or "")
+    sender = canonicalize_contact_jid(sender_raw) if sender_raw else ""
+
     return Message(
         id=info.ID,
-        chat_id=info.Chat,
+        chat_id=chat_id,
         type=msg_type,
         is_outgoing=info.IsFromMe,
         timestamp=timestamp_display,
         timestamp_unix=timestamp_unix,
         read_receipt=read_receipt,
         edited=evt.IsEdit or info.Edit == "1",
-        sender=info.Sender,
+        sender=sender,
+        sender_raw=sender_raw,
         text=text,
         mentioned_jids=mentioned_jids,
         caption=caption,
@@ -645,6 +692,7 @@ def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = 
         duration=duration,
         reply_to_id=reply_to_id,
         reply_to_sender_id=reply_to_sender_id,
+        reply_to_sender_raw=reply_to_sender_raw,
         reply_to_from_me=reply_to_from_me,
         reply_to_text=reply_to_text,
         reply_to_mentioned_jids=reply_to_mentioned_jids,
@@ -704,25 +752,33 @@ def _derive_message_type(info_type: str, media_type: str) -> Optional[MessageTyp
     return None
 
 
-def undecryptable_event_to_message(evt: UndecryptableMessageEvent) -> Optional[Message]:
+def undecryptable_event_to_message(
+    evt: UndecryptableMessageEvent, raw: Optional[Dict[str, Any]] = None
+) -> Optional[Message]:
     if not evt.IsUnavailable or evt.UnavailableType != MessageType.VIEW_ONCE:
         return None
 
     info = evt.Info
+    raw_info = raw.get("Info", {}) if raw else {}
+    chat_id = canonicalize_contact_jid(str(info.Chat or "")) if info.Chat else ""
     ts = datetime.fromisoformat(info.Timestamp)
     timestamp_unix = int(ts.timestamp())
     timestamp_display = ts.strftime("%H:%M")
     read_receipt = ReadReceipt.SENT if info.IsFromMe else ReadReceipt.NONE
 
+    sender_raw = str(raw_info.get("SenderAlt") or raw_info.get("Sender") or info.Sender or "")
+    sender = canonicalize_contact_jid(sender_raw) if sender_raw else ""
+
     return Message(
         id=info.ID,
-        chat_id=info.Chat,
+        chat_id=chat_id,
         type=MessageType.VIEW_ONCE,
         is_outgoing=info.IsFromMe,
         timestamp=timestamp_display,
         timestamp_unix=timestamp_unix,
         read_receipt=read_receipt,
-        sender=info.Sender,
+        sender=sender,
+        sender_raw=sender_raw,
         text="",
     )
 
@@ -906,6 +962,7 @@ def _merge_edited_message(existing: Message, updated: Message) -> Message:
         type=updated.type,
         edited=True,
         sender=updated.sender or existing.sender,
+        sender_raw=updated.sender_raw or existing.sender_raw,
         text=updated.text,
         mentioned_jids=list(updated.mentioned_jids),
         image_source=updated.image_source or existing.image_source,
@@ -919,6 +976,7 @@ def _merge_edited_message(existing: Message, updated: Message) -> Message:
         file_name=updated.file_name or existing.file_name,
         reply_to_id=updated.reply_to_id,
         reply_to_sender_id=updated.reply_to_sender_id,
+        reply_to_sender_raw=updated.reply_to_sender_raw,
         reply_to_from_me=updated.reply_to_from_me,
         reply_to_text=updated.reply_to_text,
         reply_to_mentioned_jids=list(updated.reply_to_mentioned_jids),
@@ -930,12 +988,13 @@ def _merge_edited_message(existing: Message, updated: Message) -> Message:
     )
 
 
-def _merge_deleted_message(existing: Message, sender: str) -> Message:
+def _merge_deleted_message(existing: Message, sender: str, sender_raw: str = "") -> Message:
     return replace(
         existing,
         type=MessageType.DELETED,
         edited=False,
         sender=sender or existing.sender,
+        sender_raw=sender_raw or existing.sender_raw,
         text="",
         mentioned_jids=[],
         image_source="",
@@ -984,12 +1043,17 @@ def store_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = None) -> Op
         if not target_id:
             return None
 
+        chat_id = canonicalize_contact_jid(str(evt.Info.Chat or "")) if evt.Info.Chat else ""
         with KV() as kv:
-            existing_key, existing_value = _find_message_entry(kv, evt.Info.Chat, target_id)
+            existing_key, existing_value = _find_message_entry(kv, chat_id, target_id)
             if existing_key is None or existing_value is None:
                 return None
             existing_msg = Message(**{k: v for k, v in existing_value.items() if k in _MESSAGE_FIELDS})
-            deleted_msg = _merge_deleted_message(existing_msg, evt.Info.Sender)
+            deleted_msg = _merge_deleted_message(
+                existing_msg,
+                canonicalize_contact_jid(str(evt.Info.Sender or "")),
+                str(evt.Info.Sender or ""),
+            )
             data = asdict(deleted_msg)
             data["raw"] = raw
             kv.put(existing_key, data)
@@ -1041,7 +1105,7 @@ def store_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = None) -> Op
 def store_undecryptable_message(
     evt: UndecryptableMessageEvent, raw: Optional[Dict[str, Any]] = None
 ) -> Optional[StoredMessage]:
-    msg = undecryptable_event_to_message(evt)
+    msg = undecryptable_event_to_message(evt, raw=raw)
     if msg is None:
         return None
 

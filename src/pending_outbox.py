@@ -112,7 +112,9 @@ def _pending_reply_context(
         message.chat_id,
         {
             "id": message.reply_to_id,
-            "participant": message.reply_to_sender_id,
+            "participant": message.reply_to_sender_raw or message.reply_to_sender_id,
+            "participant_raw": message.reply_to_sender_raw,
+            "participant_canonical": message.reply_to_sender_id,
             "from_me": message.reply_to_from_me,
             "text": message.reply_to_text,
         },

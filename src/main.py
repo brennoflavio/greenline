@@ -48,6 +48,7 @@ from message_store import (
     _merge_deleted_message,
     _message_preview,
     _update_chat_after_edit,
+    canonicalize_contact_jid,
     clear_chat_runtime_cache,
 )
 from message_store import get_message_entry_with_key as _lookup_message_entry_with_key
@@ -227,12 +228,13 @@ def uninstall_daemon() -> SuccessResponse:
 
 
 def _build_contact_item(contact: DaemonContact) -> ContactItem:
+    jid = canonicalize_contact_jid(contact.jid)
     photo = ""
     if contact.avatar_path:
         photo = "file://" + contact.avatar_path
     return ContactItem(
-        jid=contact.jid,
-        display_name=contact.display_name or contact.jid,
+        jid=jid,
+        display_name=contact.display_name or jid,
         first_name=contact.first_name,
         full_name=contact.full_name,
         push_name=contact.push_name,
@@ -444,7 +446,7 @@ def mark_messages_as_read(chat_id: str) -> SuccessResponse:
         for _key, value in entries:
             if value.get("is_outgoing") or value.get("read_receipt") == ReadReceipt.READ:
                 continue
-            sender = value.get("sender", "")
+            sender = str(value.get("sender_raw") or value.get("sender") or "")
             unread_by_sender.setdefault(sender, []).append(value["id"])
 
     if not unread_by_sender:
@@ -538,12 +540,27 @@ def _resolve_reply_context(chat_id: str, reply_context: dict[str, object] | None
     if not reply_id:
         return None
 
-    participant = str(reply_context.get("participant") or reply_context.get("reply_participant") or "")
+    participant_raw = str(
+        reply_context.get("participant_raw")
+        or reply_context.get("reply_participant_raw")
+        or reply_context.get("participant")
+        or reply_context.get("reply_participant")
+        or ""
+    )
+    participant_canonical = str(
+        reply_context.get("participant_canonical")
+        or reply_context.get("reply_participant_canonical")
+        or reply_context.get("reply_to_sender_id")
+        or participant_raw
+        or ""
+    )
     resolved: dict[str, object] = {
         "id": reply_id,
         "text": str(reply_context.get("text") or reply_context.get("reply_to_text") or ""),
-        "participant": participant,
-        "from_me": bool(reply_context.get("from_me")) or participant == "",
+        "participant": participant_raw,
+        "participant_raw": participant_raw,
+        "participant_canonical": participant_canonical,
+        "from_me": bool(reply_context.get("from_me")) or participant_raw == "",
     }
 
     entry = _get_message_entry(chat_id, reply_id)
@@ -555,10 +572,14 @@ def _resolve_reply_context(chat_id: str, reply_context: dict[str, object] | None
     rendered_msg = _ui_message(stored_msg)
 
     resolved["from_me"] = stored_msg.is_outgoing
-    if not stored_msg.is_outgoing and stored_msg.sender:
-        resolved["participant"] = stored_msg.sender
+    if not stored_msg.is_outgoing and (stored_msg.sender_raw or stored_msg.sender):
+        resolved["participant"] = stored_msg.sender_raw or stored_msg.sender
+        resolved["participant_raw"] = stored_msg.sender_raw or stored_msg.sender
+        resolved["participant_canonical"] = stored_msg.sender
     else:
         resolved["participant"] = ""
+        resolved["participant_raw"] = ""
+        resolved["participant_canonical"] = ""
 
     raw = entry.get("raw")
     quoted_message = raw.get("Message") if isinstance(raw, dict) else None
@@ -582,7 +603,9 @@ def _resolve_message_reply_context(chat_id: str, entry: dict[str, object]) -> di
         chat_id,
         {
             "reply_to_id": reply_id,
-            "reply_participant": str(entry.get("reply_to_sender_id") or ""),
+            "reply_participant": str(entry.get("reply_to_sender_raw") or entry.get("reply_to_sender_id") or ""),
+            "reply_participant_raw": str(entry.get("reply_to_sender_raw") or ""),
+            "reply_participant_canonical": str(entry.get("reply_to_sender_id") or ""),
             "reply_to_text": str(entry.get("reply_to_text") or ""),
             "from_me": bool(entry.get("reply_to_from_me")),
         },
@@ -594,7 +617,10 @@ def _apply_reply_context(message: Message, reply_context: dict[str, object] | No
         return
 
     message.reply_to_id = str(reply_context.get("id") or "")
-    message.reply_to_sender_id = str(reply_context.get("participant") or "")
+    message.reply_to_sender_id = str(
+        reply_context.get("participant_canonical") or reply_context.get("participant") or ""
+    )
+    message.reply_to_sender_raw = str(reply_context.get("participant_raw") or reply_context.get("participant") or "")
     message.reply_to_from_me = bool(reply_context.get("from_me"))
     message.reply_to_text = str(reply_context.get("text") or "")
 

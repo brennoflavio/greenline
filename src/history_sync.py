@@ -11,6 +11,7 @@ from constants import GROUP_JID_SUFFIX, WHATSAPP_JID_SUFFIX
 from message_store import (
     _contact_preview,
     _extract_thumbnail,
+    canonicalize_contact_jid,
     message_index_key,
     message_storage_key,
     persist_contact_vcard,
@@ -66,7 +67,9 @@ def handle_history_sync(event: Any) -> Dict[str, Dict[str, Any]]:
 
     with KV() as kv:
         for conv in conversations:
-            chat_jid = jid_map.get(conv.ID, conv.ID)
+            chat_jid = canonicalize_contact_jid(conv.ID, jid_map=jid_map) if conv.ID else ""
+            if not chat_jid:
+                continue
             if chat_jid == STATUS_BROADCAST_JID:
                 continue
             if chat_jid.endswith(NEWSLETTER_SERVER):
@@ -89,7 +92,8 @@ def _build_jid_map(evt: HistorySyncEvent) -> Dict[str, str]:
     lid_to_pn: Dict[str, str] = {}
     for mapping in evt.Data.phoneNumberToLidMappings or []:
         if mapping.lidJID and mapping.pnJID:
-            lid_to_pn[mapping.lidJID] = mapping.pnJID
+            canonical_lid = canonicalize_contact_jid(mapping.lidJID, jid_map={mapping.lidJID: mapping.lidJID})
+            lid_to_pn[canonical_lid] = canonicalize_contact_jid(mapping.pnJID)
 
     jids: Set[str] = set()
     for conv in evt.Data.conversations or []:
@@ -104,15 +108,7 @@ def _build_jid_map(evt: HistorySyncEvent) -> Dict[str, str]:
     jid_map: Dict[str, str] = dict(lid_to_pn)
     rpc = DaemonRPC()
     for jid in jids:
-        if jid in lid_to_pn:
-            jid_map[jid] = lid_to_pn[jid]
-        elif "@lid" in jid:
-            try:
-                jid_map[jid] = rpc.ensure_jid(jid)
-            except Exception:
-                jid_map[jid] = jid
-        else:
-            jid_map[jid] = jid
+        jid_map[jid] = canonicalize_contact_jid(jid, jid_map=lid_to_pn, rpc=rpc)
 
     return jid_map
 
@@ -281,7 +277,7 @@ def _find_latest_message(
 
 def _extract_context_info_from_dict(
     content: Dict[str, Any], jid_map: Dict[str, str]
-) -> Tuple[str, str, bool, str, List[str]]:
+) -> Tuple[str, str, str, bool, str, List[str]]:
     for field_name in (
         "extendedTextMessage",
         "imageMessage",
@@ -296,15 +292,16 @@ def _extract_context_info_from_dict(
             ctx = sub.get("contextInfo")
             if ctx and ctx.get("stanzaID"):
                 reply_to_id = ctx["stanzaID"]
-                participant = ctx.get("participant", "")
-                if participant:
-                    participant = jid_map.get(participant, participant)
+                reply_to_sender_raw = str(ctx.get("participant") or "")
+                participant = (
+                    canonicalize_contact_jid(reply_to_sender_raw, jid_map=jid_map) if reply_to_sender_raw else ""
+                )
                 reply_to_text, reply_to_mentioned_jids = quoted_message_template(
                     ctx.get("quotedMessage"),
                     jid_map=jid_map,
                 )
-                return reply_to_id, participant, False, reply_to_text, reply_to_mentioned_jids
-    return "", "", False, "", []
+                return reply_to_id, participant, reply_to_sender_raw, False, reply_to_text, reply_to_mentioned_jids
+    return "", "", "", False, "", []
 
 
 def _process_messages(
@@ -351,13 +348,17 @@ def _process_messages(
         if is_outgoing:
             read_receipt = _STATUS_TO_RECEIPT.get(inner.status, ReadReceipt.SENT)
 
-        sender = ""
-        if not is_outgoing and inner.participant:
-            sender = jid_map.get(inner.participant, inner.participant)
+        sender_raw = str(inner.participant or "") if not is_outgoing else ""
+        sender = canonicalize_contact_jid(sender_raw, jid_map=jid_map) if sender_raw else ""
 
-        reply_to_id, reply_to_sender_id, reply_to_from_me, reply_to_text, reply_to_mentioned_jids = (
-            _extract_context_info_from_dict(content, jid_map)
-        )
+        (
+            reply_to_id,
+            reply_to_sender_id,
+            reply_to_sender_raw,
+            reply_to_from_me,
+            reply_to_text,
+            reply_to_mentioned_jids,
+        ) = _extract_context_info_from_dict(content, jid_map)
 
         link_title, link_description, link_url = (
             _extract_link_preview_fields(content) if msg_type == MessageType.LINK_PREVIEW else ("", "", "")
@@ -374,6 +375,7 @@ def _process_messages(
             timestamp_unix=ts_unix,
             read_receipt=read_receipt,
             sender=sender,
+            sender_raw=sender_raw,
             text=text,
             mentioned_jids=mentioned_jids,
             caption=caption,
@@ -383,6 +385,7 @@ def _process_messages(
             duration=duration,
             reply_to_id=reply_to_id,
             reply_to_sender_id=reply_to_sender_id,
+            reply_to_sender_raw=reply_to_sender_raw,
             reply_to_from_me=reply_to_from_me,
             reply_to_text=reply_to_text,
             reply_to_mentioned_jids=reply_to_mentioned_jids,
@@ -494,7 +497,7 @@ def _process_pushnames(
     for pn in pushnames:
         if not pn.pushname or not pn.ID:
             continue
-        jid = jid_map.get(pn.ID, pn.ID)
+        jid = canonicalize_contact_jid(pn.ID, jid_map=jid_map)
         chat_key = f"chat:{jid}"
         existing = kv.get(chat_key)
         if existing is None:
@@ -528,4 +531,5 @@ def _process_lid_mappings(
 ) -> None:
     for mapping in mappings:
         if mapping.lidJID and mapping.pnJID:
-            kv.put_cached(f"lid_map:{mapping.lidJID}", mapping.pnJID)
+            canonical_lid = canonicalize_contact_jid(mapping.lidJID, jid_map={mapping.lidJID: mapping.lidJID})
+            kv.put_cached(f"lid_map:{canonical_lid}", canonicalize_contact_jid(mapping.pnJID))

@@ -11,6 +11,7 @@ from dacite import from_dict
 
 from history_sync import handle_history_sync
 from message_store import (
+    canonicalize_contact_jid,
     remember_chat,
     render_chat_mentions,
     sanitize_message_payload,
@@ -163,11 +164,11 @@ def _handle_message(
         return
     if evt.Info.Chat.endswith(NEWSLETTER_SERVER):
         return
-    evt.Info.Chat = DaemonRPC().ensure_jid(evt.Info.Chat)
+    evt.Info.Chat = canonicalize_contact_jid(DaemonRPC().ensure_jid(evt.Info.Chat))
     if evt.Info.SenderAlt:
-        evt.Info.Sender = DaemonRPC().ensure_jid(evt.Info.SenderAlt)
+        evt.Info.Sender = canonicalize_contact_jid(DaemonRPC().ensure_jid(evt.Info.SenderAlt))
     elif evt.Info.Sender:
-        evt.Info.Sender = DaemonRPC().ensure_jid(evt.Info.Sender)
+        evt.Info.Sender = canonicalize_contact_jid(DaemonRPC().ensure_jid(evt.Info.Sender))
     stored = store_message(evt, raw=raw)
     if stored is None:
         _save_unhandled_message(event, raw)
@@ -191,11 +192,11 @@ def _handle_undecryptable_message(
         return
     if evt.Info.Chat.endswith(NEWSLETTER_SERVER):
         return
-    evt.Info.Chat = DaemonRPC().ensure_jid(evt.Info.Chat)
+    evt.Info.Chat = canonicalize_contact_jid(DaemonRPC().ensure_jid(evt.Info.Chat))
     if evt.Info.SenderAlt:
-        evt.Info.Sender = DaemonRPC().ensure_jid(evt.Info.SenderAlt)
+        evt.Info.Sender = canonicalize_contact_jid(DaemonRPC().ensure_jid(evt.Info.SenderAlt))
     elif evt.Info.Sender:
-        evt.Info.Sender = DaemonRPC().ensure_jid(evt.Info.Sender)
+        evt.Info.Sender = canonicalize_contact_jid(DaemonRPC().ensure_jid(evt.Info.Sender))
     stored = store_undecryptable_message(evt, raw=raw)
     if stored is None:
         _save_unhandled_message(event, raw)
@@ -211,7 +212,7 @@ def _handle_receipt(
 ) -> None:
     raw = json.loads(event.payload or "{}")
     evt = from_dict(data_class=ReceiptEvent, data=raw)
-    evt.Chat = DaemonRPC().ensure_jid(evt.Chat)
+    evt.Chat = canonicalize_contact_jid(DaemonRPC().ensure_jid(evt.Chat))
     updated_messages, updated_chat = process_receipt(evt)
     for msg in updated_messages:
         message_updates.append(enum_to_str(msg))
@@ -222,7 +223,7 @@ def _handle_receipt(
 def _handle_contact(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None:
     raw = json.loads(event.payload or "{}")
     evt = from_dict(data_class=ContactEvent, data=raw)
-    jid = DaemonRPC().ensure_jid(evt.JID)
+    jid = canonicalize_contact_jid(DaemonRPC().ensure_jid(evt.JID))
     name = evt.Action.fullName
     if not name:
         return
@@ -260,7 +261,7 @@ def _handle_contact(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None
 def _handle_push_name(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None:
     raw = json.loads(event.payload or "{}")
     evt = from_dict(data_class=PushNameEvent, data=raw)
-    jid = DaemonRPC().ensure_jid(evt.JID)
+    jid = canonicalize_contact_jid(DaemonRPC().ensure_jid(evt.JID))
     if not evt.NewPushName:
         return
 
@@ -280,7 +281,7 @@ def _handle_push_name(event: Any, chat_updates: dict[str, dict[str, Any]]) -> No
 def _handle_business_name(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None:
     raw = json.loads(event.payload or "{}")
     evt = from_dict(data_class=BusinessNameEvent, data=raw)
-    jid = DaemonRPC().ensure_jid(evt.JID)
+    jid = canonicalize_contact_jid(DaemonRPC().ensure_jid(evt.JID))
     if not evt.NewBusinessName:
         return
 
@@ -302,6 +303,7 @@ def _handle_mute(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None:
     jid = raw.get("JID", "")
     if not jid:
         return
+    jid = canonicalize_contact_jid(DaemonRPC().ensure_jid(jid))
     action = raw.get("Action") or {}
     muted = action.get("muted", False)
 
@@ -324,7 +326,7 @@ def _handle_picture(
 ) -> None:
     raw = json.loads(event.payload or "{}")
     evt = from_dict(data_class=PictureEvent, data=raw)
-    jid = DaemonRPC().ensure_jid(evt.JID)
+    jid = canonicalize_contact_jid(DaemonRPC().ensure_jid(evt.JID))
     if not jid:
         return
 
@@ -682,10 +684,11 @@ class ChatListUpdateEvent(Event):
             for c in reply.Contacts:
                 if not c.jid:
                     continue
-                key = f"chat:{c.jid}"
+                jid = canonicalize_contact_jid(c.jid)
+                key = f"chat:{jid}"
                 photo = ("file://" + c.avatar_path) if c.avatar_path else ""
-                display_name = c.full_name or c.push_name or c.business_name or c.jid
-                muted = self._is_muted(c.jid)
+                display_name = c.full_name or c.push_name or c.business_name or jid
+                muted = self._is_muted(jid)
 
                 if key in existing:
                     chat = ChatListItem(**existing[key])
@@ -699,7 +702,7 @@ class ChatListUpdateEvent(Event):
                     if chat.photo != photo:
                         chat.photo = photo
                         changed = True
-                        photo_updates.append({"jid": c.jid, "photo": photo})
+                        photo_updates.append({"jid": jid, "photo": photo})
                     if chat.muted != muted:
                         chat.muted = muted
                         changed = True
@@ -709,7 +712,7 @@ class ChatListUpdateEvent(Event):
                         chat_updates.append(enum_to_str(asdict(chat)))
                 else:
                     chat = ChatListItem(
-                        id=c.jid,
+                        id=jid,
                         name=display_name,
                         photo=photo,
                         last_message="",
@@ -741,9 +744,10 @@ class ChatListUpdateEvent(Event):
             for g in reply.Groups:
                 if not g.jid or not g.name:
                     continue
-                key = f"chat:{g.jid}"
+                jid = canonicalize_contact_jid(g.jid)
+                key = f"chat:{jid}"
                 photo = ("file://" + g.avatar_path) if g.avatar_path else ""
-                muted = self._is_muted(g.jid)
+                muted = self._is_muted(jid)
 
                 if key in existing:
                     chat = ChatListItem(**existing[key])
@@ -755,7 +759,7 @@ class ChatListUpdateEvent(Event):
                     if chat.photo != photo:
                         chat.photo = photo
                         changed = True
-                        photo_updates.append({"jid": g.jid, "photo": photo})
+                        photo_updates.append({"jid": jid, "photo": photo})
                     if chat.muted != muted:
                         chat.muted = muted
                         changed = True
@@ -765,7 +769,7 @@ class ChatListUpdateEvent(Event):
                         chat_updates.append(enum_to_str(asdict(chat)))
                 else:
                     chat = ChatListItem(
-                        id=g.jid,
+                        id=jid,
                         name=g.name,
                         photo=photo,
                         last_message="",

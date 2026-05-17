@@ -69,6 +69,7 @@ class Message:
     read_receipt: ReadReceipt
     edited: bool = False
     sender: str = ""
+    sender_raw: str = ""
     text: str = ""
     mentioned_jids: List[str] = field(default_factory=list)
     image_source: str = ""
@@ -84,6 +85,7 @@ class Message:
     temp_id: str = ""
     reply_to_id: str = ""
     reply_to_sender_id: str = ""
+    reply_to_sender_raw: str = ""
     reply_to_from_me: bool = False
     reply_to_text: str = ""
     reply_to_mentioned_jids: List[str] = field(default_factory=list)
