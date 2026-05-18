@@ -1088,6 +1088,9 @@ def download_media(chat_id: str, message_id: str, media_type: str) -> DownloadMe
     except Exception as e:
         return DownloadMediaResponse(success=False, media_path="", message=str(e))
 
+    if not file_path:
+        return DownloadMediaResponse(success=False, media_path="", message="Failed to download media")
+
     media_path = "file://" + file_path
     entry["media_path"] = media_path
     with KV() as kv:

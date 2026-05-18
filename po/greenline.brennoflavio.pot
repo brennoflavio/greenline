@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-17 15:57+0000\n"
+"POT-Creation-Date: 2026-05-18 04:32+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -43,17 +43,17 @@ msgstr ""
 msgid "Link Device"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:35 ../qml/ChatListPage.qml:66 ../qml/ChatPage.qml:51
+#: ../qml/ChatListPage.qml:35 ../qml/ChatListPage.qml:66 ../qml/ChatPage.qml:52
 #: ../qml/components/ChatMessageList.qml:64
 msgid "Deleted message"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:38 ../qml/ChatListPage.qml:69 ../qml/ChatPage.qml:54
+#: ../qml/ChatListPage.qml:38 ../qml/ChatListPage.qml:69 ../qml/ChatPage.qml:55
 #: ../qml/components/ChatMessageList.qml:67
 msgid "View-once message. Open WhatsApp on your primary device to view it."
 msgstr ""
 
-#: ../qml/ChatListPage.qml:47 ../qml/ChatPage.qml:63 ../qml/ChatPage.qml:86
+#: ../qml/ChatListPage.qml:47 ../qml/ChatPage.qml:64 ../qml/ChatPage.qml:87
 #: ../qml/ContactPreviewPage.qml:42 ../qml/ContactPreviewPage.qml:219
 #: ../qml/components/ChatAttachmentDialog.qml:48
 #: ../qml/components/ContactMessage.qml:47
@@ -80,99 +80,107 @@ msgstr ""
 msgid "No chats found"
 msgstr ""
 
-#: ../qml/ChatPage.qml:123
+#: ../qml/ChatPage.qml:124
 msgid "You"
 msgstr ""
 
-#: ../qml/ChatPage.qml:153
+#: ../qml/ChatPage.qml:154
 msgid "Message updated"
 msgstr ""
 
-#: ../qml/ChatPage.qml:159
+#: ../qml/ChatPage.qml:160
 msgid "Failed to edit message"
 msgstr ""
 
-#: ../qml/ChatPage.qml:169
+#: ../qml/ChatPage.qml:170
 msgid "Message deleted"
 msgstr ""
 
-#: ../qml/ChatPage.qml:172
+#: ../qml/ChatPage.qml:173
 msgid "Failed to delete message"
 msgstr ""
 
-#: ../qml/ChatPage.qml:382
+#: ../qml/ChatPage.qml:183
+msgid "No internet connection. Connect and try again."
+msgstr ""
+
+#: ../qml/ChatPage.qml:197 ../qml/ChatPage.qml:911
+msgid "Failed to download media"
+msgstr ""
+
+#: ../qml/ChatPage.qml:390
 msgid "Failed to load older messages"
 msgstr ""
 
-#: ../qml/ChatPage.qml:472
+#: ../qml/ChatPage.qml:480
 msgid "Failed to send audio"
 msgstr ""
 
-#: ../qml/ChatPage.qml:590
+#: ../qml/ChatPage.qml:598
 msgid "Failed to send contact"
 msgstr ""
 
-#: ../qml/ChatPage.qml:669
+#: ../qml/ChatPage.qml:677
 msgid "WhatsApp messages read today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:670
+#: ../qml/ChatPage.qml:678
 msgid "No WhatsApp messages read today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:678
+#: ../qml/ChatPage.qml:686
 msgid "WhatsApp messages sent today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:679
+#: ../qml/ChatPage.qml:687
 msgid "No WhatsApp messages sent today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:702
+#: ../qml/ChatPage.qml:710
 msgid "Scroll up to load older messages first"
 msgstr ""
 
-#: ../qml/ChatPage.qml:708
+#: ../qml/ChatPage.qml:716
 msgid "Copied to clipboard"
 msgstr ""
 
-#: ../qml/ChatPage.qml:855
+#: ../qml/ChatPage.qml:863
 msgid "recording audio..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:855
+#: ../qml/ChatPage.qml:863
 msgid "typing..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:910
+#: ../qml/ChatPage.qml:926
 msgid "Edit Message"
 msgstr ""
 
-#: ../qml/ChatPage.qml:922 ../qml/PhonePairingPage.qml:120
+#: ../qml/ChatPage.qml:938 ../qml/PhonePairingPage.qml:120
 #: ../qml/SettingsPage.qml:127 ../qml/components/ChatAttachmentDialog.qml:56
 #: ../qml/components/VoiceMessageRecorderDialog.qml:85
 msgid "Cancel"
 msgstr ""
 
-#: ../qml/ChatPage.qml:928 ../qml/ContactPreviewPage.qml:70
+#: ../qml/ChatPage.qml:944 ../qml/ContactPreviewPage.qml:70
 #: ../qml/DocumentPreviewPage.qml:70 ../qml/ImagePreviewPage.qml:36
 #: ../qml/VideoPreviewPage.qml:38
 msgid "Save"
 msgstr ""
 
-#: ../qml/ChatPage.qml:972
+#: ../qml/ChatPage.qml:988
 msgid "Send Photo"
 msgstr ""
 
-#: ../qml/ChatPage.qml:983
+#: ../qml/ChatPage.qml:999
 msgid "Send Video"
 msgstr ""
 
-#: ../qml/ChatPage.qml:994
+#: ../qml/ChatPage.qml:1010
 msgid "Send Contact"
 msgstr ""
 
-#: ../qml/ChatPage.qml:1016 ../qml/ContactPreviewPage.qml:223
+#: ../qml/ChatPage.qml:1032 ../qml/ContactPreviewPage.qml:223
 #: ../qml/DocumentPreviewPage.qml:223 ../qml/ImagePreviewPage.qml:189
 #: ../qml/VideoPreviewPage.qml:193 ../qml/ut_components/AppHeader.qml:78
 msgid "Back"

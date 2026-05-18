@@ -1,5 +1,6 @@
 import Lomiri.Components 1.3
 import Lomiri.Components.Popups 1.3
+import Lomiri.Connectivity 1.0
 import Lomiri.Content 1.3
 import QtGraphicalEffects 1.0
 import QtQuick 2.7
@@ -178,6 +179,10 @@ Page {
     }
 
     function triggerDownload(messageId, mediaType) {
+        if (!Connectivity.online) {
+            toast.show(i18n.tr("No internet connection. Connect and try again."));
+            return ;
+        }
         var d = Object.assign({
         }, downloadingIds);
         d[messageId] = true;
@@ -187,6 +192,9 @@ Page {
             }, downloadingIds);
             delete d2[messageId];
             downloadingIds = d2;
+            if (!result || !result.success)
+                toast.show(result && result.message ? result.message : i18n.tr("Failed to download media"));
+
         });
     }
 
@@ -894,6 +902,13 @@ Page {
                     }
                 });
             });
+        }
+        onError: {
+            if (Object.keys(downloadingIds).length > 0) {
+                downloadingIds = ({
+                });
+                toast.show(i18n.tr("Failed to download media"));
+            }
         }
     }
 
