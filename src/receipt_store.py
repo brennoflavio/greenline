@@ -3,7 +3,10 @@ from __future__ import annotations
 from dataclasses import asdict
 from typing import Any, Dict, List, Optional, Tuple
 
-from message_store import get_message_entry_with_key, sanitize_message_payload
+from greenline.store.repository import (
+    get_message_entry_with_key,
+    sanitize_message_payload,
+)
 from models import ChatListItem, ReadReceipt
 from ut_components.kv import KV
 from whatsmeow_types import ReceiptEvent

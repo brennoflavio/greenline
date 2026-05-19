@@ -7,21 +7,23 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 from dacite import from_dict
 
-from constants import GROUP_JID_SUFFIX, WHATSAPP_JID_SUFFIX
-from message_store import (
+from constants import (
+    GROUP_JID_SUFFIX,
+    NEWSLETTER_SERVER,
+    STATUS_BROADCAST_JID,
+    WHATSAPP_JID_SUFFIX,
+)
+from greenline.store.identity import canonicalize_contact_jid, remember_chat
+from greenline.store.media import (
     _contact_preview,
     _extract_thumbnail,
-    canonicalize_contact_jid,
-    message_index_key,
-    message_storage_key,
     persist_contact_vcard,
-    quoted_message_template,
-    remember_chat,
     resolve_media_message_content,
-    template_mention_text,
     template_message_button,
     template_message_caption,
 )
+from greenline.store.mentions import quoted_message_template, template_mention_text
+from greenline.store.repository import message_index_key, message_storage_key
 from models import ChatListItem, Message, MessageType, ReadReceipt
 from rpc import DaemonRPC
 from ut_components.kv import KV
@@ -33,9 +35,6 @@ from whatsmeow_types import (
     HistorySyncPushname,
     PhoneNumberToLidMapping,
 )
-
-STATUS_BROADCAST_JID = "status@broadcast"
-NEWSLETTER_SERVER = "@newsletter"
 
 _STATUS_TO_RECEIPT = {
     0: ReadReceipt.NONE,

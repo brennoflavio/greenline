@@ -5,19 +5,18 @@ from dataclasses import asdict, replace
 from datetime import datetime, timedelta
 from typing import Callable
 
-from message_store import (
+from greenline.store.mentions import mention_transport_payload, render_chat_mentions
+from greenline.store.messages import upsert_chat
+from greenline.store.repository import (
     delete_message_index,
 )
-from message_store import get_message_entry_with_key as _lookup_message_entry_with_key
-from message_store import (
-    mention_transport_payload,
+from greenline.store.repository import (
+    get_message_entry_with_key as _lookup_message_entry_with_key,
 )
-from message_store import message_storage_key as _message_storage_key
-from message_store import (
+from greenline.store.repository import message_storage_key as _message_storage_key
+from greenline.store.repository import (
     put_message_index,
-    render_chat_mentions,
     to_ui_message,
-    upsert_chat,
 )
 from models import ChatListItem, Message, MessageType, ReadReceipt
 from rpc import DaemonRPC
