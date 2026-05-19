@@ -1,7 +1,6 @@
 import Lomiri.Components 1.3
 import QtGraphicalEffects 1.0
 import QtQuick 2.7
-import QtQuick.Layouts 1.3
 
 Item {
     id: bubble
@@ -21,6 +20,7 @@ Item {
     property string replyToSender: ""
     property string replyToText: ""
     property bool showSender: isGroup && !isOutgoing && senderName !== ""
+    property color bubbleColor: isOutgoing ? "#dcf8c6" : "#d4e6f9"
 
     signal replyClicked(string messageId)
 
@@ -82,7 +82,7 @@ Item {
 
         width: Math.min(Math.max(preferredBubbleWidth > 0 ? preferredBubbleWidth : innerColumn.implicitWidth + units.gu(2), footerRow.implicitWidth + units.gu(1)), parent.width - units.gu(10))
         height: innerColumn.implicitHeight + units.gu(1)
-        color: isOutgoing ? "#dcf8c6" : "#d4e6f9"
+        color: bubble.bubbleColor
         radius: units.gu(1)
 
         anchors {

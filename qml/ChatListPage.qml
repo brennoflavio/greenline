@@ -1,9 +1,8 @@
 import Lomiri.Components 1.3
-import QtGraphicalEffects 1.0
 import QtQuick 2.7
-import QtQuick.Layouts 1.3
 import "components"
 import io.thp.pyotherside 1.4
+import "lib/ChatHelpers.js" as ChatHelpers
 import "ut_components"
 
 Page {
@@ -30,63 +29,10 @@ Page {
         refreshChatList();
     }
 
-    function messagePreview(msg) {
-        if (msg.type === "deleted")
-            return i18n.tr("Deleted message");
-
-        if (msg.type === "view_once")
-            return i18n.tr("View-once message. Open WhatsApp on your primary device to view it.");
-
-        if (msg.text)
-            return msg.text;
-
-        if (msg.caption)
-            return msg.caption;
-
-        if (msg.type === "contact")
-            return "👤 " + (msg.file_name || i18n.tr("Contact"));
-
-        var previews = {
-            "image": "📷 Photo",
-            "image_gallery": "📷 Photo",
-            "video": "🎥 Video",
-            "audio": "🎵 Audio",
-            "voice": "🎵 Audio",
-            "document": "📄 Document",
-            "sticker": "🏷️ Sticker"
-        };
-        return previews[msg.type] || msg.type;
-    }
-
-    function chatPreview(chat) {
-        if (chat.has_draft)
-            return i18n.tr("Draft: ") + (chat.draft || "");
-
-        if ((chat.last_message_type || "") === "deleted")
-            return i18n.tr("Deleted message");
-
-        if ((chat.last_message_type || "") === "view_once")
-            return i18n.tr("View-once message. Open WhatsApp on your primary device to view it.");
-
-        return chat.last_message || "";
-    }
-
     function applyDraftUpdates(updatedDrafts) {
-        var newChats = chats.slice();
-        var changed = false;
-        for (var i = 0; i < updatedDrafts.length; i++) {
-            var updatedDraft = updatedDrafts[i];
-            for (var j = 0; j < newChats.length; j++) {
-                if (newChats[j].id === updatedDraft.id) {
-                    newChats[j].draft = updatedDraft.draft || "";
-                    newChats[j].has_draft = !!updatedDraft.has_draft;
-                    changed = true;
-                    break;
-                }
-            }
-        }
-        if (changed)
-            chats = newChats;
+        var result = ChatHelpers.applyDraftUpdates(chats, updatedDrafts);
+        if (result.changed)
+            chats = result.chats;
 
     }
 
@@ -105,39 +51,10 @@ Page {
             isLoading: false
         }
 
-        Item {
+        ChatListSearchBar {
             id: searchBar
 
             width: parent.width
-            height: units.gu(5)
-
-            Row {
-                spacing: units.gu(1)
-
-                anchors {
-                    fill: parent
-                    leftMargin: units.gu(2)
-                    rightMargin: units.gu(2)
-                }
-
-                Icon {
-                    anchors.verticalCenter: parent.verticalCenter
-                    name: "find"
-                    height: units.gu(2)
-                    width: units.gu(2)
-                    color: theme.palette.normal.backgroundSecondaryText
-                }
-
-                TextField {
-                    id: searchInput
-
-                    width: parent.width - units.gu(5)
-                    anchors.verticalCenter: parent.verticalCenter
-                    placeholderText: i18n.tr("Search chats...")
-                }
-
-            }
-
         }
 
         ListView {
@@ -147,16 +64,17 @@ Page {
             height: parent.height - searchBar.height - loadingBar.height
             clip: true
             model: {
-                if (searchInput.text.length === 0)
+                if (searchBar.text.length === 0)
                     return chats;
 
                 return chats.filter(function(chat) {
-                    return chat.name.toLowerCase().indexOf(searchInput.text.toLowerCase()) !== -1;
+                    return chat.name.toLowerCase().indexOf(searchBar.text.toLowerCase()) !== -1;
                 });
             }
 
-            delegate: ListItem {
-                height: units.gu(8)
+            delegate: ChatListItem {
+                width: chatListView.width
+                chat: modelData
                 onClicked: {
                     pageStack.push(Qt.resolvedUrl("ChatPage.qml"), {
                         "chatId": modelData.id,
@@ -166,164 +84,7 @@ Page {
                         "initialUnreadCount": modelData.unread_count || 0
                     });
                 }
-
-                RowLayout {
-                    spacing: units.gu(1.5)
-
-                    anchors {
-                        fill: parent
-                        leftMargin: units.gu(2)
-                        rightMargin: units.gu(2)
-                        topMargin: units.gu(1)
-                        bottomMargin: units.gu(1)
-                    }
-
-                    Rectangle {
-                        width: units.gu(6)
-                        height: units.gu(6)
-                        radius: width / 2
-                        color: theme.palette.normal.base
-                        Layout.alignment: Qt.AlignVCenter
-
-                        Image {
-                            id: avatarImage
-
-                            anchors.fill: parent
-                            source: modelData.photo || ""
-                            fillMode: Image.PreserveAspectCrop
-                            visible: false
-                        }
-
-                        Rectangle {
-                            id: avatarMask
-
-                            anchors.fill: parent
-                            radius: width / 2
-                            visible: false
-                        }
-
-                        OpacityMask {
-                            anchors.fill: parent
-                            source: avatarImage
-                            maskSource: avatarMask
-                            visible: !!modelData.photo
-                        }
-
-                        Icon {
-                            anchors.centerIn: parent
-                            name: "contact"
-                            width: units.gu(3)
-                            height: units.gu(3)
-                            color: theme.palette.normal.backgroundSecondaryText
-                            visible: !modelData.photo
-                        }
-
-                    }
-
-                    Column {
-                        Layout.fillWidth: true
-                        Layout.alignment: Qt.AlignVCenter
-                        spacing: units.gu(0.3)
-
-                        RowLayout {
-                            width: parent.width
-
-                            Label {
-                                text: modelData.name || ""
-                                fontSize: "medium"
-                                font.bold: modelData.unread_count > 0
-                                color: theme.palette.normal.foregroundText
-                                elide: Text.ElideRight
-                                Layout.fillWidth: true
-                            }
-
-                            Icon {
-                                name: "audio-volume-muted"
-                                height: units.gu(2)
-                                width: units.gu(2)
-                                color: theme.palette.normal.backgroundTertiaryText
-                                visible: !!modelData.muted
-                                Layout.alignment: Qt.AlignRight
-                            }
-
-                            Label {
-                                text: modelData.date || ""
-                                fontSize: "x-small"
-                                color: modelData.unread_count > 0 ? LomiriColors.green : theme.palette.normal.backgroundTertiaryText
-                                Layout.alignment: Qt.AlignRight
-                            }
-
-                        }
-
-                        RowLayout {
-                            width: parent.width
-
-                            Row {
-                                spacing: units.gu(0.3)
-                                Layout.fillWidth: true
-
-                                MessageReceiptIcon {
-                                    id: receiptIcon
-
-                                    height: units.gu(1.6)
-                                    width: units.gu(1.6)
-                                    readReceipt: modelData.read_receipt
-                                    inactiveColor: theme.palette.normal.backgroundTertiaryText
-                                    activeColor: LomiriColors.lightBlue
-                                    indicatorVisible: !modelData.has_draft
-                                    anchors.verticalCenter: parent.verticalCenter
-                                }
-
-                                Label {
-                                    text: chatPreview(modelData)
-                                    fontSize: "small"
-                                    color: theme.palette.normal.backgroundTertiaryText
-                                    elide: Text.ElideRight
-                                    maximumLineCount: 1
-                                    width: parent.parent.width - (receiptIcon.visible ? units.gu(2) : 0) - parent.spacing - (unreadBadge.visible ? unreadBadge.width + units.gu(0.5) : 0)
-                                    anchors.verticalCenter: parent.verticalCenter
-                                }
-
-                            }
-
-                            Rectangle {
-                                id: unreadBadge
-
-                                width: units.gu(2.5)
-                                height: units.gu(2.5)
-                                radius: width / 2
-                                color: LomiriColors.green
-                                visible: modelData.unread_count > 0
-                                Layout.alignment: Qt.AlignRight
-
-                                Label {
-                                    anchors.centerIn: parent
-                                    text: modelData.unread_count
-                                    fontSize: "x-small"
-                                    color: "white"
-                                    font.bold: true
-                                }
-
-                            }
-
-                        }
-
-                    }
-
-                }
-
-                leadingActions: ListItemActions {
-                    actions: [
-                        Action {
-                            iconName: modelData.muted ? "audio-volume-high" : "audio-volume-muted"
-                            text: modelData.muted ? i18n.tr("Unmute") : i18n.tr("Mute")
-                            onTriggered: {
-                                python.call('main.toggle_mute', [modelData.id]);
-                            }
-                        }
-                    ]
-                }
-
+                onMuteRequested: python.call('main.toggle_mute', [chatId])
             }
 
         }
@@ -364,7 +125,7 @@ Page {
                         for (var j = 0; j < newChats.length; j++) {
                             var chat = newChats[j];
                             if (chat.id === message.chat_id && message.timestamp_unix >= chat.last_message_timestamp) {
-                                chat.last_message = messagePreview(message);
+                                chat.last_message = ChatHelpers.messagePreview(message, i18n);
                                 chat.last_message_type = message.type || "";
                                 chat.date = message.timestamp;
                                 chat.last_message_timestamp = message.timestamp_unix;

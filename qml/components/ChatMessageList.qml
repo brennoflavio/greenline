@@ -83,6 +83,42 @@ Item {
         return !!message && !!message.is_outgoing && messageId !== "" && messageId.indexOf("pending-") !== 0 && messageId.indexOf("failed-") !== 0 && sendStatus !== "pending" && sendStatus !== "failed" && (message.type || "") !== "deleted";
     }
 
+    function usesRichTextMessage(message) {
+        return !!message && (!!message.reply_to_id || (root.isGroup && !message.is_outgoing && (message.sender_name || "") !== ""));
+    }
+
+    function messageComponentFor(message) {
+        var type = message && message.type ? message.type : "text";
+        if (type === "text" || type === "view_once" || type === "deleted")
+            return root.usesRichTextMessage(message) ? richTextComponent : textComponent;
+
+        if (type === "image")
+            return imageComponent;
+
+        if (type === "image_gallery")
+            return galleryComponent;
+
+        if (type === "video")
+            return videoComponent;
+
+        if (type === "voice" || type === "audio")
+            return voiceComponent;
+
+        if (type === "document")
+            return documentComponent;
+
+        if (type === "contact")
+            return contactComponent;
+
+        if (type === "sticker")
+            return stickerComponent;
+
+        if (type === "link_preview")
+            return linkPreviewComponent;
+
+        return root.usesRichTextMessage(message) ? richTextComponent : textComponent;
+    }
+
     onMessagesChanged: {
         var nextPrepared = messages.slice();
         nextPrepared.reverse();
@@ -124,43 +160,7 @@ Item {
                 property var msg: modelData
 
                 width: parent.width
-                sourceComponent: {
-                    var type = msg.type || "text";
-                    if (type === "text" || type === "view_once" || type === "deleted") {
-                        if (msg.reply_to_id || (root.isGroup && !msg.is_outgoing && (msg.sender_name || "") !== ""))
-                            return richTextComponent;
-
-                        return textComponent;
-                    }
-                    if (type === "image")
-                        return imageComponent;
-
-                    if (type === "image_gallery")
-                        return galleryComponent;
-
-                    if (type === "video")
-                        return videoComponent;
-
-                    if (type === "voice" || type === "audio")
-                        return voiceComponent;
-
-                    if (type === "document")
-                        return documentComponent;
-
-                    if (type === "contact")
-                        return contactComponent;
-
-                    if (type === "sticker")
-                        return stickerComponent;
-
-                    if (type === "link_preview")
-                        return linkPreviewComponent;
-
-                    if (msg.reply_to_id || (root.isGroup && !msg.is_outgoing && (msg.sender_name || "") !== ""))
-                        return richTextComponent;
-
-                    return textComponent;
-                }
+                sourceComponent: root.messageComponentFor(msg)
             }
 
             leadingActions: ListItemActions {
@@ -218,14 +218,8 @@ Item {
     Component {
         id: richTextComponent
 
-        MessageBubble {
-            property bool expandedText: false
-            property int collapsedLineCount: 10
-            readonly property real senderWidthHint: showSender ? senderMeasure.implicitWidth + units.gu(2) : 0
-            readonly property real replyWidthHint: replyToId !== "" ? Math.max(replySenderMeasure.implicitWidth, replyTextMeasure.implicitWidth) + units.gu(3.5) : 0
-            readonly property bool shouldCollapse: fullHeightMeasure.implicitHeight > collapsedHeightMeasure.implicitHeight + units.gu(0.1)
-
-            copyableText: root.messageText(msg)
+        RichTextMessage {
+            text: root.messageText(msg)
             isOutgoing: msg.is_outgoing || false
             isGroup: root.isGroup
             timestamp: msg.timestamp || ""
@@ -237,117 +231,7 @@ Item {
             replyToId: msg.reply_to_id || ""
             replyToSender: msg.reply_to_sender || ""
             replyToText: msg.reply_to_text || ""
-            preferredBubbleWidth: Math.max(textMeasure.implicitWidth + units.gu(2), senderWidthHint, replyWidthHint)
             onReplyClicked: root.scrollToMessage(messageId)
-
-            Label {
-                id: textMeasure
-
-                visible: false
-                text: root.messageText(msg)
-                fontSize: "small"
-            }
-
-            Label {
-                id: senderMeasure
-
-                visible: false
-                text: msg.sender_name || ""
-                fontSize: "x-small"
-                font.bold: true
-            }
-
-            Label {
-                id: replySenderMeasure
-
-                visible: false
-                text: msg.reply_to_sender || ""
-                fontSize: "small"
-                font.bold: true
-            }
-
-            Label {
-                id: replyTextMeasure
-
-                visible: false
-                text: msg.reply_to_text || ""
-                fontSize: "small"
-            }
-
-            Label {
-                id: fullHeightMeasure
-
-                visible: false
-                text: root.messageText(msg)
-                fontSize: "small"
-                wrapMode: Text.Wrap
-                width: parent.width
-            }
-
-            Label {
-                id: collapsedHeightMeasure
-
-                visible: false
-                text: root.messageText(msg)
-                fontSize: "small"
-                wrapMode: Text.Wrap
-                width: parent.width
-                maximumLineCount: collapsedLineCount
-                elide: Text.ElideRight
-            }
-
-            Label {
-                text: root.messageText(msg)
-                fontSize: "small"
-                color: "#303030"
-                wrapMode: Text.Wrap
-                width: parent.width
-                maximumLineCount: shouldCollapse && !expandedText ? collapsedLineCount : 2.14748e+09
-                elide: shouldCollapse && !expandedText ? Text.ElideRight : Text.ElideNone
-            }
-
-            Column {
-                visible: shouldCollapse
-                width: parent.width
-                spacing: 0
-
-                Item {
-                    width: 1
-                    height: toggleLabel.implicitHeight
-                }
-
-                Item {
-                    width: parent.width
-                    height: toggleLabel.implicitHeight + units.gu(0.6)
-
-                    Label {
-                        id: toggleLabel
-
-                        text: expandedText ? i18n.tr("Show less") : i18n.tr("Show more")
-                        fontSize: "small"
-                        color: LomiriColors.blue
-
-                        anchors {
-                            left: parent.left
-                            verticalCenter: parent.verticalCenter
-                        }
-
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: expandedText = !expandedText
-                    }
-
-                }
-
-            }
-
-            Item {
-                width: 1
-                height: units.gu(1.5)
-            }
-
         }
 
     }

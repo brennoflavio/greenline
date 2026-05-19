@@ -2,12 +2,11 @@ import Lomiri.Components 1.3
 import Lomiri.Components.Popups 1.3
 import Lomiri.Connectivity 1.0
 import Lomiri.Content 1.3
-import QtGraphicalEffects 1.0
 import QtQuick 2.7
-import QtQuick.Layouts 1.3
 import UserMetrics 0.1
 import "components"
 import io.thp.pyotherside 1.4
+import "lib/ChatHelpers.js" as ChatHelpers
 import "ut_components"
 
 Page {
@@ -47,53 +46,6 @@ Page {
     property var pendingDraftMentionSpans: []
     property var mentionCandidates: []
 
-    function messagePreview(message) {
-        if (!message)
-            return "";
-
-        if (message.type === "deleted")
-            return i18n.tr("Deleted message");
-
-        if (message.type === "view_once")
-            return i18n.tr("View-once message. Open WhatsApp on your primary device to view it.");
-
-        if (message.text)
-            return message.text;
-
-        if (message.caption)
-            return message.caption;
-
-        if (message.type === "contact")
-            return "👤 " + (message.file_name || i18n.tr("Contact"));
-
-        var previews = {
-            "image": "📷 Photo",
-            "image_gallery": "📷 Photo",
-            "video": "🎥 Video",
-            "audio": "🎵 Audio",
-            "voice": "🎵 Audio",
-            "document": "📄 Document",
-            "sticker": "🏷️ Sticker",
-            "link_preview": "🔗 Link"
-        };
-        return previews[message.type] || message.type || "";
-    }
-
-    function contactNameFromPath(filePath) {
-        var cleanPath = filePath.toString().replace("file://", "");
-        var parts = cleanPath.split("/");
-        var name = parts.length > 0 ? parts[parts.length - 1] : "";
-        var dotIndex = name.lastIndexOf(".");
-        if (dotIndex > 0)
-            name = name.slice(0, dotIndex);
-
-        return name || i18n.tr("Contact");
-    }
-
-    function canReplyToMessage(message) {
-        return !!message && !!message.id && message.id.indexOf("pending-") !== 0;
-    }
-
     function currentReplyContext() {
         if (replyToMessageId === "")
             return null;
@@ -120,35 +72,21 @@ Page {
     }
 
     function startReply(message) {
-        if (!canReplyToMessage(message))
+        if (!ChatHelpers.canReplyToMessage(message))
             return ;
 
         replyToMessageId = message.id;
         replyToSender = message.is_outgoing ? i18n.tr("You") : (message.sender_name || chatName || message.sender || "");
-        replyToText = messagePreview(message);
+        replyToText = ChatHelpers.messagePreview(message, i18n, {
+            "link_preview": "🔗 Link"
+        });
         replyToParticipant = message.is_outgoing ? "" : (message.sender || "");
         chatComposer.focusInput();
     }
 
-    function cloneMentionSpans(spans) {
-        return JSON.parse(JSON.stringify(spans || []));
-    }
-
-    function mentionSpansEqual(left, right) {
-        return JSON.stringify(left || []) === JSON.stringify(right || []);
-    }
-
-    function messageMentionSpans(message) {
-        return cloneMentionSpans(message && message.mention_spans ? message.mention_spans : []);
-    }
-
-    function messageMentionedJids(message) {
-        return message && message.mentioned_jids ? message.mentioned_jids : [];
-    }
-
     function canEditMessage(message) {
         var timestampUnix = message && message.timestamp_unix ? message.timestamp_unix : 0;
-        return !!message && !!message.is_outgoing && !!message.id && message.id.indexOf("pending-") !== 0 && message.id.indexOf("failed-") !== 0 && (message.type || "") === "text" && messageMentionedJids(message).length === 0 && messageMentionSpans(message).length === 0 && timestampUnix > 0 && Math.floor(Date.now() / 1000) - timestampUnix <= editWindowSeconds;
+        return !!message && !!message.is_outgoing && !!message.id && message.id.indexOf("pending-") !== 0 && message.id.indexOf("failed-") !== 0 && (message.type || "") === "text" && ChatHelpers.messageMentionedJids(message).length === 0 && ChatHelpers.messageMentionSpans(message).length === 0 && timestampUnix > 0 && Math.floor(Date.now() / 1000) - timestampUnix <= editWindowSeconds;
     }
 
     function canDeleteMessage(message) {
@@ -217,27 +155,6 @@ Page {
         });
     }
 
-    function messageComesBefore(left, right) {
-        var leftTimestamp = left && left.timestamp_unix ? left.timestamp_unix : 0;
-        var rightTimestamp = right && right.timestamp_unix ? right.timestamp_unix : 0;
-        if (leftTimestamp !== rightTimestamp)
-            return leftTimestamp < rightTimestamp;
-
-        var leftId = left && left.id ? left.id : "";
-        var rightId = right && right.id ? right.id : "";
-        return leftId < rightId;
-    }
-
-    function insertMessageSorted(messageList, message) {
-        for (var i = 0; i < messageList.length; i++) {
-            if (messageComesBefore(message, messageList[i])) {
-                messageList.splice(i, 0, message);
-                return ;
-            }
-        }
-        messageList.push(message);
-    }
-
     function loadInitialMessages() {
         python.call('main.get_messages', [chatId, "", messagePageSize], function(result) {
             if (result && result.success) {
@@ -271,22 +188,22 @@ Page {
     function loadDraft() {
         python.call('main.get_chat_draft', [chatId], function(result) {
             var draftText = result && result.success ? (result.text || "") : "";
-            var draftMentionSpans = result && result.success ? cloneMentionSpans(result.mention_spans || []) : [];
+            var draftMentionSpans = result && result.success ? ChatHelpers.cloneMentionSpans(result.mention_spans || []) : [];
             if (!draftTouchedBeforeLoad && (chatComposer.text || "") === "") {
                 lastSavedDraftText = draftText;
                 pendingDraftText = draftText;
                 lastSavedDraftMentionSpans = draftMentionSpans;
-                pendingDraftMentionSpans = cloneMentionSpans(draftMentionSpans);
+                pendingDraftMentionSpans = ChatHelpers.cloneMentionSpans(draftMentionSpans);
                 draftLoaded = true;
                 chatComposer.setTextAndMentions(draftText, draftMentionSpans);
                 return ;
             }
-            if (pendingDraftText === draftText && mentionSpansEqual(pendingDraftMentionSpans, draftMentionSpans) && !draftSaveInFlight) {
+            if (pendingDraftText === draftText && ChatHelpers.mentionSpansEqual(pendingDraftMentionSpans, draftMentionSpans) && !draftSaveInFlight) {
                 lastSavedDraftText = draftText;
-                lastSavedDraftMentionSpans = cloneMentionSpans(draftMentionSpans);
+                lastSavedDraftMentionSpans = ChatHelpers.cloneMentionSpans(draftMentionSpans);
             }
             draftLoaded = true;
-            if (pendingDraftText !== lastSavedDraftText || !mentionSpansEqual(pendingDraftMentionSpans, lastSavedDraftMentionSpans))
+            if (pendingDraftText !== lastSavedDraftText || !ChatHelpers.mentionSpansEqual(pendingDraftMentionSpans, lastSavedDraftMentionSpans))
                 saveDraft(pendingDraftText, pendingDraftMentionSpans);
 
         });
@@ -297,26 +214,26 @@ Page {
             return ;
 
         pendingDraftText = text;
-        pendingDraftMentionSpans = cloneMentionSpans(mentionSpans);
+        pendingDraftMentionSpans = ChatHelpers.cloneMentionSpans(mentionSpans);
         if (!draftLoaded && !draftTouchedBeforeLoad)
             return ;
 
         if (draftSaveInFlight)
             return ;
 
-        if (pendingDraftText === lastSavedDraftText && mentionSpansEqual(pendingDraftMentionSpans, lastSavedDraftMentionSpans))
+        if (pendingDraftText === lastSavedDraftText && ChatHelpers.mentionSpansEqual(pendingDraftMentionSpans, lastSavedDraftMentionSpans))
             return ;
 
         var textToSave = pendingDraftText;
-        var mentionSpansToSave = cloneMentionSpans(pendingDraftMentionSpans);
+        var mentionSpansToSave = ChatHelpers.cloneMentionSpans(pendingDraftMentionSpans);
         draftSaveInFlight = true;
         python.call('main.set_chat_draft', [chatId, textToSave, mentionSpansToSave], function(result) {
             draftSaveInFlight = false;
             if (result && result.success) {
                 lastSavedDraftText = textToSave;
-                lastSavedDraftMentionSpans = cloneMentionSpans(mentionSpansToSave);
+                lastSavedDraftMentionSpans = ChatHelpers.cloneMentionSpans(mentionSpansToSave);
             }
-            if (pendingDraftText !== textToSave || !mentionSpansEqual(pendingDraftMentionSpans, mentionSpansToSave))
+            if (pendingDraftText !== textToSave || !ChatHelpers.mentionSpansEqual(pendingDraftMentionSpans, mentionSpansToSave))
                 saveDraft(pendingDraftText, pendingDraftMentionSpans);
 
         });
@@ -325,41 +242,6 @@ Page {
     function flushDraft() {
         draftSaveTimer.stop();
         saveDraft(chatComposer.text || "", chatComposer.mentionSpans || []);
-    }
-
-    function isLocalOnlyMessage(message) {
-        var messageId = message && message.id ? message.id : "";
-        return messageId.indexOf("pending-") === 0 || messageId.indexOf("failed-") === 0 || message.send_status === "pending" || message.send_status === "failed";
-    }
-
-    function mergeRefreshedMessages(refreshedMessages) {
-        var mergedMessages = refreshedMessages.slice();
-        var knownIds = {
-        };
-        var knownTempIds = {
-        };
-        for (var i = 0; i < refreshedMessages.length; i++) {
-            var refreshed = refreshedMessages[i];
-            if (refreshed.id)
-                knownIds[refreshed.id] = true;
-
-            if (refreshed.temp_id)
-                knownTempIds[refreshed.temp_id] = true;
-
-        }
-        var oldestRefreshed = refreshedMessages.length > 0 ? refreshedMessages[0] : null;
-        for (var j = 0; j < messages.length; j++) {
-            var existing = messages[j];
-            var existingId = existing.id || "";
-            var existingTempId = existing.temp_id || "";
-            if ((existingId !== "" && (knownIds[existingId] || knownTempIds[existingId])) || (existingTempId !== "" && (knownIds[existingTempId] || knownTempIds[existingTempId])))
-                continue;
-
-            if (isLocalOnlyMessage(existing) || (oldestRefreshed && messageComesBefore(existing, oldestRefreshed)))
-                insertMessageSorted(mergedMessages, existing);
-
-        }
-        return mergedMessages;
     }
 
     function refreshPageState(reason) {
@@ -412,7 +294,7 @@ Page {
             if (result && result.success) {
                 nextMessagesCursor = result.next_cursor || "";
                 hasOlderMessages = !!result.has_more;
-                messages = mergeRefreshedMessages(result.messages || []);
+                messages = ChatHelpers.mergeRefreshedMessages(messages, result.messages || []);
                 if (wasAtBottom)
                     chatMessageList.scrollToBottom();
 
@@ -626,7 +508,7 @@ Page {
             "read_receipt": "",
             "send_status": "pending",
             "temp_id": tempId,
-            "file_name": contactNameFromPath(filePath),
+            "file_name": ChatHelpers.contactNameFromPath(filePath, i18n),
             "media_path": "file://" + filePath,
             "reply_to_id": replyContext ? replyContext.id : "",
             "reply_to_sender": replyContext ? replyContext.sender : "",
@@ -647,7 +529,7 @@ Page {
         Qt.inputMethod.commit();
         if (chatComposer.text.length > 0) {
             var text = chatComposer.text;
-            var mentionSpans = cloneMentionSpans(chatComposer.mentionSpans || []);
+            var mentionSpans = ChatHelpers.cloneMentionSpans(chatComposer.mentionSpans || []);
             var tempId = "pending-" + Date.now();
             var now = new Date();
             var timestampUnix = Math.floor(now.getTime() / 1000);
@@ -804,7 +686,7 @@ Page {
             draftSaveTimer.restart();
         }
         onMentionSpansChanged: {
-            chatPage.pendingDraftMentionSpans = cloneMentionSpans(chatComposer.mentionSpans || []);
+            chatPage.pendingDraftMentionSpans = ChatHelpers.cloneMentionSpans(chatComposer.mentionSpans || []);
             if (!chatPage.draftLoaded)
                 chatPage.draftTouchedBeforeLoad = true;
 
@@ -856,19 +738,21 @@ Page {
                             continue;
 
                         if (message.id === replyToMessageId && message.type === "deleted")
-                            replyToText = messagePreview(message);
+                            replyToText = ChatHelpers.messagePreview(message, i18n, {
+                            "link_preview": "🔗 Link"
+                        });
 
                         var found = false;
                         for (var j = 0; j < updated.length; j++) {
                             if (updated[j].id === message.id || (message.temp_id && updated[j].id === message.temp_id)) {
                                 updated.splice(j, 1);
-                                insertMessageSorted(updated, message);
+                                ChatHelpers.insertMessageSorted(updated, message);
                                 found = true;
                                 break;
                             }
                         }
                         if (!found) {
-                            insertMessageSorted(updated, message);
+                            ChatHelpers.insertMessageSorted(updated, message);
                             if (!message.is_outgoing) {
                                 if (wasAtBottom)
                                     visibleIncomingCount += 1;
@@ -972,45 +856,10 @@ Page {
     Component {
         id: editMessageDialog
 
-        Dialog {
+        EditMessageDialog {
             id: dialog
 
-            property string messageId: ""
-            property string initialText: ""
-            property bool saving: false
-
-            title: i18n.tr("Edit Message")
-
-            TextArea {
-                id: editMessageInput
-
-                text: dialog.initialText
-                autoSize: true
-                maximumLineCount: 6
-                Component.onCompleted: forceActiveFocus()
-            }
-
-            Button {
-                text: i18n.tr("Cancel")
-                enabled: !dialog.saving
-                onClicked: PopupUtils.close(dialog)
-            }
-
-            Button {
-                text: i18n.tr("Save")
-                color: theme.palette.normal.positive
-                enabled: !dialog.saving
-                onClicked: {
-                    Qt.inputMethod.commit();
-                    if (editMessageInput.text === dialog.initialText) {
-                        PopupUtils.close(dialog);
-                        return ;
-                    }
-                    dialog.saving = true;
-                    chatPage.submitEditedMessage(dialog, dialog.messageId, editMessageInput.text);
-                }
-            }
-
+            onSaveRequested: chatPage.submitEditedMessage(dialog, messageId, text)
         }
 
     }
@@ -1079,94 +928,20 @@ Page {
 
     }
 
-    header: PageHeader {
+    header: ChatPageHeader {
         id: chatHeader
 
-        leadingActionBar.actions: [
-            Action {
-                iconName: "back"
-                text: i18n.tr("Back")
-                onTriggered: pageStack.pop()
-            }
-        ]
-
-        contents: Row {
-            anchors.verticalCenter: parent.verticalCenter
-            spacing: units.gu(1.5)
-
-            Rectangle {
-                width: units.gu(4.5)
-                height: units.gu(4.5)
-                radius: width / 2
-                color: theme.palette.normal.base
-                anchors.verticalCenter: parent.verticalCenter
-
-                Image {
-                    id: headerAvatar
-
-                    anchors.fill: parent
-                    source: chatPhoto || ""
-                    fillMode: Image.PreserveAspectCrop
-                    visible: false
-                }
-
-                Rectangle {
-                    id: headerAvatarMask
-
-                    anchors.fill: parent
-                    radius: width / 2
-                    visible: false
-                }
-
-                OpacityMask {
-                    anchors.fill: parent
-                    source: headerAvatar
-                    maskSource: headerAvatarMask
-                    visible: !!chatPhoto
-                }
-
-                Icon {
-                    anchors.centerIn: parent
-                    name: "contact"
-                    width: units.gu(2.5)
-                    height: units.gu(2.5)
-                    color: theme.palette.normal.backgroundSecondaryText
-                    visible: !chatPhoto
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: {
-                        pageStack.push(Qt.resolvedUrl("ProfilePage.qml"), {
-                            "chatId": chatId,
-                            "chatName": chatName,
-                            "chatPhoto": chatPhoto
-                        });
-                    }
-                }
-
-            }
-
-            Column {
-                anchors.verticalCenter: parent.verticalCenter
-
-                Label {
-                    text: chatName
-                    fontSize: "medium"
-                    font.bold: true
-                }
-
-                Label {
-                    text: chatStatus
-                    fontSize: "x-small"
-                    color: theme.palette.normal.backgroundTertiaryText
-                    visible: chatStatus !== ""
-                }
-
-            }
-
+        chatName: chatPage.chatName
+        chatPhoto: chatPage.chatPhoto
+        chatStatus: chatPage.chatStatus
+        onBackRequested: pageStack.pop()
+        onProfileRequested: {
+            pageStack.push(Qt.resolvedUrl("ProfilePage.qml"), {
+                "chatId": chatId,
+                "chatName": chatName,
+                "chatPhoto": chatPhoto
+            });
         }
-
     }
 
 }

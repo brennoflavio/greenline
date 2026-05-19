@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-19 17:07+0000\n"
+"POT-Creation-Date: 2026-05-19 18:26+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -43,163 +43,121 @@ msgstr ""
 msgid "Link Device"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:35 ../qml/ChatListPage.qml:66 ../qml/ChatPage.qml:55
-#: ../qml/components/ChatMessageList.qml:64
-msgid "Deleted message"
-msgstr ""
-
-#: ../qml/ChatListPage.qml:38 ../qml/ChatListPage.qml:69 ../qml/ChatPage.qml:58
-#: ../qml/components/ChatMessageList.qml:67
-msgid "View-once message. Open WhatsApp on your primary device to view it."
-msgstr ""
-
-#: ../qml/ChatListPage.qml:47 ../qml/ChatPage.qml:67 ../qml/ChatPage.qml:90
-#: ../qml/ContactPreviewPage.qml:42 ../qml/ContactPreviewPage.qml:219
-#: ../qml/components/ChatAttachmentDialog.qml:48
-#: ../qml/components/ContactMessage.qml:47
-msgid "Contact"
-msgstr ""
-
-#: ../qml/ChatListPage.qml:63
-msgid "Draft: "
-msgstr ""
-
-#: ../qml/ChatListPage.qml:136
-msgid "Search chats..."
-msgstr ""
-
-#: ../qml/ChatListPage.qml:319
-msgid "Mute"
-msgstr ""
-
-#: ../qml/ChatListPage.qml:319
-msgid "Unmute"
-msgstr ""
-
-#: ../qml/ChatListPage.qml:334
+#: ../qml/ChatListPage.qml:92
 msgid "No chats found"
 msgstr ""
 
-#: ../qml/ChatPage.qml:127
+#: ../qml/ChatPage.qml:79
 msgid "You"
 msgstr ""
 
-#: ../qml/ChatPage.qml:173
+#: ../qml/ChatPage.qml:111
 msgid "Message updated"
 msgstr ""
 
-#: ../qml/ChatPage.qml:179
+#: ../qml/ChatPage.qml:117
 msgid "Failed to edit message"
 msgstr ""
 
-#: ../qml/ChatPage.qml:189
+#: ../qml/ChatPage.qml:127
 msgid "Message deleted"
 msgstr ""
 
-#: ../qml/ChatPage.qml:192
+#: ../qml/ChatPage.qml:130
 msgid "Failed to delete message"
 msgstr ""
 
-#: ../qml/ChatPage.qml:202
+#: ../qml/ChatPage.qml:140
 msgid "No internet connection. Connect and try again."
 msgstr ""
 
-#: ../qml/ChatPage.qml:215 ../qml/ChatPage.qml:967
+#: ../qml/ChatPage.qml:153 ../qml/ChatPage.qml:851
 msgid "Failed to download media"
 msgstr ""
 
-#: ../qml/ChatPage.qml:433
+#: ../qml/ChatPage.qml:315
 msgid "Failed to load older messages"
 msgstr ""
 
-#: ../qml/ChatPage.qml:523
+#: ../qml/ChatPage.qml:405
 msgid "Failed to send audio"
 msgstr ""
 
-#: ../qml/ChatPage.qml:641
+#: ../qml/ChatPage.qml:523
 msgid "Failed to send contact"
 msgstr ""
 
-#: ../qml/ChatPage.qml:725
+#: ../qml/ChatPage.qml:607
 msgid "WhatsApp messages read today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:726
+#: ../qml/ChatPage.qml:608
 msgid "No WhatsApp messages read today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:734
+#: ../qml/ChatPage.qml:616
 msgid "WhatsApp messages sent today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:735
+#: ../qml/ChatPage.qml:617
 msgid "No WhatsApp messages sent today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:758
+#: ../qml/ChatPage.qml:640
 msgid "Scroll up to load older messages first"
 msgstr ""
 
-#: ../qml/ChatPage.qml:764
+#: ../qml/ChatPage.qml:646
 msgid "Copied to clipboard"
 msgstr ""
 
-#: ../qml/ChatPage.qml:920
+#: ../qml/ChatPage.qml:804
 msgid "recording audio..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:920
+#: ../qml/ChatPage.qml:804
 msgid "typing..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:982
-msgid "Edit Message"
-msgstr ""
-
-#: ../qml/ChatPage.qml:994 ../qml/PhonePairingPage.qml:120
-#: ../qml/SettingsPage.qml:127 ../qml/components/ChatAttachmentDialog.qml:56
-#: ../qml/components/VoiceMessageRecorderDialog.qml:85
-msgid "Cancel"
-msgstr ""
-
-#: ../qml/ChatPage.qml:1000 ../qml/ContactPreviewPage.qml:70
-#: ../qml/DocumentPreviewPage.qml:70 ../qml/ImagePreviewPage.qml:36
-#: ../qml/VideoPreviewPage.qml:38
-msgid "Save"
-msgstr ""
-
-#: ../qml/ChatPage.qml:1044
+#: ../qml/ChatPage.qml:893
 msgid "Send Photo"
 msgstr ""
 
-#: ../qml/ChatPage.qml:1055
+#: ../qml/ChatPage.qml:904
 msgid "Send Video"
 msgstr ""
 
-#: ../qml/ChatPage.qml:1066
+#: ../qml/ChatPage.qml:915
 msgid "Send Contact"
 msgstr ""
 
-#: ../qml/ChatPage.qml:1088 ../qml/ContactPreviewPage.qml:223
-#: ../qml/DocumentPreviewPage.qml:223 ../qml/ImagePreviewPage.qml:189
-#: ../qml/VideoPreviewPage.qml:193 ../qml/ut_components/AppHeader.qml:78
-msgid "Back"
+#: ../qml/ContactPreviewPage.qml:42 ../qml/ContactPreviewPage.qml:97
+#: ../qml/components/ChatAttachmentDialog.qml:48
+#: ../qml/components/ContactMessage.qml:47
+msgid "Contact"
 msgstr ""
 
 #: ../qml/ContactPreviewPage.qml:50
 msgid "Ready to export"
 msgstr ""
 
-#: ../qml/ContactPreviewPage.qml:80 ../qml/ContactPreviewPage.qml:198
-#: ../qml/DocumentPreviewPage.qml:80 ../qml/DocumentPreviewPage.qml:198
-#: ../qml/ImagePreviewPage.qml:46 ../qml/ImagePreviewPage.qml:164
-#: ../qml/VideoPreviewPage.qml:49 ../qml/VideoPreviewPage.qml:168
+#: ../qml/ContactPreviewPage.qml:70 ../qml/DocumentPreviewPage.qml:70
+#: ../qml/ImagePreviewPage.qml:36 ../qml/VideoPreviewPage.qml:38
+#: ../qml/components/EditMessageDialog.qml:32
+msgid "Save"
+msgstr ""
+
+#: ../qml/ContactPreviewPage.qml:82 ../qml/DocumentPreviewPage.qml:82
+#: ../qml/ImagePreviewPage.qml:48 ../qml/VideoPreviewPage.qml:51
+#: ../qml/components/ContentTransferPage.qml:11
 msgid "Share"
 msgstr ""
 
-#: ../qml/ContactPreviewPage.qml:135 ../qml/DocumentPreviewPage.qml:135
-#: ../qml/ImagePreviewPage.qml:101 ../qml/VideoPreviewPage.qml:105
-msgid "Save to"
+#: ../qml/ContactPreviewPage.qml:101 ../qml/DocumentPreviewPage.qml:101
+#: ../qml/ImagePreviewPage.qml:67 ../qml/VideoPreviewPage.qml:71
+#: ../qml/components/ChatPageHeader.qml:18
+#: ../qml/ut_components/AppHeader.qml:78
+msgid "Back"
 msgstr ""
 
 #: ../qml/DaemonSetupPage.qml:46
@@ -222,7 +180,7 @@ msgstr ""
 msgid "Setup"
 msgstr ""
 
-#: ../qml/DocumentPreviewPage.qml:42 ../qml/DocumentPreviewPage.qml:219
+#: ../qml/DocumentPreviewPage.qml:42 ../qml/DocumentPreviewPage.qml:97
 #: ../qml/components/DocumentMessage.qml:58
 msgid "Document"
 msgstr ""
@@ -231,7 +189,7 @@ msgstr ""
 msgid "Downloaded"
 msgstr ""
 
-#: ../qml/ImagePreviewPage.qml:185
+#: ../qml/ImagePreviewPage.qml:63
 msgid "Image"
 msgstr ""
 
@@ -258,6 +216,13 @@ msgstr ""
 
 #: ../qml/PhonePairingPage.qml:112
 msgid "Requesting pairing code..."
+msgstr ""
+
+#: ../qml/PhonePairingPage.qml:120 ../qml/SettingsPage.qml:127
+#: ../qml/components/ChatAttachmentDialog.qml:56
+#: ../qml/components/EditMessageDialog.qml:26
+#: ../qml/components/VoiceMessageRecorderDialog.qml:85
+msgid "Cancel"
 msgstr ""
 
 #: ../qml/PhonePairingPage.qml:138
@@ -343,8 +308,7 @@ msgstr ""
 msgid "Send Sticker"
 msgstr ""
 
-#: ../qml/VideoPreviewPage.qml:189
-#: ../qml/components/ChatAttachmentDialog.qml:24
+#: ../qml/VideoPreviewPage.qml:67 ../qml/components/ChatAttachmentDialog.qml:24
 msgid "Video"
 msgstr ""
 
@@ -364,8 +328,28 @@ msgstr ""
 msgid "Sticker"
 msgstr ""
 
-#: ../qml/components/ChatComposer.qml:468
+#: ../qml/components/ChatComposer.qml:175
 msgid "Type a message..."
+msgstr ""
+
+#: ../qml/components/ChatListItem.qml:158
+msgid "Mute"
+msgstr ""
+
+#: ../qml/components/ChatListItem.qml:158
+msgid "Unmute"
+msgstr ""
+
+#: ../qml/components/ChatListSearchBar.qml:8
+msgid "Search chats..."
+msgstr ""
+
+#: ../qml/components/ChatMessageList.qml:64
+msgid "Deleted message"
+msgstr ""
+
+#: ../qml/components/ChatMessageList.qml:67
+msgid "View-once message. Open WhatsApp on your primary device to view it."
 msgstr ""
 
 #: ../qml/components/ChatMessageList.qml:170
@@ -384,16 +368,6 @@ msgstr ""
 msgid "Copy"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:326
-#: ../qml/components/TextMessage.qml:104
-msgid "Show less"
-msgstr ""
-
-#: ../qml/components/ChatMessageList.qml:326
-#: ../qml/components/TextMessage.qml:104
-msgid "Show more"
-msgstr ""
-
 #: ../qml/components/ContactMessage.qml:55
 #: ../qml/components/DocumentMessage.qml:66
 msgid "Tap to open"
@@ -401,6 +375,10 @@ msgstr ""
 
 #: ../qml/components/ContactMessage.qml:55
 msgid "Unavailable"
+msgstr ""
+
+#: ../qml/components/ContentTransferPage.qml:11
+msgid "Save to"
 msgstr ""
 
 #: ../qml/components/DocumentMessage.qml:66
@@ -411,10 +389,20 @@ msgstr ""
 msgid "Tap to download"
 msgstr ""
 
+#: ../qml/components/EditMessageDialog.qml:14
+msgid "Edit Message"
+msgstr ""
+
 #: ../qml/components/MessageBubble.qml:197
-#: ../qml/components/StickerMessage.qml:190
-#: ../qml/components/TextMessage.qml:144
 msgid "edited"
+msgstr ""
+
+#: ../qml/components/RichTextMessage.qml:101
+msgid "Show less"
+msgstr ""
+
+#: ../qml/components/RichTextMessage.qml:101
+msgid "Show more"
 msgstr ""
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:31
