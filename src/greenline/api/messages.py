@@ -640,7 +640,7 @@ def download_media(chat_id: str, message_id: str, media_type: str) -> DownloadMe
     import pyotherside
 
     entry_key, entry = _get_message_entry_with_key(chat_id, message_id)
-    if entry is None or entry.get("raw") is None:
+    if entry_key is None or entry is None or entry.get("raw") is None:
         return DownloadMediaResponse(success=False, media_path="", message="Message not found")
 
     raw = entry["raw"]
