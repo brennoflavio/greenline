@@ -72,7 +72,9 @@ Item {
     function canEditMessage(message) {
         var messageId = message && message.id ? message.id : "";
         var timestampUnix = message && message.timestamp_unix ? message.timestamp_unix : 0;
-        return !!message && !!message.is_outgoing && messageId !== "" && messageId.indexOf("pending-") !== 0 && messageId.indexOf("failed-") !== 0 && (message.type || "") === "text" && timestampUnix > 0 && Math.floor(Date.now() / 1000) - timestampUnix <= editWindowSeconds;
+        var mentionedJids = message && message.mentioned_jids ? message.mentioned_jids : [];
+        var mentionSpans = message && message.mention_spans ? message.mention_spans : [];
+        return !!message && !!message.is_outgoing && messageId !== "" && messageId.indexOf("pending-") !== 0 && messageId.indexOf("failed-") !== 0 && (message.type || "") === "text" && mentionedJids.length === 0 && mentionSpans.length === 0 && timestampUnix > 0 && Math.floor(Date.now() / 1000) - timestampUnix <= editWindowSeconds;
     }
 
     function canDeleteMessage(message) {

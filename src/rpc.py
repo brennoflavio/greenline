@@ -8,6 +8,7 @@ from constants import DAEMON_SOCKET_PATH
 from daemon_types import (
     GetChatSettingsReply,
     GetContactsReply,
+    GetGroupParticipantsReply,
     GetGroupsReply,
     GetNotificationsSuppressedReply,
     ListEventsReply,
@@ -95,6 +96,12 @@ class DaemonRPC:
             data["Groups"] = []
         return from_dict(data_class=GetGroupsReply, data=data)
 
+    def get_group_participants(self, chat_jid: str) -> GetGroupParticipantsReply:
+        data = self._call("Service.GetGroupParticipants", {"ChatJID": chat_jid})
+        if data.get("Participants") is None:
+            data["Participants"] = []
+        return from_dict(data_class=GetGroupParticipantsReply, data=data)
+
     def sync_avatar(self, jid: str) -> str:
         data = self._call("Service.SyncAvatar", {"JID": jid})
         reply = from_dict(data_class=SyncAvatarReply, data=data)
@@ -134,6 +141,7 @@ class DaemonRPC:
         file_path: str = "",
         caption: str = "",
         reply_context: Optional[Dict[str, Any]] = None,
+        mentioned_jids: Optional[list[str]] = None,
         duration_seconds: int = 0,
         ptt: bool = False,
     ) -> Dict[str, Any]:
@@ -152,6 +160,8 @@ class DaemonRPC:
             quoted_message = reply_context.get("quoted_message")
             if quoted_message is not None:
                 payload["ReplyQuotedMessage"] = quoted_message
+        if mentioned_jids:
+            payload["MentionedJIDs"] = list(mentioned_jids)
 
         result: Dict[str, Any] = self._call("Service.SendMessage", payload)
         return result

@@ -24,7 +24,7 @@ import base64
 import os
 import shutil
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 
 from daemon import (
@@ -48,6 +48,7 @@ from message_store import (
     _merge_deleted_message,
     _message_preview,
     _update_chat_after_edit,
+    build_mention_candidate,
     canonicalize_contact_jid,
     clear_chat_runtime_cache,
 )
@@ -57,6 +58,7 @@ from message_store import (
     resolve_media_message_content,
     sanitize_message_payload,
     to_ui_message,
+    validate_mention_spans,
 )
 from models import (
     ChatListEntry,
@@ -138,6 +140,14 @@ class ClearDataResponse:
 class ChatDraftResponse:
     success: bool
     text: str
+    mention_spans: list[dict[str, object]] = field(default_factory=list)
+
+
+@dataclass
+class GroupMentionCandidatesResponse:
+    success: bool
+    candidates: list[dict[str, object]] = field(default_factory=list)
+    message: str = ""
 
 
 @crash_reporter
@@ -379,23 +389,57 @@ def get_chat_info(chat_id: str) -> dict[str, object]:
 
 @crash_reporter
 @dataclass_to_dict
-def get_chat_draft(chat_id: str) -> ChatDraftResponse:
-    with KV() as kv:
-        draft = kv.get(f"draft:{chat_id}", default="")
-    return ChatDraftResponse(success=True, text=str(draft or ""))
+def get_group_mention_candidates(chat_id: str) -> GroupMentionCandidatesResponse:
+    try:
+        participants = DaemonRPC().get_group_participants(chat_id).Participants
+        candidates = []
+        for participant in participants:
+            candidate = build_mention_candidate(participant.jid, participant.display_name)
+            candidate["is_admin"] = participant.is_admin
+            candidate["is_super_admin"] = participant.is_super_admin
+            candidates.append(candidate)
+        candidates.sort(key=lambda candidate: str(candidate.get("label") or "").lower())
+        return GroupMentionCandidatesResponse(success=True, candidates=candidates)
+    except Exception as e:
+        return GroupMentionCandidatesResponse(success=False, message=str(e))
 
 
 @crash_reporter
 @dataclass_to_dict
-def set_chat_draft(chat_id: str, text: str) -> SuccessResponse:
+def get_chat_draft(chat_id: str) -> ChatDraftResponse:
+    with KV() as kv:
+        draft = kv.get(f"draft:{chat_id}", default="")
+        draft_mentions = kv.get(f"draft_mentions:{chat_id}", default=[])
+
+    draft_text = str(draft or "")
+    mention_spans = validate_mention_spans(
+        draft_text,
+        draft_mentions if isinstance(draft_mentions, list) else None,
+    )
+    return ChatDraftResponse(success=True, text=draft_text, mention_spans=mention_spans)
+
+
+@crash_reporter
+@dataclass_to_dict
+def set_chat_draft(
+    chat_id: str,
+    text: str,
+    mention_spans: list[dict[str, object]] | None = None,
+) -> SuccessResponse:
     import pyotherside
 
     draft_text = str(text)
+    validated_spans = validate_mention_spans(draft_text, mention_spans)
     with KV() as kv:
         if draft_text != "":
             kv.put(f"draft:{chat_id}", draft_text)
+            if validated_spans:
+                kv.put(f"draft_mentions:{chat_id}", validated_spans)
+            else:
+                kv.delete(f"draft_mentions:{chat_id}")
         else:
             kv.delete(f"draft:{chat_id}")
+            kv.delete(f"draft_mentions:{chat_id}")
     pyotherside.send(
         "chat-draft-update",
         [{"id": chat_id, "draft": draft_text, "has_draft": draft_text != ""}],
@@ -678,8 +722,11 @@ def send_text_message(
     text: str,
     temp_id: str = "",
     reply_context: dict[str, object] | None = None,
+    mention_spans: list[dict[str, object]] | None = None,
 ) -> SuccessResponse:
     resolved_reply_context = _resolve_reply_context(chat_id, reply_context)
+    normalized_text = str(text)
+    validated_spans = validate_mention_spans(normalized_text, mention_spans)
     now = datetime.now()
     pending_id = temp_id or f"pending-{int(now.timestamp())}"
 
@@ -691,7 +738,9 @@ def send_text_message(
         timestamp=now.strftime("%H:%M"),
         timestamp_unix=int(now.timestamp()),
         read_receipt=ReadReceipt.NONE,
-        text=text,
+        text=normalized_text,
+        mentioned_jids=[str(span["jid"]) for span in validated_spans],
+        mention_spans=validated_spans,
         send_status="pending",
         temp_id=pending_id,
     )
@@ -722,6 +771,11 @@ def edit_text_message(chat_id: str, message_id: str, text: str) -> SuccessRespon
 
     if str(entry.get("type") or "") != MessageType.TEXT.value:
         return SuccessResponse(success=False, message="Only text messages can be edited")
+
+    mentioned_jids = entry.get("mentioned_jids") if isinstance(entry.get("mentioned_jids"), list) else []
+    mention_spans = entry.get("mention_spans") if isinstance(entry.get("mention_spans"), list) else []
+    if mentioned_jids or mention_spans:
+        return SuccessResponse(success=False, message="Mention messages cannot be edited yet")
 
     raw_timestamp_unix = entry.get("timestamp_unix")
     timestamp_unix = raw_timestamp_unix if isinstance(raw_timestamp_unix, int) else 0

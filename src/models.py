@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import List
+from typing import Any, Dict, List
 
 
 class MessageType(StrEnum):
@@ -72,6 +72,7 @@ class Message:
     sender_raw: str = ""
     text: str = ""
     mentioned_jids: List[str] = field(default_factory=list)
+    mention_spans: List[Dict[str, Any]] = field(default_factory=list)
     image_source: str = ""
     caption: str = ""
     images: List[str] = field(default_factory=list)

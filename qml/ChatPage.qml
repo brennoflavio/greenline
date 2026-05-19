@@ -43,6 +43,9 @@ Page {
     property bool draftSaveInFlight: false
     property string lastSavedDraftText: ""
     property string pendingDraftText: ""
+    property var lastSavedDraftMentionSpans: []
+    property var pendingDraftMentionSpans: []
+    property var mentionCandidates: []
 
     function messagePreview(message) {
         if (!message)
@@ -127,9 +130,25 @@ Page {
         chatComposer.focusInput();
     }
 
+    function cloneMentionSpans(spans) {
+        return JSON.parse(JSON.stringify(spans || []));
+    }
+
+    function mentionSpansEqual(left, right) {
+        return JSON.stringify(left || []) === JSON.stringify(right || []);
+    }
+
+    function messageMentionSpans(message) {
+        return cloneMentionSpans(message && message.mention_spans ? message.mention_spans : []);
+    }
+
+    function messageMentionedJids(message) {
+        return message && message.mentioned_jids ? message.mentioned_jids : [];
+    }
+
     function canEditMessage(message) {
         var timestampUnix = message && message.timestamp_unix ? message.timestamp_unix : 0;
-        return !!message && !!message.is_outgoing && !!message.id && message.id.indexOf("pending-") !== 0 && message.id.indexOf("failed-") !== 0 && (message.type || "") === "text" && timestampUnix > 0 && Math.floor(Date.now() / 1000) - timestampUnix <= editWindowSeconds;
+        return !!message && !!message.is_outgoing && !!message.id && message.id.indexOf("pending-") !== 0 && message.id.indexOf("failed-") !== 0 && (message.type || "") === "text" && messageMentionedJids(message).length === 0 && messageMentionSpans(message).length === 0 && timestampUnix > 0 && Math.floor(Date.now() / 1000) - timestampUnix <= editWindowSeconds;
     }
 
     function canDeleteMessage(message) {
@@ -236,56 +255,76 @@ Page {
         });
     }
 
+    function loadMentionCandidates() {
+        if (!isGroup) {
+            mentionCandidates = [];
+            return ;
+        }
+        python.call('main.get_group_mention_candidates', [chatId], function(result) {
+            if (result && result.success)
+                mentionCandidates = result.candidates || [];
+            else
+                mentionCandidates = [];
+        });
+    }
+
     function loadDraft() {
         python.call('main.get_chat_draft', [chatId], function(result) {
             var draftText = result && result.success ? (result.text || "") : "";
+            var draftMentionSpans = result && result.success ? cloneMentionSpans(result.mention_spans || []) : [];
             if (!draftTouchedBeforeLoad && (chatComposer.text || "") === "") {
                 lastSavedDraftText = draftText;
                 pendingDraftText = draftText;
+                lastSavedDraftMentionSpans = draftMentionSpans;
+                pendingDraftMentionSpans = cloneMentionSpans(draftMentionSpans);
                 draftLoaded = true;
-                chatComposer.text = draftText;
+                chatComposer.setTextAndMentions(draftText, draftMentionSpans);
                 return ;
             }
-            if (pendingDraftText === draftText && !draftSaveInFlight)
+            if (pendingDraftText === draftText && mentionSpansEqual(pendingDraftMentionSpans, draftMentionSpans) && !draftSaveInFlight) {
                 lastSavedDraftText = draftText;
-
+                lastSavedDraftMentionSpans = cloneMentionSpans(draftMentionSpans);
+            }
             draftLoaded = true;
-            if (pendingDraftText !== lastSavedDraftText)
-                saveDraft(pendingDraftText);
+            if (pendingDraftText !== lastSavedDraftText || !mentionSpansEqual(pendingDraftMentionSpans, lastSavedDraftMentionSpans))
+                saveDraft(pendingDraftText, pendingDraftMentionSpans);
 
         });
     }
 
-    function saveDraft(text) {
+    function saveDraft(text, mentionSpans) {
         if (!pythonReady)
             return ;
 
         pendingDraftText = text;
+        pendingDraftMentionSpans = cloneMentionSpans(mentionSpans);
         if (!draftLoaded && !draftTouchedBeforeLoad)
             return ;
 
         if (draftSaveInFlight)
             return ;
 
-        if (pendingDraftText === lastSavedDraftText)
+        if (pendingDraftText === lastSavedDraftText && mentionSpansEqual(pendingDraftMentionSpans, lastSavedDraftMentionSpans))
             return ;
 
         var textToSave = pendingDraftText;
+        var mentionSpansToSave = cloneMentionSpans(pendingDraftMentionSpans);
         draftSaveInFlight = true;
-        python.call('main.set_chat_draft', [chatId, textToSave], function(result) {
+        python.call('main.set_chat_draft', [chatId, textToSave, mentionSpansToSave], function(result) {
             draftSaveInFlight = false;
-            if (result && result.success)
+            if (result && result.success) {
                 lastSavedDraftText = textToSave;
-
-            if (pendingDraftText !== textToSave)
-                saveDraft(pendingDraftText);
+                lastSavedDraftMentionSpans = cloneMentionSpans(mentionSpansToSave);
+            }
+            if (pendingDraftText !== textToSave || !mentionSpansEqual(pendingDraftMentionSpans, mentionSpansToSave))
+                saveDraft(pendingDraftText, pendingDraftMentionSpans);
 
         });
     }
 
     function flushDraft() {
         draftSaveTimer.stop();
-        saveDraft(chatComposer.text || "");
+        saveDraft(chatComposer.text || "", chatComposer.mentionSpans || []);
     }
 
     function isLocalOnlyMessage(message) {
@@ -352,6 +391,10 @@ Page {
                 chatName = result.name || chatName;
                 chatPhoto = result.photo || "";
                 isGroup = !!result.is_group;
+                if (isGroup && mentionCandidates.length === 0)
+                    loadMentionCandidates();
+                else if (!isGroup)
+                    mentionCandidates = [];
                 if (wasAtBottom) {
                     if (result.unread_count > 0) {
                         unreadCount = 0;
@@ -604,6 +647,7 @@ Page {
         Qt.inputMethod.commit();
         if (chatComposer.text.length > 0) {
             var text = chatComposer.text;
+            var mentionSpans = cloneMentionSpans(chatComposer.mentionSpans || []);
             var tempId = "pending-" + Date.now();
             var now = new Date();
             var timestampUnix = Math.floor(now.getTime() / 1000);
@@ -615,6 +659,8 @@ Page {
             if (minutes.length < 2)
                 minutes = "0" + minutes;
 
+            var mentionedJids = [];
+            for (var i = 0; i < mentionSpans.length; i++) mentionedJids.push(mentionSpans[i].jid)
             var replyContext = consumeReplyContext();
             var pendingMsg = {
                 "id": tempId,
@@ -622,6 +668,8 @@ Page {
                 "type": "text",
                 "is_outgoing": true,
                 "text": text,
+                "mentioned_jids": mentionedJids,
+                "mention_spans": mentionSpans,
                 "timestamp": hours + ":" + minutes,
                 "timestamp_unix": timestampUnix,
                 "read_receipt": "",
@@ -635,10 +683,10 @@ Page {
             newMessages.push(pendingMsg);
             messages = newMessages;
             messagesSendAttemptsMetric.increment(1);
-            chatComposer.text = "";
+            chatComposer.setTextAndMentions("", []);
             draftSaveTimer.stop();
-            saveDraft("");
-            python.call('main.send_text_message', [chatId, text, tempId, replyContext], function() {
+            saveDraft("", []);
+            python.call('main.send_text_message', [chatId, text, tempId, replyContext, mentionSpans], function() {
             });
         }
     }
@@ -655,7 +703,7 @@ Page {
 
         interval: 500
         repeat: false
-        onTriggered: chatPage.saveDraft(chatComposer.text || "")
+        onTriggered: chatPage.saveDraft(chatComposer.text || "", chatComposer.mentionSpans || [])
     }
 
     Timer {
@@ -747,8 +795,16 @@ Page {
         replyToMessageId: chatPage.replyToMessageId
         replyToSender: chatPage.replyToSender
         replyToText: chatPage.replyToText
+        mentionCandidates: chatPage.mentionCandidates
         onTextChanged: {
             chatPage.pendingDraftText = chatComposer.text || "";
+            if (!chatPage.draftLoaded)
+                chatPage.draftTouchedBeforeLoad = true;
+
+            draftSaveTimer.restart();
+        }
+        onMentionSpansChanged: {
+            chatPage.pendingDraftMentionSpans = cloneMentionSpans(chatComposer.mentionSpans || []);
             if (!chatPage.draftLoaded)
                 chatPage.draftTouchedBeforeLoad = true;
 
@@ -785,10 +841,11 @@ Page {
                 pythonReady = true;
                 loadInitialMessages();
                 loadDraft();
-                if (!isGroup)
+                if (isGroup)
+                    loadMentionCandidates();
+                else
                     python.call('main.subscribe_presence', [chatId], function() {
                 });
-
                 setHandler('message-upsert', function(incomingMessages) {
                     var updated = messages.slice();
                     var wasAtBottom = chatMessageList.atBottom;

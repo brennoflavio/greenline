@@ -293,6 +293,61 @@ func (s *Service) GetGroups(args *struct{}, reply *GetGroupsReply) error {
 	return nil
 }
 
+type GetGroupParticipantsArgs struct {
+	ChatJID string
+}
+
+type GroupParticipant struct {
+	JID            string `json:"jid"`
+	PhoneNumberJID string `json:"phone_number_jid"`
+	LIDJID         string `json:"lid_jid"`
+	DisplayName    string `json:"display_name"`
+	IsAdmin        bool   `json:"is_admin"`
+	IsSuperAdmin   bool   `json:"is_super_admin"`
+}
+
+type GetGroupParticipantsReply struct {
+	Participants []GroupParticipant
+}
+
+func (s *Service) GetGroupParticipants(args *GetGroupParticipantsArgs, reply *GetGroupParticipantsReply) error {
+	if err := s.requireLogin(); err != nil {
+		return err
+	}
+	chatJID, err := types.ParseJID(args.ChatJID)
+	if err != nil {
+		return fmt.Errorf("invalid chat JID: %w", err)
+	}
+	if chatJID.Server != types.GroupServer {
+		return fmt.Errorf("chat JID is not a group: %s", args.ChatJID)
+	}
+
+	ctx := context.Background()
+	info, err := s.client.GetGroupInfo(ctx, chatJID)
+	if err != nil {
+		return err
+	}
+
+	participants := make([]GroupParticipant, 0, len(info.Participants))
+	for _, participant := range info.Participants {
+		participants = append(participants, GroupParticipant{
+			JID:            s.client.ResolveJID(ctx, participant.JID).String(),
+			PhoneNumberJID: participant.PhoneNumber.String(),
+			LIDJID:         participant.LID.String(),
+			DisplayName:    participant.DisplayName,
+			IsAdmin:        participant.IsAdmin,
+			IsSuperAdmin:   participant.IsSuperAdmin,
+		})
+	}
+
+	sort.Slice(participants, func(i, j int) bool {
+		return participants[i].JID < participants[j].JID
+	})
+
+	reply.Participants = participants
+	return nil
+}
+
 // SyncAvatar types
 
 type SyncAvatarArgs struct {
@@ -461,6 +516,7 @@ type SendMessageArgs struct {
 	ReplyToMessageID    string
 	ReplyParticipantJID string
 	ReplyQuotedMessage  map[string]any
+	MentionedJIDs       []string
 }
 
 type SendMessageReply struct {
@@ -492,43 +548,67 @@ type DeleteMessageReply struct {
 	Timestamp int64
 }
 
-func (s *Service) buildReplyContext(args *SendMessageArgs) (*waE2E.ContextInfo, error) {
-	if args.ReplyToMessageID == "" {
+func (s *Service) buildMessageContext(args *SendMessageArgs) (*waE2E.ContextInfo, error) {
+	if args.ReplyToMessageID == "" && len(args.MentionedJIDs) == 0 {
 		return nil, nil
 	}
 
-	ctxInfo := &waE2E.ContextInfo{
-		StanzaID: proto.String(args.ReplyToMessageID),
+	ctx := context.Background()
+	ctxInfo := &waE2E.ContextInfo{}
+	if args.ReplyToMessageID != "" {
+		ctxInfo.StanzaID = proto.String(args.ReplyToMessageID)
+
+		participant := args.ReplyParticipantJID
+		if participant == "" {
+			ownJID := s.client.GetOwnJID()
+			if !ownJID.IsEmpty() {
+				participant = ownJID.String()
+			}
+		} else {
+			participantJID, err := types.ParseJID(participant)
+			if err != nil {
+				return nil, fmt.Errorf("invalid reply participant JID: %w", err)
+			}
+			participant = s.client.ResolveJID(ctx, participantJID).String()
+		}
+		if participant != "" {
+			ctxInfo.Participant = proto.String(participant)
+		}
+
+		if len(args.ReplyQuotedMessage) > 0 {
+			quotedBytes, err := json.Marshal(args.ReplyQuotedMessage)
+			if err != nil {
+				return nil, fmt.Errorf("marshal quoted message: %w", err)
+			}
+			quotedMessage := &waE2E.Message{}
+			unmarshal := protojson.UnmarshalOptions{DiscardUnknown: true}
+			if err := unmarshal.Unmarshal(quotedBytes, quotedMessage); err != nil {
+				return nil, fmt.Errorf("unmarshal quoted message: %w", err)
+			}
+			ctxInfo.QuotedMessage = quotedMessage
+		}
 	}
 
-	participant := args.ReplyParticipantJID
-	if participant == "" {
-		ownJID := s.client.GetOwnJID()
-		if !ownJID.IsEmpty() {
-			participant = ownJID.String()
+	if len(args.MentionedJIDs) > 0 {
+		mentionedJIDs := make([]string, 0, len(args.MentionedJIDs))
+		for _, mentioned := range args.MentionedJIDs {
+			mentioned = strings.TrimSpace(mentioned)
+			if mentioned == "" {
+				continue
+			}
+			mentionedJID, err := types.ParseJID(mentioned)
+			if err != nil {
+				return nil, fmt.Errorf("invalid mentioned JID: %w", err)
+			}
+			mentionedJIDs = append(mentionedJIDs, s.client.ResolveJID(ctx, mentionedJID).String())
 		}
-	} else {
-		participantJID, err := types.ParseJID(participant)
-		if err != nil {
-			return nil, fmt.Errorf("invalid reply participant JID: %w", err)
+		if len(mentionedJIDs) > 0 {
+			ctxInfo.MentionedJID = mentionedJIDs
 		}
-		participant = s.client.ResolveJID(context.Background(), participantJID).String()
-	}
-	if participant != "" {
-		ctxInfo.Participant = proto.String(participant)
 	}
 
-	if len(args.ReplyQuotedMessage) > 0 {
-		quotedBytes, err := json.Marshal(args.ReplyQuotedMessage)
-		if err != nil {
-			return nil, fmt.Errorf("marshal quoted message: %w", err)
-		}
-		quotedMessage := &waE2E.Message{}
-		unmarshal := protojson.UnmarshalOptions{DiscardUnknown: true}
-		if err := unmarshal.Unmarshal(quotedBytes, quotedMessage); err != nil {
-			return nil, fmt.Errorf("unmarshal quoted message: %w", err)
-		}
-		ctxInfo.QuotedMessage = quotedMessage
+	if ctxInfo.StanzaID == nil && ctxInfo.Participant == nil && ctxInfo.QuotedMessage == nil && len(ctxInfo.MentionedJID) == 0 {
+		return nil, nil
 	}
 
 	return ctxInfo, nil
@@ -753,9 +833,9 @@ func (s *Service) SendMessage(args *SendMessageArgs, reply *SendMessageReply) er
 		return fmt.Errorf("invalid chat JID: %w", err)
 	}
 
-	replyContext, err := s.buildReplyContext(args)
+	replyContext, err := s.buildMessageContext(args)
 	if err != nil {
-		return fmt.Errorf("reply context: %w", err)
+		return fmt.Errorf("message context: %w", err)
 	}
 
 	var message *waE2E.Message
@@ -839,13 +919,13 @@ func (s *Service) EditMessage(args *EditMessageArgs, reply *EditMessageReply) er
 		return fmt.Errorf("message text cannot be empty")
 	}
 
-	replyContext, err := s.buildReplyContext(&SendMessageArgs{
+	replyContext, err := s.buildMessageContext(&SendMessageArgs{
 		ReplyToMessageID:    args.ReplyToMessageID,
 		ReplyParticipantJID: args.ReplyParticipantJID,
 		ReplyQuotedMessage:  args.ReplyQuotedMessage,
 	})
 	if err != nil {
-		return fmt.Errorf("reply context: %w", err)
+		return fmt.Errorf("message context: %w", err)
 	}
 
 	message := s.client.BuildEdit(jid, types.MessageID(args.MessageID), buildTextMessage(args.Text, replyContext))

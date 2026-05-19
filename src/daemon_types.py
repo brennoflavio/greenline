@@ -46,6 +46,21 @@ class GetGroupsReply:
 
 
 @dataclass
+class GroupParticipant:
+    jid: str = ""
+    phone_number_jid: str = ""
+    lid_jid: str = ""
+    display_name: str = ""
+    is_admin: bool = False
+    is_super_admin: bool = False
+
+
+@dataclass
+class GetGroupParticipantsReply:
+    Participants: List[GroupParticipant] = field(default_factory=list)
+
+
+@dataclass
 class StoredEvent:
     id: int = 0
     event_type: str = ""

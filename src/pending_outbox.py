@@ -9,6 +9,9 @@ from message_store import (
     delete_message_index,
 )
 from message_store import get_message_entry_with_key as _lookup_message_entry_with_key
+from message_store import (
+    mention_transport_payload,
+)
 from message_store import message_storage_key as _message_storage_key
 from message_store import (
     put_message_index,
@@ -207,7 +210,14 @@ def _send_pending_message_via_rpc(
     rpc = DaemonRPC()
 
     if message.type == MessageType.TEXT:
-        return rpc.send_message(message.chat_id, "text", text=message.text, reply_context=reply_context)
+        transport_text, _, mentioned_jids = mention_transport_payload(message.text, message.mention_spans)
+        return rpc.send_message(
+            message.chat_id,
+            "text",
+            text=transport_text,
+            reply_context=reply_context,
+            mentioned_jids=mentioned_jids,
+        )
 
     file_path = _local_media_path(message.media_path)
     if not file_path or not os.path.exists(file_path):
