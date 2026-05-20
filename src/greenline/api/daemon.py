@@ -25,6 +25,8 @@ from ut_components.event import get_event_dispatcher
 from ut_components.kv import KV
 from ut_components.utils import dataclass_to_dict
 
+NOTIFICATIONS_SUPPRESSED_KEY = "notifications_suppressed"
+
 
 @dataclass
 class EnsureDaemonVersionResponse:
@@ -166,8 +168,9 @@ def uninstall_daemon() -> SuccessResponse:
 @dataclass_to_dict
 def get_settings() -> SettingsResponse:
     try:
-        reply = DaemonRPC().get_notifications_suppressed()
-        return SettingsResponse(success=True, notifications_suppressed=reply.Suppressed)
+        with KV() as kv:
+            suppressed = bool(kv.get(NOTIFICATIONS_SUPPRESSED_KEY, default=False))
+        return SettingsResponse(success=True, notifications_suppressed=suppressed)
     except Exception:
         return SettingsResponse(success=False, notifications_suppressed=False)
 
@@ -176,7 +179,8 @@ def get_settings() -> SettingsResponse:
 @dataclass_to_dict
 def set_notifications_suppressed(suppressed: bool) -> SuccessResponse:
     try:
-        DaemonRPC().set_notifications_suppressed(suppressed)
+        with KV() as kv:
+            kv.put(NOTIFICATIONS_SUPPRESSED_KEY, bool(suppressed))
         return SuccessResponse(success=True, message="")
     except Exception as error:
         return SuccessResponse(success=False, message=str(error))

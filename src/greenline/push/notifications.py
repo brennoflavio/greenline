@@ -21,6 +21,7 @@ from whatsmeow_types import CallOfferEvent, MessageEvent, UndecryptableMessageEv
 
 MAX_BODY_LEN = 100
 VIEW_ONCE_BODY = "View-once message — open WhatsApp on your primary phone"
+NOTIFICATIONS_SUPPRESSED_KEY = "notifications_suppressed"
 
 
 def build_postal_output(raw_payload: str) -> Dict[str, Any]:
@@ -40,7 +41,7 @@ def build_postal_output(raw_payload: str) -> Dict[str, Any]:
         return {}
 
     rpc = DaemonRPC()
-    if _notifications_suppressed(rpc, envelope):
+    if _notifications_suppressed(envelope):
         return {}
 
     notification = _build_notification(rpc, event_type, event, envelope)
@@ -341,13 +342,16 @@ def _notification_emblem_counter(unread_increment: int = 0) -> Optional[EmblemCo
     return EmblemCounter(count=count, visible=count > 0)
 
 
-def _notifications_suppressed(rpc: DaemonRPC, envelope: Dict[str, Any]) -> bool:
-    if "suppressed" in envelope:
-        return bool(envelope.get("suppressed"))
+def _notifications_suppressed(envelope: Dict[str, Any]) -> bool:
+    sentinel = object()
     try:
-        return rpc.get_notifications_suppressed().Suppressed
+        with KV() as kv:
+            suppressed = kv.get(NOTIFICATIONS_SUPPRESSED_KEY, default=sentinel)
+        if suppressed is sentinel:
+            return bool(envelope.get("suppressed"))
+        return bool(suppressed)
     except Exception:
-        return False
+        return bool(envelope.get("suppressed"))
 
 
 def _is_muted(rpc: DaemonRPC, chat_jid: str, envelope: Dict[str, Any]) -> bool:

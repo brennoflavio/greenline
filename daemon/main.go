@@ -18,20 +18,18 @@ import (
 	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
 	"greenline.brennoflavio/daemon/avatarsync"
-	"greenline.brennoflavio/daemon/configstore"
 	"greenline.brennoflavio/daemon/eventstore"
 	"greenline.brennoflavio/daemon/notify"
 	"greenline.brennoflavio/daemon/waconn"
 )
 
 type helperNotification struct {
-	EventType  string          `json:"event_type"`
-	Event      json.RawMessage `json:"event"`
-	ChatJID    string          `json:"chat_jid,omitempty"`
-	ChatName   string          `json:"chat_name,omitempty"`
-	Icon       string          `json:"icon,omitempty"`
-	Suppressed bool            `json:"suppressed"`
-	Muted      bool            `json:"muted"`
+	EventType string          `json:"event_type"`
+	Event     json.RawMessage `json:"event"`
+	ChatJID   string          `json:"chat_jid,omitempty"`
+	ChatName  string          `json:"chat_name,omitempty"`
+	Icon      string          `json:"icon,omitempty"`
+	Muted     bool            `json:"muted"`
 }
 
 func notificationIconPath(cacheDir, jid string) string {
@@ -45,15 +43,11 @@ func notificationIconPath(cacheDir, jid string) string {
 	return icon
 }
 
-func buildHelperNotificationPayload(client *waconn.Client, svc *Service, cacheDir string, evt interface{}, eventType string, data []byte) ([]byte, bool, error) {
+func buildHelperNotificationPayload(client *waconn.Client, cacheDir string, evt interface{}, eventType string, data []byte) ([]byte, bool, error) {
 	ctx := context.Background()
-	svc.mu.RLock()
-	suppressed := svc.notifSuppressed
-	svc.mu.RUnlock()
 	envelope := helperNotification{
-		EventType:  eventType,
-		Event:      json.RawMessage(data),
-		Suppressed: suppressed,
+		EventType: eventType,
+		Event:     json.RawMessage(data),
 	}
 
 	switch msg := evt.(type) {
@@ -144,19 +138,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	configDBPath := filepath.Join(*dataDir, "config.db")
-	cfgStore, err := configstore.New(configDBPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	notifSuppressed := false
-	if v, ok, err := cfgStore.Get("notifications_suppressed"); err != nil {
-		log.Fatalf("failed to read notifications_suppressed: %v", err)
-	} else if ok && v == "true" {
-		notifSuppressed = true
-	}
-
 	var notifier *notify.Notifier
 	if *appID != "" {
 		n, err := notify.New(*appID)
@@ -168,7 +149,7 @@ func main() {
 	}
 
 	syncer := avatarsync.New(client, *cacheDir, logger)
-	svc := &Service{client: client, eventStore: evStore, configStore: cfgStore, syncer: syncer, notifier: notifier, cacheDir: *cacheDir, notifSuppressed: notifSuppressed}
+	svc := &Service{client: client, eventStore: evStore, syncer: syncer, notifier: notifier, cacheDir: *cacheDir}
 
 	client.AddEventHandler(func(evt interface{}) {
 		switch msg := evt.(type) {
@@ -198,7 +179,7 @@ func main() {
 		if notifier == nil {
 			return
 		}
-		payload, ok, err := buildHelperNotificationPayload(client, svc, *cacheDir, evt, typeName, data)
+		payload, ok, err := buildHelperNotificationPayload(client, *cacheDir, evt, typeName, data)
 		if err != nil {
 			logger.Error("failed to build helper notification payload", "type", typeName, "error", err)
 			return
@@ -248,7 +229,6 @@ func main() {
 		cancel()
 		client.Disconnect()
 		evStore.Close()
-		cfgStore.Close()
 		if notifier != nil {
 			notifier.Close()
 		}

@@ -21,7 +21,6 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"greenline.brennoflavio/daemon/avatarsync"
-	"greenline.brennoflavio/daemon/configstore"
 	"greenline.brennoflavio/daemon/eventstore"
 	"greenline.brennoflavio/daemon/notify"
 	"greenline.brennoflavio/daemon/waconn"
@@ -30,15 +29,13 @@ import (
 )
 
 type Service struct {
-	client          *waconn.Client
-	eventStore      *eventstore.Store
-	configStore     *configstore.Store
-	syncer          *avatarsync.Syncer
-	notifier        *notify.Notifier
-	cacheDir        string
-	mu              sync.RWMutex
-	qrCode          string
-	notifSuppressed bool
+	client     *waconn.Client
+	eventStore *eventstore.Store
+	syncer     *avatarsync.Syncer
+	notifier   *notify.Notifier
+	cacheDir   string
+	mu         sync.RWMutex
+	qrCode     string
 }
 
 func (s *Service) setQR(code string) {
@@ -1051,33 +1048,4 @@ func (s *Service) ClearChatNotifications(args *ClearChatNotificationsArgs, reply
 		return nil
 	}
 	return s.notifier.ClearPersistentList(args.Tags)
-}
-
-type SetNotificationsSuppressedArgs struct {
-	Suppressed bool
-}
-
-func (s *Service) SetNotificationsSuppressed(args *SetNotificationsSuppressedArgs, reply *struct{}) error {
-	value := "false"
-	if args.Suppressed {
-		value = "true"
-	}
-	if err := s.configStore.Set("notifications_suppressed", value); err != nil {
-		return fmt.Errorf("set notifications_suppressed: %w", err)
-	}
-	s.mu.Lock()
-	s.notifSuppressed = args.Suppressed
-	s.mu.Unlock()
-	return nil
-}
-
-type GetNotificationsSuppressedReply struct {
-	Suppressed bool
-}
-
-func (s *Service) GetNotificationsSuppressed(args *struct{}, reply *GetNotificationsSuppressedReply) error {
-	s.mu.RLock()
-	reply.Suppressed = s.notifSuppressed
-	s.mu.RUnlock()
-	return nil
 }
