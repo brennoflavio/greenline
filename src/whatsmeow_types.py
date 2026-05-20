@@ -870,3 +870,96 @@ class ChatPresenceEvent:
     BroadcastRecipients: Optional[List[Any]] = None
     State: str = ""
     Media: str = ""
+
+
+@dataclass
+class IdentityChangeEvent:
+    JID: str = ""
+    Timestamp: str = ""
+    Implicit: bool = False
+
+
+@dataclass
+class UserAboutEvent:
+    JID: str = ""
+    Status: str = ""
+    Timestamp: str = ""
+
+
+@dataclass
+class BlocklistChange:
+    JID: str = ""
+    Action: str = ""
+
+
+@dataclass
+class BlocklistEvent:
+    Action: str = ""
+    DHash: str = ""
+    PrevDHash: str = ""
+    Changes: Optional[List[BlocklistChange]] = None
+
+
+@dataclass
+class CallRejectEvent:
+    From: str = ""
+    Timestamp: str = ""
+    CallCreator: str = ""
+    CallCreatorAlt: str = ""
+    CallID: str = ""
+    GroupJID: str = ""
+    Data: Optional[Dict[str, Any]] = None
+
+
+@dataclass
+class JoinedGroupParticipant:
+    JID: str = ""
+    PhoneNumber: str = ""
+    LID: str = ""
+    IsAdmin: bool = False
+    IsSuperAdmin: bool = False
+    DisplayName: str = ""
+    Error: int = 0
+    AddRequest: Optional[object] = None
+
+
+@dataclass
+class JoinedGroupEvent:
+    Reason: str = ""
+    Type: str = ""
+    CreateKey: str = ""
+    Sender: Optional[str] = None
+    SenderPN: Optional[str] = None
+    Notify: str = ""
+    JID: str = ""
+    OwnerJID: str = ""
+    OwnerPN: str = ""
+    Name: str = ""
+    NameSetAt: str = ""
+    NameSetBy: str = ""
+    NameSetByPN: str = ""
+    Topic: str = ""
+    TopicID: str = ""
+    TopicSetAt: str = ""
+    TopicSetBy: str = ""
+    TopicSetByPN: str = ""
+    TopicDeleted: bool = False
+    IsLocked: bool = False
+    IsAnnounce: bool = False
+    AnnounceVersionID: str = ""
+    IsEphemeral: bool = False
+    DisappearingTimer: int = 0
+    IsIncognito: bool = False
+    IsParent: bool = False
+    DefaultMembershipApprovalMode: str = ""
+    LinkedParentJID: str = ""
+    IsDefaultSubGroup: bool = False
+    IsJoinApprovalRequired: bool = False
+    AddressingMode: str = ""
+    GroupCreated: str = ""
+    CreatorCountryCode: str = ""
+    ParticipantVersionID: str = ""
+    Participants: List[JoinedGroupParticipant] = field(default_factory=list)
+    ParticipantCount: int = 0
+    MemberAddMode: str = ""
+    Suspended: bool = False

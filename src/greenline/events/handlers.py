@@ -23,16 +23,21 @@ from rpc import DaemonNotReadyError, DaemonRPC, DaemonTimeoutError
 from unread_counter import reconcile_unread_total
 from ut_components.kv import KV
 from whatsmeow_types import (
+    BlocklistEvent,
     BusinessNameEvent,
+    CallRejectEvent,
     ChatPresenceEvent,
     ContactEvent,
     GroupInfoEvent,
+    IdentityChangeEvent,
+    JoinedGroupEvent,
     MessageEvent,
     PictureEvent,
     PresenceEvent,
     PushNameEvent,
     ReceiptEvent,
     UndecryptableMessageEvent,
+    UserAboutEvent,
 )
 
 
@@ -356,8 +361,12 @@ def _handle_chat_presence(
 
 
 def _handle_group_info(event: Any) -> None:
+    _parse_ignored_event(event, GroupInfoEvent)
+
+
+def _parse_ignored_event(event: Any, data_class: Any) -> None:
     raw = json.loads(event.payload or "{}")
-    from_dict(data_class=GroupInfoEvent, data=raw)
+    from_dict(data_class=data_class, data=raw)
 
 
 def _save_unhandled_message(event: Any, raw: Dict[str, Any]) -> None:
@@ -449,6 +458,16 @@ def _dispatch_event_inner(
         reconcile_unread_total()
     elif event.event_type == "GroupInfo":
         _handle_group_info(event)
+    elif event.event_type == "Blocklist":
+        _parse_ignored_event(event, BlocklistEvent)
+    elif event.event_type == "CallReject":
+        _parse_ignored_event(event, CallRejectEvent)
+    elif event.event_type == "IdentityChange":
+        _parse_ignored_event(event, IdentityChangeEvent)
+    elif event.event_type == "JoinedGroup":
+        _parse_ignored_event(event, JoinedGroupEvent)
+    elif event.event_type == "UserAbout":
+        _parse_ignored_event(event, UserAboutEvent)
     elif event.event_type in (
         "AppState",
         "AppStateSyncComplete",
