@@ -26,6 +26,7 @@ from whatsmeow_types import (
     BusinessNameEvent,
     ChatPresenceEvent,
     ContactEvent,
+    GroupInfoEvent,
     MessageEvent,
     PictureEvent,
     PresenceEvent,
@@ -354,6 +355,11 @@ def _handle_chat_presence(
     )
 
 
+def _handle_group_info(event: Any) -> None:
+    raw = json.loads(event.payload or "{}")
+    from_dict(data_class=GroupInfoEvent, data=raw)
+
+
 def _save_unhandled_message(event: Any, raw: Dict[str, Any]) -> None:
     info = raw.get("Info", {})
     with KV() as kv:
@@ -441,6 +447,8 @@ def _dispatch_event_inner(
         updated = handle_history_sync(event)
         chat_updates.update(updated)
         reconcile_unread_total()
+    elif event.event_type == "GroupInfo":
+        _handle_group_info(event)
     elif event.event_type in (
         "AppState",
         "AppStateSyncComplete",

@@ -811,6 +811,53 @@ class CallOfferNoticeEvent:
 
 
 @dataclass
+class GroupInfoNameChange:
+    Name: str = ""
+    NameSetAt: str = ""
+    NameSetBy: str = ""
+    NameSetByPN: str = ""
+
+
+@dataclass
+class GroupInfoTopicChange:
+    Topic: str = ""
+    TopicID: str = ""
+    TopicSetAt: str = ""
+    TopicSetBy: str = ""
+    TopicSetByPN: str = ""
+    TopicDeleted: bool = False
+
+
+@dataclass
+class GroupInfoEvent:
+    JID: str = ""
+    Notify: str = ""
+    Sender: Optional[str] = None
+    SenderPN: Optional[str] = None
+    Timestamp: str = ""
+    Name: Optional[GroupInfoNameChange] = None
+    Topic: Optional[GroupInfoTopicChange] = None
+    Locked: Optional[object] = None
+    Announce: Optional[object] = None
+    Ephemeral: Optional[object] = None
+    MembershipApprovalMode: Optional[object] = None
+    Delete: Optional[object] = None
+    Link: Optional[object] = None
+    Unlink: Optional[object] = None
+    NewInviteLink: Optional[object] = None
+    PrevParticipantVersionID: str = ""
+    ParticipantVersionID: str = ""
+    JoinReason: str = ""
+    Join: Optional[List[str]] = None
+    Leave: Optional[List[str]] = None
+    Promote: Optional[List[str]] = None
+    Demote: Optional[object] = None
+    Suspended: bool = False
+    Unsuspended: bool = False
+    UnknownChanges: Optional[List[Dict[str, Any]]] = None
+
+
+@dataclass
 class ChatPresenceEvent:
     Chat: str = ""
     Sender: str = ""
