@@ -206,6 +206,8 @@ Item {
 
         TextMessage {
             text: root.messageText(msg)
+            buttonText: msg.button_text || ""
+            buttonUrl: msg.button_url || ""
             isOutgoing: msg.is_outgoing || false
             timestamp: msg.timestamp || ""
             edited: msg.edited || false
@@ -220,6 +222,8 @@ Item {
 
         RichTextMessage {
             text: root.messageText(msg)
+            buttonText: msg.button_text || ""
+            buttonUrl: msg.button_url || ""
             isOutgoing: msg.is_outgoing || false
             isGroup: root.isGroup
             timestamp: msg.timestamp || ""

@@ -1,4 +1,5 @@
 import base64
+import json
 import os
 from typing import Any, Dict, Optional, Tuple
 
@@ -39,6 +40,30 @@ def _hydrated_template(message_content: Optional[Dict[str, Any]]) -> Optional[Di
     return hydrated if isinstance(hydrated, dict) else None
 
 
+def _interactive_template(message_content: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    if not message_content:
+        return None
+    template = message_content.get("templateMessage")
+    if not isinstance(template, dict):
+        return None
+    fmt = template.get("Format")
+    if not isinstance(fmt, dict):
+        return None
+    interactive = fmt.get("InteractiveMessageTemplate")
+    return interactive if isinstance(interactive, dict) else None
+
+
+def _interactive_native_flow(message_content: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    interactive = _interactive_template(message_content)
+    if not interactive:
+        return None
+    message = interactive.get("InteractiveMessage")
+    if not isinstance(message, dict):
+        return None
+    native_flow = message.get("NativeFlowMessage")
+    return native_flow if isinstance(native_flow, dict) else None
+
+
 def resolve_media_message_content(
     message_content: Optional[Dict[str, Any]],
     field_name: str,
@@ -65,39 +90,81 @@ def resolve_media_message_content(
     return image if isinstance(image, dict) else None
 
 
-def template_message_caption(message_content: Optional[Dict[str, Any]]) -> str:
+def template_message_text(message_content: Optional[Dict[str, Any]]) -> str:
     hydrated = _hydrated_template(message_content)
-    if not hydrated:
+    if hydrated:
+        parts = []
+        for field_name in ("hydratedContentText", "hydratedFooterText"):
+            value = str(hydrated.get(field_name) or "").strip()
+            if value:
+                parts.append(value)
+        if parts:
+            return "\n\n".join(parts)
+
+    interactive = _interactive_template(message_content)
+    if not interactive:
         return ""
 
     parts = []
-    for field_name in ("hydratedContentText", "hydratedFooterText"):
-        value = str(hydrated.get(field_name) or "").strip()
+    for section_name in ("body", "footer"):
+        section = interactive.get(section_name)
+        if not isinstance(section, dict):
+            continue
+        value = str(section.get("text") or "").strip()
         if value:
             parts.append(value)
     return "\n\n".join(parts)
 
 
+def template_message_caption(message_content: Optional[Dict[str, Any]]) -> str:
+    return template_message_text(message_content)
+
+
 def template_message_button(message_content: Optional[Dict[str, Any]]) -> Tuple[str, str]:
     hydrated = _hydrated_template(message_content)
-    if not hydrated:
+    if hydrated:
+        buttons = hydrated.get("hydratedButtons")
+        if not isinstance(buttons, list):
+            return "", ""
+
+        for button in buttons:
+            if not isinstance(button, dict):
+                continue
+            hydrated_button = button.get("HydratedButton")
+            if not isinstance(hydrated_button, dict):
+                continue
+            url_button = hydrated_button.get("UrlButton")
+            if not isinstance(url_button, dict):
+                continue
+            display_text = str(url_button.get("displayText") or "").strip()
+            url = str(url_button.get("URL") or url_button.get("url") or "").strip()
+            if display_text and url:
+                return display_text, url
+
+    native_flow = _interactive_native_flow(message_content)
+    if not native_flow:
         return "", ""
 
-    buttons = hydrated.get("hydratedButtons")
+    buttons = native_flow.get("buttons")
     if not isinstance(buttons, list):
         return "", ""
 
     for button in buttons:
         if not isinstance(button, dict):
             continue
-        hydrated_button = button.get("HydratedButton")
-        if not isinstance(hydrated_button, dict):
+        raw_params = button.get("buttonParamsJSON")
+        if isinstance(raw_params, str):
+            try:
+                params = json.loads(raw_params)
+            except Exception:
+                continue
+        elif isinstance(raw_params, dict):
+            params = raw_params
+        else:
             continue
-        url_button = hydrated_button.get("UrlButton")
-        if not isinstance(url_button, dict):
-            continue
-        display_text = str(url_button.get("displayText") or "").strip()
-        url = str(url_button.get("URL") or url_button.get("url") or "").strip()
+
+        display_text = str(params.get("display_text") or params.get("displayText") or "").strip()
+        url = str(params.get("landing_page_url") or params.get("url") or params.get("URL") or "").strip()
         if display_text and url:
             return display_text, url
 

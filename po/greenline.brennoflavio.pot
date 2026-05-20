@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-19 18:26+0000\n"
+"POT-Creation-Date: 2026-05-20 03:31+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -43,7 +43,7 @@ msgstr ""
 msgid "Link Device"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:92
+#: ../qml/ChatListPage.qml:95
 msgid "No chats found"
 msgstr ""
 
@@ -328,15 +328,15 @@ msgstr ""
 msgid "Sticker"
 msgstr ""
 
-#: ../qml/components/ChatComposer.qml:175
+#: ../qml/components/ChatComposer.qml:179
 msgid "Type a message..."
 msgstr ""
 
-#: ../qml/components/ChatListItem.qml:158
+#: ../qml/components/ChatListItem.qml:166
 msgid "Mute"
 msgstr ""
 
-#: ../qml/components/ChatListItem.qml:158
+#: ../qml/components/ChatListItem.qml:166
 msgid "Unmute"
 msgstr ""
 
@@ -397,11 +397,11 @@ msgstr ""
 msgid "edited"
 msgstr ""
 
-#: ../qml/components/RichTextMessage.qml:101
+#: ../qml/components/RichTextMessage.qml:118
 msgid "Show less"
 msgstr ""
 
-#: ../qml/components/RichTextMessage.qml:101
+#: ../qml/components/RichTextMessage.qml:118
 msgid "Show more"
 msgstr ""
 

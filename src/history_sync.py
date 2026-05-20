@@ -21,6 +21,7 @@ from greenline.store.media import (
     resolve_media_message_content,
     template_message_button,
     template_message_caption,
+    template_message_text,
 )
 from greenline.store.mentions import quoted_message_template, template_mention_text
 from greenline.store.repository import message_index_key, message_storage_key
@@ -116,10 +117,10 @@ def _derive_type_from_content(content: Dict[str, Any]) -> Optional[MessageType]:
     ext = content.get("extendedTextMessage")
     if ext and (ext.get("matchedText") or ext.get("title")):
         return MessageType.LINK_PREVIEW
-    if content.get("conversation") or ext:
-        return MessageType.TEXT
     if resolve_media_message_content(content, "imageMessage"):
         return MessageType.IMAGE
+    if content.get("conversation") or ext or template_message_text(content):
+        return MessageType.TEXT
     if content.get("videoMessage"):
         return MessageType.VIDEO
     if content.get("audioMessage"):
@@ -145,6 +146,8 @@ def _extract_content_fields(
     duration = ""
     media_path = ""
 
+    img = resolve_media_message_content(content, "imageMessage")
+
     if content.get("conversation"):
         text = content["conversation"]
     elif content.get("extendedTextMessage"):
@@ -154,8 +157,8 @@ def _extract_content_fields(
             (ext.get("contextInfo") or {}).get("mentionedJID"),
             jid_map=jid_map,
         )
-
-    img = resolve_media_message_content(content, "imageMessage")
+    elif not img:
+        text = template_message_text(content)
     vid = content.get("videoMessage")
     aud = content.get("audioMessage")
     doc = content.get("documentMessage")
@@ -254,6 +257,9 @@ def _message_preview(content: Dict[str, Any], jid_map: Dict[str, str]) -> Tuple[
         return _contact_preview(contact.get("displayName", "")), []
     if content.get("stickerMessage"):
         return "🏷️ Sticker", []
+    template_text = template_message_text(content)
+    if template_text:
+        return template_text, []
     return "", []
 
 
@@ -363,7 +369,9 @@ def _process_messages(
             _extract_link_preview_fields(content) if msg_type == MessageType.LINK_PREVIEW else ("", "", "")
         )
 
-        button_text, button_url = template_message_button(content) if msg_type == MessageType.IMAGE else ("", "")
+        button_text, button_url = (
+            template_message_button(content) if msg_type in (MessageType.IMAGE, MessageType.TEXT) else ("", "")
+        )
 
         msg = Message(
             id=msg_id,

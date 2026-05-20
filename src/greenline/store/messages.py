@@ -16,6 +16,7 @@ from greenline.store.media import (
     resolve_media_message_content,
     template_message_button,
     template_message_caption,
+    template_message_text,
 )
 from greenline.store.mentions import (
     _template_text_from_context_info,
@@ -87,6 +88,7 @@ def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = 
     if is_protocol_only:
         return None
 
+    template_text = template_message_text(raw_content)
     has_supported_content = any(
         (
             content.conversation,
@@ -98,6 +100,7 @@ def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = 
             content.contactMessage is not None,
             content.stickerMessage is not None,
             template_image is not None,
+            template_text,
         )
     )
     if info.Edit == "1" and not has_supported_content:
@@ -123,6 +126,9 @@ def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = 
             content.extendedTextMessage.text,
             content.extendedTextMessage.contextInfo,
         )
+    elif msg_type == MessageType.TEXT:
+        text = template_text
+        button_text, button_url = template_message_button(raw_content)
 
     mimetype = ""
     file_name = ""
@@ -227,6 +233,8 @@ def _derive_message_type_from_content(
 ) -> Optional[MessageType]:
     if content.imageMessage or resolve_media_message_content(raw_content, "imageMessage"):
         return MessageType.IMAGE
+    if template_message_text(raw_content):
+        return MessageType.TEXT
     if content.videoMessage:
         return MessageType.VIDEO
     if content.audioMessage:

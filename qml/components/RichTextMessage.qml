@@ -5,14 +5,27 @@ MessageBubble {
     id: root
 
     property string text: ""
+    property string buttonText: ""
+    property string buttonUrl: ""
     property bool expanded: false
     property int collapsedLineCount: 10
+    readonly property bool hasOpenableButton: buttonText !== "" && (buttonUrl.indexOf("https://") === 0 || buttonUrl.indexOf("http://") === 0)
     readonly property real senderWidthHint: showSender ? senderMeasure.implicitWidth + units.gu(2) : 0
     readonly property real replyWidthHint: replyToId !== "" ? Math.max(replySenderMeasure.implicitWidth, replyTextMeasure.implicitWidth) + units.gu(3.5) : 0
+    readonly property real buttonWidthHint: hasOpenableButton ? units.gu(24) : 0
     readonly property bool shouldCollapse: fullHeightMeasure.implicitHeight > collapsedHeightMeasure.implicitHeight + units.gu(0.1)
 
-    copyableText: text
-    preferredBubbleWidth: Math.max(textMeasure.implicitWidth + units.gu(2), senderWidthHint, replyWidthHint)
+    copyableText: {
+        var parts = [];
+        if (text)
+            parts.push(text);
+
+        if (buttonUrl)
+            parts.push(buttonUrl);
+
+        return parts.join("\n");
+    }
+    preferredBubbleWidth: Math.max(textMeasure.implicitWidth + units.gu(2), senderWidthHint, replyWidthHint, buttonWidthHint)
 
     Label {
         id: textMeasure
@@ -78,6 +91,13 @@ MessageBubble {
         width: parent.width
         maximumLineCount: root.shouldCollapse && !root.expanded ? root.collapsedLineCount : 2.14748e+09
         elide: root.shouldCollapse && !root.expanded ? Text.ElideRight : Text.ElideNone
+    }
+
+    Button {
+        text: root.buttonText
+        width: parent.width
+        visible: root.hasOpenableButton
+        onClicked: Qt.openUrlExternally(root.buttonUrl)
     }
 
     Column {

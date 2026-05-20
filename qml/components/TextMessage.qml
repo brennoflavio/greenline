@@ -5,4 +5,6 @@ RichTextMessage {
     replyToId: ""
     replyToSender: ""
     replyToText: ""
+    buttonText: ""
+    buttonUrl: ""
 }
