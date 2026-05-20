@@ -27,7 +27,7 @@ from greenline.store.repository import (
 from models import ChatListItem, Message, MessagesResponse, MessageType, ReadReceipt
 from pending_outbox import queue_and_attempt_send
 from rpc import DaemonRPC
-from unread_counter import decrement_unread_total
+from unread_counter import decrement_unread_total, get_unread_total
 from ut_components import mimetypes as mime_types
 from ut_components.config import get_cache_path
 from ut_components.crash import crash_reporter
@@ -255,9 +255,6 @@ def mark_messages_as_read(chat_id: str) -> SuccessResponse:
             sender = str(value.get("sender_raw") or value.get("sender") or "")
             unread_by_sender.setdefault(sender, []).append(value["id"])
 
-    if not unread_by_sender:
-        return SuccessResponse(success=True, message="")
-
     rpc = DaemonRPC()
     for sender, ids in unread_by_sender.items():
         rpc.mark_read(chat_id, ids, sender_jid=sender)
@@ -267,14 +264,20 @@ def mark_messages_as_read(chat_id: str) -> SuccessResponse:
         if existing:
             chat = ChatListItem(**existing)
             prev_unread = chat.unread_count
-            chat.unread_count = 0
-            kv.put(f"chat:{chat_id}", asdict(chat))
-            pyotherside.send("chat-list-update", [ui_chat_dict(chat)])
             if prev_unread > 0:
+                chat.unread_count = 0
+                kv.put(f"chat:{chat_id}", asdict(chat))
+                pyotherside.send("chat-list-update", [ui_chat_dict(chat)])
                 decrement_unread_total(prev_unread)
 
     try:
         rpc.clear_chat_notifications([chat_id])
+    except Exception:
+        pass
+
+    try:
+        total = get_unread_total()
+        rpc.set_notification_counter(total, total > 0)
     except Exception:
         pass
 
