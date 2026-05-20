@@ -30,7 +30,7 @@ MessageBubble {
     Rectangle {
         id: imageContainer
 
-        property real aspectRatio: img.status === Image.Ready && img.implicitWidth > 0 ? img.implicitWidth / img.implicitHeight : 4 / 3
+        property real aspectRatio: img.status === Image.Ready && img.implicitWidth > 0 && img.implicitHeight > 0 ? img.implicitWidth / img.implicitHeight : 4 / 3
 
         implicitWidth: aspectRatio >= 1 ? units.gu(28) : Math.min(units.gu(30) * aspectRatio, units.gu(28))
         width: parent.width
@@ -44,6 +44,7 @@ MessageBubble {
 
             anchors.fill: parent
             source: root.mediaPath || root.thumbnailSource || root.imageSource
+            autoTransform: true
             fillMode: Image.PreserveAspectCrop
             visible: source != ""
         }
