@@ -1,0 +1,13 @@
+{
+  "_meta": {
+    "source": "handwritten minimal daemon-shaped JSON",
+    "source_family": "presence_update"
+  },
+  "event_type": "Presence",
+  "id": 39,
+  "payload": {
+    "From": "fixture-user-46@s.whatsapp.net",
+    "LastSeen": "0001-01-01T00:00:00Z",
+    "Unavailable": false
+  }
+}

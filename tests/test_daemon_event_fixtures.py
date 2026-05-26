@@ -6,6 +6,7 @@ import pytest
 from daemon_event_helpers import (
     EVENT_DATACLASSES,
     FIXTURE_ROOT,
+    OUTPUT_SNAPSHOT_ROOT,
     SNAPSHOT_ROOT,
     load_fixtures,
     manifest_entries,
@@ -102,6 +103,14 @@ def test_manifest_covers_every_fixture_json() -> None:
 def test_manifest_and_kv_snapshots_match() -> None:
     expected_snapshots = {fixture.relative_path.replace(".json", ".kv.json") for fixture in FIXTURES}
     actual_snapshots = {path.relative_to(SNAPSHOT_ROOT).as_posix() for path in SNAPSHOT_ROOT.rglob("*.json")}
+    assert actual_snapshots == expected_snapshots
+
+
+def test_manifest_and_output_snapshots_match() -> None:
+    expected_snapshots = {fixture.relative_path.replace(".json", ".output.json") for fixture in FIXTURES}
+    actual_snapshots = {
+        path.relative_to(OUTPUT_SNAPSHOT_ROOT).as_posix() for path in OUTPUT_SNAPSHOT_ROOT.rglob("*.json")
+    }
     assert actual_snapshots == expected_snapshots
 
 

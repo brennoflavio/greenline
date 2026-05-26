@@ -1,0 +1,16 @@
+{
+  "chat_presence_updates": [
+    {
+      "chat": "fixture-chat-1@s.whatsapp.net",
+      "is_group": false,
+      "media": "",
+      "sender": "fixture-user-29@lid",
+      "state": "composing"
+    }
+  ],
+  "chat_updates": {},
+  "message_updates": [],
+  "message_upserts": [],
+  "photo_updates": [],
+  "presence_updates": []
+}

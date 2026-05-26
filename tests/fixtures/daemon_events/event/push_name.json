@@ -1,0 +1,17 @@
+{
+  "_meta": {
+    "source": "handwritten minimal daemon-shaped JSON",
+    "source_family": "chat_update"
+  },
+  "event_type": "PushName",
+  "id": 37,
+  "payload": {
+    "JID": "fixture-chat-44@s.whatsapp.net",
+    "JIDAlt": "",
+    "Message": {
+      "Timestamp": "2025-01-01T12:44:00+00:00"
+    },
+    "NewPushName": "Fixture Push Name",
+    "OldPushName": "Old Fixture Name"
+  }
+}

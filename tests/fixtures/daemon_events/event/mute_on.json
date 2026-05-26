@@ -1,0 +1,16 @@
+{
+  "_meta": {
+    "source": "handwritten minimal daemon-shaped JSON",
+    "source_family": "chat_update"
+  },
+  "event_type": "Mute",
+  "id": 35,
+  "payload": {
+    "Action": {
+      "muteEndTimestamp": 1735732800,
+      "muted": true
+    },
+    "JID": "fixture-chat-42@s.whatsapp.net",
+    "Timestamp": "2025-01-01T12:42:00+00:00"
+  }
+}

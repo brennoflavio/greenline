@@ -1,0 +1,15 @@
+{
+  "_meta": {
+    "source": "handwritten minimal daemon-shaped JSON",
+    "source_family": "photo_update"
+  },
+  "event_type": "Picture",
+  "id": 36,
+  "payload": {
+    "Author": "fixture-user-43@s.whatsapp.net",
+    "JID": "fixture-chat-43@s.whatsapp.net",
+    "PictureID": "fixture-picture-43",
+    "Remove": false,
+    "Timestamp": "2025-01-01T12:43:00+00:00"
+  }
+}

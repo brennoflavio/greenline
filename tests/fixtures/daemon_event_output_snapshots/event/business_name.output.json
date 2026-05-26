@@ -1,0 +1,27 @@
+{
+  "chat_presence_updates": [],
+  "chat_updates": {
+    "fixture-chat-45@s.whatsapp.net": {
+      "business_name": "Fixture Business Name",
+      "date": "11:59",
+      "full_name": "",
+      "id": "fixture-chat-45@s.whatsapp.net",
+      "is_group": false,
+      "last_message": "Seed message",
+      "last_message_mentioned_jids": [],
+      "last_message_timestamp": 1,
+      "last_message_type": "text",
+      "muted": false,
+      "name": "Fixture Business Name",
+      "name_updated_at": 1735735500,
+      "photo": "",
+      "push_name": "",
+      "read_receipt": "",
+      "unread_count": 0
+    }
+  },
+  "message_updates": [],
+  "message_upserts": [],
+  "photo_updates": [],
+  "presence_updates": []
+}

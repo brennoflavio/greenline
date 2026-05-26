@@ -1,0 +1,19 @@
+{
+  "_meta": {
+    "source": "handwritten minimal daemon-shaped JSON",
+    "source_family": "contact"
+  },
+  "event_type": "Contact",
+  "id": 34,
+  "payload": {
+    "Action": {
+      "firstName": "Fixture",
+      "fullName": "Fixture Contact",
+      "lidJID": "fixture-user-41@lid",
+      "saveOnPrimaryAddressbook": false
+    },
+    "FromFullSync": false,
+    "JID": "fixture-user-41@s.whatsapp.net",
+    "Timestamp": "2025-01-01T12:41:00+00:00"
+  }
+}

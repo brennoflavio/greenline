@@ -24,18 +24,40 @@ from ut_components.kv import KV
 FIXTURE_ROOT = Path(__file__).parent / "fixtures" / "daemon_events"
 MANIFEST_PATH = FIXTURE_ROOT / "manifest.json"
 SNAPSHOT_ROOT = Path(__file__).parent / "fixtures" / "daemon_event_kv_snapshots"
+OUTPUT_SNAPSHOT_ROOT = Path(__file__).parent / "fixtures" / "daemon_event_output_snapshots"
 
-EVENT_DATACLASSES: dict[str, type[Any]] = {
+EVENT_DATACLASSES: dict[str, type[Any] | None] = {
     "Blocklist": whatsmeow_types.BlocklistEvent,
+    "BusinessName": whatsmeow_types.BusinessNameEvent,
     "CallReject": whatsmeow_types.CallRejectEvent,
     "ChatPresence": whatsmeow_types.ChatPresenceEvent,
+    "Contact": whatsmeow_types.ContactEvent,
     "GroupInfo": whatsmeow_types.GroupInfoEvent,
+    "HistorySync": whatsmeow_types.HistorySyncEvent,
     "IdentityChange": whatsmeow_types.IdentityChangeEvent,
     "JoinedGroup": whatsmeow_types.JoinedGroupEvent,
     "Message": whatsmeow_types.MessageEvent,
+    "Mute": None,
+    "Picture": whatsmeow_types.PictureEvent,
+    "Presence": whatsmeow_types.PresenceEvent,
+    "PushName": whatsmeow_types.PushNameEvent,
+    "Receipt": whatsmeow_types.ReceiptEvent,
     "UndecryptableMessage": whatsmeow_types.UndecryptableMessageEvent,
     "UserAbout": whatsmeow_types.UserAboutEvent,
 }
+
+
+@dataclass(frozen=True)
+class DispatchResult:
+    chat_updates: dict[str, dict[str, Any]]
+    message_upserts: list[dict[str, Any]]
+    message_updates: list[dict[str, Any]]
+    photo_updates: list[dict[str, str]]
+    presence_updates: list[dict[str, Any]]
+    chat_presence_updates: list[dict[str, Any]]
+
+    def as_snapshot(self) -> dict[str, Any]:
+        return normalize_snapshot_value(asdict(self))
 
 
 @dataclass(frozen=True)
@@ -69,11 +91,14 @@ class DaemonEventFixture:
         return self.relative_path.removesuffix(".json").replace("/", "__")
 
     @property
-    def data_class(self) -> type[Any]:
+    def data_class(self) -> type[Any] | None:
         return EVENT_DATACLASSES[self.event_type]
 
     def parse_payload(self) -> Any:
-        return from_dict(data_class=self.data_class, data=self.payload)
+        data_class = self.data_class
+        if data_class is None:
+            return self.payload
+        return from_dict(data_class=data_class, data=self.payload)
 
     def stored_event(self) -> daemon_types.StoredEvent:
         return daemon_types.StoredEvent(
@@ -141,9 +166,98 @@ def normalize_snapshot_value(value: Any) -> Any:
     return _normalize_scalar(value)
 
 
+def _parse_timestamp_unix(timestamp: str) -> int:
+    return int(datetime.fromisoformat(timestamp).timestamp()) if timestamp else 0
+
+
 def _event_timestamp_unix(fixture: DaemonEventFixture) -> int:
     timestamp = fixture.payload.get("Info", {}).get("Timestamp", "")
-    return int(datetime.fromisoformat(timestamp).timestamp()) if timestamp else 0
+    return _parse_timestamp_unix(timestamp)
+
+
+def seed_chat(
+    chat_id: str,
+    *,
+    name: str | None = None,
+    photo: str = "",
+    muted: bool = False,
+    read_receipt: ReadReceipt = ReadReceipt.NONE,
+    unread_count: int = 0,
+    timestamp_unix: int = 1,
+    last_message: str = "Seed message",
+) -> ChatListItem:
+    chat = ChatListItem(
+        id=chat_id,
+        name=name or chat_id,
+        photo=photo,
+        last_message=last_message,
+        date="11:59",
+        last_message_timestamp=timestamp_unix,
+        read_receipt=read_receipt,
+        unread_count=unread_count,
+        is_group=chat_id.endswith("@g.us"),
+        last_message_type=str(MessageType.TEXT),
+        muted=muted,
+        name_updated_at=timestamp_unix,
+    )
+    with KV() as kv:
+        kv.put(f"chat:{chat_id}", asdict(chat))
+    return chat
+
+
+def seed_message(
+    chat_id: str,
+    message_id: str,
+    *,
+    text: str = "Seed message",
+    read_receipt: ReadReceipt = ReadReceipt.SENT,
+    timestamp_unix: int = 1,
+    is_outgoing: bool = True,
+) -> Message:
+    message = Message(
+        id=message_id,
+        chat_id=chat_id,
+        type=MessageType.TEXT,
+        is_outgoing=is_outgoing,
+        timestamp="11:59",
+        timestamp_unix=timestamp_unix,
+        read_receipt=read_receipt,
+        text=text,
+    )
+    storage_key = message_storage_key(chat_id, timestamp_unix, message_id)
+    with KV() as kv:
+        kv.put(storage_key, asdict(message))
+        put_message_index(kv, chat_id, message_id, storage_key)
+    return message
+
+
+def seed_chat_with_message(
+    chat_id: str,
+    message_id: str,
+    *,
+    chat_read_receipt: ReadReceipt = ReadReceipt.NONE,
+    message_read_receipt: ReadReceipt = ReadReceipt.SENT,
+    unread_count: int = 0,
+    timestamp_unix: int = 1,
+    text: str = "Seed message",
+    is_outgoing: bool = True,
+) -> tuple[ChatListItem, Message]:
+    chat = seed_chat(
+        chat_id,
+        read_receipt=chat_read_receipt,
+        unread_count=unread_count,
+        timestamp_unix=timestamp_unix,
+        last_message=text,
+    )
+    message = seed_message(
+        chat_id,
+        message_id,
+        text=text,
+        read_receipt=message_read_receipt,
+        timestamp_unix=timestamp_unix,
+        is_outgoing=is_outgoing,
+    )
+    return chat, message
 
 
 def _delete_target_id(fixture: DaemonEventFixture) -> str:
@@ -164,16 +278,49 @@ def snapshot_path_for_fixture(fixture: DaemonEventFixture) -> Path:
     return path
 
 
-def dispatch_daemon_fixture(fixture: DaemonEventFixture) -> None:
+def output_snapshot_path_for_fixture(fixture: DaemonEventFixture) -> Path:
+    relative = _safe_relative_path(fixture.relative_path)
+    path = (OUTPUT_SNAPSHOT_ROOT / relative.with_suffix(".output.json")).resolve()
+    assert path.is_relative_to(
+        OUTPUT_SNAPSHOT_ROOT.resolve()
+    ), f"output snapshot path escapes snapshot root: {fixture.relative_path}"
+    return path
+
+
+def dispatch_daemon_fixture_with_buckets(fixture: DaemonEventFixture) -> DispatchResult:
     from greenline.events.handlers import dispatch_event
 
-    dispatch_event(fixture.stored_event(), {}, [], [], [], [], [])
+    chat_updates: dict[str, dict[str, Any]] = {}
+    message_upserts: list[dict[str, Any]] = []
+    message_updates: list[dict[str, Any]] = []
+    photo_updates: list[dict[str, str]] = []
+    presence_updates: list[dict[str, Any]] = []
+    chat_presence_updates: list[dict[str, Any]] = []
+
+    dispatch_event(
+        fixture.stored_event(),
+        chat_updates,
+        message_upserts,
+        message_updates,
+        photo_updates,
+        presence_updates,
+        chat_presence_updates,
+    )
+    return DispatchResult(
+        chat_updates=normalize_snapshot_value(chat_updates),
+        message_upserts=normalize_snapshot_value(message_upserts),
+        message_updates=normalize_snapshot_value(message_updates),
+        photo_updates=normalize_snapshot_value(photo_updates),
+        presence_updates=normalize_snapshot_value(presence_updates),
+        chat_presence_updates=normalize_snapshot_value(chat_presence_updates),
+    )
 
 
-def seed_prerequisite_kv(fixture: DaemonEventFixture) -> None:
-    if fixture.event_type != "Message":
-        return
+def dispatch_daemon_fixture(fixture: DaemonEventFixture) -> None:
+    dispatch_daemon_fixture_with_buckets(fixture)
 
+
+def _seed_delete_prerequisites(fixture: DaemonEventFixture) -> None:
     info = fixture.payload.get("Info", {})
     if info.get("Edit") != "7":
         return
@@ -184,34 +331,55 @@ def seed_prerequisite_kv(fixture: DaemonEventFixture) -> None:
         return
 
     timestamp_unix = max(_event_timestamp_unix(fixture) - 1, 0)
-    seed_message = Message(
-        id=target_id,
-        chat_id=chat_id,
-        type=MessageType.TEXT,
-        is_outgoing=False,
-        timestamp="11:59",
-        timestamp_unix=timestamp_unix,
-        read_receipt=ReadReceipt.NONE,
-        text="Seed message before delete",
-    )
-    seed_chat = ChatListItem(
-        id=chat_id,
-        name=chat_id,
-        photo="",
-        last_message=seed_message.text,
-        date=seed_message.timestamp,
-        last_message_timestamp=seed_message.timestamp_unix,
-        read_receipt=ReadReceipt.NONE,
+    seed_chat_with_message(
+        chat_id,
+        target_id,
+        message_read_receipt=ReadReceipt.NONE,
         unread_count=1,
-        is_group=chat_id.endswith("@g.us"),
-        last_message_type=str(seed_message.type),
-        name_updated_at=seed_message.timestamp_unix,
+        timestamp_unix=timestamp_unix,
+        text="Seed message before delete",
+        is_outgoing=False,
     )
-    storage_key = message_storage_key(chat_id, timestamp_unix, target_id)
+
+
+def _seed_receipt_prerequisites(fixture: DaemonEventFixture) -> None:
+    chat_id = str(fixture.payload.get("Chat") or "")
+    message_ids = fixture.payload.get("MessageIDs") or []
+    if not chat_id or not message_ids:
+        return
+
+    timestamp_unix = max(_parse_timestamp_unix(str(fixture.payload.get("Timestamp") or "")) - 1, 1)
+    seed_chat(
+        chat_id,
+        read_receipt=ReadReceipt.DELIVERED,
+        unread_count=2,
+        timestamp_unix=timestamp_unix,
+    )
     with KV() as kv:
-        kv.put(storage_key, asdict(seed_message))
-        put_message_index(kv, chat_id, target_id, storage_key)
-        kv.put(f"chat:{chat_id}", asdict(seed_chat))
+        kv.put("unread_total", 2)
+    for offset, message_id in enumerate(message_ids):
+        seed_message(
+            chat_id,
+            str(message_id),
+            read_receipt=ReadReceipt.SENT,
+            timestamp_unix=timestamp_unix + offset,
+        )
+
+
+def _seed_chat_update_prerequisites(fixture: DaemonEventFixture) -> None:
+    if fixture.event_type in {"Mute", "Picture", "PushName", "BusinessName"}:
+        chat_id = str(fixture.payload.get("JID") or "")
+        if chat_id:
+            seed_chat(chat_id, name="Old Fixture Name", timestamp_unix=1)
+
+
+def seed_prerequisite_kv(fixture: DaemonEventFixture) -> None:
+    if fixture.event_type == "Message":
+        _seed_delete_prerequisites(fixture)
+    elif fixture.event_type == "Receipt":
+        _seed_receipt_prerequisites(fixture)
+    else:
+        _seed_chat_update_prerequisites(fixture)
 
 
 def read_kv_snapshot() -> dict[str, Any]:
@@ -239,6 +407,14 @@ def write_snapshot(path: Path, snapshot: dict[str, Any]) -> None:
 
 def load_snapshot(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text())
+
+
+def write_output_snapshot(fixture: DaemonEventFixture, result: DispatchResult) -> None:
+    write_snapshot(output_snapshot_path_for_fixture(fixture), result.as_snapshot())
+
+
+def load_output_snapshot(fixture: DaemonEventFixture) -> dict[str, Any]:
+    return load_snapshot(output_snapshot_path_for_fixture(fixture))
 
 
 def _message_from_entry(key: str, value: Any) -> Message:

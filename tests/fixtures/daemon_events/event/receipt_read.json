@@ -1,0 +1,25 @@
+{
+  "_meta": {
+    "source": "handwritten minimal daemon-shaped JSON",
+    "source_family": "receipt"
+  },
+  "event_type": "Receipt",
+  "id": 33,
+  "payload": {
+    "AddressingMode": "",
+    "BroadcastListOwner": "",
+    "BroadcastRecipients": null,
+    "Chat": "fixture-chat-40@s.whatsapp.net",
+    "IsFromMe": false,
+    "IsGroup": false,
+    "MessageIDs": [
+      "fixture-message-040"
+    ],
+    "MessageSender": "",
+    "RecipientAlt": "",
+    "Sender": "fixture-user-40@s.whatsapp.net",
+    "SenderAlt": "",
+    "Timestamp": "2025-01-01T12:40:00+00:00",
+    "Type": "read"
+  }
+}

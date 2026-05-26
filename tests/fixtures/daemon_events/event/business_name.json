@@ -1,0 +1,16 @@
+{
+  "_meta": {
+    "source": "handwritten minimal daemon-shaped JSON",
+    "source_family": "chat_update"
+  },
+  "event_type": "BusinessName",
+  "id": 38,
+  "payload": {
+    "JID": "fixture-chat-45@s.whatsapp.net",
+    "Message": {
+      "Timestamp": "2025-01-01T12:45:00+00:00"
+    },
+    "NewBusinessName": "Fixture Business Name",
+    "OldBusinessName": "Old Fixture Name"
+  }
+}

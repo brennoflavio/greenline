@@ -1,0 +1,13 @@
+{
+  "chat_presence_updates": [],
+  "chat_updates": {},
+  "message_updates": [],
+  "message_upserts": [],
+  "photo_updates": [],
+  "presence_updates": [
+    {
+      "jid": "fixture-user-46@s.whatsapp.net",
+      "status": "online"
+    }
+  ]
+}

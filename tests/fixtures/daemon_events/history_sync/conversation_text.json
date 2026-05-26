@@ -1,0 +1,48 @@
+{
+  "_meta": {
+    "source": "handwritten minimal daemon-shaped JSON",
+    "source_family": "history_sync"
+  },
+  "event_type": "HistorySync",
+  "id": 40,
+  "payload": {
+    "Data": {
+      "chunkOrder": 1,
+      "companionMetaNonce": "",
+      "conversations": [
+        {
+          "ID": "fixture-chat-47@s.whatsapp.net",
+          "conversationTimestamp": 1735735620,
+          "messages": [
+            {
+              "message": {
+                "key": {
+                  "ID": "fixture-message-047",
+                  "fromMe": false,
+                  "remoteJID": "fixture-chat-47@s.whatsapp.net"
+                },
+                "message": {
+                  "conversation": "History sync fixture text."
+                },
+                "messageTimestamp": 1735735620,
+                "participant": "fixture-user-47@s.whatsapp.net",
+                "status": 0
+              },
+              "msgOrderID": 1
+            }
+          ],
+          "name": "Fixture History Chat",
+          "unreadCount": 1
+        }
+      ],
+      "globalSettings": null,
+      "pastParticipants": null,
+      "phoneNumberToLidMappings": null,
+      "progress": 100,
+      "pushnames": null,
+      "recentStickers": null,
+      "statusV3Messages": null,
+      "syncType": 1
+    }
+  }
+}

@@ -155,42 +155,83 @@
     {
       "event_type": "Blocklist",
       "path": "event/blocklist.json",
-      "source_family": "unknown_event"
+      "source_family": "parse_only"
     },
     {
       "event_type": "CallReject",
       "path": "event/callreject.json",
-      "source_family": "unknown_event"
+      "source_family": "parse_only"
     },
     {
       "event_type": "ChatPresence",
       "path": "event/chatpresence.json",
-      "source_family": "unknown_event"
+      "source_family": "chat_presence"
     },
     {
       "event_type": "GroupInfo",
       "path": "event/groupinfo.json",
-      "source_family": "unknown_event"
+      "source_family": "parse_only"
     },
     {
       "event_type": "IdentityChange",
       "path": "event/identitychange.json",
-      "source_family": "unknown_event"
+      "source_family": "parse_only"
     },
     {
       "event_type": "JoinedGroup",
       "path": "event/joinedgroup.json",
-      "source_family": "unknown_event"
+      "source_family": "parse_only"
     },
     {
       "event_type": "Message",
       "path": "event/message.json",
-      "source_family": "unknown_event"
+      "source_family": "message",
+      "stored_message_type": "text"
     },
     {
       "event_type": "UserAbout",
       "path": "event/userabout.json",
-      "source_family": "unknown_event"
+      "source_family": "parse_only"
+    },
+    {
+      "event_type": "Receipt",
+      "path": "event/receipt_read.json",
+      "source_family": "receipt"
+    },
+    {
+      "event_type": "Contact",
+      "path": "event/contact_full_name.json",
+      "source_family": "chat_update"
+    },
+    {
+      "event_type": "Mute",
+      "path": "event/mute_on.json",
+      "source_family": "chat_update"
+    },
+    {
+      "event_type": "Picture",
+      "path": "event/picture_update.json",
+      "source_family": "photo_update"
+    },
+    {
+      "event_type": "PushName",
+      "path": "event/push_name.json",
+      "source_family": "chat_update"
+    },
+    {
+      "event_type": "BusinessName",
+      "path": "event/business_name.json",
+      "source_family": "chat_update"
+    },
+    {
+      "event_type": "Presence",
+      "path": "event/presence_online.json",
+      "source_family": "presence"
+    },
+    {
+      "event_type": "HistorySync",
+      "path": "history_sync/conversation_text.json",
+      "source_family": "history_sync"
     }
   ]
 }

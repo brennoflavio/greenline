@@ -1,0 +1,27 @@
+{
+  "chat_presence_updates": [],
+  "chat_updates": {
+    "fixture-user-41@s.whatsapp.net": {
+      "business_name": "",
+      "date": "",
+      "full_name": "Fixture Contact",
+      "id": "fixture-user-41@s.whatsapp.net",
+      "is_group": false,
+      "last_message": "",
+      "last_message_mentioned_jids": [],
+      "last_message_timestamp": 0,
+      "last_message_type": "",
+      "muted": false,
+      "name": "Fixture Contact",
+      "name_updated_at": 1735735260,
+      "photo": "",
+      "push_name": "",
+      "read_receipt": "",
+      "unread_count": 0
+    }
+  },
+  "message_updates": [],
+  "message_upserts": [],
+  "photo_updates": [],
+  "presence_updates": []
+}
