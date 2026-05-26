@@ -14,6 +14,12 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
+import ut_components
+import ut_components.config as ut_config
+
+ut_components.setup("greenline.tests", None)
+ut_config.APP_NAME_ = "greenline.tests"
+
 import daemon_types
 
 
@@ -30,12 +36,83 @@ fake_pyotherside = FakePyOtherSide()
 sys.modules["pyotherside"] = fake_pyotherside
 
 
+class FakeDaemonService:
+    installed = True
+    active = True
+    restarted = False
+    install_calls = 0
+    uninstall_calls = 0
+    subprocess_calls: list[list[str]] = []
+
+    @classmethod
+    def reset(cls) -> None:
+        cls.installed = True
+        cls.active = True
+        cls.restarted = False
+        cls.install_calls = 0
+        cls.uninstall_calls = 0
+        cls.subprocess_calls = []
+
+    @classmethod
+    def ensure_daemon_version(cls) -> bool:
+        return cls.restarted
+
+    @classmethod
+    def install_background_service_files(cls) -> None:
+        cls.install_calls += 1
+        cls.installed = True
+        cls.active = True
+
+    @classmethod
+    def remove_background_service_files(cls) -> None:
+        cls.uninstall_calls += 1
+        cls.installed = False
+        cls.active = False
+
+    @classmethod
+    def is_daemon_installed(cls) -> bool:
+        return cls.installed
+
+    @classmethod
+    def is_daemon_active(cls) -> bool:
+        return cls.active
+
+    @classmethod
+    def run_subprocess(cls, args: list[str]) -> types.SimpleNamespace:
+        cls.subprocess_calls.append(list(args))
+        if args[:3] == ["systemctl", "--user", "start"]:
+            cls.active = True
+        return types.SimpleNamespace(returncode=0, stdout="")
+
+
 class FakeDaemonRPC:
     list_event_batches: list[list[daemon_types.StoredEvent]] = []
     list_events_calls: list[dict[str, int]] = []
     delete_events_calls: list[int] = []
     ensure_jid_map: dict[str, str] = {}
+    contacts: list[daemon_types.Contact] = []
+    groups: list[daemon_types.Group] = []
+    group_participants: dict[str, list[daemon_types.GroupParticipant]] = {}
+    session_status: daemon_types.SessionStatusReply = daemon_types.SessionStatusReply()
+    pair_phone_code: str = "12345678"
+    pair_phone_calls: list[str] = []
+    ping_result: str = "pong"
+    phone_numbers: dict[str, str] = {}
+    get_phone_number_calls: list[str] = []
+    muted_until: dict[str, int] = {}
+    set_muted_calls: list[dict[str, Any]] = []
+    mark_read_calls: list[dict[str, Any]] = []
+    clear_chat_notifications_calls: list[list[str]] = []
+    set_notification_counter_calls: list[dict[str, Any]] = []
+    send_message_calls: list[dict[str, Any]] = []
+    send_message_result: dict[str, Any] = {"MessageID": "sent-message", "Timestamp": 1_700_000_000}
+    edit_message_calls: list[dict[str, Any]] = []
+    delete_message_calls: list[dict[str, Any]] = []
+    send_presence_calls: list[bool] = []
+    subscribe_presence_calls: list[str] = []
+    logout_calls: int = 0
     download_media_calls: list[dict[str, Any]] = []
+    download_media_result: str = ""
     sync_avatar_calls: list[str] = []
     sync_avatar_paths: dict[str, str] = {}
 
@@ -45,7 +122,29 @@ class FakeDaemonRPC:
         cls.list_events_calls = []
         cls.delete_events_calls = []
         cls.ensure_jid_map = {}
+        cls.contacts = []
+        cls.groups = []
+        cls.group_participants = {}
+        cls.session_status = daemon_types.SessionStatusReply()
+        cls.pair_phone_code = "12345678"
+        cls.pair_phone_calls = []
+        cls.ping_result = "pong"
+        cls.phone_numbers = {}
+        cls.get_phone_number_calls = []
+        cls.muted_until = {}
+        cls.set_muted_calls = []
+        cls.mark_read_calls = []
+        cls.clear_chat_notifications_calls = []
+        cls.set_notification_counter_calls = []
+        cls.send_message_calls = []
+        cls.send_message_result = {"MessageID": "sent-message", "Timestamp": 1_700_000_000}
+        cls.edit_message_calls = []
+        cls.delete_message_calls = []
+        cls.send_presence_calls = []
+        cls.subscribe_presence_calls = []
+        cls.logout_calls = 0
         cls.download_media_calls = []
+        cls.download_media_result = ""
         cls.sync_avatar_calls = []
         cls.sync_avatar_paths = {}
 
@@ -61,6 +160,76 @@ class FakeDaemonRPC:
 
     def delete_events(self, *, up_to_id: int) -> None:
         self.__class__.delete_events_calls.append(up_to_id)
+
+    def get_contacts(self) -> daemon_types.GetContactsReply:
+        return daemon_types.GetContactsReply(Contacts=list(self.__class__.contacts))
+
+    def get_groups(self) -> daemon_types.GetGroupsReply:
+        return daemon_types.GetGroupsReply(Groups=list(self.__class__.groups))
+
+    def get_group_participants(self, chat_id: str) -> daemon_types.GetGroupParticipantsReply:
+        return daemon_types.GetGroupParticipantsReply(
+            Participants=list(self.__class__.group_participants.get(chat_id, []))
+        )
+
+    def get_session_status(self) -> daemon_types.SessionStatusReply:
+        return self.__class__.session_status
+
+    def pair_phone(self, phone_number: str) -> daemon_types.PairPhoneReply:
+        self.__class__.pair_phone_calls.append(phone_number)
+        return daemon_types.PairPhoneReply(Code=self.__class__.pair_phone_code)
+
+    def ping(self) -> str:
+        return self.__class__.ping_result
+
+    def get_phone_number(self, jid: str) -> str:
+        self.__class__.get_phone_number_calls.append(jid)
+        return self.__class__.phone_numbers.get(jid, "")
+
+    def get_chat_settings(self, jid: str) -> daemon_types.GetChatSettingsReply:
+        return daemon_types.GetChatSettingsReply(MutedUntil=self.__class__.muted_until.get(jid, 0))
+
+    def set_muted(self, chat_id: str, muted: bool) -> None:
+        self.__class__.set_muted_calls.append({"chat_id": chat_id, "muted": muted})
+        self.__class__.muted_until[chat_id] = 1 if muted else 0
+
+    def mark_read(self, chat_id: str, message_ids: list[str], sender_jid: str = "") -> None:
+        self.__class__.mark_read_calls.append(
+            {"chat_id": chat_id, "message_ids": list(message_ids), "sender_jid": sender_jid}
+        )
+
+    def clear_chat_notifications(self, chat_ids: list[str]) -> None:
+        self.__class__.clear_chat_notifications_calls.append(list(chat_ids))
+
+    def set_notification_counter(self, count: int, visible: bool) -> None:
+        self.__class__.set_notification_counter_calls.append({"count": count, "visible": visible})
+
+    def send_message(self, chat_id: str, message_type: str, **kwargs: Any) -> dict[str, Any]:
+        self.__class__.send_message_calls.append({"chat_id": chat_id, "message_type": message_type, **kwargs})
+        return dict(self.__class__.send_message_result)
+
+    def edit_message(
+        self,
+        chat_id: str,
+        message_id: str,
+        text: str,
+        reply_context: dict[str, object] | None = None,
+    ) -> None:
+        self.__class__.edit_message_calls.append(
+            {"chat_id": chat_id, "message_id": message_id, "text": text, "reply_context": reply_context}
+        )
+
+    def delete_message(self, chat_id: str, message_id: str) -> None:
+        self.__class__.delete_message_calls.append({"chat_id": chat_id, "message_id": message_id})
+
+    def send_presence(self, available: bool) -> None:
+        self.__class__.send_presence_calls.append(available)
+
+    def subscribe_presence(self, chat_id: str) -> None:
+        self.__class__.subscribe_presence_calls.append(chat_id)
+
+    def logout(self) -> None:
+        self.__class__.logout_calls += 1
 
     def ensure_jid(self, jid: str) -> str:
         if not jid:
@@ -99,6 +268,8 @@ class FakeDaemonRPC:
             "file_name": file_name,
         }
         self.__class__.download_media_calls.append(call)
+        if self.__class__.download_media_result:
+            return self.__class__.download_media_result
         cache_root = Path(os.environ["XDG_CACHE_HOME"]) / "greenline.tests" / "daemon-media"
         cache_root.mkdir(parents=True, exist_ok=True)
         suffix = ".webp" if media_type == "sticker" else ".bin"
@@ -143,21 +314,42 @@ def isolated_greenline_runtime(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
 
     fake_pyotherside.sent.clear()
     FakeDaemonRPC.reset()
+    FakeDaemonService.reset()
 
+    import greenline.api.chats as api_chats
+    import greenline.api.daemon as api_daemon
+    import greenline.api.messages as api_messages
     import greenline.events.chat_sync as chat_sync
     import greenline.events.handlers as handlers
+    import greenline.events.session as session_events
     import greenline.store.identity as identity
     import greenline.store.mentions as mentions
     import history_sync
+    import pending_outbox
     import rpc
 
     identity.clear_chat_runtime_cache()
     monkeypatch.setattr(rpc, "DaemonRPC", FakeDaemonRPC)
+    monkeypatch.setattr(api_chats, "DaemonRPC", FakeDaemonRPC)
+    monkeypatch.setattr(api_daemon, "DaemonRPC", FakeDaemonRPC)
+    monkeypatch.setattr(api_messages, "DaemonRPC", FakeDaemonRPC)
     monkeypatch.setattr(chat_sync, "DaemonRPC", FakeDaemonRPC)
     monkeypatch.setattr(handlers, "DaemonRPC", FakeDaemonRPC)
+    monkeypatch.setattr(session_events, "DaemonRPC", FakeDaemonRPC)
     monkeypatch.setattr(identity, "DaemonRPC", FakeDaemonRPC)
     monkeypatch.setattr(mentions, "DaemonRPC", FakeDaemonRPC)
     monkeypatch.setattr(history_sync, "DaemonRPC", FakeDaemonRPC)
+    monkeypatch.setattr(pending_outbox, "DaemonRPC", FakeDaemonRPC)
+    monkeypatch.setattr(api_daemon, "ensure_daemon_version", FakeDaemonService.ensure_daemon_version)
+    monkeypatch.setattr(
+        api_daemon, "install_background_service_files", FakeDaemonService.install_background_service_files
+    )
+    monkeypatch.setattr(
+        api_daemon, "remove_background_service_files", FakeDaemonService.remove_background_service_files
+    )
+    monkeypatch.setattr(api_daemon, "is_daemon_installed", FakeDaemonService.is_daemon_installed)
+    monkeypatch.setattr(api_daemon, "is_daemon_active", FakeDaemonService.is_daemon_active)
+    monkeypatch.setattr(api_daemon, "run_subprocess", FakeDaemonService.run_subprocess)
 
     yield
 
@@ -167,3 +359,13 @@ def isolated_greenline_runtime(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
 @pytest.fixture
 def fake_daemon_rpc() -> type[FakeDaemonRPC]:
     return FakeDaemonRPC
+
+
+@pytest.fixture
+def fake_daemon_service() -> type[FakeDaemonService]:
+    return FakeDaemonService
+
+
+@pytest.fixture
+def fake_pyotherside_module() -> FakePyOtherSide:
+    return fake_pyotherside

@@ -1,7 +1,8 @@
 from dataclasses import asdict, dataclass, field
 
 from daemon_types import Contact as DaemonContact
-from greenline.api.common import SuccessResponse, ui_chat, ui_chat_dict
+from greenline import qml_events
+from greenline.api.common import SuccessResponse, ui_chat
 from greenline.store.identity import canonicalize_contact_jid
 from greenline.store.mentions import build_mention_candidate, validate_mention_spans
 from models import (
@@ -136,8 +137,6 @@ def set_chat_draft(
     text: str,
     mention_spans: list[dict[str, object]] | None = None,
 ) -> SuccessResponse:
-    import pyotherside
-
     draft_text = str(text)
     validated_spans = validate_mention_spans(draft_text, mention_spans)
     with KV() as kv:
@@ -150,18 +149,13 @@ def set_chat_draft(
         else:
             kv.delete(f"draft:{chat_id}")
             kv.delete(f"draft_mentions:{chat_id}")
-    pyotherside.send(
-        "chat-draft-update",
-        [{"id": chat_id, "draft": draft_text, "has_draft": draft_text != ""}],
-    )
+    qml_events.emit_chat_draft_update(chat_id, draft_text)
     return SuccessResponse(success=True, message="")
 
 
 @crash_reporter
 @dataclass_to_dict
 def toggle_mute(chat_id: str) -> SuccessResponse:
-    import pyotherside
-
     with KV() as kv:
         data = kv.get(f"chat:{chat_id}")
         if data is None:
@@ -177,6 +171,6 @@ def toggle_mute(chat_id: str) -> SuccessResponse:
             chat = ChatListItem(**data)
             chat.muted = new_muted
             kv.put(f"chat:{chat_id}", asdict(chat))
-            pyotherside.send("chat-list-update", [ui_chat_dict(chat)])
+            qml_events.emit_chat_list_update([chat])
 
     return SuccessResponse(success=True, message="")

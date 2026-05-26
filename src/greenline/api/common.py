@@ -1,9 +1,9 @@
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 
+from greenline import qml_payloads
 from greenline.store.mentions import render_chat_mentions
 from greenline.store.repository import to_ui_message
 from models import ChatListItem, Message, UiMessage
-from ut_components.utils import enum_to_str as _enum_to_str
 
 
 @dataclass
@@ -21,8 +21,8 @@ def ui_chat(chat: ChatListItem) -> ChatListItem:
 
 
 def ui_message_dict(message: Message) -> dict[str, object]:
-    return _enum_to_str(asdict(ui_message(message)))  # type: ignore[no-untyped-call, no-any-return]
+    return qml_payloads.ui_message(message)
 
 
 def ui_chat_dict(chat: ChatListItem) -> dict[str, object]:
-    return _enum_to_str(asdict(ui_chat(chat)))  # type: ignore[no-untyped-call, no-any-return]
+    return qml_payloads.ui_chat(chat)

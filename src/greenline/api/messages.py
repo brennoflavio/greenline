@@ -5,11 +5,10 @@ from dataclasses import asdict, dataclass
 from datetime import datetime
 from typing import Any, cast
 
+from greenline import qml_events
 from greenline.api.common import (
     SuccessResponse,
-    ui_chat_dict,
     ui_message,
-    ui_message_dict,
 )
 from greenline.store.media import resolve_media_message_content
 from greenline.store.mentions import validate_mention_spans
@@ -244,8 +243,6 @@ def get_messages(chat_id: str, cursor: str = "", page_size: int = 100) -> Messag
 @crash_reporter
 @dataclass_to_dict
 def mark_messages_as_read(chat_id: str) -> SuccessResponse:
-    import pyotherside
-
     with KV() as kv:
         entries = kv.get_partial(f"message:{chat_id}:")
         unread_by_sender: dict[str, list[str]] = {}
@@ -267,7 +264,7 @@ def mark_messages_as_read(chat_id: str) -> SuccessResponse:
             if prev_unread > 0:
                 chat.unread_count = 0
                 kv.put(f"chat:{chat_id}", asdict(chat))
-                pyotherside.send("chat-list-update", [ui_chat_dict(chat)])
+                qml_events.emit_chat_list_update([chat])
                 decrement_unread_total(prev_unread)
 
     try:
@@ -321,8 +318,6 @@ def send_text_message(
 @crash_reporter
 @dataclass_to_dict
 def edit_text_message(chat_id: str, message_id: str, text: str) -> SuccessResponse:
-    import pyotherside
-
     normalized_text = str(text)
     if normalized_text.strip() == "":
         return SuccessResponse(success=False, message="Message text cannot be empty")
@@ -369,16 +364,14 @@ def edit_text_message(chat_id: str, message_id: str, text: str) -> SuccessRespon
         kv.put(entry_key, updated_entry)
         chat = _update_chat_after_edit(kv, updated_msg, MessageInfo())
 
-    pyotherside.send("message-upsert", [ui_message_dict(updated_msg)])
-    pyotherside.send("chat-list-update", [ui_chat_dict(chat)])
+    qml_events.emit_message_upsert([updated_msg])
+    qml_events.emit_chat_list_update([chat])
     return SuccessResponse(success=True, message="")
 
 
 @crash_reporter
 @dataclass_to_dict
 def delete_message(chat_id: str, message_id: str) -> SuccessResponse:
-    import pyotherside
-
     entry_key, entry = _get_message_entry_with_key(chat_id, message_id)
     if entry_key is None or entry is None:
         return SuccessResponse(success=False, message="Message not found")
@@ -407,8 +400,8 @@ def delete_message(chat_id: str, message_id: str) -> SuccessResponse:
         kv.put(entry_key, updated_entry)
         chat = _update_chat_after_edit(kv, deleted_msg, MessageInfo())
 
-    pyotherside.send("message-upsert", [ui_message_dict(deleted_msg)])
-    pyotherside.send("chat-list-update", [ui_chat_dict(chat)])
+    qml_events.emit_message_upsert([deleted_msg])
+    qml_events.emit_chat_list_update([chat])
     return SuccessResponse(success=True, message="")
 
 
@@ -495,8 +488,6 @@ def send_audio_message(
     temp_id: str = "",
     reply_context: dict[str, object] | None = None,
 ) -> SuccessResponse:
-    import pyotherside
-
     resolved_reply_context = _resolve_reply_context(chat_id, reply_context)
     duration_value = max(0, int(duration_seconds))
     duration = _format_duration(duration_value)
@@ -527,7 +518,7 @@ def send_audio_message(
             temp_id=failed_id,
         )
         _apply_reply_context(failed_msg, resolved_reply_context)
-        pyotherside.send("message-upsert", [ui_message_dict(failed_msg)])
+        qml_events.emit_message_upsert([failed_msg])
         return SuccessResponse(success=False, message=str(error) or "Failed to prepare audio")
 
     pending_id = temp_id or f"pending-{int(now.timestamp())}"
@@ -640,8 +631,6 @@ def get_cached_stickers() -> dict[str, object]:
 @crash_reporter
 @dataclass_to_dict
 def download_media(chat_id: str, message_id: str, media_type: str) -> DownloadMediaResponse:
-    import pyotherside
-
     entry_key, entry = _get_message_entry_with_key(chat_id, message_id)
     if entry_key is None or entry is None or entry.get("raw") is None:
         return DownloadMediaResponse(success=False, media_path="", message="Message not found")
@@ -696,5 +685,5 @@ def download_media(chat_id: str, message_id: str, media_type: str) -> DownloadMe
 
     msg_fields = {field.name for field in Message.__dataclass_fields__.values()}
     msg = Message(**{key: value for key, value in entry.items() if key in msg_fields})  # type: ignore[arg-type]
-    pyotherside.send("message-upsert", [ui_message_dict(msg)])
+    qml_events.emit_message_upsert([msg])
     return DownloadMediaResponse(success=True, media_path=media_path, message="")

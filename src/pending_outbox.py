@@ -5,7 +5,8 @@ from dataclasses import asdict, replace
 from datetime import datetime, timedelta
 from typing import Callable
 
-from greenline.store.mentions import mention_transport_payload, render_chat_mentions
+from greenline import qml_events
+from greenline.store.mentions import mention_transport_payload
 from greenline.store.messages import upsert_chat
 from greenline.store.repository import (
     delete_message_index,
@@ -16,13 +17,11 @@ from greenline.store.repository import (
 from greenline.store.repository import message_storage_key as _message_storage_key
 from greenline.store.repository import (
     put_message_index,
-    to_ui_message,
 )
 from models import ChatListItem, Message, MessageType, ReadReceipt
 from rpc import DaemonRPC
 from ut_components.event import Event
 from ut_components.kv import KV
-from ut_components.utils import enum_to_str as _enum_to_str
 from whatsmeow_types import MessageInfo
 
 PENDING_RETRY_INTERVAL_SECONDS = 5
@@ -32,14 +31,6 @@ _PENDING_SEND_LOCK = threading.Lock()
 _PENDING_SEND_IN_FLIGHT: set[str] = set()
 
 ReplyContextResolver = Callable[[str, dict[str, object] | None], dict[str, object] | None]
-
-
-def _ui_message_dict(message: Message) -> dict[str, object]:
-    return _enum_to_str(asdict(to_ui_message(message)))  # type: ignore[no-untyped-call, no-any-return]
-
-
-def _ui_chat_dict(chat: ChatListItem) -> dict[str, object]:
-    return _enum_to_str(asdict(render_chat_mentions(chat)))  # type: ignore[no-untyped-call, no-any-return]
 
 
 def _pending_outbox_key(chat_id: str, message_id: str) -> str:
@@ -124,11 +115,9 @@ def _pending_reply_context(
 
 
 def _emit_message_change(message: Message, chat: ChatListItem | None = None) -> None:
-    import pyotherside
-
-    pyotherside.send("message-upsert", [_ui_message_dict(message)])
+    qml_events.emit_message_upsert([message])
     if chat is not None:
-        pyotherside.send("chat-list-update", [_ui_chat_dict(chat)])
+        qml_events.emit_chat_list_update([chat])
 
 
 def _store_pending_message(message: Message) -> ChatListItem:

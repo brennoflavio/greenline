@@ -44,6 +44,13 @@ repos:
         files: \.qml$
         pass_filenames: true
 
+      - id: qml-contract-coverage
+        name: Check QML contract coverage
+        entry: uv run python tests/tools/check_qml_contract_coverage.py
+        language: system
+        pass_filenames: false
+        always_run: true
+
       - id: pytest
         name: Run pytest
         entry: uv run pytest

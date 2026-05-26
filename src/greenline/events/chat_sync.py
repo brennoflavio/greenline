@@ -3,13 +3,8 @@ from dataclasses import asdict
 from datetime import timedelta
 from typing import Any, Dict, Optional
 
-import pyotherside
-
-from greenline.events.handlers import (
-    dispatch_event,
-    render_chat_payload,
-    render_message_payload,
-)
+from greenline import qml_events
+from greenline.events.handlers import dispatch_event
 from greenline.events.session import LAST_EVENT_ID_KEY
 from greenline.store.identity import (
     canonicalize_contact_jid,
@@ -85,7 +80,7 @@ class DaemonEventHandler(Event):
 
                 if not syncing:
                     syncing = True
-                    pyotherside.send("sync-status", True)
+                    qml_events.emit_sync_status(True)
 
                 max_id = last_id
                 chat_updates: dict[str, dict[str, Any]] = {}
@@ -109,25 +104,19 @@ class DaemonEventHandler(Event):
 
                 all_message_upserts = message_upserts + message_updates
                 if all_message_upserts:
-                    pyotherside.send(
-                        "message-upsert",
-                        [render_message_payload(payload) for payload in all_message_upserts],
-                    )
+                    qml_events.emit_message_upsert(all_message_upserts)
 
                 if chat_updates:
-                    pyotherside.send(
-                        "chat-list-update",
-                        [render_chat_payload(payload) for payload in chat_updates.values()],
-                    )
+                    qml_events.emit_chat_list_update(chat_updates.values())
 
                 if photo_updates:
-                    pyotherside.send("sender-photo-update", photo_updates)
+                    qml_events.emit_sender_photo_update(photo_updates)
 
                 if presence_updates:
-                    pyotherside.send("presence-update", presence_updates)
+                    qml_events.emit_presence_update(presence_updates)
 
                 if chat_presence_updates:
-                    pyotherside.send("chat-presence", chat_presence_updates)
+                    qml_events.emit_chat_presence(chat_presence_updates)
 
                 if max_id > last_id:
                     DaemonRPC().delete_events(up_to_id=max_id)
@@ -139,7 +128,7 @@ class DaemonEventHandler(Event):
                     break
         finally:
             if syncing:
-                pyotherside.send("sync-status", False)
+                qml_events.emit_sync_status(False)
 
         return None
 
@@ -163,10 +152,10 @@ class ChatListUpdateEvent(Event):
             pass
 
         if chat_updates:
-            pyotherside.send("chat-list-update", [render_chat_payload(chat) for chat in chat_updates])
+            qml_events.emit_chat_list_update(chat_updates)
 
         if photo_updates:
-            pyotherside.send("sender-photo-update", photo_updates)
+            qml_events.emit_sender_photo_update(photo_updates)
 
         return None
 

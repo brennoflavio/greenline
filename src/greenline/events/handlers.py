@@ -7,15 +7,15 @@ from typing import Any, Dict
 from dacite import from_dict
 
 from constants import NEWSLETTER_SERVER, STATUS_BROADCAST_JID
+from greenline import qml_payloads
 from greenline.store.identity import (
     canonicalize_contact_jid,
     remember_chat,
     update_chat_name,
 )
-from greenline.store.mentions import render_chat_mentions
 from greenline.store.messages import store_message, store_undecryptable_message
-from greenline.store.repository import sanitize_message_payload, to_ui_message
-from greenline.ui import dataclass_to_ui_dict, enum_to_str, inflate_dataclass
+from greenline.store.repository import sanitize_message_payload
+from greenline.ui import dataclass_to_ui_dict, enum_to_str
 from history_sync import handle_history_sync
 from models import ChatListItem, Message, MessageType, ReadReceipt
 from receipt_store import process_receipt
@@ -42,13 +42,11 @@ from whatsmeow_types import (
 
 
 def render_message_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
-    message = inflate_dataclass(Message, payload)
-    return dataclass_to_ui_dict(to_ui_message(message))
+    return qml_payloads.stored_ui_message(payload)
 
 
 def render_chat_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
-    chat = inflate_dataclass(ChatListItem, payload)
-    return dataclass_to_ui_dict(render_chat_mentions(chat))
+    return qml_payloads.stored_ui_chat(payload)
 
 
 def _auto_download_sticker(msg: Message, raw: Dict[str, Any]) -> str:
