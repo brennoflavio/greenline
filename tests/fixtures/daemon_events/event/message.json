@@ -1,0 +1,83 @@
+{
+  "_meta": {
+    "source": "sanitized from repository root kv.db",
+    "source_family": "unknown_event"
+  },
+  "event_type": "Message",
+  "id": 31,
+  "payload": {
+    "Info": {
+      "AddressingMode": "",
+      "BroadcastListOwner": "",
+      "BroadcastRecipients": null,
+      "Category": "",
+      "Chat": "fixture-chat-1@s.whatsapp.net",
+      "DeviceSentMeta": null,
+      "Edit": "",
+      "ID": "fixture-message-044",
+      "IsFromMe": false,
+      "IsGroup": false,
+      "MediaType": "",
+      "MsgBotInfo": {
+        "EditSenderTimestampMS": "2025-01-01T12:00:00+00:00",
+        "EditTargetID": "",
+        "EditType": ""
+      },
+      "MsgMetaInfo": {
+        "DeprecatedLIDSession": null,
+        "TargetChat": "",
+        "TargetID": "",
+        "TargetSender": "",
+        "ThreadMessageID": "",
+        "ThreadMessageSenderJID": ""
+      },
+      "Multicast": false,
+      "PushName": "Fixture text.",
+      "RecipientAlt": "",
+      "Sender": "fixture-user-17@lid",
+      "SenderAlt": "fixture-user-18@s.whatsapp.net",
+      "ServerID": 1,
+      "Timestamp": "2025-01-01T12:00:00+00:00",
+      "Type": "text",
+      "VerifiedName": null
+    },
+    "IsBotInvoke": false,
+    "IsDocumentWithCaption": false,
+    "IsEdit": false,
+    "IsEphemeral": false,
+    "IsLottieSticker": false,
+    "IsViewOnce": false,
+    "IsViewOnceV2": false,
+    "IsViewOnceV2Extension": false,
+    "Message": {
+      "conversation": "Fixture message text.",
+      "messageContextInfo": {
+        "deviceListMetadata": {
+          "recipientKeyHash": "REDACTED_RECIPIENTKEYHASH",
+          "recipientTimestamp": 1,
+          "senderKeyHash": "REDACTED_SENDERKEYHASH",
+          "senderTimestamp": 1
+        },
+        "deviceListMetadataVersion": 2,
+        "messageSecret": "REDACTED_MESSAGESECRET"
+      }
+    },
+    "NewsletterMeta": null,
+    "RawMessage": {
+      "conversation": "Fixture message text.",
+      "messageContextInfo": {
+        "deviceListMetadata": {
+          "recipientKeyHash": "REDACTED_RECIPIENTKEYHASH",
+          "recipientTimestamp": 1,
+          "senderKeyHash": "REDACTED_SENDERKEYHASH",
+          "senderTimestamp": 1
+        },
+        "deviceListMetadataVersion": 2,
+        "messageSecret": "REDACTED_MESSAGESECRET"
+      }
+    },
+    "RetryCount": 0,
+    "SourceWebMsg": null,
+    "UnavailableRequestID": ""
+  }
+}

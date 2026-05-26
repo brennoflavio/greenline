@@ -1,0 +1,146 @@
+{
+  "_meta": {
+    "source": "sanitized from repository root kv.db",
+    "source_family": "message",
+    "stored_message_type": "link_preview"
+  },
+  "event_type": "Message",
+  "id": 3,
+  "payload": {
+    "Info": {
+      "AddressingMode": "",
+      "BroadcastListOwner": "",
+      "BroadcastRecipients": null,
+      "Category": "",
+      "Chat": "fixture-chat-1@s.whatsapp.net",
+      "DeviceSentMeta": {
+        "DestinationJID": "fixture-user-5@lid",
+        "Phash": ""
+      },
+      "Edit": "",
+      "ID": "fixture-message-004",
+      "IsFromMe": true,
+      "IsGroup": false,
+      "MediaType": "url",
+      "MsgBotInfo": {
+        "EditSenderTimestampMS": "2025-01-01T12:00:00+00:00",
+        "EditTargetID": "",
+        "EditType": ""
+      },
+      "MsgMetaInfo": {
+        "DeprecatedLIDSession": null,
+        "TargetChat": "",
+        "TargetID": "",
+        "TargetSender": "",
+        "ThreadMessageID": "",
+        "ThreadMessageSenderJID": ""
+      },
+      "Multicast": false,
+      "PushName": "Fixture text.",
+      "RecipientAlt": "fixture-user-6@s.whatsapp.net",
+      "Sender": "fixture-user-8@lid",
+      "SenderAlt": "",
+      "ServerID": 1,
+      "Timestamp": "2025-01-01T12:00:00+00:00",
+      "Type": "media",
+      "VerifiedName": null
+    },
+    "IsBotInvoke": false,
+    "IsDocumentWithCaption": false,
+    "IsEdit": false,
+    "IsEphemeral": false,
+    "IsLottieSticker": false,
+    "IsViewOnce": false,
+    "IsViewOnceV2": false,
+    "IsViewOnceV2Extension": false,
+    "Message": {
+      "extendedTextMessage": {
+        "contextInfo": {
+          "disappearingMode": {
+            "initiator": 0,
+            "trigger": 1
+          }
+        },
+        "description": "Fixture text.",
+        "inviteLinkGroupTypeV2": 0,
+        "matchedText": "Fixture text.",
+        "previewType": 0,
+        "text": "Fixture text.",
+        "title": "Fixture text."
+      },
+      "messageContextInfo": {
+        "deviceListMetadata": {
+          "receiverAccountType": 0,
+          "recipientKeyHash": "REDACTED_RECIPIENTKEYHASH",
+          "recipientTimestamp": 1,
+          "senderAccountType": 0,
+          "senderKeyHash": "REDACTED_SENDERKEYHASH",
+          "senderTimestamp": 1
+        },
+        "deviceListMetadataVersion": 2,
+        "limitSharingV2": {
+          "initiatedByMe": false,
+          "trigger": 0
+        },
+        "messageSecret": "REDACTED_MESSAGESECRET"
+      }
+    },
+    "NewsletterMeta": null,
+    "RawMessage": {
+      "deviceSentMessage": {
+        "destinationJID": "fixture-user-5@lid",
+        "message": {
+          "extendedTextMessage": {
+            "contextInfo": {
+              "disappearingMode": {
+                "initiator": 0,
+                "trigger": 1
+              }
+            },
+            "description": "Fixture text.",
+            "inviteLinkGroupTypeV2": 0,
+            "matchedText": "Fixture text.",
+            "previewType": 0,
+            "text": "Fixture text.",
+            "title": "Fixture text."
+          },
+          "messageContextInfo": {
+            "deviceListMetadata": {
+              "receiverAccountType": 0,
+              "recipientKeyHash": "REDACTED_RECIPIENTKEYHASH",
+              "recipientTimestamp": 1,
+              "senderAccountType": 0,
+              "senderKeyHash": "REDACTED_SENDERKEYHASH",
+              "senderTimestamp": 1
+            },
+            "deviceListMetadataVersion": 2,
+            "limitSharingV2": {
+              "initiatedByMe": false,
+              "trigger": 0
+            },
+            "messageSecret": "REDACTED_MESSAGESECRET"
+          }
+        }
+      },
+      "messageContextInfo": {
+        "deviceListMetadata": {
+          "receiverAccountType": 0,
+          "recipientKeyHash": "REDACTED_RECIPIENTKEYHASH",
+          "recipientTimestamp": 1,
+          "senderAccountType": 0,
+          "senderKeyHash": "REDACTED_SENDERKEYHASH",
+          "senderTimestamp": 1
+        },
+        "deviceListMetadataVersion": 2,
+        "limitSharingV2": {
+          "initiatedByMe": false,
+          "trigger": 0
+        },
+        "messageSecret": "REDACTED_MESSAGESECRET"
+      }
+    },
+    "RetryCount": 0,
+    "SourceWebMsg": null,
+    "UnavailableRequestID": ""
+  }
+}

@@ -1,0 +1,190 @@
+{
+  "added": {
+    "chat:fixture-group-1@g.us": {
+      "business_name": "",
+      "date": "12:00",
+      "full_name": "",
+      "id": "fixture-group-1@g.us",
+      "is_group": true,
+      "last_message": "\ud83d\udcf7 Photo",
+      "last_message_mentioned_jids": [],
+      "last_message_timestamp": 1735732800,
+      "last_message_type": "image",
+      "muted": false,
+      "name": "fixture-group-1@g.us",
+      "name_updated_at": 1735732800,
+      "photo": "",
+      "push_name": "",
+      "read_receipt": "",
+      "unread_count": 1
+    },
+    "chat:fixture-user-9@s.whatsapp.net": {
+      "business_name": "",
+      "date": "",
+      "full_name": "",
+      "id": "fixture-user-9@s.whatsapp.net",
+      "is_group": false,
+      "last_message": "",
+      "last_message_mentioned_jids": [],
+      "last_message_timestamp": 0,
+      "last_message_type": "",
+      "muted": false,
+      "name": "Fixture text.",
+      "name_updated_at": 1735732800,
+      "photo": "",
+      "push_name": "Fixture text.",
+      "read_receipt": "",
+      "unread_count": 0
+    },
+    "message:fixture-group-1@g.us:1735732800:fixture-message-003": {
+      "button_text": "",
+      "button_url": "",
+      "caption": "",
+      "chat_id": "fixture-group-1@g.us",
+      "duration": "",
+      "edited": false,
+      "file_name": "",
+      "id": "fixture-message-003",
+      "image_source": "",
+      "images": [],
+      "is_outgoing": false,
+      "link_description": "",
+      "link_title": "",
+      "link_url": "",
+      "media_path": "",
+      "mention_spans": [],
+      "mentioned_jids": [],
+      "mimetype": "image/jpeg",
+      "raw": {
+        "Info": {
+          "AddressingMode": "lid",
+          "BroadcastListOwner": "",
+          "BroadcastRecipients": null,
+          "Category": "",
+          "Chat": "fixture-group-1@g.us",
+          "DeviceSentMeta": null,
+          "Edit": "",
+          "ID": "fixture-message-003",
+          "IsFromMe": false,
+          "IsGroup": true,
+          "MediaType": "image",
+          "MsgBotInfo": {
+            "EditSenderTimestampMS": "2025-01-01T12:00:00+00:00",
+            "EditTargetID": "",
+            "EditType": ""
+          },
+          "MsgMetaInfo": {
+            "DeprecatedLIDSession": null,
+            "TargetChat": "",
+            "TargetID": "",
+            "TargetSender": "",
+            "ThreadMessageID": "",
+            "ThreadMessageSenderJID": ""
+          },
+          "Multicast": false,
+          "PushName": "Fixture text.",
+          "RecipientAlt": "",
+          "Sender": "fixture-user-7@lid",
+          "SenderAlt": "fixture-user-9@s.whatsapp.net",
+          "ServerID": 1,
+          "Timestamp": "2025-01-01T12:00:00+00:00",
+          "Type": "media",
+          "VerifiedName": null
+        },
+        "IsBotInvoke": false,
+        "IsDocumentWithCaption": false,
+        "IsEdit": false,
+        "IsEphemeral": false,
+        "IsLottieSticker": false,
+        "IsViewOnce": false,
+        "IsViewOnceV2": false,
+        "IsViewOnceV2Extension": false,
+        "Message": {
+          "imageMessage": {
+            "JPEGThumbnail": "REDACTED_JPEGTHUMBNAIL",
+            "URL": "https://example.test/fixture",
+            "contextInfo": {
+              "pairedMediaType": 0,
+              "statusSourceType": 0
+            },
+            "directPath": "/v/fixture/media-1.enc",
+            "fileEncSHA256": "REDACTED_FILEENCSHA256",
+            "fileLength": 276460,
+            "fileSHA256": "REDACTED_FILESHA256",
+            "height": 1448,
+            "mediaKey": "REDACTED_MEDIAKEY",
+            "mediaKeyTimestamp": 1,
+            "midQualityFileSHA256": "REDACTED_MIDQUALITYFILESHA256",
+            "mimetype": "image/jpeg",
+            "scanLengths": [
+              23422,
+              134459,
+              49146,
+              69433
+            ],
+            "scansSidecar": "REDACTED_SCANSSIDECAR",
+            "width": 1086
+          },
+          "messageContextInfo": {
+            "messageSecret": "REDACTED_MESSAGESECRET"
+          }
+        },
+        "NewsletterMeta": null,
+        "RawMessage": {
+          "imageMessage": {
+            "JPEGThumbnail": "REDACTED_JPEGTHUMBNAIL",
+            "URL": "https://example.test/fixture",
+            "contextInfo": {
+              "pairedMediaType": 0,
+              "statusSourceType": 0
+            },
+            "directPath": "/v/fixture/media-1.enc",
+            "fileEncSHA256": "REDACTED_FILEENCSHA256",
+            "fileLength": 276460,
+            "fileSHA256": "REDACTED_FILESHA256",
+            "height": 1448,
+            "mediaKey": "REDACTED_MEDIAKEY",
+            "mediaKeyTimestamp": 1,
+            "midQualityFileSHA256": "REDACTED_MIDQUALITYFILESHA256",
+            "mimetype": "image/jpeg",
+            "scanLengths": [
+              23422,
+              134459,
+              49146,
+              69433
+            ],
+            "scansSidecar": "REDACTED_SCANSSIDECAR",
+            "width": 1086
+          },
+          "messageContextInfo": {
+            "messageSecret": "REDACTED_MESSAGESECRET"
+          }
+        },
+        "RetryCount": 0,
+        "SourceWebMsg": null,
+        "UnavailableRequestID": ""
+      },
+      "read_receipt": "",
+      "reply_to_from_me": false,
+      "reply_to_id": "",
+      "reply_to_mentioned_jids": [],
+      "reply_to_sender_id": "",
+      "reply_to_sender_raw": "",
+      "reply_to_text": "",
+      "send_status": "",
+      "sender": "fixture-user-9@s.whatsapp.net",
+      "sender_raw": "fixture-user-9@s.whatsapp.net",
+      "sticker_source": "",
+      "temp_id": "",
+      "text": "",
+      "thumbnail_path": "",
+      "timestamp": "12:00",
+      "timestamp_unix": 1735732800,
+      "type": "image"
+    },
+    "message_index:fixture-group-1@g.us:fixture-message-003": "message:fixture-group-1@g.us:1735732800:fixture-message-003",
+    "unread_total": 1
+  },
+  "changed": {},
+  "deleted": {}
+}

@@ -1,0 +1,37 @@
+{
+  "_meta": {
+    "source": "sanitized from repository root kv.db",
+    "source_family": "unknown_event"
+  },
+  "event_type": "GroupInfo",
+  "id": 28,
+  "payload": {
+    "Announce": null,
+    "Delete": null,
+    "Demote": null,
+    "Ephemeral": null,
+    "JID": "fixture-group-39@g.us",
+    "Join": [
+      "fixture-user-40@lid"
+    ],
+    "JoinReason": "",
+    "Leave": null,
+    "Link": null,
+    "Locked": null,
+    "MembershipApprovalMode": null,
+    "Name": null,
+    "NewInviteLink": null,
+    "Notify": "Fixture text.",
+    "ParticipantVersionID": "fixture-message-037",
+    "PrevParticipantVersionID": "fixture-message-036",
+    "Promote": null,
+    "Sender": "fixture-user-13@lid",
+    "SenderPN": "fixture-user-14@s.whatsapp.net",
+    "Suspended": false,
+    "Timestamp": "2025-01-01T12:00:00+00:00",
+    "Topic": null,
+    "UnknownChanges": null,
+    "Unlink": null,
+    "Unsuspended": false
+  }
+}

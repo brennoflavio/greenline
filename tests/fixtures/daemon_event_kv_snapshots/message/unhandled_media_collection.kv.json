@@ -1,0 +1,16 @@
+{
+  "added": {
+    "unhandled_message:19": {
+      "chat": "fixture-group-1@g.us",
+      "event_id": 19,
+      "info_type": "media",
+      "media_type": "collection",
+      "message_id": "fixture-message-029",
+      "payload": "{\"Info\": {\"AddressingMode\": \"lid\", \"BroadcastListOwner\": \"\", \"BroadcastRecipients\": null, \"Category\": \"\", \"Chat\": \"fixture-group-1@g.us\", \"DeviceSentMeta\": null, \"Edit\": \"\", \"ID\": \"fixture-message-029\", \"IsFromMe\": false, \"IsGroup\": true, \"MediaType\": \"collection\", \"MsgBotInfo\": {\"EditSenderTimestampMS\": \"2025-01-01T12:00:00+00:00\", \"EditTargetID\": \"\", \"EditType\": \"\"}, \"MsgMetaInfo\": {\"DeprecatedLIDSession\": null, \"TargetChat\": \"\", \"TargetID\": \"\", \"TargetSender\": \"\", \"ThreadMessageID\": \"\", \"ThreadMessageSenderJID\": \"\"}, \"Multicast\": false, \"PushName\": \"Fixture text.\", \"RecipientAlt\": \"\", \"Sender\": \"fixture-user-5@lid\", \"SenderAlt\": \"fixture-user-6@s.whatsapp.net\", \"ServerID\": 1, \"Timestamp\": \"2025-01-01T12:00:00+00:00\", \"Type\": \"media\", \"VerifiedName\": null}, \"IsBotInvoke\": false, \"IsDocumentWithCaption\": false, \"IsEdit\": false, \"IsEphemeral\": false, \"IsLottieSticker\": false, \"IsViewOnce\": false, \"IsViewOnceV2\": false, \"IsViewOnceV2Extension\": false, \"Message\": {\"messageContextInfo\": {\"deviceListMetadata\": {\"recipientKeyHash\": \"REDACTED_RECIPIENTKEYHASH\", \"recipientTimestamp\": 1, \"senderKeyHash\": \"REDACTED_SENDERKEYHASH\", \"senderTimestamp\": 1}, \"deviceListMetadataVersion\": 2}, \"senderKeyDistributionMessage\": {\"axolotlSenderKeyDistributionMessage\": \"REDACTED_TOKEN\", \"groupID\": \"fixture-group-20@g.us\"}}, \"NewsletterMeta\": null, \"RawMessage\": {\"messageContextInfo\": {\"deviceListMetadata\": {\"recipientKeyHash\": \"REDACTED_RECIPIENTKEYHASH\", \"recipientTimestamp\": 1, \"senderKeyHash\": \"REDACTED_SENDERKEYHASH\", \"senderTimestamp\": 1}, \"deviceListMetadataVersion\": 2}, \"senderKeyDistributionMessage\": {\"axolotlSenderKeyDistributionMessage\": \"REDACTED_TOKEN\", \"groupID\": \"fixture-group-20@g.us\"}}, \"RetryCount\": 0, \"SourceWebMsg\": null, \"UnavailableRequestID\": \"\"}",
+      "sender": "fixture-user-5@lid",
+      "timestamp": "2025-01-01T12:00:00+00:00"
+    }
+  },
+  "changed": {},
+  "deleted": {}
+}

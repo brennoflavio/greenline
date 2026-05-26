@@ -15,6 +15,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Run tests
+        run: uv run pytest
+
       - name: Pull Clickable
         run: |
           docker pull clickable/ci-ut24.04-1.x-arm64:latest

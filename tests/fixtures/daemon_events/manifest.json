@@ -1,0 +1,196 @@
+{
+  "fixtures": [
+    {
+      "event_type": "Message",
+      "path": "message/conversation.json",
+      "source_family": "message",
+      "stored_message_type": "text"
+    },
+    {
+      "event_type": "Message",
+      "path": "message/extended_text.json",
+      "source_family": "message",
+      "stored_message_type": "text"
+    },
+    {
+      "event_type": "Message",
+      "path": "message/link_preview.json",
+      "source_family": "message",
+      "stored_message_type": "link_preview"
+    },
+    {
+      "event_type": "Message",
+      "path": "message/image.json",
+      "source_family": "message",
+      "stored_message_type": "image"
+    },
+    {
+      "event_type": "Message",
+      "path": "message/video.json",
+      "source_family": "message",
+      "stored_message_type": "video"
+    },
+    {
+      "event_type": "Message",
+      "path": "message/audio.json",
+      "source_family": "message",
+      "stored_message_type": "audio"
+    },
+    {
+      "event_type": "Message",
+      "path": "message/voice.json",
+      "source_family": "message",
+      "stored_message_type": "audio"
+    },
+    {
+      "event_type": "Message",
+      "path": "message/document.json",
+      "source_family": "message",
+      "stored_message_type": "document"
+    },
+    {
+      "event_type": "Message",
+      "path": "message/contact.json",
+      "source_family": "message",
+      "stored_message_type": "contact"
+    },
+    {
+      "event_type": "Message",
+      "path": "message/sticker.json",
+      "source_family": "message",
+      "stored_message_type": "sticker"
+    },
+    {
+      "event_type": "Message",
+      "path": "message/template_message.json",
+      "source_family": "message",
+      "stored_message_type": "text"
+    },
+    {
+      "event_type": "Message",
+      "path": "message/template_button_reply.json",
+      "source_family": "message",
+      "stored_message_type": "text"
+    },
+    {
+      "event_type": "Message",
+      "path": "message/buttons_message.json",
+      "source_family": "message",
+      "stored_message_type": "text"
+    },
+    {
+      "event_type": "Message",
+      "path": "message/deleted.json",
+      "source_family": "message",
+      "stored_message_type": "deleted"
+    },
+    {
+      "event_type": "Message",
+      "path": "message/edit.json",
+      "source_family": "unhandled_message"
+    },
+    {
+      "event_type": "UndecryptableMessage",
+      "path": "undecryptable_message/view_once.json",
+      "source_family": "message",
+      "stored_message_type": "view_once"
+    },
+    {
+      "event_type": "Message",
+      "info_type": "reaction",
+      "media_type": "",
+      "path": "message/reaction_ignored.json",
+      "source_family": "unhandled_message"
+    },
+    {
+      "event_type": "Message",
+      "info_type": "text",
+      "media_type": "",
+      "path": "message/unhandled_text.json",
+      "source_family": "unhandled_message"
+    },
+    {
+      "event_type": "Message",
+      "info_type": "media",
+      "media_type": "collection",
+      "path": "message/unhandled_media_collection.json",
+      "source_family": "unhandled_message"
+    },
+    {
+      "event_type": "Message",
+      "info_type": "media",
+      "media_type": "gif",
+      "path": "message/unhandled_media_gif.json",
+      "source_family": "message",
+      "stored_message_type": "video"
+    },
+    {
+      "event_type": "Message",
+      "info_type": "media",
+      "media_type": "contact_array",
+      "path": "message/unhandled_media_contact_array.json",
+      "source_family": "unhandled_message"
+    },
+    {
+      "event_type": "Message",
+      "info_type": "media",
+      "media_type": "livelocation",
+      "path": "message/unhandled_media_livelocation.json",
+      "source_family": "unhandled_message"
+    },
+    {
+      "event_type": "Message",
+      "info_type": "poll",
+      "media_type": "",
+      "path": "message/unhandled_poll.json",
+      "source_family": "unhandled_message"
+    },
+    {
+      "event_type": "Message",
+      "info_type": "medianotify",
+      "media_type": "",
+      "path": "message/unhandled_medianotify.json",
+      "source_family": "unhandled_message"
+    },
+    {
+      "event_type": "Blocklist",
+      "path": "event/blocklist.json",
+      "source_family": "unknown_event"
+    },
+    {
+      "event_type": "CallReject",
+      "path": "event/callreject.json",
+      "source_family": "unknown_event"
+    },
+    {
+      "event_type": "ChatPresence",
+      "path": "event/chatpresence.json",
+      "source_family": "unknown_event"
+    },
+    {
+      "event_type": "GroupInfo",
+      "path": "event/groupinfo.json",
+      "source_family": "unknown_event"
+    },
+    {
+      "event_type": "IdentityChange",
+      "path": "event/identitychange.json",
+      "source_family": "unknown_event"
+    },
+    {
+      "event_type": "JoinedGroup",
+      "path": "event/joinedgroup.json",
+      "source_family": "unknown_event"
+    },
+    {
+      "event_type": "Message",
+      "path": "event/message.json",
+      "source_family": "unknown_event"
+    },
+    {
+      "event_type": "UserAbout",
+      "path": "event/userabout.json",
+      "source_family": "unknown_event"
+    }
+  ]
+}

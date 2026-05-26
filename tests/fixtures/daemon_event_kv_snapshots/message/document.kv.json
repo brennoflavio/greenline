@@ -1,0 +1,189 @@
+{
+  "added": {
+    "chat:fixture-chat-1@s.whatsapp.net": {
+      "business_name": "",
+      "date": "12:00",
+      "full_name": "",
+      "id": "fixture-chat-1@s.whatsapp.net",
+      "is_group": false,
+      "last_message": "\ud83d\udcc4 Document",
+      "last_message_mentioned_jids": [],
+      "last_message_timestamp": 1735732800,
+      "last_message_type": "document",
+      "muted": false,
+      "name": "fixture-chat-1@s.whatsapp.net",
+      "name_updated_at": 1735732800,
+      "photo": "",
+      "push_name": "",
+      "read_receipt": "sent",
+      "unread_count": 0
+    },
+    "message:fixture-chat-1@s.whatsapp.net:1735732800:fixture-message-009": {
+      "button_text": "",
+      "button_url": "",
+      "caption": "",
+      "chat_id": "fixture-chat-1@s.whatsapp.net",
+      "duration": "",
+      "edited": false,
+      "file_name": "fixture-document.pdf",
+      "id": "fixture-message-009",
+      "image_source": "",
+      "images": [],
+      "is_outgoing": true,
+      "link_description": "",
+      "link_title": "",
+      "link_url": "",
+      "media_path": "",
+      "mention_spans": [],
+      "mentioned_jids": [],
+      "mimetype": "application/pdf",
+      "raw": {
+        "Info": {
+          "AddressingMode": "",
+          "BroadcastListOwner": "",
+          "BroadcastRecipients": null,
+          "Category": "",
+          "Chat": "fixture-chat-1@s.whatsapp.net",
+          "DeviceSentMeta": {
+            "DestinationJID": "fixture-user-5@lid",
+            "Phash": ""
+          },
+          "Edit": "",
+          "ID": "fixture-message-009",
+          "IsFromMe": true,
+          "IsGroup": false,
+          "MediaType": "document",
+          "MsgBotInfo": {
+            "EditSenderTimestampMS": "2025-01-01T12:00:00+00:00",
+            "EditTargetID": "",
+            "EditType": ""
+          },
+          "MsgMetaInfo": {
+            "DeprecatedLIDSession": null,
+            "TargetChat": "",
+            "TargetID": "",
+            "TargetSender": "",
+            "ThreadMessageID": "",
+            "ThreadMessageSenderJID": ""
+          },
+          "Multicast": false,
+          "PushName": "Fixture text.",
+          "RecipientAlt": "fixture-user-6@s.whatsapp.net",
+          "Sender": "fixture-user-19@lid",
+          "SenderAlt": "",
+          "ServerID": 1,
+          "Timestamp": "2025-01-01T12:00:00+00:00",
+          "Type": "media",
+          "VerifiedName": null
+        },
+        "IsBotInvoke": false,
+        "IsDocumentWithCaption": false,
+        "IsEdit": false,
+        "IsEphemeral": false,
+        "IsLottieSticker": false,
+        "IsViewOnce": false,
+        "IsViewOnceV2": false,
+        "IsViewOnceV2Extension": false,
+        "Message": {
+          "documentMessage": {
+            "JPEGThumbnail": "REDACTED_JPEGTHUMBNAIL",
+            "URL": "https://example.test/fixture",
+            "directPath": "/v/fixture/media-6.enc",
+            "fileEncSHA256": "REDACTED_FILEENCSHA256",
+            "fileLength": 901524,
+            "fileName": "fixture-document.pdf",
+            "fileSHA256": "REDACTED_FILESHA256",
+            "mediaKey": "REDACTED_MEDIAKEY",
+            "mediaKeyTimestamp": 1,
+            "mimetype": "application/pdf",
+            "pageCount": 1,
+            "thumbnailDirectPath": "/v/fixture/media-7.enc",
+            "thumbnailEncSHA256": "REDACTED_THUMBNAILENCSHA256",
+            "thumbnailHeight": 480,
+            "thumbnailSHA256": "REDACTED_THUMBNAILSHA256",
+            "thumbnailWidth": 310
+          },
+          "messageContextInfo": {
+            "deviceListMetadata": {
+              "recipientKeyHash": "REDACTED_RECIPIENTKEYHASH",
+              "recipientTimestamp": 1,
+              "senderKeyHash": "REDACTED_SENDERKEYHASH",
+              "senderTimestamp": 1
+            },
+            "deviceListMetadataVersion": 2,
+            "messageSecret": "REDACTED_MESSAGESECRET"
+          }
+        },
+        "NewsletterMeta": null,
+        "RawMessage": {
+          "deviceSentMessage": {
+            "destinationJID": "fixture-user-5@lid",
+            "message": {
+              "documentMessage": {
+                "JPEGThumbnail": "REDACTED_JPEGTHUMBNAIL",
+                "URL": "https://example.test/fixture",
+                "directPath": "/v/fixture/media-6.enc",
+                "fileEncSHA256": "REDACTED_FILEENCSHA256",
+                "fileLength": 901524,
+                "fileName": "fixture-document.pdf",
+                "fileSHA256": "REDACTED_FILESHA256",
+                "mediaKey": "REDACTED_MEDIAKEY",
+                "mediaKeyTimestamp": 1,
+                "mimetype": "application/pdf",
+                "pageCount": 1,
+                "thumbnailDirectPath": "/v/fixture/media-7.enc",
+                "thumbnailEncSHA256": "REDACTED_THUMBNAILENCSHA256",
+                "thumbnailHeight": 480,
+                "thumbnailSHA256": "REDACTED_THUMBNAILSHA256",
+                "thumbnailWidth": 310
+              },
+              "messageContextInfo": {
+                "deviceListMetadata": {
+                  "recipientKeyHash": "REDACTED_RECIPIENTKEYHASH",
+                  "recipientTimestamp": 1,
+                  "senderKeyHash": "REDACTED_SENDERKEYHASH",
+                  "senderTimestamp": 1
+                },
+                "deviceListMetadataVersion": 2,
+                "messageSecret": "REDACTED_MESSAGESECRET"
+              }
+            }
+          },
+          "messageContextInfo": {
+            "deviceListMetadata": {
+              "recipientKeyHash": "REDACTED_RECIPIENTKEYHASH",
+              "recipientTimestamp": 1,
+              "senderKeyHash": "REDACTED_SENDERKEYHASH",
+              "senderTimestamp": 1
+            },
+            "deviceListMetadataVersion": 2,
+            "messageSecret": "REDACTED_MESSAGESECRET"
+          }
+        },
+        "RetryCount": 0,
+        "SourceWebMsg": null,
+        "UnavailableRequestID": ""
+      },
+      "read_receipt": "sent",
+      "reply_to_from_me": false,
+      "reply_to_id": "",
+      "reply_to_mentioned_jids": [],
+      "reply_to_sender_id": "",
+      "reply_to_sender_raw": "",
+      "reply_to_text": "",
+      "send_status": "",
+      "sender": "fixture-user-19@s.whatsapp.net",
+      "sender_raw": "fixture-user-19@lid",
+      "sticker_source": "",
+      "temp_id": "",
+      "text": "",
+      "thumbnail_path": "",
+      "timestamp": "12:00",
+      "timestamp_unix": 1735732800,
+      "type": "document"
+    },
+    "message_index:fixture-chat-1@s.whatsapp.net:fixture-message-009": "message:fixture-chat-1@s.whatsapp.net:1735732800:fixture-message-009"
+  },
+  "changed": {},
+  "deleted": {}
+}

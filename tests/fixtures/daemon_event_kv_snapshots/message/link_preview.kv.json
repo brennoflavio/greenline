@@ -1,0 +1,199 @@
+{
+  "added": {
+    "chat:fixture-chat-1@s.whatsapp.net": {
+      "business_name": "",
+      "date": "12:00",
+      "full_name": "",
+      "id": "fixture-chat-1@s.whatsapp.net",
+      "is_group": false,
+      "last_message": "Fixture text.",
+      "last_message_mentioned_jids": [],
+      "last_message_timestamp": 1735732800,
+      "last_message_type": "link_preview",
+      "muted": false,
+      "name": "fixture-chat-1@s.whatsapp.net",
+      "name_updated_at": 1735732800,
+      "photo": "",
+      "push_name": "",
+      "read_receipt": "sent",
+      "unread_count": 0
+    },
+    "message:fixture-chat-1@s.whatsapp.net:1735732800:fixture-message-004": {
+      "button_text": "",
+      "button_url": "",
+      "caption": "",
+      "chat_id": "fixture-chat-1@s.whatsapp.net",
+      "duration": "",
+      "edited": false,
+      "file_name": "",
+      "id": "fixture-message-004",
+      "image_source": "",
+      "images": [],
+      "is_outgoing": true,
+      "link_description": "Fixture text.",
+      "link_title": "Fixture text.",
+      "link_url": "Fixture text.",
+      "media_path": "",
+      "mention_spans": [],
+      "mentioned_jids": [],
+      "mimetype": "",
+      "raw": {
+        "Info": {
+          "AddressingMode": "",
+          "BroadcastListOwner": "",
+          "BroadcastRecipients": null,
+          "Category": "",
+          "Chat": "fixture-chat-1@s.whatsapp.net",
+          "DeviceSentMeta": {
+            "DestinationJID": "fixture-user-5@lid",
+            "Phash": ""
+          },
+          "Edit": "",
+          "ID": "fixture-message-004",
+          "IsFromMe": true,
+          "IsGroup": false,
+          "MediaType": "url",
+          "MsgBotInfo": {
+            "EditSenderTimestampMS": "2025-01-01T12:00:00+00:00",
+            "EditTargetID": "",
+            "EditType": ""
+          },
+          "MsgMetaInfo": {
+            "DeprecatedLIDSession": null,
+            "TargetChat": "",
+            "TargetID": "",
+            "TargetSender": "",
+            "ThreadMessageID": "",
+            "ThreadMessageSenderJID": ""
+          },
+          "Multicast": false,
+          "PushName": "Fixture text.",
+          "RecipientAlt": "fixture-user-6@s.whatsapp.net",
+          "Sender": "fixture-user-8@lid",
+          "SenderAlt": "",
+          "ServerID": 1,
+          "Timestamp": "2025-01-01T12:00:00+00:00",
+          "Type": "media",
+          "VerifiedName": null
+        },
+        "IsBotInvoke": false,
+        "IsDocumentWithCaption": false,
+        "IsEdit": false,
+        "IsEphemeral": false,
+        "IsLottieSticker": false,
+        "IsViewOnce": false,
+        "IsViewOnceV2": false,
+        "IsViewOnceV2Extension": false,
+        "Message": {
+          "extendedTextMessage": {
+            "contextInfo": {
+              "disappearingMode": {
+                "initiator": 0,
+                "trigger": 1
+              }
+            },
+            "description": "Fixture text.",
+            "inviteLinkGroupTypeV2": 0,
+            "matchedText": "Fixture text.",
+            "previewType": 0,
+            "text": "Fixture text.",
+            "title": "Fixture text."
+          },
+          "messageContextInfo": {
+            "deviceListMetadata": {
+              "receiverAccountType": 0,
+              "recipientKeyHash": "REDACTED_RECIPIENTKEYHASH",
+              "recipientTimestamp": 1,
+              "senderAccountType": 0,
+              "senderKeyHash": "REDACTED_SENDERKEYHASH",
+              "senderTimestamp": 1
+            },
+            "deviceListMetadataVersion": 2,
+            "limitSharingV2": {
+              "initiatedByMe": false,
+              "trigger": 0
+            },
+            "messageSecret": "REDACTED_MESSAGESECRET"
+          }
+        },
+        "NewsletterMeta": null,
+        "RawMessage": {
+          "deviceSentMessage": {
+            "destinationJID": "fixture-user-5@lid",
+            "message": {
+              "extendedTextMessage": {
+                "contextInfo": {
+                  "disappearingMode": {
+                    "initiator": 0,
+                    "trigger": 1
+                  }
+                },
+                "description": "Fixture text.",
+                "inviteLinkGroupTypeV2": 0,
+                "matchedText": "Fixture text.",
+                "previewType": 0,
+                "text": "Fixture text.",
+                "title": "Fixture text."
+              },
+              "messageContextInfo": {
+                "deviceListMetadata": {
+                  "receiverAccountType": 0,
+                  "recipientKeyHash": "REDACTED_RECIPIENTKEYHASH",
+                  "recipientTimestamp": 1,
+                  "senderAccountType": 0,
+                  "senderKeyHash": "REDACTED_SENDERKEYHASH",
+                  "senderTimestamp": 1
+                },
+                "deviceListMetadataVersion": 2,
+                "limitSharingV2": {
+                  "initiatedByMe": false,
+                  "trigger": 0
+                },
+                "messageSecret": "REDACTED_MESSAGESECRET"
+              }
+            }
+          },
+          "messageContextInfo": {
+            "deviceListMetadata": {
+              "receiverAccountType": 0,
+              "recipientKeyHash": "REDACTED_RECIPIENTKEYHASH",
+              "recipientTimestamp": 1,
+              "senderAccountType": 0,
+              "senderKeyHash": "REDACTED_SENDERKEYHASH",
+              "senderTimestamp": 1
+            },
+            "deviceListMetadataVersion": 2,
+            "limitSharingV2": {
+              "initiatedByMe": false,
+              "trigger": 0
+            },
+            "messageSecret": "REDACTED_MESSAGESECRET"
+          }
+        },
+        "RetryCount": 0,
+        "SourceWebMsg": null,
+        "UnavailableRequestID": ""
+      },
+      "read_receipt": "sent",
+      "reply_to_from_me": false,
+      "reply_to_id": "",
+      "reply_to_mentioned_jids": [],
+      "reply_to_sender_id": "",
+      "reply_to_sender_raw": "",
+      "reply_to_text": "",
+      "send_status": "",
+      "sender": "fixture-user-8@s.whatsapp.net",
+      "sender_raw": "fixture-user-8@lid",
+      "sticker_source": "",
+      "temp_id": "",
+      "text": "Fixture text.",
+      "thumbnail_path": "",
+      "timestamp": "12:00",
+      "timestamp_unix": 1735732800,
+      "type": "link_preview"
+    },
+    "message_index:fixture-chat-1@s.whatsapp.net:fixture-message-004": "message:fixture-chat-1@s.whatsapp.net:1735732800:fixture-message-004"
+  },
+  "changed": {},
+  "deleted": {}
+}

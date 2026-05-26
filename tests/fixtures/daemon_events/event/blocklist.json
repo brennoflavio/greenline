@@ -1,0 +1,14 @@
+{
+  "_meta": {
+    "source": "sanitized from repository root kv.db",
+    "source_family": "unknown_event"
+  },
+  "event_type": "Blocklist",
+  "id": 25,
+  "payload": {
+    "Action": "modify",
+    "Changes": null,
+    "DHash": "",
+    "PrevDHash": ""
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "_meta": {
+    "source": "sanitized from repository root kv.db",
+    "source_family": "unknown_event"
+  },
+  "event_type": "JoinedGroup",
+  "id": 30,
+  "payload": {
+    "AddressingMode": "",
+    "AnnounceVersionID": "fixture-message-038",
+    "CreateKey": "REDACTED_CREATEKEY",
+    "CreatorCountryCode": "ZZ",
+    "DefaultMembershipApprovalMode": "",
+    "DisappearingTimer": 0,
+    "GroupCreated": "2025-01-01T12:00:00+00:00",
+    "IsAnnounce": false,
+    "IsDefaultSubGroup": false,
+    "IsEphemeral": false,
+    "IsIncognito": false,
+    "IsJoinApprovalRequired": false,
+    "IsLocked": false,
+    "IsParent": false,
+    "JID": "fixture-group-42@g.us",
+    "LinkedParentJID": "",
+    "MemberAddMode": "all_member_add",
+    "Name": "Fixture text.",
+    "NameSetAt": "2025-01-01T12:00:00+00:00",
+    "NameSetBy": "fixture-user-19@lid",
+    "NameSetByPN": "fixture-user-32@s.whatsapp.net",
+    "Notify": "Fixture text.",
+    "OwnerJID": "fixture-user-19@lid",
+    "OwnerPN": "fixture-user-32@s.whatsapp.net",
+    "ParticipantCount": 4,
+    "ParticipantVersionID": "fixture-message-039",
+    "Participants": [
+      {
+        "AddRequest": null,
+        "DisplayName": "",
+        "Error": 0,
+        "IsAdmin": false,
+        "IsSuperAdmin": false,
+        "JID": "fixture-user-7@lid",
+        "LID": "fixture-user-7@lid",
+        "PhoneNumber": "fixture-user-9@s.whatsapp.net"
+      },
+      {
+        "AddRequest": null,
+        "DisplayName": "",
+        "Error": 0,
+        "IsAdmin": true,
+        "IsSuperAdmin": true,
+        "JID": "fixture-user-19@lid",
+        "LID": "fixture-user-19@lid",
+        "PhoneNumber": "fixture-user-32@s.whatsapp.net"
+      },
+      {
+        "AddRequest": null,
+        "DisplayName": "",
+        "Error": 0,
+        "IsAdmin": false,
+        "IsSuperAdmin": false,
+        "JID": "fixture-user-43@lid",
+        "LID": "fixture-user-43@lid",
+        "PhoneNumber": "fixture-user-44@s.whatsapp.net"
+      },
+      {
+        "AddRequest": null,
+        "DisplayName": "",
+        "Error": 0,
+        "IsAdmin": false,
+        "IsSuperAdmin": false,
+        "JID": "fixture-user-45@lid",
+        "LID": "fixture-user-45@lid",
+        "PhoneNumber": "fixture-user-46@s.whatsapp.net"
+      }
+    ],
+    "Reason": "",
+    "Sender": "fixture-user-19@lid",
+    "SenderPN": "fixture-user-32@s.whatsapp.net",
+    "Suspended": false,
+    "Topic": "",
+    "TopicDeleted": false,
+    "TopicID": "",
+    "TopicSetAt": "2025-01-01T12:00:00+00:00",
+    "TopicSetBy": "",
+    "TopicSetByPN": "",
+    "Type": "new"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "added": {
+    "unhandled_message:23": {
+      "chat": "fixture-group-1@g.us",
+      "event_id": 23,
+      "info_type": "poll",
+      "media_type": "",
+      "message_id": "fixture-message-033",
+      "payload": "{\"Info\": {\"AddressingMode\": \"lid\", \"BroadcastListOwner\": \"\", \"BroadcastRecipients\": null, \"Category\": \"\", \"Chat\": \"fixture-group-1@g.us\", \"DeviceSentMeta\": null, \"Edit\": \"\", \"ID\": \"fixture-message-033\", \"IsFromMe\": false, \"IsGroup\": true, \"MediaType\": \"\", \"MsgBotInfo\": {\"EditSenderTimestampMS\": \"2025-01-01T12:00:00+00:00\", \"EditTargetID\": \"\", \"EditType\": \"\"}, \"MsgMetaInfo\": {\"DeprecatedLIDSession\": null, \"TargetChat\": \"\", \"TargetID\": \"\", \"TargetSender\": \"\", \"ThreadMessageID\": \"\", \"ThreadMessageSenderJID\": \"\"}, \"Multicast\": false, \"PushName\": \"Fixture text.\", \"RecipientAlt\": \"\", \"Sender\": \"fixture-user-5@lid\", \"SenderAlt\": \"fixture-user-6@s.whatsapp.net\", \"ServerID\": 1, \"Timestamp\": \"2025-01-01T12:00:00+00:00\", \"Type\": \"poll\", \"VerifiedName\": null}, \"IsBotInvoke\": false, \"IsDocumentWithCaption\": false, \"IsEdit\": false, \"IsEphemeral\": false, \"IsLottieSticker\": false, \"IsViewOnce\": false, \"IsViewOnceV2\": false, \"IsViewOnceV2Extension\": false, \"Message\": {\"messageContextInfo\": {\"messageSecret\": \"REDACTED_MESSAGESECRET\"}, \"pollCreationMessageV3\": {\"name\": \"Fixture text.\", \"options\": [{\"optionName\": \"Fixture text.\"}, {\"optionName\": \"Fixture text.\"}], \"pollContentType\": 1, \"pollType\": 0, \"selectableOptionsCount\": 0}}, \"NewsletterMeta\": null, \"RawMessage\": {\"messageContextInfo\": {\"messageSecret\": \"REDACTED_MESSAGESECRET\"}, \"pollCreationMessageV3\": {\"name\": \"Fixture text.\", \"options\": [{\"optionName\": \"Fixture text.\"}, {\"optionName\": \"Fixture text.\"}], \"pollContentType\": 1, \"pollType\": 0, \"selectableOptionsCount\": 0}}, \"RetryCount\": 0, \"SourceWebMsg\": null, \"UnavailableRequestID\": \"\"}",
+      "sender": "fixture-user-5@lid",
+      "timestamp": "2025-01-01T12:00:00+00:00"
+    }
+  },
+  "changed": {},
+  "deleted": {}
+}

@@ -1,0 +1,136 @@
+{
+  "_meta": {
+    "source": "sanitized from repository root kv.db",
+    "source_family": "message",
+    "stored_message_type": "document"
+  },
+  "event_type": "Message",
+  "id": 8,
+  "payload": {
+    "Info": {
+      "AddressingMode": "",
+      "BroadcastListOwner": "",
+      "BroadcastRecipients": null,
+      "Category": "",
+      "Chat": "fixture-chat-1@s.whatsapp.net",
+      "DeviceSentMeta": {
+        "DestinationJID": "fixture-user-5@lid",
+        "Phash": ""
+      },
+      "Edit": "",
+      "ID": "fixture-message-009",
+      "IsFromMe": true,
+      "IsGroup": false,
+      "MediaType": "document",
+      "MsgBotInfo": {
+        "EditSenderTimestampMS": "2025-01-01T12:00:00+00:00",
+        "EditTargetID": "",
+        "EditType": ""
+      },
+      "MsgMetaInfo": {
+        "DeprecatedLIDSession": null,
+        "TargetChat": "",
+        "TargetID": "",
+        "TargetSender": "",
+        "ThreadMessageID": "",
+        "ThreadMessageSenderJID": ""
+      },
+      "Multicast": false,
+      "PushName": "Fixture text.",
+      "RecipientAlt": "fixture-user-6@s.whatsapp.net",
+      "Sender": "fixture-user-19@lid",
+      "SenderAlt": "",
+      "ServerID": 1,
+      "Timestamp": "2025-01-01T12:00:00+00:00",
+      "Type": "media",
+      "VerifiedName": null
+    },
+    "IsBotInvoke": false,
+    "IsDocumentWithCaption": false,
+    "IsEdit": false,
+    "IsEphemeral": false,
+    "IsLottieSticker": false,
+    "IsViewOnce": false,
+    "IsViewOnceV2": false,
+    "IsViewOnceV2Extension": false,
+    "Message": {
+      "documentMessage": {
+        "JPEGThumbnail": "REDACTED_JPEGTHUMBNAIL",
+        "URL": "https://example.test/fixture",
+        "directPath": "/v/fixture/media-6.enc",
+        "fileEncSHA256": "REDACTED_FILEENCSHA256",
+        "fileLength": 901524,
+        "fileName": "fixture-document.pdf",
+        "fileSHA256": "REDACTED_FILESHA256",
+        "mediaKey": "REDACTED_MEDIAKEY",
+        "mediaKeyTimestamp": 1,
+        "mimetype": "application/pdf",
+        "pageCount": 1,
+        "thumbnailDirectPath": "/v/fixture/media-7.enc",
+        "thumbnailEncSHA256": "REDACTED_THUMBNAILENCSHA256",
+        "thumbnailHeight": 480,
+        "thumbnailSHA256": "REDACTED_THUMBNAILSHA256",
+        "thumbnailWidth": 310
+      },
+      "messageContextInfo": {
+        "deviceListMetadata": {
+          "recipientKeyHash": "REDACTED_RECIPIENTKEYHASH",
+          "recipientTimestamp": 1,
+          "senderKeyHash": "REDACTED_SENDERKEYHASH",
+          "senderTimestamp": 1
+        },
+        "deviceListMetadataVersion": 2,
+        "messageSecret": "REDACTED_MESSAGESECRET"
+      }
+    },
+    "NewsletterMeta": null,
+    "RawMessage": {
+      "deviceSentMessage": {
+        "destinationJID": "fixture-user-5@lid",
+        "message": {
+          "documentMessage": {
+            "JPEGThumbnail": "REDACTED_JPEGTHUMBNAIL",
+            "URL": "https://example.test/fixture",
+            "directPath": "/v/fixture/media-6.enc",
+            "fileEncSHA256": "REDACTED_FILEENCSHA256",
+            "fileLength": 901524,
+            "fileName": "fixture-document.pdf",
+            "fileSHA256": "REDACTED_FILESHA256",
+            "mediaKey": "REDACTED_MEDIAKEY",
+            "mediaKeyTimestamp": 1,
+            "mimetype": "application/pdf",
+            "pageCount": 1,
+            "thumbnailDirectPath": "/v/fixture/media-7.enc",
+            "thumbnailEncSHA256": "REDACTED_THUMBNAILENCSHA256",
+            "thumbnailHeight": 480,
+            "thumbnailSHA256": "REDACTED_THUMBNAILSHA256",
+            "thumbnailWidth": 310
+          },
+          "messageContextInfo": {
+            "deviceListMetadata": {
+              "recipientKeyHash": "REDACTED_RECIPIENTKEYHASH",
+              "recipientTimestamp": 1,
+              "senderKeyHash": "REDACTED_SENDERKEYHASH",
+              "senderTimestamp": 1
+            },
+            "deviceListMetadataVersion": 2,
+            "messageSecret": "REDACTED_MESSAGESECRET"
+          }
+        }
+      },
+      "messageContextInfo": {
+        "deviceListMetadata": {
+          "recipientKeyHash": "REDACTED_RECIPIENTKEYHASH",
+          "recipientTimestamp": 1,
+          "senderKeyHash": "REDACTED_SENDERKEYHASH",
+          "senderTimestamp": 1
+        },
+        "deviceListMetadataVersion": 2,
+        "messageSecret": "REDACTED_MESSAGESECRET"
+      }
+    },
+    "RetryCount": 0,
+    "SourceWebMsg": null,
+    "UnavailableRequestID": ""
+  }
+}

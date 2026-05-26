@@ -1,0 +1,13 @@
+{
+  "_meta": {
+    "source": "sanitized from repository root kv.db",
+    "source_family": "unknown_event"
+  },
+  "event_type": "UserAbout",
+  "id": 32,
+  "payload": {
+    "JID": "fixture-user-47@lid",
+    "Status": "Fixture text.",
+    "Timestamp": "2025-01-01T12:00:00+00:00"
+  }
+}

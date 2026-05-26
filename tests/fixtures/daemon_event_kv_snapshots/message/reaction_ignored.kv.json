@@ -1,0 +1,16 @@
+{
+  "added": {
+    "unhandled_message:17": {
+      "chat": "fixture-group-1@g.us",
+      "event_id": 17,
+      "info_type": "reaction",
+      "media_type": "",
+      "message_id": "fixture-message-026",
+      "payload": "{\"Info\": {\"AddressingMode\": \"lid\", \"BroadcastListOwner\": \"\", \"BroadcastRecipients\": null, \"Category\": \"\", \"Chat\": \"fixture-group-1@g.us\", \"DeviceSentMeta\": null, \"Edit\": \"\", \"ID\": \"fixture-message-026\", \"IsFromMe\": false, \"IsGroup\": true, \"MediaType\": \"\", \"MsgBotInfo\": {\"EditSenderTimestampMS\": \"2025-01-01T12:00:00+00:00\", \"EditTargetID\": \"\", \"EditType\": \"\"}, \"MsgMetaInfo\": {\"DeprecatedLIDSession\": null, \"TargetChat\": \"\", \"TargetID\": \"\", \"TargetSender\": \"\", \"ThreadMessageID\": \"\", \"ThreadMessageSenderJID\": \"\"}, \"Multicast\": false, \"PushName\": \"Fixture text.\", \"RecipientAlt\": \"\", \"Sender\": \"fixture-user-11@lid\", \"SenderAlt\": \"fixture-user-12@s.whatsapp.net\", \"ServerID\": 1, \"Timestamp\": \"2025-01-01T12:00:00+00:00\", \"Type\": \"reaction\", \"VerifiedName\": null}, \"IsBotInvoke\": false, \"IsDocumentWithCaption\": false, \"IsEdit\": false, \"IsEphemeral\": false, \"IsLottieSticker\": false, \"IsViewOnce\": false, \"IsViewOnceV2\": false, \"IsViewOnceV2Extension\": false, \"Message\": {\"reactionMessage\": {\"key\": {\"ID\": \"fixture-message-027\", \"fromMe\": false, \"participant\": \"fixture-user-13@lid\", \"remoteJID\": \"fixture-group-10@g.us\"}, \"senderTimestampMS\": 1, \"text\": \"Fixture text.\"}}, \"NewsletterMeta\": null, \"RawMessage\": {\"reactionMessage\": {\"key\": {\"ID\": \"fixture-message-027\", \"fromMe\": false, \"participant\": \"fixture-user-13@lid\", \"remoteJID\": \"fixture-group-10@g.us\"}, \"senderTimestampMS\": 1, \"text\": \"Fixture text.\"}}, \"RetryCount\": 0, \"SourceWebMsg\": null, \"UnavailableRequestID\": \"\"}",
+      "sender": "fixture-user-11@lid",
+      "timestamp": "2025-01-01T12:00:00+00:00"
+    }
+  },
+  "changed": {},
+  "deleted": {}
+}

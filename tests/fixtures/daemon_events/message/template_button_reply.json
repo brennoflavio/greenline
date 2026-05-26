@@ -1,0 +1,300 @@
+{
+  "_meta": {
+    "source": "sanitized from repository root kv.db",
+    "source_family": "message",
+    "stored_message_type": "text"
+  },
+  "event_type": "Message",
+  "id": 12,
+  "payload": {
+    "Info": {
+      "AddressingMode": "",
+      "BroadcastListOwner": "",
+      "BroadcastRecipients": null,
+      "Category": "",
+      "Chat": "fixture-chat-1@s.whatsapp.net",
+      "DeviceSentMeta": {
+        "DestinationJID": "fixture-user-25@lid",
+        "Phash": ""
+      },
+      "Edit": "",
+      "ID": "fixture-message-017",
+      "IsFromMe": true,
+      "IsGroup": false,
+      "MediaType": "",
+      "MsgBotInfo": {
+        "EditSenderTimestampMS": "2025-01-01T12:00:00+00:00",
+        "EditTargetID": "",
+        "EditType": ""
+      },
+      "MsgMetaInfo": {
+        "DeprecatedLIDSession": null,
+        "TargetChat": "",
+        "TargetID": "",
+        "TargetSender": "",
+        "ThreadMessageID": "",
+        "ThreadMessageSenderJID": ""
+      },
+      "Multicast": false,
+      "PushName": "Fixture text.",
+      "RecipientAlt": "fixture-user-26@s.whatsapp.net",
+      "Sender": "fixture-user-19@lid",
+      "SenderAlt": "",
+      "ServerID": 1,
+      "Timestamp": "2025-01-01T12:00:00+00:00",
+      "Type": "text",
+      "VerifiedName": null
+    },
+    "IsBotInvoke": false,
+    "IsDocumentWithCaption": false,
+    "IsEdit": false,
+    "IsEphemeral": false,
+    "IsLottieSticker": false,
+    "IsViewOnce": false,
+    "IsViewOnceV2": false,
+    "IsViewOnceV2Extension": false,
+    "Message": {
+      "messageContextInfo": {
+        "deviceListMetadata": {
+          "senderKeyHash": "REDACTED_SENDERKEYHASH",
+          "senderTimestamp": 1
+        },
+        "deviceListMetadataVersion": 2,
+        "messageSecret": "REDACTED_MESSAGESECRET",
+        "threadID": [
+          {
+            "threadKey": {
+              "ID": "fixture-message-018",
+              "fromMe": false,
+              "remoteJID": "fixture-user-25@lid"
+            },
+            "threadType": 1
+          }
+        ]
+      },
+      "templateButtonReplyMessage": {
+        "contextInfo": {
+          "participant": "fixture-user-25@lid",
+          "quotedMessage": {
+            "templateMessage": {
+              "Format": {
+                "HydratedFourRowTemplate": {
+                  "Title": {
+                    "HydratedTitleText": "Fixture text."
+                  },
+                  "hydratedButtons": [
+                    {
+                      "HydratedButton": {
+                        "QuickReplyButton": {
+                          "ID": "fixture-message-013",
+                          "displayText": "Fixture text."
+                        }
+                      },
+                      "index": 0
+                    },
+                    {
+                      "HydratedButton": {
+                        "QuickReplyButton": {
+                          "ID": "fixture-message-014",
+                          "displayText": "Fixture text."
+                        }
+                      },
+                      "index": 1
+                    },
+                    {
+                      "HydratedButton": {
+                        "QuickReplyButton": {
+                          "ID": "fixture-message-015",
+                          "displayText": "Fixture text."
+                        }
+                      },
+                      "index": 2
+                    }
+                  ],
+                  "hydratedContentText": "Fixture text.",
+                  "hydratedFooterText": "Fixture text."
+                }
+              },
+              "hydratedTemplate": {
+                "Title": {
+                  "HydratedTitleText": "Fixture text."
+                },
+                "hydratedButtons": [
+                  {
+                    "HydratedButton": {
+                      "QuickReplyButton": {
+                        "ID": "fixture-message-013",
+                        "displayText": "Fixture text."
+                      }
+                    },
+                    "index": 0
+                  },
+                  {
+                    "HydratedButton": {
+                      "QuickReplyButton": {
+                        "ID": "fixture-message-014",
+                        "displayText": "Fixture text."
+                      }
+                    },
+                    "index": 1
+                  },
+                  {
+                    "HydratedButton": {
+                      "QuickReplyButton": {
+                        "ID": "fixture-message-015",
+                        "displayText": "Fixture text."
+                      }
+                    },
+                    "index": 2
+                  }
+                ],
+                "hydratedContentText": "Fixture text.",
+                "hydratedFooterText": "Fixture text."
+              }
+            }
+          },
+          "quotedType": 0,
+          "stanzaID": "fixture-message-018"
+        },
+        "selectedDisplayText": "Fixture text.",
+        "selectedID": "fixture-message-015",
+        "selectedIndex": 2
+      }
+    },
+    "NewsletterMeta": null,
+    "RawMessage": {
+      "deviceSentMessage": {
+        "destinationJID": "fixture-user-25@lid",
+        "message": {
+          "messageContextInfo": {
+            "deviceListMetadata": {
+              "senderKeyHash": "REDACTED_SENDERKEYHASH",
+              "senderTimestamp": 1
+            },
+            "deviceListMetadataVersion": 2,
+            "messageSecret": "REDACTED_MESSAGESECRET",
+            "threadID": [
+              {
+                "threadKey": {
+                  "ID": "fixture-message-018",
+                  "fromMe": false,
+                  "remoteJID": "fixture-user-25@lid"
+                },
+                "threadType": 1
+              }
+            ]
+          },
+          "templateButtonReplyMessage": {
+            "contextInfo": {
+              "participant": "fixture-user-25@lid",
+              "quotedMessage": {
+                "templateMessage": {
+                  "Format": {
+                    "HydratedFourRowTemplate": {
+                      "Title": {
+                        "HydratedTitleText": "Fixture text."
+                      },
+                      "hydratedButtons": [
+                        {
+                          "HydratedButton": {
+                            "QuickReplyButton": {
+                              "ID": "fixture-message-013",
+                              "displayText": "Fixture text."
+                            }
+                          },
+                          "index": 0
+                        },
+                        {
+                          "HydratedButton": {
+                            "QuickReplyButton": {
+                              "ID": "fixture-message-014",
+                              "displayText": "Fixture text."
+                            }
+                          },
+                          "index": 1
+                        },
+                        {
+                          "HydratedButton": {
+                            "QuickReplyButton": {
+                              "ID": "fixture-message-015",
+                              "displayText": "Fixture text."
+                            }
+                          },
+                          "index": 2
+                        }
+                      ],
+                      "hydratedContentText": "Fixture text.",
+                      "hydratedFooterText": "Fixture text."
+                    }
+                  },
+                  "hydratedTemplate": {
+                    "Title": {
+                      "HydratedTitleText": "Fixture text."
+                    },
+                    "hydratedButtons": [
+                      {
+                        "HydratedButton": {
+                          "QuickReplyButton": {
+                            "ID": "fixture-message-013",
+                            "displayText": "Fixture text."
+                          }
+                        },
+                        "index": 0
+                      },
+                      {
+                        "HydratedButton": {
+                          "QuickReplyButton": {
+                            "ID": "fixture-message-014",
+                            "displayText": "Fixture text."
+                          }
+                        },
+                        "index": 1
+                      },
+                      {
+                        "HydratedButton": {
+                          "QuickReplyButton": {
+                            "ID": "fixture-message-015",
+                            "displayText": "Fixture text."
+                          }
+                        },
+                        "index": 2
+                      }
+                    ],
+                    "hydratedContentText": "Fixture text.",
+                    "hydratedFooterText": "Fixture text."
+                  }
+                }
+              },
+              "quotedType": 0,
+              "stanzaID": "fixture-message-018"
+            },
+            "selectedDisplayText": "Fixture text.",
+            "selectedID": "fixture-message-015",
+            "selectedIndex": 2
+          }
+        }
+      },
+      "messageContextInfo": {
+        "deviceListMetadata": {
+          "senderKeyHash": "REDACTED_SENDERKEYHASH",
+          "senderTimestamp": 1
+        },
+        "deviceListMetadataVersion": 2,
+        "messageSecret": "REDACTED_MESSAGESECRET",
+        "threadID": [
+          {
+            "threadKey": {
+              "ID": "fixture-message-018",
+              "fromMe": false,
+              "remoteJID": "fixture-user-25@lid"
+            },
+            "threadType": 1
+          }
+        ]
+      }
+    },
+    "RetryCount": 0,
+    "SourceWebMsg": null,
+    "UnavailableRequestID": ""
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "added": {
+    "unhandled_message:15": {
+      "chat": "fixture-group-1@g.us",
+      "event_id": 15,
+      "info_type": "text",
+      "media_type": "",
+      "message_id": "fixture-message-024",
+      "payload": "{\"Info\": {\"AddressingMode\": \"lid\", \"BroadcastListOwner\": \"\", \"BroadcastRecipients\": null, \"Category\": \"\", \"Chat\": \"fixture-group-1@g.us\", \"DeviceSentMeta\": null, \"Edit\": \"1\", \"ID\": \"fixture-message-024\", \"IsFromMe\": false, \"IsGroup\": true, \"MediaType\": \"\", \"MsgBotInfo\": {\"EditSenderTimestampMS\": \"2025-01-01T12:00:00+00:00\", \"EditTargetID\": \"\", \"EditType\": \"\"}, \"MsgMetaInfo\": {\"DeprecatedLIDSession\": null, \"TargetChat\": \"\", \"TargetID\": \"\", \"TargetSender\": \"\", \"ThreadMessageID\": \"\", \"ThreadMessageSenderJID\": \"\"}, \"Multicast\": false, \"PushName\": \"Fixture text.\", \"RecipientAlt\": \"\", \"Sender\": \"fixture-user-30@lid\", \"SenderAlt\": \"fixture-user-31@s.whatsapp.net\", \"ServerID\": 1, \"Timestamp\": \"2025-01-01T12:00:00+00:00\", \"Type\": \"text\", \"VerifiedName\": null}, \"IsBotInvoke\": false, \"IsDocumentWithCaption\": false, \"IsEdit\": false, \"IsEphemeral\": false, \"IsLottieSticker\": false, \"IsViewOnce\": false, \"IsViewOnceV2\": false, \"IsViewOnceV2Extension\": false, \"Message\": {\"messageContextInfo\": {\"deviceListMetadata\": {\"recipientKeyHash\": \"REDACTED_RECIPIENTKEYHASH\", \"recipientTimestamp\": 1, \"senderKeyHash\": \"REDACTED_SENDERKEYHASH\", \"senderTimestamp\": 1}, \"deviceListMetadataVersion\": 2}, \"senderKeyDistributionMessage\": {\"axolotlSenderKeyDistributionMessage\": \"REDACTED_TOKEN\", \"groupID\": \"fixture-group-20@g.us\"}}, \"NewsletterMeta\": null, \"RawMessage\": {\"messageContextInfo\": {\"deviceListMetadata\": {\"recipientKeyHash\": \"REDACTED_RECIPIENTKEYHASH\", \"recipientTimestamp\": 1, \"senderKeyHash\": \"REDACTED_SENDERKEYHASH\", \"senderTimestamp\": 1}, \"deviceListMetadataVersion\": 2}, \"senderKeyDistributionMessage\": {\"axolotlSenderKeyDistributionMessage\": \"REDACTED_TOKEN\", \"groupID\": \"fixture-group-20@g.us\"}}, \"RetryCount\": 0, \"SourceWebMsg\": null, \"UnavailableRequestID\": \"\"}",
+      "sender": "fixture-user-30@lid",
+      "timestamp": "2025-01-01T12:00:00+00:00"
+    }
+  },
+  "changed": {},
+  "deleted": {}
+}

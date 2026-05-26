@@ -1,0 +1,16 @@
+{
+  "added": {
+    "unhandled_message:22": {
+      "chat": "fixture-group-1@g.us",
+      "event_id": 22,
+      "info_type": "media",
+      "media_type": "livelocation",
+      "message_id": "fixture-message-032",
+      "payload": "{\"Info\": {\"AddressingMode\": \"lid\", \"BroadcastListOwner\": \"\", \"BroadcastRecipients\": null, \"Category\": \"\", \"Chat\": \"fixture-group-1@g.us\", \"DeviceSentMeta\": null, \"Edit\": \"\", \"ID\": \"fixture-message-032\", \"IsFromMe\": false, \"IsGroup\": true, \"MediaType\": \"livelocation\", \"MsgBotInfo\": {\"EditSenderTimestampMS\": \"2025-01-01T12:00:00+00:00\", \"EditTargetID\": \"\", \"EditType\": \"\"}, \"MsgMetaInfo\": {\"DeprecatedLIDSession\": null, \"TargetChat\": \"\", \"TargetID\": \"\", \"TargetSender\": \"\", \"ThreadMessageID\": \"\", \"ThreadMessageSenderJID\": \"\"}, \"Multicast\": false, \"PushName\": \"Fixture text.\", \"RecipientAlt\": \"\", \"Sender\": \"fixture-user-7@lid\", \"SenderAlt\": \"fixture-user-9@s.whatsapp.net\", \"ServerID\": 1, \"Timestamp\": \"2025-01-01T12:00:00+00:00\", \"Type\": \"media\", \"VerifiedName\": null}, \"IsBotInvoke\": false, \"IsDocumentWithCaption\": false, \"IsEdit\": false, \"IsEphemeral\": false, \"IsLottieSticker\": false, \"IsViewOnce\": false, \"IsViewOnceV2\": false, \"IsViewOnceV2Extension\": false, \"Message\": {\"liveLocationMessage\": {\"JPEGThumbnail\": \"REDACTED_JPEGTHUMBNAIL\", \"degreesLatitude\": 0.0, \"degreesLongitude\": 0.0, \"sequenceNumber\": 1}, \"messageContextInfo\": {\"messageSecret\": \"REDACTED_MESSAGESECRET\"}}, \"NewsletterMeta\": null, \"RawMessage\": {\"liveLocationMessage\": {\"JPEGThumbnail\": \"REDACTED_JPEGTHUMBNAIL\", \"degreesLatitude\": 0.0, \"degreesLongitude\": 0.0, \"sequenceNumber\": 1}, \"messageContextInfo\": {\"messageSecret\": \"REDACTED_MESSAGESECRET\"}}, \"RetryCount\": 0, \"SourceWebMsg\": null, \"UnavailableRequestID\": \"\"}",
+      "sender": "fixture-user-7@lid",
+      "timestamp": "2025-01-01T12:00:00+00:00"
+    }
+  },
+  "changed": {},
+  "deleted": {}
+}

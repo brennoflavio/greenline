@@ -1,0 +1,89 @@
+{
+  "_meta": {
+    "info_type": "media",
+    "media_type": "contact_array",
+    "source": "sanitized from repository root kv.db",
+    "source_family": "unhandled_message"
+  },
+  "event_type": "Message",
+  "id": 21,
+  "payload": {
+    "Info": {
+      "AddressingMode": "lid",
+      "BroadcastListOwner": "",
+      "BroadcastRecipients": null,
+      "Category": "",
+      "Chat": "fixture-group-1@g.us",
+      "DeviceSentMeta": null,
+      "Edit": "",
+      "ID": "fixture-message-031",
+      "IsFromMe": false,
+      "IsGroup": true,
+      "MediaType": "contact_array",
+      "MsgBotInfo": {
+        "EditSenderTimestampMS": "2025-01-01T12:00:00+00:00",
+        "EditTargetID": "",
+        "EditType": ""
+      },
+      "MsgMetaInfo": {
+        "DeprecatedLIDSession": null,
+        "TargetChat": "",
+        "TargetID": "",
+        "TargetSender": "",
+        "ThreadMessageID": "",
+        "ThreadMessageSenderJID": ""
+      },
+      "Multicast": false,
+      "PushName": "Fixture text.",
+      "RecipientAlt": "",
+      "Sender": "fixture-user-33@lid",
+      "SenderAlt": "fixture-user-34@s.whatsapp.net",
+      "ServerID": 1,
+      "Timestamp": "2025-01-01T12:00:00+00:00",
+      "Type": "media",
+      "VerifiedName": null
+    },
+    "IsBotInvoke": false,
+    "IsDocumentWithCaption": false,
+    "IsEdit": false,
+    "IsEphemeral": false,
+    "IsLottieSticker": false,
+    "IsViewOnce": false,
+    "IsViewOnceV2": false,
+    "IsViewOnceV2Extension": false,
+    "Message": {
+      "messageContextInfo": {
+        "deviceListMetadata": {
+          "recipientKeyHash": "REDACTED_RECIPIENTKEYHASH",
+          "recipientTimestamp": 1,
+          "senderKeyHash": "REDACTED_SENDERKEYHASH",
+          "senderTimestamp": 1
+        },
+        "deviceListMetadataVersion": 2
+      },
+      "senderKeyDistributionMessage": {
+        "axolotlSenderKeyDistributionMessage": "REDACTED_TOKEN",
+        "groupID": "fixture-group-20@g.us"
+      }
+    },
+    "NewsletterMeta": null,
+    "RawMessage": {
+      "messageContextInfo": {
+        "deviceListMetadata": {
+          "recipientKeyHash": "REDACTED_RECIPIENTKEYHASH",
+          "recipientTimestamp": 1,
+          "senderKeyHash": "REDACTED_SENDERKEYHASH",
+          "senderTimestamp": 1
+        },
+        "deviceListMetadataVersion": 2
+      },
+      "senderKeyDistributionMessage": {
+        "axolotlSenderKeyDistributionMessage": "REDACTED_TOKEN",
+        "groupID": "fixture-group-20@g.us"
+      }
+    },
+    "RetryCount": 0,
+    "SourceWebMsg": null,
+    "UnavailableRequestID": ""
+  }
+}

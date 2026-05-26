@@ -1,0 +1,106 @@
+{
+  "_meta": {
+    "source": "sanitized from repository root kv.db",
+    "source_family": "message",
+    "stored_message_type": "deleted"
+  },
+  "event_type": "Message",
+  "id": 14,
+  "payload": {
+    "Info": {
+      "AddressingMode": "",
+      "BroadcastListOwner": "",
+      "BroadcastRecipients": null,
+      "Category": "",
+      "Chat": "fixture-chat-1@s.whatsapp.net",
+      "DeviceSentMeta": null,
+      "Edit": "7",
+      "ID": "fixture-message-022",
+      "IsFromMe": false,
+      "IsGroup": false,
+      "MediaType": "",
+      "MsgBotInfo": {
+        "EditSenderTimestampMS": "2025-01-01T12:00:00+00:00",
+        "EditTargetID": "",
+        "EditType": ""
+      },
+      "MsgMetaInfo": {
+        "DeprecatedLIDSession": null,
+        "TargetChat": "",
+        "TargetID": "",
+        "TargetSender": "",
+        "ThreadMessageID": "",
+        "ThreadMessageSenderJID": ""
+      },
+      "Multicast": false,
+      "PushName": "Fixture text.",
+      "RecipientAlt": "",
+      "Sender": "fixture-user-29@lid",
+      "SenderAlt": "fixture-user-1@s.whatsapp.net",
+      "ServerID": 1,
+      "Timestamp": "2025-01-01T12:00:00+00:00",
+      "Type": "text",
+      "VerifiedName": {
+        "Certificate": {
+          "details": "REDACTED_DETAILS",
+          "signature": "REDACTED_SIGNATURE"
+        },
+        "Details": {
+          "issuer": "smb:wa",
+          "serial": 1,
+          "verifiedName": "Fixture text."
+        }
+      }
+    },
+    "IsBotInvoke": false,
+    "IsDocumentWithCaption": false,
+    "IsEdit": false,
+    "IsEphemeral": false,
+    "IsLottieSticker": false,
+    "IsViewOnce": false,
+    "IsViewOnceV2": false,
+    "IsViewOnceV2Extension": false,
+    "Message": {
+      "messageContextInfo": {
+        "deviceListMetadata": {
+          "recipientKeyHash": "REDACTED_RECIPIENTKEYHASH",
+          "recipientTimestamp": 1,
+          "senderKeyHash": "REDACTED_SENDERKEYHASH",
+          "senderTimestamp": 1
+        },
+        "deviceListMetadataVersion": 2
+      },
+      "protocolMessage": {
+        "key": {
+          "ID": "fixture-message-023",
+          "fromMe": true,
+          "remoteJID": "fixture-user-19@lid"
+        },
+        "type": 0
+      }
+    },
+    "NewsletterMeta": null,
+    "RawMessage": {
+      "messageContextInfo": {
+        "deviceListMetadata": {
+          "recipientKeyHash": "REDACTED_RECIPIENTKEYHASH",
+          "recipientTimestamp": 1,
+          "senderKeyHash": "REDACTED_SENDERKEYHASH",
+          "senderTimestamp": 1
+        },
+        "deviceListMetadataVersion": 2
+      },
+      "protocolMessage": {
+        "key": {
+          "ID": "fixture-message-023",
+          "fromMe": true,
+          "remoteJID": "fixture-user-19@lid"
+        },
+        "type": 0
+      }
+    },
+    "RetryCount": 0,
+    "SourceWebMsg": null,
+    "UnavailableRequestID": ""
+  }
+}
