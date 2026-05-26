@@ -2,8 +2,8 @@ from dataclasses import asdict
 from typing import Any, Dict, Optional
 
 from constants import GROUP_JID_SUFFIX, WHATSAPP_JID_SUFFIX
+from greenline.contracts.daemon import daemon_client
 from models import ChatListItem, ReadReceipt
-from rpc import DaemonRPC
 from ut_components.kv import KV
 
 _CHAT_RUNTIME_CACHE: Dict[str, Dict[str, Any]] = {}
@@ -107,31 +107,39 @@ def canonicalize_contact_jid(
     *,
     jid_map: Optional[Dict[str, str]] = None,
     kv: Optional[KV] = None,
-    rpc: Optional[DaemonRPC] = None,
+    rpc: Optional[Any] = None,
 ) -> str:
     if not _is_contact_identity_jid(jid):
         return jid
 
     stripped_jid = _strip_device_suffix(str(jid))
-    resolved = jid_map.get(stripped_jid) or jid_map.get(jid) if jid_map is not None else None
+    resolved: str | None = None
+    if jid_map is not None:
+        resolved = jid_map.get(stripped_jid)
+        if resolved is None:
+            resolved = jid_map.get(jid)
 
-    if not resolved and stripped_jid.endswith(_LID_JID_SUFFIX):
+    if resolved is None and stripped_jid.endswith(_LID_JID_SUFFIX):
         cached = None
         if kv is None:
             with KV() as lid_kv:
-                cached = lid_kv.get(f"lid_map:{stripped_jid}") or lid_kv.get(f"lid_map:{jid}")
+                cached = lid_kv.get(f"lid_map:{stripped_jid}")
+                if cached is None:
+                    cached = lid_kv.get(f"lid_map:{jid}")
         else:
-            cached = kv.get(f"lid_map:{stripped_jid}") or kv.get(f"lid_map:{jid}")
-        if cached:
+            cached = kv.get(f"lid_map:{stripped_jid}")
+            if cached is None:
+                cached = kv.get(f"lid_map:{jid}")
+        if cached is not None:
             resolved = str(cached)
 
-    if not resolved and stripped_jid.endswith(_LID_JID_SUFFIX):
+    if resolved is None and stripped_jid.endswith(_LID_JID_SUFFIX):
         try:
-            resolved = rpc.ensure_jid(stripped_jid) if rpc is not None else DaemonRPC().ensure_jid(stripped_jid)
+            resolved = rpc.ensure_jid(stripped_jid) if rpc is not None else daemon_client().ensure_jid(stripped_jid)
         except Exception:
             resolved = stripped_jid
 
-    return _strip_device_suffix(str(resolved or stripped_jid))
+    return _strip_device_suffix(str(resolved if resolved is not None else stripped_jid))
 
 
 def upsert_identity_chat(

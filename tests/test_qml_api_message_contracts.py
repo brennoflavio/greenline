@@ -14,6 +14,7 @@ from qml_contract_helpers import (
 )
 
 import main
+from greenline.contracts.validation import BoundaryValidationError
 from models import MessageType, ReadReceipt
 from ut_components.kv import KV
 
@@ -31,7 +32,13 @@ def test_get_messages_contract_pagination_and_sender_reply_fields() -> None:
     seed_sender_identity(DEFAULT_SENDER_ID, name="Alice", photo="file:///tmp/alice.jpg")
     seed_chat(DEFAULT_CHAT_ID)
     seed_message(DEFAULT_CHAT_ID, "reply-1", is_outgoing=True, text="Original", timestamp_unix=1)
-    seed_message(DEFAULT_CHAT_ID, "message-1", is_outgoing=False, text="Incoming", timestamp_unix=2)
+    seed_message(
+        DEFAULT_CHAT_ID,
+        "message-1",
+        is_outgoing=False,
+        text="Incoming",
+        timestamp_unix=2,
+    )
     seed_message(DEFAULT_CHAT_ID, "message-2", is_outgoing=False, text="Next", timestamp_unix=3)
 
     first_page = main.get_messages(DEFAULT_CHAT_ID, "", 1)
@@ -50,8 +57,20 @@ def test_get_messages_contract_pagination_and_sender_reply_fields() -> None:
 
 def test_mark_messages_as_read_contract_and_chat_emit(fake_daemon_rpc, fake_pyotherside_module) -> None:
     seed_chat(DEFAULT_CHAT_ID, unread_count=2)
-    seed_message(DEFAULT_CHAT_ID, "incoming-1", is_outgoing=False, read_receipt=ReadReceipt.NONE, timestamp_unix=1)
-    seed_message(DEFAULT_CHAT_ID, "incoming-2", is_outgoing=False, read_receipt=ReadReceipt.NONE, timestamp_unix=2)
+    seed_message(
+        DEFAULT_CHAT_ID,
+        "incoming-1",
+        is_outgoing=False,
+        read_receipt=ReadReceipt.NONE,
+        timestamp_unix=1,
+    )
+    seed_message(
+        DEFAULT_CHAT_ID,
+        "incoming-2",
+        is_outgoing=False,
+        read_receipt=ReadReceipt.NONE,
+        timestamp_unix=2,
+    )
 
     result = main.mark_messages_as_read(DEFAULT_CHAT_ID)
 
@@ -77,18 +96,52 @@ def test_send_text_message_contract_and_pending_outbox_emits(fake_daemon_rpc, fa
     assert message_updates[-1][0]["id"] == "sent-message"
 
 
+def test_send_text_message_boundary_failure_remains_pending(fake_daemon_rpc, fake_pyotherside_module) -> None:
+    seed_chat(DEFAULT_CHAT_ID)
+    seed_sender_identity(DEFAULT_SENDER_ID)
+    fake_daemon_rpc.send_message_exception = BoundaryValidationError("bad daemon reply")
+
+    result = main.send_text_message(DEFAULT_CHAT_ID, "Hello", "pending-boundary-1")
+
+    validate_api_response("send_text_message", result)
+    assert result["success"] is True
+    with KV() as kv:
+        outbox_entry = kv.get(f"pending-outbox:{DEFAULT_CHAT_ID}:pending-boundary-1")
+        indexed_key = kv.get(f"message_index:{DEFAULT_CHAT_ID}:pending-boundary-1")
+        stored_message = kv.get(indexed_key)
+    assert outbox_entry["attempt_count"] == 1
+    assert outbox_entry["next_attempt_at"] >= int(time.time())
+    assert stored_message["send_status"] == "pending"
+    _assert_all_contract_events(fake_pyotherside_module)
+
+
 def test_send_media_message_contracts(tmp_path, fake_pyotherside_module) -> None:
     seed_chat(DEFAULT_CHAT_ID)
     media_cases = [
-        ("send_image_message", main.send_image_message, "image.jpg", [DEFAULT_CHAT_ID, "", "", "temp-image", None]),
-        ("send_video_message", main.send_video_message, "video.mp4", [DEFAULT_CHAT_ID, "", "", "temp-video", None]),
+        (
+            "send_image_message",
+            main.send_image_message,
+            "image.jpg",
+            [DEFAULT_CHAT_ID, "", "", "temp-image", None],
+        ),
+        (
+            "send_video_message",
+            main.send_video_message,
+            "video.mp4",
+            [DEFAULT_CHAT_ID, "", "", "temp-video", None],
+        ),
         (
             "send_sticker_message",
             main.send_sticker_message,
             "sticker.webp",
             [DEFAULT_CHAT_ID, "", "temp-sticker", None],
         ),
-        ("send_contact_message", main.send_contact_message, "contact.vcf", [DEFAULT_CHAT_ID, "", "temp-contact", None]),
+        (
+            "send_contact_message",
+            main.send_contact_message,
+            "contact.vcf",
+            [DEFAULT_CHAT_ID, "", "temp-contact", None],
+        ),
     ]
     for api_name, function, file_name, args in media_cases:
         if file_name.endswith(".vcf"):
@@ -143,7 +196,13 @@ def test_edit_text_message_contract_success_and_failure(fake_daemon_rpc, fake_py
 
 def test_delete_message_contract_success_and_failure(fake_daemon_rpc, fake_pyotherside_module) -> None:
     seed_chat(DEFAULT_CHAT_ID)
-    seed_message(DEFAULT_CHAT_ID, "deletable", is_outgoing=True, read_receipt=ReadReceipt.SENT, reply_to_id="")
+    seed_message(
+        DEFAULT_CHAT_ID,
+        "deletable",
+        is_outgoing=True,
+        read_receipt=ReadReceipt.SENT,
+        reply_to_id="",
+    )
 
     success = main.delete_message(DEFAULT_CHAT_ID, "deletable")
 

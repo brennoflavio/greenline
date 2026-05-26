@@ -13,6 +13,7 @@ from constants import (
     STATUS_BROADCAST_JID,
     WHATSAPP_JID_SUFFIX,
 )
+from greenline.contracts.daemon import daemon_client
 from greenline.store.identity import canonicalize_contact_jid, remember_chat
 from greenline.store.media import (
     _contact_preview,
@@ -26,7 +27,6 @@ from greenline.store.media import (
 from greenline.store.mentions import quoted_message_template, template_mention_text
 from greenline.store.repository import message_index_key, message_storage_key
 from models import ChatListItem, Message, MessageType, ReadReceipt
-from rpc import DaemonRPC
 from ut_components.kv import KV
 from ut_components.utils import enum_to_str as _enum_to_str
 from whatsmeow_types import (
@@ -106,7 +106,7 @@ def _build_jid_map(evt: HistorySyncEvent) -> Dict[str, str]:
             jids.add(pn.ID)
 
     jid_map: Dict[str, str] = dict(lid_to_pn)
-    rpc = DaemonRPC()
+    rpc = daemon_client()
     for jid in jids:
         jid_map[jid] = canonicalize_contact_jid(jid, jid_map=lid_to_pn, rpc=rpc)
 

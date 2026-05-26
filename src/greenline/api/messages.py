@@ -10,6 +10,7 @@ from greenline.api.common import (
     SuccessResponse,
     ui_message,
 )
+from greenline.contracts.daemon import daemon_client
 from greenline.store.media import resolve_media_message_content
 from greenline.store.mentions import validate_mention_spans
 from greenline.store.messages import (
@@ -25,7 +26,6 @@ from greenline.store.repository import (
 )
 from models import ChatListItem, Message, MessagesResponse, MessageType, ReadReceipt
 from pending_outbox import queue_and_attempt_send
-from rpc import DaemonRPC
 from unread_counter import decrement_unread_total, get_unread_total
 from ut_components import mimetypes as mime_types
 from ut_components.config import get_cache_path
@@ -252,7 +252,7 @@ def mark_messages_as_read(chat_id: str) -> SuccessResponse:
             sender = str(value.get("sender_raw") or value.get("sender") or "")
             unread_by_sender.setdefault(sender, []).append(value["id"])
 
-    rpc = DaemonRPC()
+    rpc = daemon_client()
     for sender, ids in unread_by_sender.items():
         rpc.mark_read(chat_id, ids, sender_jid=sender)
 
@@ -348,7 +348,7 @@ def edit_text_message(chat_id: str, message_id: str, text: str) -> SuccessRespon
     reply_context = _resolve_message_reply_context(chat_id, entry)
 
     try:
-        rpc = DaemonRPC()
+        rpc = daemon_client()
         rpc.edit_message(chat_id, message_id, normalized_text, reply_context=reply_context)
     except Exception as error:
         return SuccessResponse(success=False, message=str(error))
@@ -386,7 +386,7 @@ def delete_message(chat_id: str, message_id: str) -> SuccessResponse:
         return SuccessResponse(success=False, message="Message already deleted")
 
     try:
-        DaemonRPC().delete_message(chat_id, message_id)
+        daemon_client().delete_message(chat_id, message_id)
     except Exception as error:
         return SuccessResponse(success=False, message=str(error))
 
@@ -660,7 +660,7 @@ def download_media(chat_id: str, message_id: str, media_type: str) -> DownloadMe
         return DownloadMediaResponse(success=False, media_path="", message="Missing media download info")
 
     try:
-        file_path = DaemonRPC().download_media(
+        file_path = daemon_client().download_media(
             direct_path=direct_path,
             media_key=media_key,
             file_enc_sha256=file_enc_sha256,

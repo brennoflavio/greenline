@@ -3,6 +3,7 @@ from dataclasses import asdict, dataclass, field
 from daemon_types import Contact as DaemonContact
 from greenline import qml_events
 from greenline.api.common import SuccessResponse, ui_chat
+from greenline.contracts.daemon import daemon_client
 from greenline.store.identity import canonicalize_contact_jid
 from greenline.store.mentions import build_mention_candidate, validate_mention_spans
 from models import (
@@ -12,7 +13,6 @@ from models import (
     ContactItem,
     ContactListResponse,
 )
-from rpc import DaemonRPC
 from ut_components.crash import crash_reporter
 from ut_components.kv import KV
 from ut_components.utils import dataclass_to_dict
@@ -52,7 +52,7 @@ def _build_contact_item(contact: DaemonContact) -> ContactItem:
 @dataclass_to_dict
 def get_contact_list() -> ContactListResponse:
     try:
-        reply = DaemonRPC().get_contacts()
+        reply = daemon_client().get_contacts()
         contacts = [_build_contact_item(contact) for contact in reply.Contacts]
         return ContactListResponse(success=True, contacts=contacts, message="")
     except Exception as error:
@@ -102,7 +102,7 @@ def get_chat_info(chat_id: str) -> dict[str, object]:
 @dataclass_to_dict
 def get_group_mention_candidates(chat_id: str) -> GroupMentionCandidatesResponse:
     try:
-        participants = DaemonRPC().get_group_participants(chat_id).Participants
+        participants = daemon_client().get_group_participants(chat_id).Participants
         candidates = []
         for participant in participants:
             candidate = build_mention_candidate(participant.jid, participant.display_name)
@@ -163,7 +163,7 @@ def toggle_mute(chat_id: str) -> SuccessResponse:
         chat = ChatListItem(**data)
         new_muted = not chat.muted
 
-    DaemonRPC().set_muted(chat_id, new_muted)
+    daemon_client().set_muted(chat_id, new_muted)
 
     with KV() as kv:
         data = kv.get(f"chat:{chat_id}")

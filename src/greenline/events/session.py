@@ -1,8 +1,9 @@
 from datetime import timedelta
 from typing import Any, Dict, Optional
 
+from greenline.contracts.daemon import daemon_client
 from greenline.session import SessionStatusResponse, build_session_status_response
-from rpc import DaemonNotReadyError, DaemonRPC, DaemonTimeoutError
+from rpc import DaemonNotReadyError, DaemonTimeoutError
 from ut_components.event import Event
 
 LAST_EVENT_ID_KEY = "daemon:last_event_id"
@@ -17,7 +18,7 @@ class SessionStatusEvent(Event):
 
     def trigger(self, metadata: Optional[Dict[str, Any]]) -> Optional[SessionStatusResponse]:
         try:
-            result = DaemonRPC().get_session_status()
+            result = daemon_client().get_session_status()
         except (ConnectionRefusedError, DaemonNotReadyError, DaemonTimeoutError):
             return None
 

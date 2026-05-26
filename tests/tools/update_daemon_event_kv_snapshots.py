@@ -51,20 +51,11 @@ def configure_runtime(root: Path) -> None:
     fake_pyotherside.sent.clear()
     FakeDaemonRPC.reset()
 
-    import greenline.events.chat_sync as chat_sync
-    import greenline.events.handlers as handlers
+    import greenline.contracts.daemon as daemon_boundary
     import greenline.store.identity as identity
-    import greenline.store.mentions as mentions
-    import history_sync
-    import rpc
 
     identity.clear_chat_runtime_cache()
-    rpc.DaemonRPC = FakeDaemonRPC
-    chat_sync.DaemonRPC = FakeDaemonRPC
-    handlers.DaemonRPC = FakeDaemonRPC
-    identity.DaemonRPC = FakeDaemonRPC
-    mentions.DaemonRPC = FakeDaemonRPC
-    history_sync.DaemonRPC = FakeDaemonRPC
+    daemon_boundary.set_daemon_client_factory(lambda: FakeDaemonRPC())
 
 
 def update_snapshots() -> None:

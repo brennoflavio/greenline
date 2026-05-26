@@ -97,6 +97,7 @@ class FakeDaemonRPC:
     pair_phone_code: str = "12345678"
     pair_phone_calls: list[str] = []
     ping_result: str = "pong"
+    version: daemon_types.VersionReply = daemon_types.VersionReply(GitCommit="test")
     phone_numbers: dict[str, str] = {}
     get_phone_number_calls: list[str] = []
     muted_until: dict[str, int] = {}
@@ -105,7 +106,10 @@ class FakeDaemonRPC:
     clear_chat_notifications_calls: list[list[str]] = []
     set_notification_counter_calls: list[dict[str, Any]] = []
     send_message_calls: list[dict[str, Any]] = []
-    send_message_result: dict[str, Any] = {"MessageID": "sent-message", "Timestamp": 1_700_000_000}
+    send_message_result: daemon_types.SendMessageReply = daemon_types.SendMessageReply(
+        MessageID="sent-message", Timestamp=1_700_000_000
+    )
+    send_message_exception: BaseException | None = None
     edit_message_calls: list[dict[str, Any]] = []
     delete_message_calls: list[dict[str, Any]] = []
     send_presence_calls: list[bool] = []
@@ -129,6 +133,7 @@ class FakeDaemonRPC:
         cls.pair_phone_code = "12345678"
         cls.pair_phone_calls = []
         cls.ping_result = "pong"
+        cls.version = daemon_types.VersionReply(GitCommit="test")
         cls.phone_numbers = {}
         cls.get_phone_number_calls = []
         cls.muted_until = {}
@@ -137,7 +142,8 @@ class FakeDaemonRPC:
         cls.clear_chat_notifications_calls = []
         cls.set_notification_counter_calls = []
         cls.send_message_calls = []
-        cls.send_message_result = {"MessageID": "sent-message", "Timestamp": 1_700_000_000}
+        cls.send_message_result = daemon_types.SendMessageReply(MessageID="sent-message", Timestamp=1_700_000_000)
+        cls.send_message_exception = None
         cls.edit_message_calls = []
         cls.delete_message_calls = []
         cls.send_presence_calls = []
@@ -182,6 +188,9 @@ class FakeDaemonRPC:
     def ping(self) -> str:
         return self.__class__.ping_result
 
+    def get_version(self) -> daemon_types.VersionReply:
+        return self.__class__.version
+
     def get_phone_number(self, jid: str) -> str:
         self.__class__.get_phone_number_calls.append(jid)
         return self.__class__.phone_numbers.get(jid, "")
@@ -195,7 +204,11 @@ class FakeDaemonRPC:
 
     def mark_read(self, chat_id: str, message_ids: list[str], sender_jid: str = "") -> None:
         self.__class__.mark_read_calls.append(
-            {"chat_id": chat_id, "message_ids": list(message_ids), "sender_jid": sender_jid}
+            {
+                "chat_id": chat_id,
+                "message_ids": list(message_ids),
+                "sender_jid": sender_jid,
+            }
         )
 
     def clear_chat_notifications(self, chat_ids: list[str]) -> None:
@@ -204,9 +217,11 @@ class FakeDaemonRPC:
     def set_notification_counter(self, count: int, visible: bool) -> None:
         self.__class__.set_notification_counter_calls.append({"count": count, "visible": visible})
 
-    def send_message(self, chat_id: str, message_type: str, **kwargs: Any) -> dict[str, Any]:
+    def send_message(self, chat_id: str, message_type: str, **kwargs: Any) -> daemon_types.SendMessageReply:
         self.__class__.send_message_calls.append({"chat_id": chat_id, "message_type": message_type, **kwargs})
-        return dict(self.__class__.send_message_result)
+        if self.__class__.send_message_exception is not None:
+            raise self.__class__.send_message_exception
+        return self.__class__.send_message_result
 
     def edit_message(
         self,
@@ -216,7 +231,12 @@ class FakeDaemonRPC:
         reply_context: dict[str, object] | None = None,
     ) -> None:
         self.__class__.edit_message_calls.append(
-            {"chat_id": chat_id, "message_id": message_id, "text": text, "reply_context": reply_context}
+            {
+                "chat_id": chat_id,
+                "message_id": message_id,
+                "text": text,
+                "reply_context": reply_context,
+            }
         )
 
     def delete_message(self, chat_id: str, message_id: str) -> None:
@@ -277,16 +297,16 @@ class FakeDaemonRPC:
         path.write_bytes(b"")
         return str(path)
 
-    def sync_avatar(self, jid: str) -> str:
+    def sync_avatar(self, jid: str) -> daemon_types.SyncAvatarReply:
         self.__class__.sync_avatar_calls.append(jid)
         configured = self.__class__.sync_avatar_paths.get(jid)
         if configured is not None:
-            return configured
+            return daemon_types.SyncAvatarReply(AvatarPath=configured)
         cache_root = Path(os.environ["XDG_CACHE_HOME"]) / "greenline.tests" / "avatars"
         cache_root.mkdir(parents=True, exist_ok=True)
         path = cache_root / f"{jid.replace('/', '_')}.jpg"
         path.write_bytes(b"")
-        return str(path)
+        return daemon_types.SyncAvatarReply(AvatarPath=str(path))
 
 
 @pytest.fixture(autouse=True)
@@ -316,36 +336,22 @@ def isolated_greenline_runtime(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     FakeDaemonRPC.reset()
     FakeDaemonService.reset()
 
-    import greenline.api.chats as api_chats
     import greenline.api.daemon as api_daemon
-    import greenline.api.messages as api_messages
-    import greenline.events.chat_sync as chat_sync
-    import greenline.events.handlers as handlers
-    import greenline.events.session as session_events
+    import greenline.contracts.daemon as daemon_boundary
     import greenline.store.identity as identity
-    import greenline.store.mentions as mentions
-    import history_sync
-    import pending_outbox
-    import rpc
 
     identity.clear_chat_runtime_cache()
-    monkeypatch.setattr(rpc, "DaemonRPC", FakeDaemonRPC)
-    monkeypatch.setattr(api_chats, "DaemonRPC", FakeDaemonRPC)
-    monkeypatch.setattr(api_daemon, "DaemonRPC", FakeDaemonRPC)
-    monkeypatch.setattr(api_messages, "DaemonRPC", FakeDaemonRPC)
-    monkeypatch.setattr(chat_sync, "DaemonRPC", FakeDaemonRPC)
-    monkeypatch.setattr(handlers, "DaemonRPC", FakeDaemonRPC)
-    monkeypatch.setattr(session_events, "DaemonRPC", FakeDaemonRPC)
-    monkeypatch.setattr(identity, "DaemonRPC", FakeDaemonRPC)
-    monkeypatch.setattr(mentions, "DaemonRPC", FakeDaemonRPC)
-    monkeypatch.setattr(history_sync, "DaemonRPC", FakeDaemonRPC)
-    monkeypatch.setattr(pending_outbox, "DaemonRPC", FakeDaemonRPC)
+    daemon_boundary.set_daemon_client_factory(lambda: FakeDaemonRPC())
     monkeypatch.setattr(api_daemon, "ensure_daemon_version", FakeDaemonService.ensure_daemon_version)
     monkeypatch.setattr(
-        api_daemon, "install_background_service_files", FakeDaemonService.install_background_service_files
+        api_daemon,
+        "install_background_service_files",
+        FakeDaemonService.install_background_service_files,
     )
     monkeypatch.setattr(
-        api_daemon, "remove_background_service_files", FakeDaemonService.remove_background_service_files
+        api_daemon,
+        "remove_background_service_files",
+        FakeDaemonService.remove_background_service_files,
     )
     monkeypatch.setattr(api_daemon, "is_daemon_installed", FakeDaemonService.is_daemon_installed)
     monkeypatch.setattr(api_daemon, "is_daemon_active", FakeDaemonService.is_daemon_active)
@@ -353,6 +359,7 @@ def isolated_greenline_runtime(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
 
     yield
 
+    daemon_boundary.set_daemon_client_factory(None)
     identity.clear_chat_runtime_cache()
 
 

@@ -4,6 +4,7 @@ from datetime import timedelta
 from typing import Any, Dict, Optional
 
 from greenline import qml_events
+from greenline.contracts.daemon import daemon_client
 from greenline.events.handlers import dispatch_event
 from greenline.events.session import LAST_EVENT_ID_KEY
 from greenline.store.identity import (
@@ -13,7 +14,7 @@ from greenline.store.identity import (
 )
 from greenline.ui import dataclass_to_ui_dict
 from models import ChatListItem, ReadReceipt
-from rpc import DaemonNotReadyError, DaemonRPC, DaemonTimeoutError, RateLimitError
+from rpc import DaemonNotReadyError, DaemonTimeoutError, RateLimitError
 from ut_components.event import Event
 from ut_components.kv import KV
 
@@ -23,7 +24,7 @@ def process_events_once(batch_limit: int = 50) -> None:
         with KV() as kv:
             last_id = kv.get(LAST_EVENT_ID_KEY, default=0)
 
-        reply = DaemonRPC().list_events(after_id=last_id, limit=batch_limit)
+        reply = daemon_client().list_events(after_id=last_id, limit=batch_limit)
         if not reply.Events:
             return
 
@@ -48,7 +49,7 @@ def process_events_once(batch_limit: int = 50) -> None:
                 max_id = event.id
 
         if max_id > last_id:
-            DaemonRPC().delete_events(up_to_id=max_id)
+            daemon_client().delete_events(up_to_id=max_id)
             with KV() as kv:
                 kv.put(LAST_EVENT_ID_KEY, max_id)
     except (ConnectionRefusedError, DaemonNotReadyError, DaemonTimeoutError):
@@ -74,7 +75,7 @@ class DaemonEventHandler(Event):
 
         try:
             while True:
-                reply = DaemonRPC().list_events(after_id=last_id, limit=batch_limit)
+                reply = daemon_client().list_events(after_id=last_id, limit=batch_limit)
                 if not reply.Events:
                     break
 
@@ -119,7 +120,7 @@ class DaemonEventHandler(Event):
                     qml_events.emit_chat_presence(chat_presence_updates)
 
                 if max_id > last_id:
-                    DaemonRPC().delete_events(up_to_id=max_id)
+                    daemon_client().delete_events(up_to_id=max_id)
                     with KV() as kv:
                         kv.put(LAST_EVENT_ID_KEY, max_id)
                     last_id = max_id
@@ -162,13 +163,13 @@ class ChatListUpdateEvent(Event):
     @staticmethod
     def _is_muted(jid: str) -> bool:
         try:
-            reply = DaemonRPC().get_chat_settings(jid)
-            return reply.MutedUntil != 0
+            reply = daemon_client().get_chat_settings(jid)
+            return bool(reply.MutedUntil != 0)
         except Exception:
             return False
 
     def _sync_contacts(self, chat_updates: list[dict[str, Any]], photo_updates: list[dict[str, str]]) -> None:
-        reply = DaemonRPC().get_contacts()
+        reply = daemon_client().get_contacts()
         if not reply.Contacts:
             return
 
@@ -228,7 +229,7 @@ class ChatListUpdateEvent(Event):
                     chat_updates.append(dataclass_to_ui_dict(chat))
 
     def _sync_groups(self, chat_updates: list[dict[str, Any]], photo_updates: list[dict[str, str]]) -> None:
-        reply = DaemonRPC().get_groups()
+        reply = daemon_client().get_groups()
         if not reply.Groups:
             return
 

@@ -102,10 +102,10 @@ def ensure_daemon_version() -> bool:
     except FileNotFoundError:
         return service_updated
 
-    from rpc import DaemonRPC
+    from greenline.contracts.daemon import daemon_client
 
     try:
-        result = DaemonRPC().get_version()
+        result = daemon_client().get_version()
         current = result.GitCommit
     except Exception:
         current = ""
@@ -117,7 +117,7 @@ def ensure_daemon_version() -> bool:
     for _ in range(10):
         time.sleep(0.5)
         try:
-            DaemonRPC().ping()
+            daemon_client().ping()
             return True
         except Exception:
             continue

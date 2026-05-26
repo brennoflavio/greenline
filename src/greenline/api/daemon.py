@@ -12,12 +12,12 @@ from daemon import (
     run_subprocess,
 )
 from greenline.api.common import SuccessResponse
+from greenline.contracts.daemon import daemon_client
 from greenline.events.chat_sync import ChatListUpdateEvent, DaemonEventHandler
 from greenline.events.session import LAST_EVENT_ID_KEY, SessionStatusEvent
 from greenline.session import SessionStatusResponse, build_session_status_response
 from greenline.store.identity import clear_chat_runtime_cache
 from pending_outbox import PendingMessageRetryEvent
-from rpc import DaemonRPC
 from unread_counter import reconcile_unread_total
 from ut_components.config import get_cache_path, get_config_path
 from ut_components.crash import crash_reporter
@@ -74,7 +74,7 @@ def get_sync_status() -> bool:
     try:
         with KV() as kv:
             last_id = kv.get(LAST_EVENT_ID_KEY, default=0)
-        reply = DaemonRPC().list_events(after_id=last_id, limit=1)
+        reply = daemon_client().list_events(after_id=last_id, limit=1)
         return bool(reply.Events)
     except Exception:
         return False
@@ -96,7 +96,7 @@ def start_event_loop() -> None:
 @dataclass_to_dict
 def ping_daemon() -> SuccessResponse:
     try:
-        result = DaemonRPC().ping()
+        result = daemon_client().ping()
         return SuccessResponse(success=True, message=result)
     except Exception as error:
         return SuccessResponse(success=False, message=str(error))
@@ -111,7 +111,7 @@ def check_daemon_status() -> DaemonStatusResponse:
         for _ in range(10):
             time.sleep(0.5)
             try:
-                DaemonRPC().ping()
+                daemon_client().ping()
                 break
             except Exception:
                 continue
@@ -125,7 +125,7 @@ def check_daemon_status() -> DaemonStatusResponse:
 @dataclass_to_dict
 def get_session_status() -> SessionStatusResponse:
     try:
-        result = DaemonRPC().get_session_status()
+        result = daemon_client().get_session_status()
         return build_session_status_response(
             logged_in=result.LoggedIn,
             qr_image_base64=result.QRImage,
@@ -138,7 +138,7 @@ def get_session_status() -> SessionStatusResponse:
 @dataclass_to_dict
 def pair_phone(phone_number: str) -> PairPhoneResponse:
     try:
-        reply = DaemonRPC().pair_phone(phone_number)
+        reply = daemon_client().pair_phone(phone_number)
         return PairPhoneResponse(success=True, code=reply.Code, message="")
     except Exception as error:
         return PairPhoneResponse(success=False, code="", message=str(error))
@@ -193,7 +193,7 @@ def clear_data() -> ClearDataResponse:
     dispatcher.stop()  # type: ignore[no-untyped-call]
 
     try:
-        DaemonRPC().logout()
+        daemon_client().logout()
     except Exception:
         pass
 
@@ -214,7 +214,7 @@ def clear_data() -> ClearDataResponse:
 @dataclass_to_dict
 def get_phone_number(jid: str) -> PhoneNumberResponse:
     try:
-        phone = DaemonRPC().get_phone_number(jid)
+        phone = daemon_client().get_phone_number(jid)
         return PhoneNumberResponse(success=True, phone_number=phone)
     except Exception:
         return PhoneNumberResponse(success=True, phone_number="")
@@ -222,7 +222,7 @@ def get_phone_number(jid: str) -> PhoneNumberResponse:
 
 def send_presence(available: bool) -> None:
     try:
-        DaemonRPC().send_presence(available)
+        daemon_client().send_presence(available)
     except Exception:
         pass
 
@@ -231,6 +231,6 @@ def subscribe_presence(chat_id: str) -> None:
     if "@g.us" in chat_id:
         return
     try:
-        DaemonRPC().subscribe_presence(chat_id)
+        daemon_client().subscribe_presence(chat_id)
     except Exception:
         pass

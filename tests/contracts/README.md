@@ -40,14 +40,31 @@ uv run pytest
 4. Add an event contract test from a real emitter path.
 5. Register the QML handler with a literal `setHandler('event-name', ...)` so the scanner can discover it.
 
+## Daemon RPC boundary workflow
+
+App code must not instantiate `DaemonRPC()` or import the low-level transport directly. The only runtime owner of daemon socket access is `src/greenline/contracts/daemon.py`; `src/rpc.py` remains the low-level socket implementation and exception source.
+
+When adding or changing a daemon RPC:
+
+1. Add daemon-shaped request dataclasses to `src/greenline/contracts/daemon.py` for every request payload field sent to the daemon.
+2. Reuse reply dataclasses from `src/daemon_types.py` when they already exist, or add a small reply dataclass in the boundary for simple daemon results.
+3. Encode requests with `greenline.contracts.codecs.encode_dataclass(...)` and decode typed replies with `decode_dataclass(...)` so validation failures are logged centrally.
+4. Expose the method on `GreenlineDaemon` and call it from app code with `daemon_client()`.
+5. Update `tests/conftest.py`'s fake daemon client state if high-level tests need the method.
+6. Add or extend focused boundary tests in `tests/test_daemon_boundary.py` for request shape, reply decoding, and malformed reply logging.
+7. Run `uv run python tests/tools/check_daemon_rpc_boundary.py` and `uv run pytest`.
+
+Only update the scanner allowlist in `tests/tools/check_daemon_rpc_boundary.py` for true low-level boundary code or scanner/fake infrastructure. Do not allowlist normal app modules to work around the guard.
+
 ## Pre-commit enforcement
 
-Pre-commit runs both the coverage scanner and pytest. It fails when:
+Pre-commit runs the contract scanners and pytest. It fails when:
 
 - QML calls a `main.*` function with no API contract.
 - `src/main.py` exports a QML-facing function with no API contract.
 - QML registers a handler with no event contract.
 - A registry entry exists for a removed API/event.
 - App code bypasses the QML bridge with raw `pyotherside.send(...)`.
+- App code bypasses the daemon boundary with direct `DaemonRPC` imports, `DaemonRPC()` construction, or `rpc.DaemonRPC` access.
 
-Use the scanner failure output as the checklist for what contract or bridge update is missing.
+Use the scanner failure output as the checklist for what contract or boundary update is missing.

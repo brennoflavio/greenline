@@ -12,6 +12,7 @@ from qml_contract_helpers import (
 
 import daemon_types
 import main
+from greenline.store.identity import canonicalize_contact_jid
 from ut_components.kv import KV
 
 
@@ -68,6 +69,14 @@ def test_get_contact_list_contract_success_and_failure(fake_daemon_rpc, monkeypa
     failure = main.get_contact_list()
     validate_api_response("get_contact_list", failure)
     assert failure["success"] is False
+
+
+def test_canonicalize_contact_jid_preserves_empty_daemon_resolution(
+    fake_daemon_rpc,
+) -> None:
+    fake_daemon_rpc.ensure_jid_map["lid-user@lid"] = ""
+
+    assert canonicalize_contact_jid("lid-user@lid", rpc=fake_daemon_rpc()) == ""
 
 
 def test_get_chat_info_contract_success_missing_and_malformed() -> None:

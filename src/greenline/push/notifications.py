@@ -7,13 +7,13 @@ from urllib.parse import quote
 from dacite import from_dict
 
 from constants import GROUP_JID_SUFFIX
+from greenline.contracts.daemon import daemon_client
 from greenline.store.identity import resolve_sender_name
 from greenline.store.media import (
     resolve_media_message_content,
     template_message_caption,
 )
 from greenline.store.mentions import render_mention_text, template_mention_text
-from rpc import DaemonRPC
 from unread_counter import get_unread_total
 from ut_components.kv import KV
 from ut_components.notification import EmblemCounter, Notification
@@ -40,7 +40,7 @@ def build_postal_output(raw_payload: str) -> Dict[str, Any]:
     if not isinstance(event, dict):
         return {}
 
-    rpc = DaemonRPC()
+    rpc = daemon_client()
     if _notifications_suppressed(envelope):
         return {}
 
@@ -59,7 +59,7 @@ def build_postal_output(raw_payload: str) -> Dict[str, Any]:
 
 
 def _build_notification(
-    rpc: DaemonRPC,
+    rpc: Any,
     event_type: str,
     event: Dict[str, Any],
     envelope: Dict[str, Any],
@@ -74,7 +74,7 @@ def _build_notification(
 
 
 def _build_message_notification(
-    rpc: DaemonRPC,
+    rpc: Any,
     event: Dict[str, Any],
     envelope: Dict[str, Any],
 ) -> Optional[Dict[str, Any]]:
@@ -105,7 +105,7 @@ def _build_message_notification(
 
 
 def _build_undecryptable_notification(
-    rpc: DaemonRPC,
+    rpc: Any,
     event: Dict[str, Any],
     envelope: Dict[str, Any],
 ) -> Optional[Dict[str, Any]]:
@@ -354,11 +354,11 @@ def _notifications_suppressed(envelope: Dict[str, Any]) -> bool:
         return bool(envelope.get("suppressed"))
 
 
-def _is_muted(rpc: DaemonRPC, chat_jid: str, envelope: Dict[str, Any]) -> bool:
+def _is_muted(rpc: Any, chat_jid: str, envelope: Dict[str, Any]) -> bool:
     if "muted" in envelope:
         return bool(envelope.get("muted"))
     try:
-        muted_until = rpc.get_chat_settings(chat_jid).MutedUntil
+        muted_until = int(rpc.get_chat_settings(chat_jid).MutedUntil)
     except Exception:
         return False
     if muted_until == -1:

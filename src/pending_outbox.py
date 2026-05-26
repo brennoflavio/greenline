@@ -5,7 +5,9 @@ from dataclasses import asdict, replace
 from datetime import datetime, timedelta
 from typing import Callable
 
+from daemon_types import SendMessageReply
 from greenline import qml_events
+from greenline.contracts.daemon import daemon_client
 from greenline.store.mentions import mention_transport_payload
 from greenline.store.messages import upsert_chat
 from greenline.store.repository import (
@@ -19,7 +21,6 @@ from greenline.store.repository import (
     put_message_index,
 )
 from models import ChatListItem, Message, MessageType, ReadReceipt
-from rpc import DaemonRPC
 from ut_components.event import Event
 from ut_components.kv import KV
 from whatsmeow_types import MessageInfo
@@ -31,6 +32,10 @@ _PENDING_SEND_LOCK = threading.Lock()
 _PENDING_SEND_IN_FLIGHT: set[str] = set()
 
 ReplyContextResolver = Callable[[str, dict[str, object] | None], dict[str, object] | None]
+
+
+class UnsupportedPendingMessageTypeError(ValueError):
+    pass
 
 
 def _pending_outbox_key(chat_id: str, message_id: str) -> str:
@@ -193,9 +198,9 @@ def _mark_pending_message_failed(entry_key: str, entry: dict[str, object]) -> No
 def _send_pending_message_via_rpc(
     message: Message,
     resolve_reply_context: ReplyContextResolver,
-) -> dict[str, object]:
+) -> SendMessageReply:
     reply_context = _pending_reply_context(message, resolve_reply_context)
-    rpc = DaemonRPC()
+    rpc = daemon_client()
 
     if message.type == MessageType.TEXT:
         transport_text, _, mentioned_jids = mention_transport_payload(message.text, message.mention_spans)
@@ -240,7 +245,12 @@ def _send_pending_message_via_rpc(
         )
 
     if message.type == MessageType.STICKER:
-        return rpc.send_message(message.chat_id, "sticker", file_path=file_path, reply_context=reply_context)
+        return rpc.send_message(
+            message.chat_id,
+            "sticker",
+            file_path=file_path,
+            reply_context=reply_context,
+        )
 
     if message.type == MessageType.CONTACT:
         return rpc.send_message(
@@ -251,15 +261,14 @@ def _send_pending_message_via_rpc(
             reply_context=reply_context,
         )
 
-    raise ValueError(f"Unsupported pending message type: {message.type}")
+    raise UnsupportedPendingMessageTypeError(f"Unsupported pending message type: {message.type}")
 
 
-def _complete_pending_send(entry_key: str, pending_message: Message, result: dict[str, object]) -> None:
-    raw_timestamp = result.get("Timestamp")
-    timestamp_unix = raw_timestamp if isinstance(raw_timestamp, int) else int(str(raw_timestamp or 0))
+def _complete_pending_send(entry_key: str, pending_message: Message, result: SendMessageReply) -> None:
+    timestamp_unix = int(result.Timestamp)
     sent_message = replace(
         pending_message,
-        id=str(result["MessageID"]),
+        id=str(result.MessageID),
         timestamp=datetime.fromtimestamp(timestamp_unix).strftime("%H:%M"),
         timestamp_unix=timestamp_unix,
         read_receipt=ReadReceipt.SENT,
@@ -300,7 +309,7 @@ def _attempt_pending_send(
         pending_message = _message_from_entry(entry)
         try:
             result = _send_pending_message_via_rpc(pending_message, resolve_reply_context)
-        except (FileNotFoundError, ValueError):
+        except (FileNotFoundError, UnsupportedPendingMessageTypeError):
             _mark_pending_message_failed(entry_key, entry)
             return False
         except Exception:
@@ -322,7 +331,8 @@ def queue_and_attempt_send(message: Message, resolve_reply_context: ReplyContext
 class PendingMessageRetryEvent(Event):
     def __init__(self, resolve_reply_context: ReplyContextResolver) -> None:
         super().__init__(
-            id="pending-message-retry", execution_interval=timedelta(seconds=PENDING_RETRY_INTERVAL_SECONDS)
+            id="pending-message-retry",
+            execution_interval=timedelta(seconds=PENDING_RETRY_INTERVAL_SECONDS),
         )
         self._resolve_reply_context = resolve_reply_context
 

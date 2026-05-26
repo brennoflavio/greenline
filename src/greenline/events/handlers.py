@@ -8,6 +8,7 @@ from dacite import from_dict
 
 from constants import NEWSLETTER_SERVER, STATUS_BROADCAST_JID
 from greenline import qml_payloads
+from greenline.contracts.daemon import daemon_client
 from greenline.store.identity import (
     canonicalize_contact_jid,
     remember_chat,
@@ -19,7 +20,7 @@ from greenline.ui import dataclass_to_ui_dict, enum_to_str
 from history_sync import handle_history_sync
 from models import ChatListItem, Message, MessageType, ReadReceipt
 from receipt_store import process_receipt
-from rpc import DaemonNotReadyError, DaemonRPC, DaemonTimeoutError
+from rpc import DaemonNotReadyError, DaemonTimeoutError
 from unread_counter import reconcile_unread_total
 from ut_components.kv import KV
 from whatsmeow_types import (
@@ -76,7 +77,7 @@ def _auto_download_sticker(msg: Message, raw: Dict[str, Any]) -> str:
             return media_path
 
     try:
-        file_path = DaemonRPC().download_media(
+        file_path = daemon_client().download_media(
             direct_path=direct_path,
             media_key=media_key,
             file_enc_sha256=sticker.get("fileEncSHA256", ""),
@@ -116,11 +117,11 @@ def _handle_message(
         return
     if evt.Info.Chat.endswith(NEWSLETTER_SERVER):
         return
-    evt.Info.Chat = canonicalize_contact_jid(DaemonRPC().ensure_jid(evt.Info.Chat))
+    evt.Info.Chat = canonicalize_contact_jid(daemon_client().ensure_jid(evt.Info.Chat))
     if evt.Info.SenderAlt:
-        evt.Info.Sender = canonicalize_contact_jid(DaemonRPC().ensure_jid(evt.Info.SenderAlt))
+        evt.Info.Sender = canonicalize_contact_jid(daemon_client().ensure_jid(evt.Info.SenderAlt))
     elif evt.Info.Sender:
-        evt.Info.Sender = canonicalize_contact_jid(DaemonRPC().ensure_jid(evt.Info.Sender))
+        evt.Info.Sender = canonicalize_contact_jid(daemon_client().ensure_jid(evt.Info.Sender))
     stored = store_message(evt, raw=raw)
     if stored is None:
         _save_unhandled_message(event, raw)
@@ -144,11 +145,11 @@ def _handle_undecryptable_message(
         return
     if evt.Info.Chat.endswith(NEWSLETTER_SERVER):
         return
-    evt.Info.Chat = canonicalize_contact_jid(DaemonRPC().ensure_jid(evt.Info.Chat))
+    evt.Info.Chat = canonicalize_contact_jid(daemon_client().ensure_jid(evt.Info.Chat))
     if evt.Info.SenderAlt:
-        evt.Info.Sender = canonicalize_contact_jid(DaemonRPC().ensure_jid(evt.Info.SenderAlt))
+        evt.Info.Sender = canonicalize_contact_jid(daemon_client().ensure_jid(evt.Info.SenderAlt))
     elif evt.Info.Sender:
-        evt.Info.Sender = canonicalize_contact_jid(DaemonRPC().ensure_jid(evt.Info.Sender))
+        evt.Info.Sender = canonicalize_contact_jid(daemon_client().ensure_jid(evt.Info.Sender))
     stored = store_undecryptable_message(evt, raw=raw)
     if stored is None:
         _save_unhandled_message(event, raw)
@@ -164,7 +165,7 @@ def _handle_receipt(
 ) -> None:
     raw = json.loads(event.payload or "{}")
     evt = from_dict(data_class=ReceiptEvent, data=raw)
-    evt.Chat = canonicalize_contact_jid(DaemonRPC().ensure_jid(evt.Chat))
+    evt.Chat = canonicalize_contact_jid(daemon_client().ensure_jid(evt.Chat))
     updated_messages, updated_chat = process_receipt(evt)
     for msg in updated_messages:
         message_updates.append(enum_to_str(msg))
@@ -175,7 +176,7 @@ def _handle_receipt(
 def _handle_contact(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None:
     raw = json.loads(event.payload or "{}")
     evt = from_dict(data_class=ContactEvent, data=raw)
-    jid = canonicalize_contact_jid(DaemonRPC().ensure_jid(evt.JID))
+    jid = canonicalize_contact_jid(daemon_client().ensure_jid(evt.JID))
     name = evt.Action.fullName
     if not name:
         return
@@ -213,7 +214,7 @@ def _handle_contact(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None
 def _handle_push_name(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None:
     raw = json.loads(event.payload or "{}")
     evt = from_dict(data_class=PushNameEvent, data=raw)
-    jid = canonicalize_contact_jid(DaemonRPC().ensure_jid(evt.JID))
+    jid = canonicalize_contact_jid(daemon_client().ensure_jid(evt.JID))
     if not evt.NewPushName:
         return
 
@@ -233,7 +234,7 @@ def _handle_push_name(event: Any, chat_updates: dict[str, dict[str, Any]]) -> No
 def _handle_business_name(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None:
     raw = json.loads(event.payload or "{}")
     evt = from_dict(data_class=BusinessNameEvent, data=raw)
-    jid = canonicalize_contact_jid(DaemonRPC().ensure_jid(evt.JID))
+    jid = canonicalize_contact_jid(daemon_client().ensure_jid(evt.JID))
     if not evt.NewBusinessName:
         return
 
@@ -255,7 +256,7 @@ def _handle_mute(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None:
     jid = raw.get("JID", "")
     if not jid:
         return
-    jid = canonicalize_contact_jid(DaemonRPC().ensure_jid(jid))
+    jid = canonicalize_contact_jid(daemon_client().ensure_jid(jid))
     action = raw.get("Action") or {}
     muted = action.get("muted", False)
 
@@ -278,11 +279,11 @@ def _handle_picture(
 ) -> None:
     raw = json.loads(event.payload or "{}")
     evt = from_dict(data_class=PictureEvent, data=raw)
-    jid = canonicalize_contact_jid(DaemonRPC().ensure_jid(evt.JID))
+    jid = canonicalize_contact_jid(daemon_client().ensure_jid(evt.JID))
     if not jid:
         return
 
-    avatar_path = DaemonRPC().sync_avatar(jid)
+    avatar_path = daemon_client().sync_avatar(jid).AvatarPath
     photo = "file://" + avatar_path if avatar_path else ""
 
     with KV() as kv:
@@ -325,7 +326,7 @@ def _handle_presence(
 ) -> None:
     raw = json.loads(event.payload or "{}")
     evt = from_dict(data_class=PresenceEvent, data=raw)
-    jid = DaemonRPC().ensure_jid(evt.From)
+    jid = daemon_client().ensure_jid(evt.From)
     if not jid:
         return
     presence_updates.append(
@@ -344,7 +345,7 @@ def _handle_chat_presence(
     evt = from_dict(data_class=ChatPresenceEvent, data=raw)
     if evt.IsFromMe:
         return
-    jid = DaemonRPC().ensure_jid(evt.Chat)
+    jid = daemon_client().ensure_jid(evt.Chat)
     if not jid:
         return
     chat_presence_updates.append(
