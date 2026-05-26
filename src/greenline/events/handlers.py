@@ -77,16 +77,20 @@ def _auto_download_sticker(msg: Message, raw: Dict[str, Any]) -> str:
             return media_path
 
     try:
-        file_path = daemon_client().download_media(
-            direct_path=direct_path,
-            media_key=media_key,
-            file_enc_sha256=sticker.get("fileEncSHA256", ""),
-            file_sha256=file_sha256,
-            file_length=sticker.get("fileLength", 0),
-            media_type="sticker",
-            mimetype=sticker.get("mimetype", ""),
-            message_id=msg.id,
-            chat_id=msg.chat_id,
+        file_path = (
+            daemon_client()
+            .download_media(
+                direct_path=direct_path,
+                media_key=media_key,
+                file_enc_sha256=sticker.get("fileEncSHA256", ""),
+                file_sha256=file_sha256,
+                file_length=sticker.get("fileLength", 0),
+                media_type="sticker",
+                mimetype=sticker.get("mimetype", ""),
+                message_id=msg.id,
+                chat_id=msg.chat_id,
+            )
+            .FilePath
         )
     except Exception:
         return ""
@@ -117,11 +121,11 @@ def _handle_message(
         return
     if evt.Info.Chat.endswith(NEWSLETTER_SERVER):
         return
-    evt.Info.Chat = canonicalize_contact_jid(daemon_client().ensure_jid(evt.Info.Chat))
+    evt.Info.Chat = canonicalize_contact_jid(daemon_client().ensure_jid(evt.Info.Chat).JID)
     if evt.Info.SenderAlt:
-        evt.Info.Sender = canonicalize_contact_jid(daemon_client().ensure_jid(evt.Info.SenderAlt))
+        evt.Info.Sender = canonicalize_contact_jid(daemon_client().ensure_jid(evt.Info.SenderAlt).JID)
     elif evt.Info.Sender:
-        evt.Info.Sender = canonicalize_contact_jid(daemon_client().ensure_jid(evt.Info.Sender))
+        evt.Info.Sender = canonicalize_contact_jid(daemon_client().ensure_jid(evt.Info.Sender).JID)
     stored = store_message(evt, raw=raw)
     if stored is None:
         _save_unhandled_message(event, raw)
@@ -145,11 +149,11 @@ def _handle_undecryptable_message(
         return
     if evt.Info.Chat.endswith(NEWSLETTER_SERVER):
         return
-    evt.Info.Chat = canonicalize_contact_jid(daemon_client().ensure_jid(evt.Info.Chat))
+    evt.Info.Chat = canonicalize_contact_jid(daemon_client().ensure_jid(evt.Info.Chat).JID)
     if evt.Info.SenderAlt:
-        evt.Info.Sender = canonicalize_contact_jid(daemon_client().ensure_jid(evt.Info.SenderAlt))
+        evt.Info.Sender = canonicalize_contact_jid(daemon_client().ensure_jid(evt.Info.SenderAlt).JID)
     elif evt.Info.Sender:
-        evt.Info.Sender = canonicalize_contact_jid(daemon_client().ensure_jid(evt.Info.Sender))
+        evt.Info.Sender = canonicalize_contact_jid(daemon_client().ensure_jid(evt.Info.Sender).JID)
     stored = store_undecryptable_message(evt, raw=raw)
     if stored is None:
         _save_unhandled_message(event, raw)
@@ -165,7 +169,7 @@ def _handle_receipt(
 ) -> None:
     raw = json.loads(event.payload or "{}")
     evt = from_dict(data_class=ReceiptEvent, data=raw)
-    evt.Chat = canonicalize_contact_jid(daemon_client().ensure_jid(evt.Chat))
+    evt.Chat = canonicalize_contact_jid(daemon_client().ensure_jid(evt.Chat).JID)
     updated_messages, updated_chat = process_receipt(evt)
     for msg in updated_messages:
         message_updates.append(enum_to_str(msg))
@@ -176,7 +180,7 @@ def _handle_receipt(
 def _handle_contact(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None:
     raw = json.loads(event.payload or "{}")
     evt = from_dict(data_class=ContactEvent, data=raw)
-    jid = canonicalize_contact_jid(daemon_client().ensure_jid(evt.JID))
+    jid = canonicalize_contact_jid(daemon_client().ensure_jid(evt.JID).JID)
     name = evt.Action.fullName
     if not name:
         return
@@ -214,7 +218,7 @@ def _handle_contact(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None
 def _handle_push_name(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None:
     raw = json.loads(event.payload or "{}")
     evt = from_dict(data_class=PushNameEvent, data=raw)
-    jid = canonicalize_contact_jid(daemon_client().ensure_jid(evt.JID))
+    jid = canonicalize_contact_jid(daemon_client().ensure_jid(evt.JID).JID)
     if not evt.NewPushName:
         return
 
@@ -234,7 +238,7 @@ def _handle_push_name(event: Any, chat_updates: dict[str, dict[str, Any]]) -> No
 def _handle_business_name(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None:
     raw = json.loads(event.payload or "{}")
     evt = from_dict(data_class=BusinessNameEvent, data=raw)
-    jid = canonicalize_contact_jid(daemon_client().ensure_jid(evt.JID))
+    jid = canonicalize_contact_jid(daemon_client().ensure_jid(evt.JID).JID)
     if not evt.NewBusinessName:
         return
 
@@ -256,7 +260,7 @@ def _handle_mute(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None:
     jid = raw.get("JID", "")
     if not jid:
         return
-    jid = canonicalize_contact_jid(daemon_client().ensure_jid(jid))
+    jid = canonicalize_contact_jid(daemon_client().ensure_jid(jid).JID)
     action = raw.get("Action") or {}
     muted = action.get("muted", False)
 
@@ -279,7 +283,7 @@ def _handle_picture(
 ) -> None:
     raw = json.loads(event.payload or "{}")
     evt = from_dict(data_class=PictureEvent, data=raw)
-    jid = canonicalize_contact_jid(daemon_client().ensure_jid(evt.JID))
+    jid = canonicalize_contact_jid(daemon_client().ensure_jid(evt.JID).JID)
     if not jid:
         return
 
@@ -326,7 +330,7 @@ def _handle_presence(
 ) -> None:
     raw = json.loads(event.payload or "{}")
     evt = from_dict(data_class=PresenceEvent, data=raw)
-    jid = daemon_client().ensure_jid(evt.From)
+    jid = daemon_client().ensure_jid(evt.From).JID
     if not jid:
         return
     presence_updates.append(
@@ -345,7 +349,7 @@ def _handle_chat_presence(
     evt = from_dict(data_class=ChatPresenceEvent, data=raw)
     if evt.IsFromMe:
         return
-    jid = daemon_client().ensure_jid(evt.Chat)
+    jid = daemon_client().ensure_jid(evt.Chat).JID
     if not jid:
         return
     chat_presence_updates.append(

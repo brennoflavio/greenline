@@ -53,6 +53,23 @@ def test_invalid_decode_is_logged_before_reraising(caplog: pytest.LogCaptureFixt
     assert "test.reply validation failed" in caplog.text
 
 
+def test_validation_failure_logs_boundary_contract_and_direction(caplog: pytest.LogCaptureFixture) -> None:
+    with pytest.raises(Exception):
+        decode_dataclass(
+            SamplePayload,
+            {"tags": ["text"]},
+            boundary="daemon_rpc",
+            contract="Service.SendMessage",
+            direction="decode",
+        )
+
+    record = caplog.records[-1]
+    assert "daemon_rpc contract=Service.SendMessage direction=decode validation failed" in caplog.text
+    assert record.boundary == "daemon_rpc"
+    assert record.contract == "Service.SendMessage"
+    assert record.direction == "decode"
+
+
 def test_to_json_like_converts_nested_enums_and_tuples() -> None:
     assert to_json_like({"kind": SampleKind.TEXT, "items": (SampleKind.TEXT,)}) == {
         "kind": "text",
@@ -64,6 +81,17 @@ def test_json_like_validator_logs_by_default(caplog: pytest.LogCaptureFixture) -
     assert not validate_json_like({"path": Path("avatar.jpg")}, boundary="test.payload")
 
     assert "test.payload validation failed" in caplog.text
+
+
+def test_json_like_validator_logs_metadata(caplog: pytest.LogCaptureFixture) -> None:
+    assert not validate_json_like(
+        {"path": Path("avatar.jpg")},
+        boundary="daemon_rpc",
+        contract="Service.SyncAvatar",
+        direction="encode",
+    )
+
+    assert "daemon_rpc contract=Service.SyncAvatar direction=encode validation failed" in caplog.text
 
 
 def test_json_like_assertion_raises_after_logging(caplog: pytest.LogCaptureFixture) -> None:

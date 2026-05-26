@@ -117,7 +117,7 @@ def ensure_daemon_version() -> bool:
     for _ in range(10):
         time.sleep(0.5)
         try:
-            daemon_client().ping()
+            daemon_client().ping().Message
             return True
         except Exception:
             continue

@@ -21,6 +21,14 @@ ut_components.setup("greenline.tests", None)
 ut_config.APP_NAME_ = "greenline.tests"
 
 import daemon_types
+from greenline.contracts.daemon import (
+    DeleteMessageReply,
+    DownloadMediaReply,
+    EditMessageReply,
+    EmptyReply,
+    EnsureJIDReply,
+    PingReply,
+)
 
 
 class FakePyOtherSide(types.ModuleType):
@@ -158,14 +166,15 @@ class FakeDaemonRPC:
     def queue_events(cls, *batches: list[daemon_types.StoredEvent]) -> None:
         cls.list_event_batches.extend(batches)
 
-    def list_events(self, *, after_id: int, limit: int) -> daemon_types.ListEventsReply:
+    def list_events(self, after_id: int = 0, limit: int = 100) -> daemon_types.ListEventsReply:
         self.__class__.list_events_calls.append({"after_id": after_id, "limit": limit})
         if self.__class__.list_event_batches:
             return daemon_types.ListEventsReply(Events=self.__class__.list_event_batches.pop(0))
         return daemon_types.ListEventsReply()
 
-    def delete_events(self, *, up_to_id: int) -> None:
+    def delete_events(self, up_to_id: int) -> EmptyReply:
         self.__class__.delete_events_calls.append(up_to_id)
+        return EmptyReply()
 
     def get_contacts(self) -> daemon_types.GetContactsReply:
         return daemon_types.GetContactsReply(Contacts=list(self.__class__.contacts))
@@ -185,8 +194,8 @@ class FakeDaemonRPC:
         self.__class__.pair_phone_calls.append(phone_number)
         return daemon_types.PairPhoneReply(Code=self.__class__.pair_phone_code)
 
-    def ping(self) -> str:
-        return self.__class__.ping_result
+    def ping(self) -> PingReply:
+        return PingReply(Message=self.__class__.ping_result)
 
     def get_version(self) -> daemon_types.VersionReply:
         return self.__class__.version
@@ -198,11 +207,12 @@ class FakeDaemonRPC:
     def get_chat_settings(self, jid: str) -> daemon_types.GetChatSettingsReply:
         return daemon_types.GetChatSettingsReply(MutedUntil=self.__class__.muted_until.get(jid, 0))
 
-    def set_muted(self, chat_id: str, muted: bool) -> None:
+    def set_muted(self, chat_id: str, muted: bool) -> EmptyReply:
         self.__class__.set_muted_calls.append({"chat_id": chat_id, "muted": muted})
         self.__class__.muted_until[chat_id] = 1 if muted else 0
+        return EmptyReply()
 
-    def mark_read(self, chat_id: str, message_ids: list[str], sender_jid: str = "") -> None:
+    def mark_read(self, chat_id: str, message_ids: list[str], sender_jid: str = "") -> EmptyReply:
         self.__class__.mark_read_calls.append(
             {
                 "chat_id": chat_id,
@@ -210,12 +220,15 @@ class FakeDaemonRPC:
                 "sender_jid": sender_jid,
             }
         )
+        return EmptyReply()
 
-    def clear_chat_notifications(self, chat_ids: list[str]) -> None:
+    def clear_chat_notifications(self, chat_ids: list[str]) -> EmptyReply:
         self.__class__.clear_chat_notifications_calls.append(list(chat_ids))
+        return EmptyReply()
 
-    def set_notification_counter(self, count: int, visible: bool) -> None:
+    def set_notification_counter(self, count: int, visible: bool) -> EmptyReply:
         self.__class__.set_notification_counter_calls.append({"count": count, "visible": visible})
+        return EmptyReply()
 
     def send_message(self, chat_id: str, message_type: str, **kwargs: Any) -> daemon_types.SendMessageReply:
         self.__class__.send_message_calls.append({"chat_id": chat_id, "message_type": message_type, **kwargs})
@@ -229,7 +242,7 @@ class FakeDaemonRPC:
         message_id: str,
         text: str,
         reply_context: dict[str, object] | None = None,
-    ) -> None:
+    ) -> EditMessageReply:
         self.__class__.edit_message_calls.append(
             {
                 "chat_id": chat_id,
@@ -238,28 +251,33 @@ class FakeDaemonRPC:
                 "reply_context": reply_context,
             }
         )
+        return EditMessageReply(MessageID=message_id, Timestamp=1_700_000_000)
 
-    def delete_message(self, chat_id: str, message_id: str) -> None:
+    def delete_message(self, chat_id: str, message_id: str) -> DeleteMessageReply:
         self.__class__.delete_message_calls.append({"chat_id": chat_id, "message_id": message_id})
+        return DeleteMessageReply(MessageID=message_id, Timestamp=1_700_000_000)
 
-    def send_presence(self, available: bool) -> None:
+    def send_presence(self, available: bool) -> EmptyReply:
         self.__class__.send_presence_calls.append(available)
+        return EmptyReply()
 
-    def subscribe_presence(self, chat_id: str) -> None:
+    def subscribe_presence(self, chat_id: str) -> EmptyReply:
         self.__class__.subscribe_presence_calls.append(chat_id)
+        return EmptyReply()
 
-    def logout(self) -> None:
+    def logout(self) -> EmptyReply:
         self.__class__.logout_calls += 1
+        return EmptyReply()
 
-    def ensure_jid(self, jid: str) -> str:
+    def ensure_jid(self, jid: str) -> EnsureJIDReply:
         if not jid:
-            return ""
+            return EnsureJIDReply(JID="")
         mapped = self.__class__.ensure_jid_map.get(jid)
         if mapped is not None:
-            return mapped
+            return EnsureJIDReply(JID=mapped)
         if jid.endswith("@lid"):
-            return jid[: -len("@lid")] + "@s.whatsapp.net"
-        return jid
+            return EnsureJIDReply(JID=jid[: -len("@lid")] + "@s.whatsapp.net")
+        return EnsureJIDReply(JID=jid)
 
     def download_media(
         self,
@@ -274,7 +292,7 @@ class FakeDaemonRPC:
         message_id: str,
         chat_id: str,
         file_name: str = "",
-    ) -> str:
+    ) -> DownloadMediaReply:
         call = {
             "direct_path": direct_path,
             "media_key": media_key,
@@ -289,13 +307,13 @@ class FakeDaemonRPC:
         }
         self.__class__.download_media_calls.append(call)
         if self.__class__.download_media_result:
-            return self.__class__.download_media_result
+            return DownloadMediaReply(FilePath=self.__class__.download_media_result)
         cache_root = Path(os.environ["XDG_CACHE_HOME"]) / "greenline.tests" / "daemon-media"
         cache_root.mkdir(parents=True, exist_ok=True)
         suffix = ".webp" if media_type == "sticker" else ".bin"
         path = cache_root / f"{chat_id.replace('/', '_')}__{message_id}{suffix}"
         path.write_bytes(b"")
-        return str(path)
+        return DownloadMediaReply(FilePath=str(path))
 
     def sync_avatar(self, jid: str) -> daemon_types.SyncAvatarReply:
         self.__class__.sync_avatar_calls.append(jid)

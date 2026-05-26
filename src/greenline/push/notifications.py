@@ -7,7 +7,7 @@ from urllib.parse import quote
 from dacite import from_dict
 
 from constants import GROUP_JID_SUFFIX
-from greenline.contracts.daemon import daemon_client
+from greenline.contracts.daemon import DaemonClientProtocol, daemon_client
 from greenline.store.identity import resolve_sender_name
 from greenline.store.media import (
     resolve_media_message_content,
@@ -59,7 +59,7 @@ def build_postal_output(raw_payload: str) -> Dict[str, Any]:
 
 
 def _build_notification(
-    rpc: Any,
+    rpc: DaemonClientProtocol,
     event_type: str,
     event: Dict[str, Any],
     envelope: Dict[str, Any],
@@ -74,7 +74,7 @@ def _build_notification(
 
 
 def _build_message_notification(
-    rpc: Any,
+    rpc: DaemonClientProtocol,
     event: Dict[str, Any],
     envelope: Dict[str, Any],
 ) -> Optional[Dict[str, Any]]:
@@ -105,7 +105,7 @@ def _build_message_notification(
 
 
 def _build_undecryptable_notification(
-    rpc: Any,
+    rpc: DaemonClientProtocol,
     event: Dict[str, Any],
     envelope: Dict[str, Any],
 ) -> Optional[Dict[str, Any]]:
@@ -354,7 +354,7 @@ def _notifications_suppressed(envelope: Dict[str, Any]) -> bool:
         return bool(envelope.get("suppressed"))
 
 
-def _is_muted(rpc: Any, chat_jid: str, envelope: Dict[str, Any]) -> bool:
+def _is_muted(rpc: DaemonClientProtocol, chat_jid: str, envelope: Dict[str, Any]) -> bool:
     if "muted" in envelope:
         return bool(envelope.get("muted"))
     try:

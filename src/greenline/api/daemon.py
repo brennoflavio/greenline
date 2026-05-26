@@ -96,7 +96,7 @@ def start_event_loop() -> None:
 @dataclass_to_dict
 def ping_daemon() -> SuccessResponse:
     try:
-        result = daemon_client().ping()
+        result = daemon_client().ping().Message
         return SuccessResponse(success=True, message=result)
     except Exception as error:
         return SuccessResponse(success=False, message=str(error))
@@ -111,7 +111,7 @@ def check_daemon_status() -> DaemonStatusResponse:
         for _ in range(10):
             time.sleep(0.5)
             try:
-                daemon_client().ping()
+                daemon_client().ping().Message
                 break
             except Exception:
                 continue

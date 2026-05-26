@@ -46,13 +46,15 @@ App code must not instantiate `DaemonRPC()` or import the low-level transport di
 
 When adding or changing a daemon RPC:
 
-1. Add daemon-shaped request dataclasses to `src/greenline/contracts/daemon.py` for every request payload field sent to the daemon.
-2. Reuse reply dataclasses from `src/daemon_types.py` when they already exist, or add a small reply dataclass in the boundary for simple daemon results.
-3. Encode requests with `greenline.contracts.codecs.encode_dataclass(...)` and decode typed replies with `decode_dataclass(...)` so validation failures are logged centrally.
-4. Expose the method on `GreenlineDaemon` and call it from app code with `daemon_client()`.
-5. Update `tests/conftest.py`'s fake daemon client state if high-level tests need the method.
-6. Add or extend focused boundary tests in `tests/test_daemon_boundary.py` for request shape, reply decoding, and malformed reply logging.
-7. Run `uv run python tests/tools/check_daemon_rpc_boundary.py` and `uv run pytest`.
+1. Add a daemon-shaped request dataclass to `src/greenline/contracts/daemon.py` for every `Service.*` call. Use `EmptyRequest` for calls with no daemon payload.
+2. Reuse reply dataclasses from `src/daemon_types.py` when they already exist, or add a small reply dataclass in the boundary for simple daemon results. Empty command replies must decode to `EmptyReply`; scalar daemon replies must be wrapped in a reply dataclass such as `PingReply`.
+3. Encode every request with `greenline.contracts.codecs.encode_dataclass(...)` and decode every reply with `decode_dataclass(...)` or a dedicated boundary helper. Pass `boundary="daemon_rpc"`, `contract="Service.<Method>"`, and `direction="encode"` or `"decode"` so validation logs include all daemon boundary metadata.
+4. Expose the method on `GreenlineDaemon` and `DaemonClientProtocol` with a dataclass return type. Do not expose raw daemon `dict`, `Any`, primitive `str`, or ignored `None` replies from direct daemon wrappers.
+5. Convenience helpers may return primitives only when they are clearly derived from dataclass-returning wrappers, e.g. `get_phone_number()` derives from `ensure_jid(...).JID` instead of representing a separate daemon reply.
+6. Call daemon methods from app code through `greenline.contracts.daemon.daemon_client()`. Direct `DaemonRPC` imports/construction remain restricted to `src/rpc.py` and `src/greenline/contracts/daemon.py`.
+7. Update `tests/conftest.py`'s fake daemon client state if high-level tests need the method, keeping fake returns aligned with `DaemonClientProtocol` dataclasses.
+8. Add or extend focused boundary tests in `tests/test_daemon_boundary.py` for request shape, reply decoding, malformed reply logging, and the contract completeness guard.
+9. Run `uv run python tests/tools/check_daemon_rpc_boundary.py` and `uv run pytest`.
 
 Only update the scanner allowlist in `tests/tools/check_daemon_rpc_boundary.py` for true low-level boundary code or scanner/fake infrastructure. Do not allowlist normal app modules to work around the guard.
 

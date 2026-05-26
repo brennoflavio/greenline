@@ -13,17 +13,30 @@ class BoundaryValidationError(ValueError):
     """Raised by strict boundary validators."""
 
 
+def _format_validation_scope(boundary: str, contract: str | None, direction: str | None) -> str:
+    parts = [boundary]
+    if contract is not None:
+        parts.append(f"contract={contract}")
+    if direction is not None:
+        parts.append(f"direction={direction}")
+    return " ".join(parts)
+
+
 def report_validation_failure(
     boundary: str,
     error: BaseException | str,
     *,
     payload: Any | None = None,
+    contract: str | None = None,
+    direction: str | None = None,
 ) -> None:
-    if isinstance(error, BaseException):
-        message = str(error)
-        LOGGER.warning("%s validation failed: %s", boundary, message, extra={"payload": payload})
-        return
-    LOGGER.warning("%s validation failed: %s", boundary, error, extra={"payload": payload})
+    message = str(error)
+    LOGGER.warning(
+        "%s validation failed: %s",
+        _format_validation_scope(boundary, contract, direction),
+        message,
+        extra={"payload": payload, "boundary": boundary, "contract": contract, "direction": direction},
+    )
 
 
 def _json_like_error(value: Any, path: str) -> str | None:
@@ -58,15 +71,31 @@ def validate_json_like(
     boundary: str,
     path: str = "payload",
     raise_on_error: bool = False,
+    contract: str | None = None,
+    direction: str | None = None,
 ) -> bool:
     error = _json_like_error(value, path)
     if error is None:
         return True
-    report_validation_failure(boundary, error, payload=value)
+    report_validation_failure(boundary, error, payload=value, contract=contract, direction=direction)
     if raise_on_error:
         raise BoundaryValidationError(error)
     return False
 
 
-def assert_json_like(value: Any, *, boundary: str, path: str = "payload") -> None:
-    validate_json_like(value, boundary=boundary, path=path, raise_on_error=True)
+def assert_json_like(
+    value: Any,
+    *,
+    boundary: str,
+    path: str = "payload",
+    contract: str | None = None,
+    direction: str | None = None,
+) -> None:
+    validate_json_like(
+        value,
+        boundary=boundary,
+        path=path,
+        raise_on_error=True,
+        contract=contract,
+        direction=direction,
+    )

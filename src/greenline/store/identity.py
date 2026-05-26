@@ -2,7 +2,7 @@ from dataclasses import asdict
 from typing import Any, Dict, Optional
 
 from constants import GROUP_JID_SUFFIX, WHATSAPP_JID_SUFFIX
-from greenline.contracts.daemon import daemon_client
+from greenline.contracts.daemon import DaemonClientProtocol, daemon_client
 from models import ChatListItem, ReadReceipt
 from ut_components.kv import KV
 
@@ -107,7 +107,7 @@ def canonicalize_contact_jid(
     *,
     jid_map: Optional[Dict[str, str]] = None,
     kv: Optional[KV] = None,
-    rpc: Optional[Any] = None,
+    rpc: Optional[DaemonClientProtocol] = None,
 ) -> str:
     if not _is_contact_identity_jid(jid):
         return jid
@@ -135,7 +135,8 @@ def canonicalize_contact_jid(
 
     if resolved is None and stripped_jid.endswith(_LID_JID_SUFFIX):
         try:
-            resolved = rpc.ensure_jid(stripped_jid) if rpc is not None else daemon_client().ensure_jid(stripped_jid)
+            reply = rpc.ensure_jid(stripped_jid) if rpc is not None else daemon_client().ensure_jid(stripped_jid)
+            resolved = reply.JID
         except Exception:
             resolved = stripped_jid
 

@@ -660,17 +660,21 @@ def download_media(chat_id: str, message_id: str, media_type: str) -> DownloadMe
         return DownloadMediaResponse(success=False, media_path="", message="Missing media download info")
 
     try:
-        file_path = daemon_client().download_media(
-            direct_path=direct_path,
-            media_key=media_key,
-            file_enc_sha256=file_enc_sha256,
-            file_sha256=file_sha256,
-            file_length=file_length,
-            media_type=media_type,
-            mimetype=mimetype,
-            message_id=message_id,
-            chat_id=chat_id,
-            file_name=file_name,
+        file_path = (
+            daemon_client()
+            .download_media(
+                direct_path=direct_path,
+                media_key=media_key,
+                file_enc_sha256=file_enc_sha256,
+                file_sha256=file_sha256,
+                file_length=file_length,
+                media_type=media_type,
+                mimetype=mimetype,
+                message_id=message_id,
+                chat_id=chat_id,
+                file_name=file_name,
+            )
+            .FilePath
         )
     except Exception as error:
         return DownloadMediaResponse(success=False, media_path="", message=str(error))
