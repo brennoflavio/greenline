@@ -58,6 +58,8 @@ def get_contact_list() -> ContactListResponse:
         reply = daemon_client().get_contacts()
         contacts = [_build_contact_item(contact) for contact in reply.Contacts]
         return ContactListResponse(success=True, contacts=contacts, message="")
+    except BoundaryValidationError:
+        raise
     except Exception as error:
         return ContactListResponse(success=False, contacts=[], message=str(error))
 
@@ -112,6 +114,8 @@ def get_group_mention_candidates(request: ChatIdRequest) -> GroupMentionCandidat
             candidates.append(candidate)
         candidates.sort(key=lambda candidate: str(candidate.get("label") or "").lower())
         return GroupMentionCandidatesResponse(success=True, candidates=candidates)
+    except BoundaryValidationError:
+        raise
     except Exception as error:
         return GroupMentionCandidatesResponse(success=False, message=str(error))
 

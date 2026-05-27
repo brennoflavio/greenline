@@ -7,6 +7,7 @@ from qml_contract_helpers import DEFAULT_CHAT_ID
 import daemon_types
 import greenline.api.daemon as api_daemon
 import main
+from greenline.contracts.validation import BoundaryValidationError
 
 
 class FakeDispatcher:
@@ -114,6 +115,28 @@ def test_pair_phone_contract_success_and_failure(fake_daemon_rpc, monkeypatch: p
     assert failure == {"success": False, "code": "", "message": "pair failed"}
 
 
+def test_get_session_status_contract_raises_boundary_validation_error(
+    fake_daemon_rpc, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def fail_session(self):
+        raise BoundaryValidationError("bad session reply")
+
+    monkeypatch.setattr(fake_daemon_rpc, "get_session_status", fail_session)
+
+    with pytest.raises(BoundaryValidationError, match="bad session reply"):
+        main.get_session_status()
+
+
+def test_pair_phone_contract_raises_boundary_validation_error(fake_daemon_rpc, monkeypatch: pytest.MonkeyPatch) -> None:
+    def fail_pair(self, phone_number: str):
+        raise BoundaryValidationError("bad pair reply")
+
+    monkeypatch.setattr(fake_daemon_rpc, "pair_phone", fail_pair)
+
+    with pytest.raises(BoundaryValidationError, match="bad pair reply"):
+        main.pair_phone("+15551234567")
+
+
 def test_install_and_uninstall_daemon_contracts(fake_daemon_service) -> None:
     installed = main.install_daemon()
     validate_api_response("install_daemon", installed)
@@ -160,6 +183,18 @@ def test_get_phone_number_contract_success_and_failure(fake_daemon_rpc, monkeypa
 
     def fail_phone(self, jid: str):
         raise RuntimeError("lookup failed")
+
+    monkeypatch.setattr(fake_daemon_rpc, "get_phone_number", fail_phone)
+    failure = main.get_phone_number(DEFAULT_CHAT_ID)
+    validate_api_response("get_phone_number", failure)
+    assert failure == {"success": True, "phone_number": ""}
+
+
+def test_get_phone_number_contract_boundary_validation_error_stays_soft(
+    fake_daemon_rpc, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def fail_phone(self, jid: str):
+        raise BoundaryValidationError("bad phone reply")
 
     monkeypatch.setattr(fake_daemon_rpc, "get_phone_number", fail_phone)
     failure = main.get_phone_number(DEFAULT_CHAT_ID)

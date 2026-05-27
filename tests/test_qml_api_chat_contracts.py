@@ -12,6 +12,7 @@ from qml_contract_helpers import (
 
 import daemon_types
 import main
+from greenline.contracts.validation import BoundaryValidationError
 from greenline.store.identity import canonicalize_contact_jid
 from ut_components.kv import KV
 
@@ -68,6 +69,18 @@ def test_get_contact_list_contract_success_and_failure(fake_daemon_rpc, monkeypa
     assert failure["success"] is False
 
 
+def test_get_contact_list_contract_raises_boundary_validation_error(
+    fake_daemon_rpc, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def fail_contacts(self):
+        raise BoundaryValidationError("bad contacts reply")
+
+    monkeypatch.setattr(fake_daemon_rpc, "get_contacts", fail_contacts)
+
+    with pytest.raises(BoundaryValidationError, match="bad contacts reply"):
+        main.get_contact_list()
+
+
 def test_canonicalize_contact_jid_preserves_empty_daemon_resolution(
     fake_daemon_rpc,
 ) -> None:
@@ -120,6 +133,18 @@ def test_get_group_mention_candidates_contract_success_and_failure(
     failure = main.get_group_mention_candidates("group@g.us")
     validate_api_response("get_group_mention_candidates", failure)
     assert failure["success"] is False
+
+
+def test_get_group_mention_candidates_contract_raises_boundary_validation_error(
+    fake_daemon_rpc, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def fail_participants(self, chat_id: str):
+        raise BoundaryValidationError("bad participants reply")
+
+    monkeypatch.setattr(fake_daemon_rpc, "get_group_participants", fail_participants)
+
+    with pytest.raises(BoundaryValidationError, match="bad participants reply"):
+        main.get_group_mention_candidates("group@g.us")
 
 
 def test_get_and_set_chat_draft_contracts(fake_pyotherside_module) -> None:

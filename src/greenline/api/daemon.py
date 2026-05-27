@@ -144,6 +144,8 @@ def get_session_status() -> SessionStatusResponse:
             logged_in=result.LoggedIn,
             qr_image_base64=result.QRImage,
         )
+    except BoundaryValidationError:
+        raise
     except Exception:
         return SessionStatusResponse(logged_in=False, qr_image_path="")
 
@@ -154,6 +156,8 @@ def pair_phone(request: PairPhoneRequest) -> PairPhoneResponse:
     try:
         reply = daemon_client().pair_phone(request.phone_number)
         return PairPhoneResponse(success=True, code=reply.Code, message="")
+    except BoundaryValidationError:
+        raise
     except Exception as error:
         return PairPhoneResponse(success=False, code="", message=str(error))
 
