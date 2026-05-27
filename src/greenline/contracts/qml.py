@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass, fields, is_dataclass
+from dataclasses import MISSING, dataclass, field, fields, is_dataclass
 from enum import Enum
 from functools import wraps
 from pathlib import Path
-from typing import Any, Literal, ParamSpec, TypeVar, cast
+from types import NoneType
+from typing import Any, Literal, TypeVar, cast, get_args, get_origin, get_type_hints
 
+from greenline.contracts.codecs import decode_dataclass
 from greenline.contracts.validation import (
     BoundaryValidationError,
     report_validation_failure,
@@ -15,6 +17,7 @@ from models import (
     ChatListEntry,
     ChatListItem,
     ContactItem,
+    MentionSpan,
     MessageType,
     ReadReceipt,
     UiMessage,
@@ -413,8 +416,126 @@ def assert_chat_draft_update_payload(payload: Any) -> None:
         _assert_bool(update, "has_draft", f"chat-draft-update[{index}]")
 
 
+@dataclass(frozen=True)
+class ReplyContextRequest:
+    id: str
+    sender: str
+    text: str
+    participant: str
+
+
+@dataclass(frozen=True)
+class ChatIdRequest:
+    chat_id: str
+
+
+@dataclass(frozen=True)
+class JidRequest:
+    jid: str
+
+
+@dataclass(frozen=True)
+class PairPhoneRequest:
+    phone_number: str
+
+
+@dataclass(frozen=True)
+class SetNotificationsSuppressedRequest:
+    suppressed: bool
+
+
+@dataclass(frozen=True)
+class SendPresenceRequest:
+    available: bool
+
+
+@dataclass(frozen=True)
+class GetMessagesRequest:
+    chat_id: str
+    cursor: str = ""
+    page_size: int = 100
+
+
+@dataclass(frozen=True)
+class SetChatDraftRequest:
+    chat_id: str
+    text: str
+    mention_spans: list[MentionSpan] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class DeleteMessageRequest:
+    chat_id: str
+    message_id: str
+
+
+@dataclass(frozen=True)
+class EditTextMessageRequest:
+    chat_id: str
+    message_id: str
+    text: str
+
+
+@dataclass(frozen=True)
+class DownloadMediaRequest:
+    chat_id: str
+    message_id: str
+    media_type: str
+
+
+@dataclass(frozen=True)
+class SendTextMessageRequest:
+    chat_id: str
+    text: str
+    temp_id: str = ""
+    reply_context: ReplyContextRequest | None = None
+    mention_spans: list[MentionSpan] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class SendImageMessageRequest:
+    chat_id: str
+    file_path: str
+    caption: str = ""
+    temp_id: str = ""
+    reply_context: ReplyContextRequest | None = None
+
+
+@dataclass(frozen=True)
+class SendVideoMessageRequest:
+    chat_id: str
+    file_path: str
+    caption: str = ""
+    temp_id: str = ""
+    reply_context: ReplyContextRequest | None = None
+
+
+@dataclass(frozen=True)
+class SendAudioMessageRequest:
+    chat_id: str
+    file_path: str
+    duration_seconds: int = 0
+    temp_id: str = ""
+    reply_context: ReplyContextRequest | None = None
+
+
+@dataclass(frozen=True)
+class SendStickerMessageRequest:
+    chat_id: str
+    file_path: str
+    temp_id: str = ""
+    reply_context: ReplyContextRequest | None = None
+
+
+@dataclass(frozen=True)
+class SendContactMessageRequest:
+    chat_id: str
+    file_path: str
+    temp_id: str = ""
+    reply_context: ReplyContextRequest | None = None
+
+
 ReturnKind = Literal["dict", "bool", "none"]
-P = ParamSpec("P")
 R = TypeVar("R")
 
 
@@ -423,6 +544,7 @@ class ApiContract:
     name: str
     validator: Validator
     return_kind: ReturnKind
+    request_type: type[object] | None = None
     notes: str = ""
 
 
@@ -437,50 +559,83 @@ API_CONTRACTS: dict[str, ApiContract] = {
     "check_daemon_status": ApiContract("check_daemon_status", assert_daemon_status_response, "dict"),
     "check_daemon_version": ApiContract("check_daemon_version", assert_ensure_daemon_version_response, "dict"),
     "clear_data": ApiContract("clear_data", assert_clear_data_response, "dict"),
-    "delete_message": ApiContract("delete_message", assert_success_response, "dict"),
-    "download_media": ApiContract("download_media", assert_download_media_response, "dict"),
-    "edit_text_message": ApiContract("edit_text_message", assert_success_response, "dict"),
+    "delete_message": ApiContract("delete_message", assert_success_response, "dict", request_type=DeleteMessageRequest),
+    "download_media": ApiContract(
+        "download_media", assert_download_media_response, "dict", request_type=DownloadMediaRequest
+    ),
+    "edit_text_message": ApiContract(
+        "edit_text_message", assert_success_response, "dict", request_type=EditTextMessageRequest
+    ),
     "get_cached_stickers": ApiContract("get_cached_stickers", assert_cached_stickers_response, "dict"),
-    "get_chat_draft": ApiContract("get_chat_draft", assert_chat_draft_response, "dict"),
-    "get_chat_info": ApiContract("get_chat_info", assert_chat_info_response, "dict"),
+    "get_chat_draft": ApiContract("get_chat_draft", assert_chat_draft_response, "dict", request_type=ChatIdRequest),
+    "get_chat_info": ApiContract("get_chat_info", assert_chat_info_response, "dict", request_type=ChatIdRequest),
     "get_chat_list": ApiContract("get_chat_list", assert_chat_list_response, "dict"),
     "get_contact_list": ApiContract("get_contact_list", assert_contact_list_response, "dict"),
     "get_group_mention_candidates": ApiContract(
-        "get_group_mention_candidates", assert_group_mention_candidates_response, "dict"
+        "get_group_mention_candidates", assert_group_mention_candidates_response, "dict", request_type=ChatIdRequest
     ),
-    "get_messages": ApiContract("get_messages", assert_messages_response, "dict"),
-    "get_phone_number": ApiContract("get_phone_number", assert_phone_number_response, "dict"),
+    "get_messages": ApiContract("get_messages", assert_messages_response, "dict", request_type=GetMessagesRequest),
+    "get_phone_number": ApiContract("get_phone_number", assert_phone_number_response, "dict", request_type=JidRequest),
     "get_session_status": ApiContract("get_session_status", assert_session_status_response, "dict"),
     "get_settings": ApiContract("get_settings", assert_settings_response, "dict"),
     "get_sync_status": ApiContract(
         "get_sync_status",
         assert_sync_status_response,
         "bool",
-        "Returns a bare bool for list backlog state.",
+        notes="Returns a bare bool for list backlog state.",
     ),
     "install_daemon": ApiContract("install_daemon", assert_success_response, "dict"),
-    "mark_messages_as_read": ApiContract("mark_messages_as_read", assert_success_response, "dict"),
-    "pair_phone": ApiContract("pair_phone", assert_pair_phone_response, "dict"),
+    "mark_messages_as_read": ApiContract(
+        "mark_messages_as_read", assert_success_response, "dict", request_type=ChatIdRequest
+    ),
+    "pair_phone": ApiContract("pair_phone", assert_pair_phone_response, "dict", request_type=PairPhoneRequest),
     "ping_daemon": ApiContract("ping_daemon", assert_success_response, "dict"),
-    "send_audio_message": ApiContract("send_audio_message", assert_success_response, "dict"),
-    "send_contact_message": ApiContract("send_contact_message", assert_success_response, "dict"),
-    "send_image_message": ApiContract("send_image_message", assert_success_response, "dict"),
-    "send_presence": ApiContract("send_presence", assert_none_response, "none", "Fire-and-forget presence command."),
-    "send_sticker_message": ApiContract("send_sticker_message", assert_success_response, "dict"),
-    "send_text_message": ApiContract("send_text_message", assert_success_response, "dict"),
-    "send_video_message": ApiContract("send_video_message", assert_success_response, "dict"),
-    "set_chat_draft": ApiContract("set_chat_draft", assert_success_response, "dict"),
-    "set_notifications_suppressed": ApiContract("set_notifications_suppressed", assert_success_response, "dict"),
+    "send_audio_message": ApiContract(
+        "send_audio_message", assert_success_response, "dict", request_type=SendAudioMessageRequest
+    ),
+    "send_contact_message": ApiContract(
+        "send_contact_message", assert_success_response, "dict", request_type=SendContactMessageRequest
+    ),
+    "send_image_message": ApiContract(
+        "send_image_message", assert_success_response, "dict", request_type=SendImageMessageRequest
+    ),
+    "send_presence": ApiContract(
+        "send_presence",
+        assert_none_response,
+        "none",
+        request_type=SendPresenceRequest,
+        notes="Fire-and-forget presence command.",
+    ),
+    "send_sticker_message": ApiContract(
+        "send_sticker_message", assert_success_response, "dict", request_type=SendStickerMessageRequest
+    ),
+    "send_text_message": ApiContract(
+        "send_text_message", assert_success_response, "dict", request_type=SendTextMessageRequest
+    ),
+    "send_video_message": ApiContract(
+        "send_video_message", assert_success_response, "dict", request_type=SendVideoMessageRequest
+    ),
+    "set_chat_draft": ApiContract("set_chat_draft", assert_success_response, "dict", request_type=SetChatDraftRequest),
+    "set_notifications_suppressed": ApiContract(
+        "set_notifications_suppressed",
+        assert_success_response,
+        "dict",
+        request_type=SetNotificationsSuppressedRequest,
+    ),
     "start_event_loop": ApiContract(
         "start_event_loop",
         assert_none_response,
         "none",
-        "Registers framework Event instances; events have separate contracts.",
+        notes="Registers framework Event instances; events have separate contracts.",
     ),
     "subscribe_presence": ApiContract(
-        "subscribe_presence", assert_none_response, "none", "Fire-and-forget presence subscription."
+        "subscribe_presence",
+        assert_none_response,
+        "none",
+        request_type=ChatIdRequest,
+        notes="Fire-and-forget presence subscription.",
     ),
-    "toggle_mute": ApiContract("toggle_mute", assert_success_response, "dict"),
+    "toggle_mute": ApiContract("toggle_mute", assert_success_response, "dict", request_type=ChatIdRequest),
     "uninstall_daemon": ApiContract("uninstall_daemon", assert_success_response, "dict"),
 }
 
@@ -502,8 +657,117 @@ EVENT_CONTRACTS: dict[str, EventContract] = {
 }
 
 
-def _validation_error(boundary: str, name: str, payload: Any, error: BaseException | str) -> BoundaryValidationError:
-    report_validation_failure(boundary, error, payload=payload, contract=name, direction="encode")
+def _normalize_qml_request_value(expected_type: Any, value: object) -> object:
+    if value is None:
+        return None
+    if expected_type is int and type(value) is float and value.is_integer():
+        return int(value)
+
+    origin = get_origin(expected_type)
+    if origin is list:
+        item_types = get_args(expected_type)
+        if isinstance(value, list) and len(item_types) == 1:
+            return [_normalize_qml_request_value(item_types[0], item) for item in value]
+        return value
+
+    union_types = [item for item in get_args(expected_type) if item is not NoneType]
+    if union_types and len(union_types) != len(get_args(expected_type)):
+        return _normalize_qml_request_value(union_types[0], value)
+
+    if isinstance(expected_type, type) and is_dataclass(expected_type) and isinstance(value, dict):
+        normalized = dict(value)
+        for field_name, field_type in get_type_hints(expected_type).items():
+            if field_name in normalized:
+                normalized[field_name] = _normalize_qml_request_value(field_type, normalized[field_name])
+        return normalized
+
+    return value
+
+
+def request_arg_bounds(request_type: type[object] | None) -> tuple[int, int]:
+    if request_type is None:
+        return (0, 0)
+    if not is_dataclass(request_type):
+        raise TypeError(f"QML request type must be a dataclass, got {request_type!r}")
+
+    request_fields = fields(cast(Any, request_type))
+    min_args = sum(
+        1
+        for request_field in request_fields
+        if request_field.default is MISSING and request_field.default_factory is MISSING
+    )
+    return (min_args, len(request_fields))
+
+
+def decode_qml_request(name: str, args: tuple[object, ...], kwargs: dict[str, object]) -> object | None:
+    payload = {"args": list(args), "kwargs": dict(kwargs)}
+    contract = API_CONTRACTS.get(name)
+    if contract is None:
+        raise _validation_error(
+            "qml_api", name, payload, f"No QML API contract registered for {name!r}", direction="decode"
+        )
+
+    if kwargs:
+        raise _validation_error(
+            "qml_api",
+            name,
+            payload,
+            "QML API calls do not accept keyword arguments",
+            direction="decode",
+        )
+
+    request_type = contract.request_type
+    if request_type is None:
+        if args:
+            raise _validation_error(
+                "qml_api",
+                name,
+                payload,
+                f"QML API {name!r} does not accept positional arguments (got {len(args)})",
+                direction="decode",
+            )
+        return None
+
+    min_args, max_args = request_arg_bounds(request_type)
+    if len(args) < min_args:
+        raise _validation_error(
+            "qml_api",
+            name,
+            payload,
+            f"QML API {name!r} expects at least {min_args} positional arguments, got {len(args)}",
+            direction="decode",
+        )
+    if len(args) > max_args:
+        raise _validation_error(
+            "qml_api",
+            name,
+            payload,
+            f"QML API {name!r} expects at most {max_args} positional arguments, got {len(args)}",
+            direction="decode",
+        )
+
+    request_fields = fields(cast(Any, request_type))
+    raw_request = {request_fields[index].name: value for index, value in enumerate(args)}
+    normalized_request = cast(dict[str, object], _normalize_qml_request_value(request_type, raw_request))
+    return decode_dataclass(
+        request_type,
+        normalized_request,
+        boundary="qml_api",
+        contract=name,
+        direction="decode",
+        strict=True,
+    )
+
+
+def _validation_error(
+    boundary: str,
+    name: str,
+    payload: Any,
+    error: BaseException | str,
+    *,
+    direction: str = "encode",
+) -> BoundaryValidationError:
+    report_validation_failure(boundary, error, payload=payload, contract=name, direction=direction)
     return BoundaryValidationError(str(error))
 
 
@@ -527,14 +791,18 @@ def validate_qml_event(name: str, payload: object) -> None:
         raise _validation_error("qml_event", name, payload, error) from error
 
 
-def qml_api(name: str) -> Callable[[Callable[P, R]], Callable[P, R]]:
-    def decorate(func: Callable[P, R]) -> Callable[P, R]:
+def qml_api(name: str) -> Callable[[Callable[..., R]], Callable[..., R]]:
+    def decorate(func: Callable[..., R]) -> Callable[..., R]:
         @wraps(func)
-        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            result = func(*args, **kwargs)
+        def wrapper(*args: object, **kwargs: object) -> R:
+            request = decode_qml_request(name, args, dict(kwargs))
+            if request is None:
+                result = func()
+            else:
+                result = func(request)
             validate_qml_response(name, result)
             return result
 
-        return cast(Callable[P, R], wrapper)
+        return cast(Callable[..., R], wrapper)
 
     return decorate

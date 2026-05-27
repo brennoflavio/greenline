@@ -1,11 +1,11 @@
 from dataclasses import asdict, dataclass, field
-from typing import Mapping, Sequence
 
 from daemon_types import Contact as DaemonContact
 from greenline import qml_events
 from greenline.api.common import SuccessResponse, ui_chat
 from greenline.contracts.daemon import daemon_client
 from greenline.contracts.kv import GreenlineKV
+from greenline.contracts.qml import ChatIdRequest, SetChatDraftRequest
 from greenline.contracts.validation import BoundaryValidationError
 from greenline.store.identity import canonicalize_contact_jid
 from greenline.store.mentions import build_mention_candidate, validate_mention_spans
@@ -84,9 +84,9 @@ def get_chat_list() -> ChatListResponse:
 
 
 @crash_reporter
-def get_chat_info(chat_id: str) -> dict[str, object]:
+def get_chat_info(request: ChatIdRequest) -> dict[str, object]:
     with GreenlineKV() as kv:
-        chat = kv.get_record(f"chat:{chat_id}")
+        chat = kv.get_record(f"chat:{request.chat_id}")
     if chat is None:
         return {"success": False}
     return {
@@ -101,9 +101,9 @@ def get_chat_info(chat_id: str) -> dict[str, object]:
 
 @crash_reporter
 @dataclass_to_dict
-def get_group_mention_candidates(chat_id: str) -> GroupMentionCandidatesResponse:
+def get_group_mention_candidates(request: ChatIdRequest) -> GroupMentionCandidatesResponse:
     try:
-        participants = daemon_client().get_group_participants(chat_id).Participants
+        participants = daemon_client().get_group_participants(request.chat_id).Participants
         candidates = []
         for participant in participants:
             candidate = build_mention_candidate(participant.jid, participant.display_name)
@@ -118,10 +118,10 @@ def get_group_mention_candidates(chat_id: str) -> GroupMentionCandidatesResponse
 
 @crash_reporter
 @dataclass_to_dict
-def get_chat_draft(chat_id: str) -> ChatDraftResponse:
+def get_chat_draft(request: ChatIdRequest) -> ChatDraftResponse:
     with GreenlineKV() as kv:
-        draft = kv.get_record(f"draft:{chat_id}", default=DraftRecord(""))
-        draft_mentions = kv.get_record(f"draft_mentions:{chat_id}", default=DraftMentionsRecord([]))
+        draft = kv.get_record(f"draft:{request.chat_id}", default=DraftRecord(""))
+        draft_mentions = kv.get_record(f"draft_mentions:{request.chat_id}", default=DraftMentionsRecord([]))
 
     draft_text = draft.value
     mention_spans = validate_mention_spans(draft_text, draft_mentions.value)
@@ -130,46 +130,42 @@ def get_chat_draft(chat_id: str) -> ChatDraftResponse:
 
 @crash_reporter
 @dataclass_to_dict
-def set_chat_draft(
-    chat_id: str,
-    text: str,
-    mention_spans: Sequence[MentionSpan | Mapping[str, object]] | None = None,
-) -> SuccessResponse:
-    draft_text = str(text)
-    validated_spans = validate_mention_spans(draft_text, mention_spans)
+def set_chat_draft(request: SetChatDraftRequest) -> SuccessResponse:
+    draft_text = request.text
+    validated_spans = validate_mention_spans(draft_text, request.mention_spans)
     with GreenlineKV() as kv:
         if draft_text != "":
-            kv.put_record(f"draft:{chat_id}", DraftRecord(draft_text))
+            kv.put_record(f"draft:{request.chat_id}", DraftRecord(draft_text))
             if validated_spans:
                 kv.put_record(
-                    f"draft_mentions:{chat_id}",
+                    f"draft_mentions:{request.chat_id}",
                     DraftMentionsRecord(validated_spans),
                 )
             else:
-                kv.delete(f"draft_mentions:{chat_id}")
+                kv.delete(f"draft_mentions:{request.chat_id}")
         else:
-            kv.delete(f"draft:{chat_id}")
-            kv.delete(f"draft_mentions:{chat_id}")
-    qml_events.emit_chat_draft_update(chat_id, draft_text)
+            kv.delete(f"draft:{request.chat_id}")
+            kv.delete(f"draft_mentions:{request.chat_id}")
+    qml_events.emit_chat_draft_update(request.chat_id, draft_text)
     return SuccessResponse(success=True, message="")
 
 
 @crash_reporter
 @dataclass_to_dict
-def toggle_mute(chat_id: str) -> SuccessResponse:
+def toggle_mute(request: ChatIdRequest) -> SuccessResponse:
     with GreenlineKV() as kv:
-        chat = kv.get_record(f"chat:{chat_id}")
+        chat = kv.get_record(f"chat:{request.chat_id}")
         if chat is None:
             return SuccessResponse(success=False, message="Chat not found")
         new_muted = not chat.muted
 
-    daemon_client().set_muted(chat_id, new_muted)
+    daemon_client().set_muted(request.chat_id, new_muted)
 
     with GreenlineKV() as kv:
-        chat = kv.get_record(f"chat:{chat_id}")
+        chat = kv.get_record(f"chat:{request.chat_id}")
         if chat is not None:
             chat.muted = new_muted
-            kv.put_record(f"chat:{chat_id}", chat)
+            kv.put_record(f"chat:{request.chat_id}", chat)
             qml_events.emit_chat_list_update([chat])
 
     return SuccessResponse(success=True, message="")

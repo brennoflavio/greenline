@@ -4,6 +4,7 @@ import ast
 import re
 import sys
 from pathlib import Path
+from typing import NamedTuple
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "src"
@@ -12,9 +13,9 @@ if str(SRC) not in sys.path:
 if str(ROOT / "tests") not in sys.path:
     sys.path.insert(0, str(ROOT / "tests"))
 
-from greenline.contracts.qml import API_CONTRACTS, EVENT_CONTRACTS
+from greenline.contracts.qml import API_CONTRACTS, EVENT_CONTRACTS, request_arg_bounds
 
-QML_CALL_RE = re.compile(r"(?:python\.)?call\(\s*['\"]main\.([A-Za-z_][A-Za-z0-9_]*)['\"]")
+QML_MAIN_CALL_RE = re.compile(r"(?:python\.)?call\(\s*['\"]main\.([A-Za-z_][A-Za-z0-9_]*)['\"]")
 QML_HANDLER_RE = re.compile(r"setHandler\(\s*['\"]([^'\"]+)['\"]")
 PYOTHERSIDE_SEND_RE = re.compile(r"\bpyotherside\.send\s*\(")
 APPROVED_PYOTHERSIDE_PATHS = {
@@ -23,11 +24,134 @@ APPROVED_PYOTHERSIDE_PATHS = {
 }
 
 
-def qml_used_main_calls() -> set[str]:
-    calls: set[str] = set()
+class QmlMainCall(NamedTuple):
+    path: Path
+    line: int
+    name: str
+    arg_count: int
+
+
+def _find_matching_bracket(text: str, start: int) -> int:
+    depth = 0
+    quote: str | None = None
+    escape = False
+
+    for index in range(start, len(text)):
+        char = text[index]
+        if quote is not None:
+            if escape:
+                escape = False
+            elif char == "\\":
+                escape = True
+            elif char == quote:
+                quote = None
+            continue
+
+        if char in ('"', "'"):
+            quote = char
+            continue
+        if char == "[":
+            depth += 1
+            continue
+        if char == "]":
+            depth -= 1
+            if depth == 0:
+                return index
+
+    raise ValueError("Unterminated QML argument array")
+
+
+def _count_qml_array_items(array_text: str) -> int:
+    inner = array_text[1:-1].strip()
+    if not inner:
+        return 0
+
+    items: list[str] = []
+    start = 0
+    square_depth = 0
+    curly_depth = 0
+    paren_depth = 0
+    quote: str | None = None
+    escape = False
+
+    for index, char in enumerate(inner):
+        if quote is not None:
+            if escape:
+                escape = False
+            elif char == "\\":
+                escape = True
+            elif char == quote:
+                quote = None
+            continue
+
+        if char in ('"', "'"):
+            quote = char
+            continue
+        if char == "[":
+            square_depth += 1
+            continue
+        if char == "]":
+            square_depth -= 1
+            continue
+        if char == "{":
+            curly_depth += 1
+            continue
+        if char == "}":
+            curly_depth -= 1
+            continue
+        if char == "(":
+            paren_depth += 1
+            continue
+        if char == ")":
+            paren_depth -= 1
+            continue
+        if char == "," and square_depth == 0 and curly_depth == 0 and paren_depth == 0:
+            items.append(inner[start:index].strip())
+            start = index + 1
+
+    items.append(inner[start:].strip())
+    return len([item for item in items if item])
+
+
+def _scan_qml_main_calls() -> tuple[list[QmlMainCall], list[str]]:
+    calls: list[QmlMainCall] = []
+    parse_errors: list[str] = []
+
     for path in (ROOT / "qml").rglob("*.qml"):
-        calls.update(QML_CALL_RE.findall(path.read_text()))
+        text = path.read_text()
+        relative_path = path.relative_to(ROOT)
+        for match in QML_MAIN_CALL_RE.finditer(text):
+            line = text.count("\n", 0, match.start()) + 1
+            cursor = match.end()
+            while cursor < len(text) and text[cursor].isspace():
+                cursor += 1
+            if cursor >= len(text) or text[cursor] != ",":
+                parse_errors.append(f"{relative_path}:{line}: main.{match.group(1)} is missing an argument array")
+                continue
+            cursor += 1
+            while cursor < len(text) and text[cursor].isspace():
+                cursor += 1
+            if cursor >= len(text) or text[cursor] != "[":
+                parse_errors.append(
+                    f"{relative_path}:{line}: main.{match.group(1)} must use an inline positional argument array"
+                )
+                continue
+
+            array_start = cursor
+            array_end = _find_matching_bracket(text, array_start)
+            arg_count = _count_qml_array_items(text[array_start : array_end + 1])
+            calls.append(QmlMainCall(relative_path, line, match.group(1), arg_count))
+
+    return calls, parse_errors
+
+
+def qml_main_calls() -> list[QmlMainCall]:
+    calls, _ = _scan_qml_main_calls()
     return calls
+
+
+def qml_used_main_calls() -> set[str]:
+    return {call.name for call in qml_main_calls()}
 
 
 def qml_handlers() -> set[str]:
@@ -152,6 +276,22 @@ def raw_pyotherside_usages() -> list[str]:
     return violations
 
 
+def qml_call_contract_errors() -> list[str]:
+    errors: list[str] = []
+    for call in qml_main_calls():
+        contract = API_CONTRACTS.get(call.name)
+        if contract is None:
+            continue
+        min_args, max_args = request_arg_bounds(contract.request_type)
+        if min_args <= call.arg_count <= max_args:
+            continue
+        errors.append(
+            f"{call.path}:{call.line}: main.{call.name} passes {call.arg_count} positional args, "
+            f"but contract accepts {min_args}..{max_args}"
+        )
+    return errors
+
+
 def _format_missing(title: str, missing: set[str]) -> list[str]:
     if not missing:
         return []
@@ -177,6 +317,14 @@ def coverage_errors() -> list[str]:
     if invalid_wrappers:
         errors.append("Invalid src/main.py qml_api wrappers:")
         errors.extend(f"  - {wrapper}" for wrapper in sorted(invalid_wrappers))
+    _qml_calls, qml_call_parse_errors = _scan_qml_main_calls()
+    if qml_call_parse_errors:
+        errors.append("QML main.* calls that do not use inline positional argument arrays:")
+        errors.extend(f"  - {error}" for error in qml_call_parse_errors)
+    qml_call_errors = qml_call_contract_errors()
+    if qml_call_errors:
+        errors.append("QML main.* calls with positional args outside request contract bounds:")
+        errors.extend(f"  - {error}" for error in qml_call_errors)
     errors.extend(_format_missing("QML setHandler events missing event contracts:", handlers - event_contracts))
     errors.extend(_format_missing("Event contracts not used by QML setHandler:", event_contracts - handlers))
     bridge_events = bridge_event_names()

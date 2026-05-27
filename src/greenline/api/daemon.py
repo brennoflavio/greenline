@@ -14,6 +14,13 @@ from daemon import (
 from greenline.api.common import SuccessResponse
 from greenline.contracts.daemon import daemon_client
 from greenline.contracts.kv import GreenlineKV
+from greenline.contracts.qml import (
+    ChatIdRequest,
+    JidRequest,
+    PairPhoneRequest,
+    SendPresenceRequest,
+    SetNotificationsSuppressedRequest,
+)
 from greenline.contracts.validation import BoundaryValidationError
 from greenline.events.chat_sync import ChatListUpdateEvent, DaemonEventHandler
 from greenline.events.session import LAST_EVENT_ID_KEY, SessionStatusEvent
@@ -143,9 +150,9 @@ def get_session_status() -> SessionStatusResponse:
 
 @crash_reporter
 @dataclass_to_dict
-def pair_phone(phone_number: str) -> PairPhoneResponse:
+def pair_phone(request: PairPhoneRequest) -> PairPhoneResponse:
     try:
-        reply = daemon_client().pair_phone(phone_number)
+        reply = daemon_client().pair_phone(request.phone_number)
         return PairPhoneResponse(success=True, code=reply.Code, message="")
     except Exception as error:
         return PairPhoneResponse(success=False, code="", message=str(error))
@@ -189,10 +196,10 @@ def get_settings() -> SettingsResponse:
 
 @crash_reporter
 @dataclass_to_dict
-def set_notifications_suppressed(suppressed: bool) -> SuccessResponse:
+def set_notifications_suppressed(request: SetNotificationsSuppressedRequest) -> SuccessResponse:
     try:
         with GreenlineKV() as kv:
-            kv.put_record(NOTIFICATIONS_SUPPRESSED_KEY, NotificationsSuppressedRecord(bool(suppressed)))
+            kv.put_record(NOTIFICATIONS_SUPPRESSED_KEY, NotificationsSuppressedRecord(request.suppressed))
         return SuccessResponse(success=True, message="")
     except Exception as error:
         return SuccessResponse(success=False, message=str(error))
@@ -224,25 +231,25 @@ def clear_data() -> ClearDataResponse:
 
 @crash_reporter
 @dataclass_to_dict
-def get_phone_number(jid: str) -> PhoneNumberResponse:
+def get_phone_number(request: JidRequest) -> PhoneNumberResponse:
     try:
-        phone = daemon_client().get_phone_number(jid)
+        phone = daemon_client().get_phone_number(request.jid)
         return PhoneNumberResponse(success=True, phone_number=phone)
     except Exception:
         return PhoneNumberResponse(success=True, phone_number="")
 
 
-def send_presence(available: bool) -> None:
+def send_presence(request: SendPresenceRequest) -> None:
     try:
-        daemon_client().send_presence(available)
+        daemon_client().send_presence(request.available)
     except Exception:
         pass
 
 
-def subscribe_presence(chat_id: str) -> None:
-    if "@g.us" in chat_id:
+def subscribe_presence(request: ChatIdRequest) -> None:
+    if "@g.us" in request.chat_id:
         return
     try:
-        daemon_client().subscribe_presence(chat_id)
+        daemon_client().subscribe_presence(request.chat_id)
     except Exception:
         pass
