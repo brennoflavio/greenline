@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, is_dataclass
+import json
+from dataclasses import asdict, dataclass, field, is_dataclass
 from typing import Any
 
 from greenline.contracts.codecs import to_json_like
@@ -8,7 +9,21 @@ from models import Message
 
 
 @dataclass
+class MediaDownloadRecord:
+    media_type: str = ""
+    direct_path: str = ""
+    media_key: str = ""
+    file_enc_sha256: str = ""
+    file_sha256: str = ""
+    file_length: int = 0
+    mimetype: str = ""
+    file_name: str = ""
+
+
+@dataclass
 class StoredMessageRecord(Message):
+    media_download: MediaDownloadRecord = field(default_factory=MediaDownloadRecord)
+    reply_quote_payload_json: str = ""
     raw: dict[str, Any] | None = None
 
 
@@ -86,15 +101,69 @@ class StickerCacheRecord:
     value: str
 
 
+_MEDIA_DOWNLOAD_FIELDS = (
+    ("image", "imageMessage"),
+    ("video", "videoMessage"),
+    ("audio", "audioMessage"),
+    ("document", "documentMessage"),
+    ("sticker", "stickerMessage"),
+)
+
+
+def _int_value(value: Any) -> int:
+    try:
+        return int(value or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _media_download_record(raw: dict[str, Any]) -> MediaDownloadRecord:
+    from greenline.store.media import resolve_media_message_content
+
+    raw_message = raw.get("Message")
+    if not isinstance(raw_message, dict):
+        return MediaDownloadRecord()
+
+    for media_type, field_name in _MEDIA_DOWNLOAD_FIELDS:
+        media = resolve_media_message_content(raw_message, field_name)
+        if not isinstance(media, dict):
+            continue
+        return MediaDownloadRecord(
+            media_type=media_type,
+            direct_path=str(media.get("directPath") or ""),
+            media_key=str(media.get("mediaKey") or ""),
+            file_enc_sha256=str(media.get("fileEncSHA256") or ""),
+            file_sha256=str(media.get("fileSHA256") or ""),
+            file_length=_int_value(media.get("fileLength")),
+            mimetype=str(media.get("mimetype") or ""),
+            file_name=str(media.get("fileName") or ""),
+        )
+    return MediaDownloadRecord()
+
+
 def stored_message_record(message: Message, raw: dict[str, Any] | None = None) -> StoredMessageRecord:
     payload = asdict(message)
     if raw is not None:
+        raw_message = raw.get("Message")
+        if isinstance(raw_message, dict):
+            payload["reply_quote_payload_json"] = json.dumps(to_json_like(raw_message), separators=(",", ":"))
+        payload["media_download"] = _media_download_record(raw)
         payload["raw"] = raw
+    return StoredMessageRecord(**payload)
+
+
+def updated_stored_message_record(record: StoredMessageRecord, message: Message) -> StoredMessageRecord:
+    payload = asdict(message)
+    payload["media_download"] = record.media_download
+    payload["reply_quote_payload_json"] = record.reply_quote_payload_json
+    payload["raw"] = record.raw
     return StoredMessageRecord(**payload)
 
 
 def message_from_record(record: StoredMessageRecord) -> Message:
     payload = asdict(record)
+    payload.pop("media_download", None)
+    payload.pop("reply_quote_payload_json", None)
     payload.pop("raw", None)
     return Message(**payload)
 

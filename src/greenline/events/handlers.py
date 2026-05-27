@@ -22,7 +22,7 @@ from greenline.store.records import (
     UnhandledMessageRecord,
     UnknownEventRecord,
     message_from_record,
-    stored_message_record,
+    updated_stored_message_record,
 )
 from greenline.ui import dataclass_to_ui_dict, enum_to_str
 from history_sync import handle_history_sync
@@ -57,44 +57,40 @@ def render_chat_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
     return qml_payloads.stored_ui_chat(payload)
 
 
-def _auto_download_sticker(msg: Message, raw: Dict[str, Any]) -> str:
-    msg_content = raw.get("Message", {})
-    sticker = msg_content.get("stickerMessage")
-    if not sticker:
+def _auto_download_sticker(msg: Message) -> str:
+    key = f"message:{msg.chat_id}:{msg.timestamp_unix}:{msg.id}"
+    with GreenlineKV() as kv:
+        entry = cast(StoredMessageRecord | None, kv.get_record(key))
+    if entry is None:
         return ""
 
-    direct_path = sticker.get("directPath", "")
-    media_key = sticker.get("mediaKey", "")
-    if not direct_path or not media_key:
+    media = entry.media_download
+    if media.media_type != "sticker" or not media.direct_path or not media.media_key:
         return ""
 
-    file_sha256 = sticker.get("fileSHA256", "")
-    if file_sha256:
-        cache_key = f"sticker_cache:{file_sha256}"
+    if media.file_sha256:
+        cache_key = f"sticker_cache:{media.file_sha256}"
         with GreenlineKV() as kv:
             cached = cast(StickerCacheRecord | None, kv.get_record(cache_key))
         if cached is not None and os.path.exists(cached.value):
             media_path = "file://" + cached.value
-            key = f"message:{msg.chat_id}:{msg.timestamp_unix}:{msg.id}"
             with GreenlineKV() as kv:
-                entry = cast(StoredMessageRecord | None, kv.get_record(key))
-                if entry is not None:
-                    updated = message_from_record(entry)
-                    updated.media_path = media_path
-                    kv.put_record(key, stored_message_record(updated, entry.raw))
+                updated = message_from_record(entry)
+                updated.media_path = media_path
+                kv.put_record(key, updated_stored_message_record(entry, updated))
             return media_path
 
     try:
         file_path = str(
             daemon_client()
             .download_media(
-                direct_path=direct_path,
-                media_key=media_key,
-                file_enc_sha256=sticker.get("fileEncSHA256", ""),
-                file_sha256=file_sha256,
-                file_length=sticker.get("fileLength", 0),
+                direct_path=media.direct_path,
+                media_key=media.media_key,
+                file_enc_sha256=media.file_enc_sha256,
+                file_sha256=media.file_sha256,
+                file_length=media.file_length,
                 media_type="sticker",
-                mimetype=sticker.get("mimetype", ""),
+                mimetype=media.mimetype,
                 message_id=msg.id,
                 chat_id=msg.chat_id,
             )
@@ -103,18 +99,15 @@ def _auto_download_sticker(msg: Message, raw: Dict[str, Any]) -> str:
     except Exception:
         return ""
 
-    if file_sha256:
+    if media.file_sha256:
         with GreenlineKV() as kv:
-            kv.put_record(f"sticker_cache:{file_sha256}", StickerCacheRecord(file_path))
+            kv.put_record(f"sticker_cache:{media.file_sha256}", StickerCacheRecord(file_path))
 
     media_path = "file://" + str(file_path)
-    key = f"message:{msg.chat_id}:{msg.timestamp_unix}:{msg.id}"
     with GreenlineKV() as kv:
-        entry = cast(StoredMessageRecord | None, kv.get_record(key))
-        if entry is not None:
-            updated = message_from_record(entry)
-            updated.media_path = media_path
-            kv.put_record(key, stored_message_record(updated, entry.raw))
+        updated = message_from_record(entry)
+        updated.media_path = media_path
+        kv.put_record(key, updated_stored_message_record(entry, updated))
 
     return media_path
 
@@ -140,7 +133,7 @@ def _handle_message(
         _save_unhandled_message(event, raw)
         return
     if stored.message.type == MessageType.STICKER:
-        media_path = _auto_download_sticker(stored.message, raw)
+        media_path = _auto_download_sticker(stored.message)
         if media_path:
             stored.message.media_path = media_path
     message_upserts.append(dataclass_to_ui_dict(stored.message))

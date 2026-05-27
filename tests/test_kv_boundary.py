@@ -70,13 +70,41 @@ def test_object_records_round_trip_without_changing_storage_shape() -> None:
             "business_name": "",
             "name_updated_at": 0,
         }
-        assert raw_kv.get(f"message:{message.chat_id}:{message.timestamp_unix}:{message.id}")["raw"] == {
-            "Message": {"conversation": "hello"}
-        }
+        raw_message = raw_kv.get(f"message:{message.chat_id}:{message.timestamp_unix}:{message.id}")
+        assert raw_message["reply_quote_payload_json"] == '{"conversation":"hello"}'
+        assert raw_message["raw"] == {"Message": {"conversation": "hello"}}
 
     with GreenlineKV() as kv:
         assert kv.get_record(f"chat:{chat.id}") == chat
         assert kv.get_record(f"message:{message.chat_id}:{message.timestamp_unix}:{message.id}") == message
+
+
+def test_stored_message_promotes_media_download_fields() -> None:
+    message = stored_message_record(
+        _message(),
+        raw={
+            "Message": {
+                "imageMessage": {
+                    "directPath": "/media/path",
+                    "mediaKey": "key",
+                    "fileEncSHA256": "enc",
+                    "fileSHA256": "sha",
+                    "fileLength": 123,
+                    "mimetype": "image/jpeg",
+                    "fileName": "photo.jpg",
+                }
+            }
+        },
+    )
+
+    assert message.media_download.media_type == "image"
+    assert message.media_download.direct_path == "/media/path"
+    assert message.media_download.media_key == "key"
+    assert message.media_download.file_enc_sha256 == "enc"
+    assert message.media_download.file_sha256 == "sha"
+    assert message.media_download.file_length == 123
+    assert message.media_download.mimetype == "image/jpeg"
+    assert message.media_download.file_name == "photo.jpg"
 
 
 def test_stored_message_omits_none_raw() -> None:

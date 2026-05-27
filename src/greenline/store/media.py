@@ -198,22 +198,21 @@ def _quoted_message_preview(quoted: Optional[Dict[str, Any]]) -> str:
     return ""
 
 
-def _extract_thumbnail(raw: Optional[Dict[str, Any]], message_id: str) -> str:
-    if not raw:
+def extract_thumbnail_from_message_content(message_content: Optional[Dict[str, Any]], message_id: str) -> str:
+    if not message_content:
         return ""
-    msg_content = raw.get("Message", {})
     thumbnail_b64 = ""
     for field_name in ("imageMessage", "videoMessage", "documentMessage", "extendedTextMessage"):
         sub = (
-            resolve_media_message_content(msg_content, field_name)
+            resolve_media_message_content(message_content, field_name)
             if field_name == "imageMessage"
-            else msg_content.get(field_name)
+            else message_content.get(field_name)
         )
         if sub and sub.get("JPEGThumbnail"):
             thumbnail_b64 = sub["JPEGThumbnail"]
             break
     if not thumbnail_b64:
-        sticker = msg_content.get("stickerMessage")
+        sticker = message_content.get("stickerMessage")
         if sticker and sticker.get("pngThumbnail"):
             thumbnail_b64 = sticker["pngThumbnail"]
 
@@ -225,7 +224,7 @@ def _extract_thumbnail(raw: Optional[Dict[str, Any]], message_id: str) -> str:
         return ""
     thumb_dir = _get_thumbnail_dir()
     os.makedirs(thumb_dir, exist_ok=True)
-    ext = "png" if msg_content.get("stickerMessage") else "jpg"
+    ext = "png" if message_content.get("stickerMessage") else "jpg"
     path = os.path.join(thumb_dir, f"{message_id}.{ext}")
     with open(path, "wb") as file_handle:
         file_handle.write(data)

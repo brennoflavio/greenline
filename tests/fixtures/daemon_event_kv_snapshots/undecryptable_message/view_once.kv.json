@@ -51,6 +51,16 @@
       "link_description": "",
       "link_title": "",
       "link_url": "",
+      "media_download": {
+        "direct_path": "",
+        "file_enc_sha256": "",
+        "file_length": 0,
+        "file_name": "",
+        "file_sha256": "",
+        "media_key": "",
+        "media_type": "",
+        "mimetype": ""
+      },
       "media_path": "",
       "mention_spans": [],
       "mentioned_jids": [],
@@ -96,6 +106,7 @@
         "UnavailableType": "view_once"
       },
       "read_receipt": "",
+      "reply_quote_payload_json": "",
       "reply_to_from_me": false,
       "reply_to_id": "",
       "reply_to_mentioned_jids": [],

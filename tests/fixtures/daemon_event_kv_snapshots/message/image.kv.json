@@ -51,6 +51,16 @@
       "link_description": "",
       "link_title": "",
       "link_url": "",
+      "media_download": {
+        "direct_path": "/v/fixture/media-1.enc",
+        "file_enc_sha256": "REDACTED_FILEENCSHA256",
+        "file_length": 276460,
+        "file_name": "",
+        "file_sha256": "REDACTED_FILESHA256",
+        "media_key": "REDACTED_MEDIAKEY",
+        "media_type": "image",
+        "mimetype": "image/jpeg"
+      },
       "media_path": "",
       "mention_spans": [],
       "mentioned_jids": [],
@@ -165,6 +175,7 @@
         "UnavailableRequestID": ""
       },
       "read_receipt": "",
+      "reply_quote_payload_json": "{\"imageMessage\":{\"JPEGThumbnail\":\"REDACTED_JPEGTHUMBNAIL\",\"URL\":\"https://example.test/fixture\",\"contextInfo\":{\"pairedMediaType\":0,\"statusSourceType\":0},\"directPath\":\"/v/fixture/media-1.enc\",\"fileEncSHA256\":\"REDACTED_FILEENCSHA256\",\"fileLength\":276460,\"fileSHA256\":\"REDACTED_FILESHA256\",\"height\":1448,\"mediaKey\":\"REDACTED_MEDIAKEY\",\"mediaKeyTimestamp\":1,\"midQualityFileSHA256\":\"REDACTED_MIDQUALITYFILESHA256\",\"mimetype\":\"image/jpeg\",\"scanLengths\":[23422,134459,49146,69433],\"scansSidecar\":\"REDACTED_SCANSSIDECAR\",\"width\":1086},\"messageContextInfo\":{\"messageSecret\":\"REDACTED_MESSAGESECRET\"}}",
       "reply_to_from_me": false,
       "reply_to_id": "",
       "reply_to_mentioned_jids": [],

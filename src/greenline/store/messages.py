@@ -12,7 +12,7 @@ from greenline.store.identity import (
 )
 from greenline.store.media import (
     _contact_preview,
-    _extract_thumbnail,
+    extract_thumbnail_from_message_content,
     persist_contact_vcard,
     resolve_media_message_content,
     template_message_button,
@@ -224,6 +224,7 @@ def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = 
         link_title=link_title,
         link_description=link_description,
         link_url=link_url,
+        thumbnail_path=extract_thumbnail_from_message_content(raw_content, info.ID),
     )
 
 
@@ -528,8 +529,6 @@ def store_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = None) -> Op
     msg = message_event_to_message(evt, raw)
     if msg is None:
         return None
-
-    msg.thumbnail_path = _extract_thumbnail(raw, msg.id)
 
     business_name = ""
     if evt.Info.VerifiedName and evt.Info.VerifiedName.Details:

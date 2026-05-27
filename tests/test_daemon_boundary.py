@@ -126,7 +126,7 @@ def test_daemon_boundary_encodes_request_and_decodes_send_message_reply() -> Non
         reply_context={
             "id": "quoted-1",
             "participant": "sender-1",
-            "quoted_message": {"text": "Hi"},
+            "quoted_message_json": '{"conversation":"Hi"}',
         },
         mentioned_jids=["sender-1"],
     )
@@ -145,7 +145,7 @@ def test_daemon_boundary_encodes_request_and_decodes_send_message_reply() -> Non
                 "PTT": False,
                 "ReplyToMessageID": "quoted-1",
                 "ReplyParticipantJID": "sender-1",
-                "ReplyQuotedMessage": {"text": "Hi"},
+                "ReplyQuotedMessageJSON": '{"conversation":"Hi"}',
                 "MentionedJIDs": ["sender-1"],
             },
         )

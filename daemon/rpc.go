@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"mime"
@@ -503,17 +502,17 @@ func extensionFromMimetype(mimetype string) string {
 // SendMessage types
 
 type SendMessageArgs struct {
-	ChatJID             string
-	Type                string // "text", "image", "video", "audio", "sticker", "document", "contact"
-	Text                string
-	FilePath            string
-	Caption             string
-	DurationSeconds     int
-	PTT                 bool
-	ReplyToMessageID    string
-	ReplyParticipantJID string
-	ReplyQuotedMessage  map[string]any
-	MentionedJIDs       []string
+	ChatJID                string
+	Type                   string // "text", "image", "video", "audio", "sticker", "document", "contact"
+	Text                   string
+	FilePath               string
+	Caption                string
+	DurationSeconds        int
+	PTT                    bool
+	ReplyToMessageID       string
+	ReplyParticipantJID    string
+	ReplyQuotedMessageJSON string
+	MentionedJIDs          []string
 }
 
 type SendMessageReply struct {
@@ -522,12 +521,12 @@ type SendMessageReply struct {
 }
 
 type EditMessageArgs struct {
-	ChatJID             string
-	MessageID           string
-	Text                string
-	ReplyToMessageID    string
-	ReplyParticipantJID string
-	ReplyQuotedMessage  map[string]any
+	ChatJID                string
+	MessageID              string
+	Text                   string
+	ReplyToMessageID       string
+	ReplyParticipantJID    string
+	ReplyQuotedMessageJSON string
 }
 
 type EditMessageReply struct {
@@ -572,14 +571,10 @@ func (s *Service) buildMessageContext(args *SendMessageArgs) (*waE2E.ContextInfo
 			ctxInfo.Participant = proto.String(participant)
 		}
 
-		if len(args.ReplyQuotedMessage) > 0 {
-			quotedBytes, err := json.Marshal(args.ReplyQuotedMessage)
-			if err != nil {
-				return nil, fmt.Errorf("marshal quoted message: %w", err)
-			}
+		if args.ReplyQuotedMessageJSON != "" {
 			quotedMessage := &waE2E.Message{}
 			unmarshal := protojson.UnmarshalOptions{DiscardUnknown: true}
-			if err := unmarshal.Unmarshal(quotedBytes, quotedMessage); err != nil {
+			if err := unmarshal.Unmarshal([]byte(args.ReplyQuotedMessageJSON), quotedMessage); err != nil {
 				return nil, fmt.Errorf("unmarshal quoted message: %w", err)
 			}
 			ctxInfo.QuotedMessage = quotedMessage
@@ -917,9 +912,9 @@ func (s *Service) EditMessage(args *EditMessageArgs, reply *EditMessageReply) er
 	}
 
 	replyContext, err := s.buildMessageContext(&SendMessageArgs{
-		ReplyToMessageID:    args.ReplyToMessageID,
-		ReplyParticipantJID: args.ReplyParticipantJID,
-		ReplyQuotedMessage:  args.ReplyQuotedMessage,
+		ReplyToMessageID:       args.ReplyToMessageID,
+		ReplyParticipantJID:    args.ReplyParticipantJID,
+		ReplyQuotedMessageJSON: args.ReplyQuotedMessageJSON,
 	})
 	if err != nil {
 		return fmt.Errorf("message context: %w", err)

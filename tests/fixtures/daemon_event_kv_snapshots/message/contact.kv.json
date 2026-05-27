@@ -51,6 +51,16 @@
       "link_description": "",
       "link_title": "",
       "link_url": "",
+      "media_download": {
+        "direct_path": "",
+        "file_enc_sha256": "",
+        "file_length": 0,
+        "file_name": "",
+        "file_sha256": "",
+        "media_key": "",
+        "media_type": "",
+        "mimetype": ""
+      },
       "media_path": "file://<CACHE>/greenline.tests/contacts/fixture-group-1@g.us/fixture-message-010.vcf",
       "mention_spans": [],
       "mentioned_jids": [],
@@ -135,6 +145,7 @@
         "UnavailableRequestID": ""
       },
       "read_receipt": "",
+      "reply_quote_payload_json": "{\"contactMessage\":{\"displayName\":\"Fixture text.\",\"vcard\":\"BEGIN:VCARD\\nVERSION:3.0\\nFN:Fixture Contact\\nTEL;TYPE=CELL:+1-555-000-0000\\nEND:VCARD\\n\"},\"messageContextInfo\":{\"limitSharingV2\":{\"initiatedByMe\":false,\"limitSharingSettingTimestamp\":1,\"sharingLimited\":true,\"trigger\":1},\"messageSecret\":\"REDACTED_MESSAGESECRET\"}}",
       "reply_to_from_me": false,
       "reply_to_id": "",
       "reply_to_mentioned_jids": [],

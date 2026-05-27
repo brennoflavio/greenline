@@ -51,6 +51,16 @@
       "link_description": "",
       "link_title": "",
       "link_url": "",
+      "media_download": {
+        "direct_path": "/v/fixture/media-2.enc",
+        "file_enc_sha256": "REDACTED_FILEENCSHA256",
+        "file_length": 2300624,
+        "file_name": "",
+        "file_sha256": "REDACTED_FILESHA256",
+        "media_key": "REDACTED_MEDIAKEY",
+        "media_type": "video",
+        "mimetype": "video/mp4"
+      },
       "media_path": "",
       "mention_spans": [],
       "mentioned_jids": [],
@@ -161,6 +171,7 @@
         "UnavailableRequestID": ""
       },
       "read_receipt": "",
+      "reply_quote_payload_json": "{\"messageContextInfo\":{\"messageSecret\":\"REDACTED_MESSAGESECRET\"},\"videoMessage\":{\"JPEGThumbnail\":\"REDACTED_JPEGTHUMBNAIL\",\"URL\":\"https://example.test/fixture\",\"accessibilityLabel\":\"\",\"contextInfo\":{\"forwardingScore\":1,\"isForwarded\":true,\"pairedMediaType\":0},\"directPath\":\"/v/fixture/media-2.enc\",\"externalShareFullVideoDurationInSeconds\":0,\"fileEncSHA256\":\"REDACTED_FILEENCSHA256\",\"fileLength\":2300624,\"fileSHA256\":\"REDACTED_FILESHA256\",\"height\":850,\"mediaKey\":\"REDACTED_MEDIAKEY\",\"mediaKeyTimestamp\":1,\"metadataURL\":\"\",\"mimetype\":\"video/mp4\",\"seconds\":11,\"videoSourceType\":0,\"width\":478}}",
       "reply_to_from_me": false,
       "reply_to_id": "",
       "reply_to_mentioned_jids": [],

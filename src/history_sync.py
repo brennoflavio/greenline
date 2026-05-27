@@ -18,7 +18,7 @@ from greenline.contracts.kv import GreenlineKV
 from greenline.store.identity import canonicalize_contact_jid, remember_chat
 from greenline.store.media import (
     _contact_preview,
-    _extract_thumbnail,
+    extract_thumbnail_from_message_content,
     persist_contact_vcard,
     resolve_media_message_content,
     template_message_button,
@@ -408,7 +408,7 @@ def _process_messages(
             link_url=link_url,
         )
 
-        msg.thumbnail_path = _extract_thumbnail({"Message": content}, msg_id)
+        msg.thumbnail_path = extract_thumbnail_from_message_content(content, msg_id)
 
         key = message_storage_key(chat_jid, ts_unix, msg_id)
         kv.put_cached_record(key, stored_message_record(msg, {"Message": content}))

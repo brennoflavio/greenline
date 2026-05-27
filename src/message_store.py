@@ -9,7 +9,7 @@ from greenline.store.identity import (
 )
 from greenline.store.media import (
     _contact_preview,
-    _extract_thumbnail,
+    extract_thumbnail_from_message_content,
     persist_contact_vcard,
     resolve_media_message_content,
     template_message_button,
@@ -43,7 +43,6 @@ from greenline.store.repository import (
     message_index_key,
     message_storage_key,
     put_message_index,
-    sanitize_message_payload,
     to_ui_message,
 )
 
@@ -56,7 +55,7 @@ __all__ = [
     "update_chat_name",
     "upsert_identity_chat",
     "_contact_preview",
-    "_extract_thumbnail",
+    "extract_thumbnail_from_message_content",
     "persist_contact_vcard",
     "resolve_media_message_content",
     "template_message_button",
@@ -84,6 +83,5 @@ __all__ = [
     "message_index_key",
     "message_storage_key",
     "put_message_index",
-    "sanitize_message_payload",
     "to_ui_message",
 ]

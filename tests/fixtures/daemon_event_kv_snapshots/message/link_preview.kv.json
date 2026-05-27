@@ -33,6 +33,16 @@
       "link_description": "Fixture text.",
       "link_title": "Fixture text.",
       "link_url": "Fixture text.",
+      "media_download": {
+        "direct_path": "",
+        "file_enc_sha256": "",
+        "file_length": 0,
+        "file_name": "",
+        "file_sha256": "",
+        "media_key": "",
+        "media_type": "",
+        "mimetype": ""
+      },
       "media_path": "",
       "mention_spans": [],
       "mentioned_jids": [],
@@ -175,6 +185,7 @@
         "UnavailableRequestID": ""
       },
       "read_receipt": "sent",
+      "reply_quote_payload_json": "{\"extendedTextMessage\":{\"contextInfo\":{\"disappearingMode\":{\"initiator\":0,\"trigger\":1}},\"description\":\"Fixture text.\",\"inviteLinkGroupTypeV2\":0,\"matchedText\":\"Fixture text.\",\"previewType\":0,\"text\":\"Fixture text.\",\"title\":\"Fixture text.\"},\"messageContextInfo\":{\"deviceListMetadata\":{\"receiverAccountType\":0,\"recipientKeyHash\":\"REDACTED_RECIPIENTKEYHASH\",\"recipientTimestamp\":1,\"senderAccountType\":0,\"senderKeyHash\":\"REDACTED_SENDERKEYHASH\",\"senderTimestamp\":1},\"deviceListMetadataVersion\":2,\"limitSharingV2\":{\"initiatedByMe\":false,\"trigger\":0},\"messageSecret\":\"REDACTED_MESSAGESECRET\"}}",
       "reply_to_from_me": false,
       "reply_to_id": "",
       "reply_to_mentioned_jids": [],

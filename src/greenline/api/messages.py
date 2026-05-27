@@ -11,7 +11,6 @@ from greenline.api.common import (
 )
 from greenline.contracts.daemon import daemon_client
 from greenline.contracts.kv import GreenlineKV
-from greenline.store.media import resolve_media_message_content
 from greenline.store.mentions import validate_mention_spans
 from greenline.store.messages import (
     _merge_deleted_message,
@@ -21,7 +20,7 @@ from greenline.store.messages import (
 from greenline.store.records import (
     StoredMessageRecord,
     message_from_record,
-    stored_message_record,
+    updated_stored_message_record,
 )
 from greenline.store.repository import (
     get_message_entry_with_key as _lookup_message_entry_with_key,
@@ -116,10 +115,8 @@ def _resolve_reply_context(chat_id: str, reply_context: dict[str, object] | None
         resolved["participant_raw"] = ""
         resolved["participant_canonical"] = ""
 
-    raw = entry.raw
-    quoted_message = raw.get("Message") if isinstance(raw, dict) else None
-    if isinstance(quoted_message, dict):
-        resolved["quoted_message"] = quoted_message
+    if entry.reply_quote_payload_json:
+        resolved["quoted_message_json"] = entry.reply_quote_payload_json
 
     if stored_msg.type == MessageType.DELETED:
         resolved["text"] = _message_preview(rendered_msg)
@@ -351,7 +348,7 @@ def edit_text_message(chat_id: str, message_id: str, text: str) -> SuccessRespon
     updated_msg.edited = True
 
     with GreenlineKV() as kv:
-        kv.put_record(entry_key, stored_message_record(updated_msg, entry.raw))
+        kv.put_record(entry_key, updated_stored_message_record(entry, updated_msg))
         chat = _update_chat_after_edit(kv, updated_msg, MessageInfo())
 
     qml_events.emit_message_upsert([updated_msg])
@@ -384,7 +381,7 @@ def delete_message(chat_id: str, message_id: str) -> SuccessResponse:
     deleted_msg = _merge_deleted_message(existing_msg, existing_msg.sender)
 
     with GreenlineKV() as kv:
-        kv.put_record(entry_key, stored_message_record(deleted_msg, entry.raw))
+        kv.put_record(entry_key, updated_stored_message_record(entry, deleted_msg))
         chat = _update_chat_after_edit(kv, deleted_msg, MessageInfo())
 
     qml_events.emit_message_upsert([deleted_msg])
@@ -619,45 +616,33 @@ def get_cached_stickers() -> dict[str, object]:
 @dataclass_to_dict
 def download_media(chat_id: str, message_id: str, media_type: str) -> DownloadMediaResponse:
     entry_key, entry = _get_message_entry_with_key(chat_id, message_id)
-    if entry_key is None or entry is None or entry.raw is None:
+    if entry_key is None or entry is None:
         return DownloadMediaResponse(success=False, media_path="", message="Message not found")
 
-    raw = entry.raw
-
-    msg_content = raw.get("Message", {})
-    field_name = _MEDIA_TYPE_MAP.get(media_type)
-    if not field_name:
+    if media_type not in _MEDIA_TYPE_MAP:
         return DownloadMediaResponse(success=False, media_path="", message=f"Unknown media type: {media_type}")
 
-    media_msg = resolve_media_message_content(msg_content, field_name)
-    if not media_msg:
+    media = entry.media_download
+    if media.media_type != media_type:
         return DownloadMediaResponse(success=False, media_path="", message="No media content in message")
 
-    direct_path = media_msg.get("directPath", "")
-    media_key = media_msg.get("mediaKey", "")
-    file_enc_sha256 = media_msg.get("fileEncSHA256", "")
-    file_sha256 = media_msg.get("fileSHA256", "")
-    file_length = media_msg.get("fileLength", 0)
-    mimetype = media_msg.get("mimetype", "")
-    file_name = media_msg.get("fileName", "")
-
-    if not direct_path or not media_key:
+    if not media.direct_path or not media.media_key:
         return DownloadMediaResponse(success=False, media_path="", message="Missing media download info")
 
     try:
         file_path = (
             daemon_client()
             .download_media(
-                direct_path=direct_path,
-                media_key=media_key,
-                file_enc_sha256=file_enc_sha256,
-                file_sha256=file_sha256,
-                file_length=file_length,
+                direct_path=media.direct_path,
+                media_key=media.media_key,
+                file_enc_sha256=media.file_enc_sha256,
+                file_sha256=media.file_sha256,
+                file_length=media.file_length,
                 media_type=media_type,
-                mimetype=mimetype,
+                mimetype=media.mimetype,
                 message_id=message_id,
                 chat_id=chat_id,
-                file_name=file_name,
+                file_name=media.file_name,
             )
             .FilePath
         )
@@ -671,6 +656,6 @@ def download_media(chat_id: str, message_id: str, media_type: str) -> DownloadMe
     msg = message_from_record(entry)
     msg.media_path = media_path
     with GreenlineKV() as kv:
-        kv.put_record(entry_key, stored_message_record(msg, entry.raw))
+        kv.put_record(entry_key, updated_stored_message_record(entry, msg))
     qml_events.emit_message_upsert([msg])
     return DownloadMediaResponse(success=True, media_path=media_path, message="")

@@ -94,7 +94,7 @@ class SendMessageRequest:
     PTT: bool = False
     ReplyToMessageID: str | None = None
     ReplyParticipantJID: str | None = None
-    ReplyQuotedMessage: Any | None = None
+    ReplyQuotedMessageJSON: str | None = None
     MentionedJIDs: list[str] | None = None
 
 
@@ -105,7 +105,7 @@ class EditMessageRequest:
     Text: str
     ReplyToMessageID: str | None = None
     ReplyParticipantJID: str | None = None
-    ReplyQuotedMessage: Any | None = None
+    ReplyQuotedMessageJSON: str | None = None
 
 
 @dataclass
@@ -271,9 +271,9 @@ def _reply_context_fields(reply_context: Optional[dict[str, Any]]) -> dict[str, 
         "ReplyToMessageID": str(reply_context.get("id") or ""),
         "ReplyParticipantJID": str(reply_context.get("participant") or ""),
     }
-    quoted_message = reply_context.get("quoted_message")
-    if quoted_message is not None:
-        fields["ReplyQuotedMessage"] = quoted_message
+    quoted_message_json = str(reply_context.get("quoted_message_json") or "")
+    if quoted_message_json:
+        fields["ReplyQuotedMessageJSON"] = quoted_message_json
     return fields
 
 

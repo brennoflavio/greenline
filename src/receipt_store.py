@@ -4,7 +4,7 @@ from dataclasses import replace
 from typing import Any, Dict, List, Optional, Tuple, cast
 
 from greenline.contracts.kv import GreenlineKV
-from greenline.store.records import record_payload_without_none
+from greenline.store.records import message_from_record, record_payload_without_none
 from greenline.store.repository import get_message_entry_with_key
 from models import ChatListItem, ReadReceipt
 from whatsmeow_types import ReceiptEvent
@@ -56,7 +56,7 @@ def _update_messages(chat_id: str, message_ids: set[str], new_status: ReadReceip
                 continue
             updated_record = replace(record, read_receipt=new_status)
             kv.put_record(key, updated_record)
-            updated_messages.append(record_payload_without_none(updated_record))
+            updated_messages.append(record_payload_without_none(message_from_record(updated_record)))
 
     return updated_messages
 

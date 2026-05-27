@@ -33,6 +33,16 @@
       "link_description": "",
       "link_title": "",
       "link_url": "",
+      "media_download": {
+        "direct_path": "/v/fixture/media-6.enc",
+        "file_enc_sha256": "REDACTED_FILEENCSHA256",
+        "file_length": 901524,
+        "file_name": "fixture-document.pdf",
+        "file_sha256": "REDACTED_FILESHA256",
+        "media_key": "REDACTED_MEDIAKEY",
+        "media_type": "document",
+        "mimetype": "application/pdf"
+      },
       "media_path": "",
       "mention_spans": [],
       "mentioned_jids": [],
@@ -165,6 +175,7 @@
         "UnavailableRequestID": ""
       },
       "read_receipt": "sent",
+      "reply_quote_payload_json": "{\"documentMessage\":{\"JPEGThumbnail\":\"REDACTED_JPEGTHUMBNAIL\",\"URL\":\"https://example.test/fixture\",\"directPath\":\"/v/fixture/media-6.enc\",\"fileEncSHA256\":\"REDACTED_FILEENCSHA256\",\"fileLength\":901524,\"fileName\":\"fixture-document.pdf\",\"fileSHA256\":\"REDACTED_FILESHA256\",\"mediaKey\":\"REDACTED_MEDIAKEY\",\"mediaKeyTimestamp\":1,\"mimetype\":\"application/pdf\",\"pageCount\":1,\"thumbnailDirectPath\":\"/v/fixture/media-7.enc\",\"thumbnailEncSHA256\":\"REDACTED_THUMBNAILENCSHA256\",\"thumbnailHeight\":480,\"thumbnailSHA256\":\"REDACTED_THUMBNAILSHA256\",\"thumbnailWidth\":310},\"messageContextInfo\":{\"deviceListMetadata\":{\"recipientKeyHash\":\"REDACTED_RECIPIENTKEYHASH\",\"recipientTimestamp\":1,\"senderKeyHash\":\"REDACTED_SENDERKEYHASH\",\"senderTimestamp\":1},\"deviceListMetadataVersion\":2,\"messageSecret\":\"REDACTED_MESSAGESECRET\"}}",
       "reply_to_from_me": false,
       "reply_to_id": "",
       "reply_to_mentioned_jids": [],

@@ -1,5 +1,5 @@
 from dataclasses import asdict
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional, Tuple
 
 from greenline.contracts.kv import GreenlineKV
 from greenline.store.identity import resolve_sender_name, resolve_sender_photo
@@ -11,15 +11,7 @@ from greenline.store.records import (
 )
 from models import Message, MessageType, UiMessage
 
-_MESSAGE_FIELDS = set(Message.__dataclass_fields__.keys())
 _DELETED_MESSAGE_PREVIEW = "Deleted message"
-
-
-def sanitize_message_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
-    sanitized = {key: value for key, value in payload.items() if key in _MESSAGE_FIELDS}
-    if "raw" in payload:
-        sanitized["raw"] = payload["raw"]
-    return sanitized
 
 
 def message_storage_key(chat_id: str, timestamp_unix: int, message_id: str) -> str:
