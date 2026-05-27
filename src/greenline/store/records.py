@@ -5,7 +5,7 @@ from dataclasses import asdict, dataclass, field, is_dataclass
 from typing import Any
 
 from greenline.contracts.codecs import to_json_like
-from models import Message
+from models import MentionSpan, Message
 
 
 @dataclass
@@ -54,16 +54,8 @@ class UnknownEventRecord:
 
 
 @dataclass
-class MentionSpanRecord:
-    jid: str
-    label: str
-    start: int
-    length: int
-
-
-@dataclass
 class DraftMentionsRecord:
-    value: list[MentionSpanRecord]
+    value: list[MentionSpan]
 
 
 @dataclass
@@ -141,8 +133,13 @@ def _media_download_record(raw: dict[str, Any]) -> MediaDownloadRecord:
     return MediaDownloadRecord()
 
 
+def _typed_mention_spans(value: Any) -> list[MentionSpan]:
+    return [span if isinstance(span, MentionSpan) else MentionSpan(**span) for span in value]
+
+
 def stored_message_record(message: Message, raw: dict[str, Any] | None = None) -> StoredMessageRecord:
     payload = asdict(message)
+    payload["mention_spans"] = _typed_mention_spans(payload["mention_spans"])
     if raw is not None:
         raw_message = raw.get("Message")
         if isinstance(raw_message, dict):
@@ -154,6 +151,7 @@ def stored_message_record(message: Message, raw: dict[str, Any] | None = None) -
 
 def updated_stored_message_record(record: StoredMessageRecord, message: Message) -> StoredMessageRecord:
     payload = asdict(message)
+    payload["mention_spans"] = _typed_mention_spans(payload["mention_spans"])
     payload["media_download"] = record.media_download
     payload["reply_quote_payload_json"] = record.reply_quote_payload_json
     payload["raw"] = record.raw
@@ -162,6 +160,7 @@ def updated_stored_message_record(record: StoredMessageRecord, message: Message)
 
 def message_from_record(record: StoredMessageRecord) -> Message:
     payload = asdict(record)
+    payload["mention_spans"] = _typed_mention_spans(payload["mention_spans"])
     payload.pop("media_download", None)
     payload.pop("reply_quote_payload_json", None)
     payload.pop("raw", None)

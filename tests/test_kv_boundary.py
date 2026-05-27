@@ -7,12 +7,11 @@ import pytest
 from greenline.contracts.kv import GreenlineKV
 from greenline.store.records import (
     DraftMentionsRecord,
-    MentionSpanRecord,
     MessageIndexRecord,
     UnreadTotalRecord,
     stored_message_record,
 )
-from models import ChatListItem, Message, MessageType, ReadReceipt
+from models import ChatListItem, MentionSpan, Message, MessageType, ReadReceipt
 from ut_components.kv import KV
 
 
@@ -117,8 +116,28 @@ def test_stored_message_omits_none_raw() -> None:
         assert "raw" not in raw_kv.get(f"message:{message.chat_id}:{message.timestamp_unix}:{message.id}")
 
 
+def test_stored_message_mention_spans_remain_typed_while_storage_is_json_like() -> None:
+    source = _message()
+    source.text = "Hello @Sender"
+    source.mention_spans = [MentionSpan("sender@s.whatsapp.net", "Sender", 6, 7)]
+    message = stored_message_record(source)
+
+    with GreenlineKV() as kv:
+        kv.put_record(f"message:{message.chat_id}:{message.timestamp_unix}:{message.id}", message)
+
+    with KV() as raw_kv:
+        assert raw_kv.get(f"message:{message.chat_id}:{message.timestamp_unix}:{message.id}")["mention_spans"] == [
+            {"jid": "sender@s.whatsapp.net", "label": "Sender", "start": 6, "length": 7}
+        ]
+
+    with GreenlineKV() as kv:
+        stored = kv.get_record(f"message:{message.chat_id}:{message.timestamp_unix}:{message.id}")
+        assert stored.mention_spans == source.mention_spans
+        assert isinstance(stored.mention_spans[0], MentionSpan)
+
+
 def test_scalar_and_list_records_preserve_raw_values() -> None:
-    spans = DraftMentionsRecord([MentionSpanRecord("sender@s.whatsapp.net", "Sender", 0, 7)])
+    spans = DraftMentionsRecord([MentionSpan("sender@s.whatsapp.net", "Sender", 0, 7)])
 
     with GreenlineKV() as kv:
         kv.put_record("unread_total", UnreadTotalRecord(3))
@@ -137,7 +156,9 @@ def test_scalar_and_list_records_preserve_raw_values() -> None:
         assert kv.get_record("message_index:chat@s.whatsapp.net:m1") == MessageIndexRecord(
             "message:chat@s.whatsapp.net:1:m1"
         )
-        assert kv.get_record("draft_mentions:chat@s.whatsapp.net") == spans
+        draft_mentions = kv.get_record("draft_mentions:chat@s.whatsapp.net")
+        assert draft_mentions == spans
+        assert isinstance(draft_mentions.value[0], MentionSpan)
 
 
 def test_prefix_reads_paged_reads_and_cached_writes() -> None:

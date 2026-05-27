@@ -8,15 +8,25 @@ from greenline.store.identity import remember_chat
 from greenline.store.records import (
     DraftMentionsRecord,
     DraftRecord,
-    MentionSpanRecord,
     stored_message_record,
 )
 from greenline.store.repository import message_storage_key, put_message_index
-from models import ChatListItem, Message, MessageType, ReadReceipt
+from models import ChatListItem, MentionSpan, Message, MessageType, ReadReceipt
 
 DEFAULT_CHAT_ID = "111@s.whatsapp.net"
 DEFAULT_SENDER_ID = "222@s.whatsapp.net"
 DEFAULT_GROUP_ID = "333@g.us"
+
+
+def _mention_span(span: MentionSpan | dict[str, object]) -> MentionSpan:
+    if isinstance(span, MentionSpan):
+        return span
+    return MentionSpan(
+        jid=str(span.get("jid") or ""),
+        label=str(span.get("label") or ""),
+        start=int(span.get("start") or 0),
+        length=int(span.get("length") or 0),
+    )
 
 
 def seed_chat(
@@ -98,7 +108,7 @@ def seed_message(
     sender_raw: str = DEFAULT_SENDER_ID,
     text: str = "Seed message",
     mentioned_jids: list[str] | None = None,
-    mention_spans: list[dict[str, object]] | None = None,
+    mention_spans: list[MentionSpan | dict[str, object]] | None = None,
     reply_to_id: str = "reply-1",
     reply_to_sender_id: str = DEFAULT_SENDER_ID,
     reply_to_sender_raw: str = DEFAULT_SENDER_ID,
@@ -122,7 +132,7 @@ def seed_message(
         sender_raw=sender_raw if not is_outgoing else "",
         text=text if message_type in (MessageType.TEXT, MessageType.LINK_PREVIEW) else "",
         mentioned_jids=mentioned_jids or [],
-        mention_spans=mention_spans or [],
+        mention_spans=[_mention_span(span) for span in mention_spans or []],
         image_source=media_path if message_type in (MessageType.IMAGE, MessageType.VIEW_ONCE) else "",
         caption="Caption" if message_type in (MessageType.IMAGE, MessageType.VIDEO, MessageType.DOCUMENT) else "",
         images=[media_path] if message_type == MessageType.IMAGE_GALLERY else [],
@@ -173,15 +183,13 @@ def seed_chat_with_message(
 def seed_draft(
     chat_id: str = DEFAULT_CHAT_ID,
     text: str = "Hello @Sender",
-    mention_spans: list[dict[str, object]] | None = None,
+    mention_spans: list[MentionSpan | dict[str, object]] | None = None,
 ) -> None:
     if mention_spans is None:
         mention_spans = [{"jid": DEFAULT_SENDER_ID, "label": "Sender", "start": 6, "length": 7}]
     with GreenlineKV() as kv:
         kv.put_record(f"draft:{chat_id}", DraftRecord(text))
-        kv.put_record(
-            f"draft_mentions:{chat_id}", DraftMentionsRecord([MentionSpanRecord(**span) for span in mention_spans])
-        )
+        kv.put_record(f"draft_mentions:{chat_id}", DraftMentionsRecord([_mention_span(span) for span in mention_spans]))
 
 
 def make_mention_span(

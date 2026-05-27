@@ -1,4 +1,3 @@
-from dataclasses import asdict
 from typing import Any, Optional, Tuple
 
 from greenline.contracts.kv import GreenlineKV
@@ -109,7 +108,7 @@ def to_ui_message(message: Message) -> UiMessage:
     elif rendered.reply_to_sender_id:
         reply_to_sender = resolve_sender_name(rendered.reply_to_sender_id)
 
-    payload = asdict(rendered)
+    payload = dict(vars(rendered))
     payload["reply_to_text"] = _resolve_reply_preview_text(rendered)
 
     return UiMessage(

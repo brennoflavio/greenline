@@ -1,6 +1,6 @@
 import re
 from dataclasses import replace
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 from greenline.contracts.daemon import daemon_client
 from greenline.contracts.kv import GreenlineKV
@@ -12,10 +12,11 @@ from greenline.store.identity import (
     resolve_sender_photo,
 )
 from greenline.store.media import _quoted_message_preview
-from models import ChatListItem, Message
+from models import ChatListItem, MentionSpan, Message
 
 _MENTION_TOKEN_RE = re.compile(r"@([0-9][0-9A-Za-z:._-]*)")
 _MENTION_PLACEHOLDER_RE = re.compile("\ue000(\\d+)\ue001")
+MentionSpanInput = MentionSpan | Mapping[str, object]
 
 
 def _mention_placeholder(index: int) -> str:
@@ -99,60 +100,80 @@ def build_mention_candidate(jid: str, push_name: str = "") -> Dict[str, Any]:
     }
 
 
-def validate_mention_spans(
-    text: str,
-    mention_spans: Optional[List[Dict[str, Any]]],
-    *,
-    jid_map: Optional[Dict[str, str]] = None,
-) -> List[Dict[str, Any]]:
-    if not text or not mention_spans:
-        return []
-
-    validated: List[Dict[str, Any]] = []
-    for index, span in enumerate(mention_spans):
-        if not isinstance(span, dict):
-            continue
+def _coerce_mention_span(span: MentionSpanInput) -> MentionSpan | None:
+    raw_start: Any
+    raw_length: Any
+    if isinstance(span, MentionSpan):
+        jid = span.jid
+        label = span.label
+        raw_start = span.start
+        raw_length = span.length
+    elif isinstance(span, Mapping):
         jid = str(span.get("jid") or "")
         label = str(span.get("label") or "")
         raw_start = span.get("start")
         raw_length = span.get("length")
-        if raw_start is None or raw_length is None:
+    else:
+        return None
+
+    if raw_start is None or raw_length is None:
+        return None
+    try:
+        start = int(raw_start)
+        length = int(raw_length)
+    except (TypeError, ValueError):
+        return None
+    if not jid or not label or start < 0 or length <= 0:
+        return None
+    return MentionSpan(jid=str(jid), label=str(label), start=start, length=length)
+
+
+def validate_mention_spans(
+    text: str,
+    mention_spans: Optional[Sequence[MentionSpanInput]],
+    *,
+    jid_map: Optional[Dict[str, str]] = None,
+) -> List[MentionSpan]:
+    if not text or not mention_spans:
+        return []
+
+    validated: List[tuple[int, MentionSpan]] = []
+    for index, span in enumerate(mention_spans):
+        mention_span = _coerce_mention_span(span)
+        if mention_span is None:
             continue
-        try:
-            start = int(raw_start)
-            length = int(raw_length)
-        except (TypeError, ValueError):
+        token = f"@{mention_span.label}"
+        if mention_span.length != len(token.encode("utf-16-le")) // 2 or not _mention_span_matches(
+            text,
+            mention_span.label,
+            mention_span.start,
+            mention_span.length,
+        ):
             continue
-        if not jid or not label or start < 0 or length <= 0:
-            continue
-        token = f"@{label}"
-        if length != len(token.encode("utf-16-le")) // 2 or not _mention_span_matches(text, label, start, length):
-            continue
-        validated.append({"jid": jid, "label": label, "start": start, "length": length, "_order": index})
+        validated.append((index, mention_span))
 
     if not validated:
         return []
 
-    validated.sort(key=lambda span: (int(span["start"]), int(span["_order"])))
+    validated.sort(key=lambda item: (item[1].start, item[0]))
 
-    non_overlapping: List[Dict[str, Any]] = []
+    non_overlapping: List[MentionSpan] = []
     last_end = -1
-    for span in validated:
-        start = int(span["start"])
-        end = start + int(span["length"])
-        if start < last_end:
+    for _, span in validated:
+        end = span.start + span.length
+        if span.start < last_end:
             continue
         non_overlapping.append(span)
         last_end = end
 
-    normalized_jids = normalize_mentioned_jids([str(span["jid"]) for span in non_overlapping], jid_map=jid_map)
+    normalized_jids = normalize_mentioned_jids([span.jid for span in non_overlapping], jid_map=jid_map)
     return [
-        {
-            "jid": normalized_jids[index],
-            "label": str(span["label"]),
-            "start": int(span["start"]),
-            "length": int(span["length"]),
-        }
+        MentionSpan(
+            jid=normalized_jids[index],
+            label=span.label,
+            start=span.start,
+            length=span.length,
+        )
         for index, span in enumerate(non_overlapping)
         if normalized_jids[index]
     ]
@@ -160,28 +181,28 @@ def validate_mention_spans(
 
 def mention_transport_payload(
     text: str,
-    mention_spans: Optional[List[Dict[str, Any]]],
+    mention_spans: Optional[Sequence[MentionSpanInput]],
     *,
     jid_map: Optional[Dict[str, str]] = None,
-) -> Tuple[str, List[Dict[str, Any]], List[str]]:
+) -> Tuple[str, List[MentionSpan], List[str]]:
     validated_spans = validate_mention_spans(text, mention_spans, jid_map=jid_map)
     if not validated_spans:
         return text, [], []
 
     parts: List[str] = []
-    transport_spans: List[Dict[str, Any]] = []
+    transport_spans: List[MentionSpan] = []
     mentioned_jids: List[str] = []
     last_end = 0
     for span in validated_spans:
-        start_index, end_index, _ = _mention_span_text(text, int(span["start"]), int(span["length"]))
-        token = _mention_transport_token(str(span["jid"]))
+        start_index, end_index, _ = _mention_span_text(text, span.start, span.length)
+        token = _mention_transport_token(span.jid)
         if start_index is None or end_index is None or not token:
             continue
         parts.append(text[last_end:start_index])
         parts.append(token)
         last_end = end_index
-        transport_spans.append(dict(span))
-        mentioned_jids.append(str(span["jid"]))
+        transport_spans.append(span)
+        mentioned_jids.append(span.jid)
     parts.append(text[last_end:])
 
     if not transport_spans:

@@ -3,6 +3,7 @@
 from dataclasses import asdict
 from typing import Any, Mapping, TypeVar
 
+from greenline.contracts.codecs import decode_dataclass
 from ut_components.utils import enum_to_str as _enum_to_str
 
 T = TypeVar("T")
@@ -22,4 +23,4 @@ def filter_dataclass_payload(data_class: type[T], payload: Mapping[str, Any]) ->
 
 
 def inflate_dataclass(data_class: type[T], payload: Mapping[str, Any]) -> T:
-    return data_class(**filter_dataclass_payload(data_class, payload))
+    return decode_dataclass(data_class, filter_dataclass_payload(data_class, payload), boundary="ui")

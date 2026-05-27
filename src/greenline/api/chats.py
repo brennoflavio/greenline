@@ -1,4 +1,5 @@
 from dataclasses import asdict, dataclass, field
+from typing import Mapping, Sequence
 
 from daemon_types import Contact as DaemonContact
 from greenline import qml_events
@@ -8,8 +9,14 @@ from greenline.contracts.kv import GreenlineKV
 from greenline.contracts.validation import BoundaryValidationError
 from greenline.store.identity import canonicalize_contact_jid
 from greenline.store.mentions import build_mention_candidate, validate_mention_spans
-from greenline.store.records import DraftMentionsRecord, DraftRecord, MentionSpanRecord
-from models import ChatListEntry, ChatListResponse, ContactItem, ContactListResponse
+from greenline.store.records import DraftMentionsRecord, DraftRecord
+from models import (
+    ChatListEntry,
+    ChatListResponse,
+    ContactItem,
+    ContactListResponse,
+    MentionSpan,
+)
 from ut_components.crash import crash_reporter
 from ut_components.utils import dataclass_to_dict
 
@@ -18,7 +25,7 @@ from ut_components.utils import dataclass_to_dict
 class ChatDraftResponse:
     success: bool
     text: str
-    mention_spans: list[dict[str, object]] = field(default_factory=list)
+    mention_spans: list[MentionSpan] = field(default_factory=list)
 
 
 @dataclass
@@ -117,10 +124,7 @@ def get_chat_draft(chat_id: str) -> ChatDraftResponse:
         draft_mentions = kv.get_record(f"draft_mentions:{chat_id}", default=DraftMentionsRecord([]))
 
     draft_text = draft.value
-    mention_spans = validate_mention_spans(
-        draft_text,
-        [asdict(span) for span in draft_mentions.value],
-    )
+    mention_spans = validate_mention_spans(draft_text, draft_mentions.value)
     return ChatDraftResponse(success=True, text=draft_text, mention_spans=mention_spans)
 
 
@@ -129,7 +133,7 @@ def get_chat_draft(chat_id: str) -> ChatDraftResponse:
 def set_chat_draft(
     chat_id: str,
     text: str,
-    mention_spans: list[dict[str, object]] | None = None,
+    mention_spans: Sequence[MentionSpan | Mapping[str, object]] | None = None,
 ) -> SuccessResponse:
     draft_text = str(text)
     validated_spans = validate_mention_spans(draft_text, mention_spans)
@@ -139,7 +143,7 @@ def set_chat_draft(
             if validated_spans:
                 kv.put_record(
                     f"draft_mentions:{chat_id}",
-                    DraftMentionsRecord([MentionSpanRecord(**span) for span in validated_spans]),
+                    DraftMentionsRecord(validated_spans),
                 )
             else:
                 kv.delete(f"draft_mentions:{chat_id}")

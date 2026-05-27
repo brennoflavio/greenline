@@ -3,6 +3,7 @@ import shutil
 import time
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Mapping, Sequence
 
 from greenline import qml_events
 from greenline.api.common import (
@@ -25,7 +26,7 @@ from greenline.store.records import (
 from greenline.store.repository import (
     get_message_entry_with_key as _lookup_message_entry_with_key,
 )
-from models import Message, MessagesResponse, MessageType, ReadReceipt
+from models import MentionSpan, Message, MessagesResponse, MessageType, ReadReceipt
 from pending_outbox import queue_and_attempt_send
 from unread_counter import decrement_unread_total, get_unread_total
 from ut_components import mimetypes as mime_types
@@ -281,7 +282,7 @@ def send_text_message(
     text: str,
     temp_id: str = "",
     reply_context: dict[str, object] | None = None,
-    mention_spans: list[dict[str, object]] | None = None,
+    mention_spans: Sequence[MentionSpan | Mapping[str, object]] | None = None,
 ) -> SuccessResponse:
     resolved_reply_context = _resolve_reply_context(chat_id, reply_context)
     normalized_text = str(text)
@@ -298,7 +299,7 @@ def send_text_message(
         timestamp_unix=int(now.timestamp()),
         read_receipt=ReadReceipt.NONE,
         text=normalized_text,
-        mentioned_jids=[str(span["jid"]) for span in validated_spans],
+        mentioned_jids=[span.jid for span in validated_spans],
         mention_spans=validated_spans,
         send_status="pending",
         temp_id=pending_id,
