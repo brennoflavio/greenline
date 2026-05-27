@@ -7,13 +7,17 @@ from contracts.qml_payloads import (
     assert_base_chat,
     assert_chat_list_entry,
 )
-from qml_contract_helpers import DEFAULT_CHAT_ID, DEFAULT_SENDER_ID, seed_chat
+from qml_contract_helpers import (
+    DEFAULT_CHAT_ID,
+    DEFAULT_SENDER_ID,
+    seed_chat,
+    seed_draft,
+)
 
 from greenline import qml_events, qml_payloads
 from greenline.api.common import ui_chat_dict
 from greenline.events.handlers import render_chat_payload
 from models import MessageType, ReadReceipt
-from ut_components.kv import KV
 
 
 def test_chat_serializers_match_initial_load_except_draft_fields() -> None:
@@ -31,8 +35,7 @@ def test_chat_serializers_match_initial_load_except_draft_fields() -> None:
         push_name="Alice Push",
         business_name="Alice Biz",
     )
-    with KV() as kv:
-        kv.put(f"draft:{DEFAULT_CHAT_ID}", "Draft text")
+    seed_draft(DEFAULT_CHAT_ID, "Draft text", [])
 
     expected = qml_payloads.ui_chat(chat)
     api_common = ui_chat_dict(chat)

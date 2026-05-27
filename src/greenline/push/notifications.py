@@ -8,14 +8,17 @@ from dacite import from_dict
 
 from constants import GROUP_JID_SUFFIX
 from greenline.contracts.daemon import DaemonClientProtocol, daemon_client
+from greenline.contracts.kv import GreenlineKV
+from greenline.contracts.validation import BoundaryValidationError
 from greenline.store.identity import resolve_sender_name
 from greenline.store.media import (
     resolve_media_message_content,
     template_message_caption,
 )
 from greenline.store.mentions import render_mention_text, template_mention_text
+from greenline.store.records import NotificationsSuppressedRecord
+from models import ChatListItem
 from unread_counter import get_unread_total
-from ut_components.kv import KV
 from ut_components.notification import EmblemCounter, Notification
 from whatsmeow_types import CallOfferEvent, MessageEvent, UndecryptableMessageEvent
 
@@ -202,12 +205,10 @@ def _message_summary_and_body(
 
 
 def _chat_name(chat_jid: str) -> str:
-    with KV() as kv:
-        data = kv.get(f"chat:{chat_jid}")
-    if data is not None:
-        name = str(data.get("name", "")).strip()
-        if name:
-            return name
+    with GreenlineKV() as kv:
+        chat = cast(ChatListItem | None, kv.get_record(f"chat:{chat_jid}"))
+    if chat is not None and chat.name.strip():
+        return chat.name.strip()
     return _fallback_name(chat_jid)
 
 
@@ -343,13 +344,14 @@ def _notification_emblem_counter(unread_increment: int = 0) -> Optional[EmblemCo
 
 
 def _notifications_suppressed(envelope: Dict[str, Any]) -> bool:
-    sentinel = object()
     try:
-        with KV() as kv:
-            suppressed = kv.get(NOTIFICATIONS_SUPPRESSED_KEY, default=sentinel)
-        if suppressed is sentinel:
+        with GreenlineKV() as kv:
+            suppressed = cast(NotificationsSuppressedRecord | None, kv.get_record(NOTIFICATIONS_SUPPRESSED_KEY))
+        if suppressed is None:
             return bool(envelope.get("suppressed"))
-        return bool(suppressed)
+        return suppressed.value
+    except BoundaryValidationError:
+        raise
     except Exception:
         return bool(envelope.get("suppressed"))
 

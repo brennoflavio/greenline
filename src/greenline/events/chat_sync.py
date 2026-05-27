@@ -1,10 +1,10 @@
 import time
-from dataclasses import asdict
 from datetime import timedelta
 from typing import Any, Dict, Optional
 
 from greenline import qml_events
 from greenline.contracts.daemon import daemon_client
+from greenline.contracts.kv import GreenlineKV
 from greenline.events.handlers import dispatch_event
 from greenline.events.session import LAST_EVENT_ID_KEY
 from greenline.store.identity import (
@@ -12,17 +12,17 @@ from greenline.store.identity import (
     remember_chat,
     update_chat_name,
 )
+from greenline.store.records import DaemonLastEventIDRecord
 from greenline.ui import dataclass_to_ui_dict
 from models import ChatListItem, ReadReceipt
 from rpc import DaemonNotReadyError, DaemonTimeoutError, RateLimitError
 from ut_components.event import Event
-from ut_components.kv import KV
 
 
 def process_events_once(batch_limit: int = 50) -> None:
     try:
-        with KV() as kv:
-            last_id = kv.get(LAST_EVENT_ID_KEY, default=0)
+        with GreenlineKV() as kv:
+            last_id = kv.get_record(LAST_EVENT_ID_KEY, default=DaemonLastEventIDRecord(0)).value
 
         reply = daemon_client().list_events(after_id=last_id, limit=batch_limit)
         if not reply.Events:
@@ -50,8 +50,8 @@ def process_events_once(batch_limit: int = 50) -> None:
 
         if max_id > last_id:
             daemon_client().delete_events(up_to_id=max_id)
-            with KV() as kv:
-                kv.put(LAST_EVENT_ID_KEY, max_id)
+            with GreenlineKV() as kv:
+                kv.put_record(LAST_EVENT_ID_KEY, DaemonLastEventIDRecord(max_id))
     except (ConnectionRefusedError, DaemonNotReadyError, DaemonTimeoutError):
         return
 
@@ -70,8 +70,8 @@ class DaemonEventHandler(Event):
         batch_limit = 500
         syncing = False
 
-        with KV() as kv:
-            last_id = kv.get(LAST_EVENT_ID_KEY, default=0)
+        with GreenlineKV() as kv:
+            last_id = kv.get_record(LAST_EVENT_ID_KEY, default=DaemonLastEventIDRecord(0)).value
 
         try:
             while True:
@@ -121,8 +121,8 @@ class DaemonEventHandler(Event):
 
                 if max_id > last_id:
                     daemon_client().delete_events(up_to_id=max_id)
-                    with KV() as kv:
-                        kv.put(LAST_EVENT_ID_KEY, max_id)
+                    with GreenlineKV() as kv:
+                        kv.put_record(LAST_EVENT_ID_KEY, DaemonLastEventIDRecord(max_id))
                     last_id = max_id
 
                 if len(reply.Events) < batch_limit:
@@ -175,8 +175,8 @@ class ChatListUpdateEvent(Event):
 
         now = int(time.time())
 
-        with KV() as kv:
-            existing = {key: value for key, value in kv.get_partial("chat:")}
+        with GreenlineKV() as kv:
+            existing = {key: value for key, value in kv.get_partial_records("chat:")}
 
             for contact in reply.Contacts:
                 if not contact.jid:
@@ -188,7 +188,7 @@ class ChatListUpdateEvent(Event):
                 muted = self._is_muted(jid)
 
                 if key in existing:
-                    chat = ChatListItem(**existing[key])
+                    chat = existing[key]
                     changed = update_chat_name(
                         chat,
                         now,
@@ -204,7 +204,7 @@ class ChatListUpdateEvent(Event):
                         chat.muted = muted
                         changed = True
                     if changed:
-                        kv.put(key, asdict(chat))
+                        kv.put_record(key, chat)
                         remember_chat(chat)
                         chat_updates.append(dataclass_to_ui_dict(chat))
                 else:
@@ -224,7 +224,7 @@ class ChatListUpdateEvent(Event):
                         business_name=contact.business_name,
                         name_updated_at=now,
                     )
-                    kv.put(key, asdict(chat))
+                    kv.put_record(key, chat)
                     remember_chat(chat)
                     chat_updates.append(dataclass_to_ui_dict(chat))
 
@@ -235,8 +235,8 @@ class ChatListUpdateEvent(Event):
 
         now = int(time.time())
 
-        with KV() as kv:
-            existing = {key: value for key, value in kv.get_partial("chat:")}
+        with GreenlineKV() as kv:
+            existing = {key: value for key, value in kv.get_partial_records("chat:")}
 
             for group in reply.Groups:
                 if not group.jid or not group.name:
@@ -247,7 +247,7 @@ class ChatListUpdateEvent(Event):
                 muted = self._is_muted(jid)
 
                 if key in existing:
-                    chat = ChatListItem(**existing[key])
+                    chat = existing[key]
                     changed = False
                     if chat.name != group.name:
                         chat.name = group.name
@@ -261,7 +261,7 @@ class ChatListUpdateEvent(Event):
                         chat.muted = muted
                         changed = True
                     if changed:
-                        kv.put(key, asdict(chat))
+                        kv.put_record(key, chat)
                         remember_chat(chat)
                         chat_updates.append(dataclass_to_ui_dict(chat))
                 else:
@@ -278,6 +278,6 @@ class ChatListUpdateEvent(Event):
                         muted=muted,
                         name_updated_at=now,
                     )
-                    kv.put(key, asdict(chat))
+                    kv.put_record(key, chat)
                     remember_chat(chat)
                     chat_updates.append(dataclass_to_ui_dict(chat))

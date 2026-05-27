@@ -1,8 +1,9 @@
-from dataclasses import asdict, dataclass, replace
+from dataclasses import dataclass, replace
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from constants import GROUP_JID_SUFFIX
+from greenline.contracts.kv import GreenlineKV
 from greenline.store.identity import (
     canonicalize_contact_jid,
     remember_chat,
@@ -22,15 +23,14 @@ from greenline.store.mentions import (
     _template_text_from_context_info,
     quoted_message_template,
 )
+from greenline.store.records import message_from_record, stored_message_record
 from greenline.store.repository import (
-    _MESSAGE_FIELDS,
     _find_message_entry,
     message_storage_key,
     put_message_index,
 )
 from models import ChatListItem, Message, MessageType, ReadReceipt
 from unread_counter import increment_unread_total
-from ut_components.kv import KV
 from whatsmeow_types import (
     MessageContent,
     MessageEvent,
@@ -336,8 +336,8 @@ def _message_preview(msg: Message) -> str:
 
 def upsert_chat(msg: Message, info: MessageInfo, *, count_unread: bool = True) -> ChatListItem:
     chat_key = f"chat:{msg.chat_id}"
-    with KV() as kv:
-        existing = kv.get(chat_key)
+    with GreenlineKV() as kv:
+        existing = cast(ChatListItem | None, kv.get_record(chat_key))
 
     preview, preview_mentioned_jids = _message_preview_data(msg)
     is_group = msg.chat_id.endswith(GROUP_JID_SUFFIX)
@@ -350,7 +350,7 @@ def upsert_chat(msg: Message, info: MessageInfo, *, count_unread: bool = True) -
     direct_business_name = "" if msg.is_outgoing else business_name
 
     if existing is not None:
-        chat = ChatListItem(**existing)
+        chat = existing
         if msg.timestamp_unix >= chat.last_message_timestamp:
             chat.last_message = preview
             chat.last_message_mentioned_jids = preview_mentioned_jids
@@ -394,8 +394,8 @@ def upsert_chat(msg: Message, info: MessageInfo, *, count_unread: bool = True) -
         if not msg.is_outgoing and count_unread:
             increment_unread_total()
 
-    with KV() as kv:
-        kv.put(chat_key, asdict(chat))
+    with GreenlineKV() as kv:
+        kv.put_record(chat_key, chat)
     remember_chat(chat)
     return chat
 
@@ -484,22 +484,21 @@ def _merge_deleted_message(existing: Message, sender: str, sender_raw: str = "")
     )
 
 
-def _update_chat_after_edit(kv: KV, msg: Message, info: MessageInfo) -> ChatListItem:
+def _update_chat_after_edit(kv: GreenlineKV, msg: Message, info: MessageInfo) -> ChatListItem:
     chat_key = f"chat:{msg.chat_id}"
-    existing = kv.get(chat_key)
-    if existing is None:
+    chat = cast(ChatListItem | None, kv.get_record(chat_key))
+    if chat is None:
         return upsert_chat(msg, info, count_unread=False)
 
-    chat = ChatListItem(**existing)
-    latest_entries, _ = kv.get_partial_page(f"message:{msg.chat_id}:", page_size=1, reverse=True)
-    latest_id = str(latest_entries[0][1].get("id") or "") if latest_entries else ""
+    latest_entries, _ = kv.get_partial_page_records(f"message:{msg.chat_id}:", page_size=1, reverse=True)
+    latest_id = latest_entries[0][1].id if latest_entries else ""
 
     if latest_id == msg.id:
         preview, preview_mentioned_jids = _message_preview_data(msg)
         chat.last_message = preview
         chat.last_message_mentioned_jids = preview_mentioned_jids
         chat.last_message_type = str(msg.type)
-        kv.put(chat_key, asdict(chat))
+        kv.put_record(chat_key, chat)
         remember_chat(chat)
 
     return chat
@@ -512,19 +511,17 @@ def store_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = None) -> Op
             return None
 
         chat_id = canonicalize_contact_jid(str(evt.Info.Chat or "")) if evt.Info.Chat else ""
-        with KV() as kv:
+        with GreenlineKV() as kv:
             existing_key, existing_value = _find_message_entry(kv, chat_id, target_id)
             if existing_key is None or existing_value is None:
                 return None
-            existing_msg = Message(**{key: value for key, value in existing_value.items() if key in _MESSAGE_FIELDS})
+            existing_msg = message_from_record(existing_value)
             deleted_msg = _merge_deleted_message(
                 existing_msg,
                 canonicalize_contact_jid(str(evt.Info.Sender or "")),
                 str(evt.Info.Sender or ""),
             )
-            data = asdict(deleted_msg)
-            data["raw"] = raw
-            kv.put(existing_key, data)
+            kv.put_record(existing_key, stored_message_record(deleted_msg, raw))
             chat = _update_chat_after_edit(kv, deleted_msg, evt.Info)
             return StoredMessage(message=deleted_msg, chat=chat)
 
@@ -545,25 +542,21 @@ def store_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = None) -> Op
             business_name=business_name,
         )
 
-    data = asdict(msg)
-    data["raw"] = raw
-    with KV() as kv:
+    with GreenlineKV() as kv:
         if msg.edited:
             existing_key, existing_value = _find_message_entry(kv, msg.chat_id, msg.id)
             if existing_key is None or existing_value is None:
                 return None
-            existing_msg = Message(**{key: value for key, value in existing_value.items() if key in _MESSAGE_FIELDS})
+            existing_msg = message_from_record(existing_value)
             msg = _merge_edited_message(existing_msg, msg)
-            data = asdict(msg)
-            data["raw"] = raw
-            kv.put(existing_key, data)
+            kv.put_record(existing_key, stored_message_record(msg, raw))
             put_message_index(kv, msg.chat_id, msg.id, existing_key)
             chat = _update_chat_after_edit(kv, msg, evt.Info)
             return StoredMessage(message=msg, chat=chat)
 
         key = message_storage_key(msg.chat_id, msg.timestamp_unix, msg.id)
-        already_stored = kv.get(key) is not None
-        kv.put(key, data)
+        already_stored = kv.get_record(key) is not None
+        kv.put_record(key, stored_message_record(msg, raw))
         put_message_index(kv, msg.chat_id, msg.id, key)
 
     chat = upsert_chat(msg, evt.Info, count_unread=not already_stored)
@@ -586,11 +579,9 @@ def store_undecryptable_message(
         )
 
     key = message_storage_key(msg.chat_id, msg.timestamp_unix, msg.id)
-    data = asdict(msg)
-    data["raw"] = raw
-    with KV() as kv:
-        already_stored = kv.get(key) is not None
-        kv.put(key, data)
+    with GreenlineKV() as kv:
+        already_stored = kv.get_record(key) is not None
+        kv.put_record(key, stored_message_record(msg, raw))
         put_message_index(kv, msg.chat_id, msg.id, key)
 
     chat = upsert_chat(msg, evt.Info, count_unread=not already_stored)

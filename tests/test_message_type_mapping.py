@@ -5,6 +5,7 @@ from typing import Any
 import pytest
 from daemon_event_helpers import load_fixtures, seed_prerequisite_kv
 
+from greenline.contracts.kv import GreenlineKV
 from greenline.store.messages import (
     message_event_to_message,
     store_message,
@@ -13,7 +14,6 @@ from greenline.store.messages import (
 )
 from greenline.store.repository import message_index_key
 from models import MessageType
-from ut_components.kv import KV
 
 MESSAGE_FIXTURES = [fixture for fixture in load_fixtures() if fixture.event_type in {"Message", "UndecryptableMessage"}]
 
@@ -82,14 +82,14 @@ def test_store_message_fixture_variants_write_expected_kv(fixture) -> None:
     assert stored.message.type == MessageType(expected_type)
     assert stored.chat.id == stored.message.chat_id
 
-    with KV() as kv:
+    with GreenlineKV() as kv:
         index_key = message_index_key(stored.message.chat_id, stored.message.id)
-        storage_key = kv.get(index_key)
-        assert isinstance(storage_key, str)
-        stored_payload = kv.get(storage_key)
-        chat_payload = kv.get(f"chat:{stored.chat.id}")
+        index_record = kv.get_record(index_key)
+        assert index_record is not None
+        stored_payload = kv.get_record(index_record.value)
+        chat_payload = kv.get_record(f"chat:{stored.chat.id}")
 
     assert stored_payload is not None
-    assert stored_payload["type"] == expected_type
-    assert stored_payload["raw"] == fixture.payload
+    assert stored_payload.type == MessageType(expected_type)
+    assert stored_payload.raw == fixture.payload
     assert chat_payload is not None

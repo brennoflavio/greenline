@@ -17,6 +17,16 @@ if str(SRC) not in sys.path:
 
 import daemon_types
 import whatsmeow_types
+from greenline.contracts.codecs import decode_dataclass
+from greenline.store.records import (
+    MessageIndexRecord,
+    StickerCacheRecord,
+    StoredMessageRecord,
+    UnhandledMessageRecord,
+    UnknownEventRecord,
+    UnreadTotalRecord,
+    message_from_record,
+)
 from greenline.store.repository import message_storage_key, put_message_index
 from models import ChatListItem, Message, MessageType, ReadReceipt
 from ut_components.kv import KV
@@ -419,26 +429,17 @@ def load_output_snapshot(fixture: DaemonEventFixture) -> dict[str, Any]:
 
 def _message_from_entry(key: str, value: Any) -> Message:
     assert isinstance(value, dict), f"{key} must store an object"
-    message_fields = {field.name for field in fields(Message)}
-    extra_fields = set(value) - message_fields - {"raw"}
+    message_fields = {field.name for field in fields(StoredMessageRecord)}
+    extra_fields = set(value) - message_fields
     assert not extra_fields, f"{key} has unknown message fields: {sorted(extra_fields)}"
-    data = {field: value[field] for field in message_fields if field in value}
-    assert "type" in data, f"{key} missing message type"
-    assert "read_receipt" in data, f"{key} missing read receipt"
-    data["type"] = MessageType(data["type"])
-    data["read_receipt"] = ReadReceipt(data["read_receipt"])
-    message = Message(**data)
-    raw = value.get("raw")
-    assert raw is None or isinstance(raw, dict), f"{key}.raw must be a JSON object"
-    return message
+    record = decode_dataclass(StoredMessageRecord, value, boundary="kv", contract="message:", direction="decode")
+    assert record.raw is None or isinstance(record.raw, dict), f"{key}.raw must be a JSON object"
+    return message_from_record(record)
 
 
 def _chat_from_entry(key: str, value: Any) -> ChatListItem:
     assert isinstance(value, dict), f"{key} must store an object"
-    assert "read_receipt" in value, f"{key} missing read receipt"
-    data = dict(value)
-    data["read_receipt"] = ReadReceipt(data["read_receipt"])
-    return ChatListItem(**data)
+    return decode_dataclass(ChatListItem, value, boundary="kv", contract="chat:", direction="decode")
 
 
 def validate_kv_snapshot(snapshot: dict[str, Any]) -> None:
@@ -448,17 +449,45 @@ def validate_kv_snapshot(snapshot: dict[str, Any]) -> None:
         elif key.startswith("chat:"):
             _chat_from_entry(key, value)
         elif key.startswith("message_index:"):
-            assert isinstance(value, str), f"{key} must point to a message key"
-            assert value in snapshot, f"{key} points to missing message entry {value!r}"
+            record = decode_dataclass(
+                MessageIndexRecord,
+                {"value": value},
+                boundary="kv",
+                contract="message_index:",
+                direction="decode",
+            )
+            assert record.value in snapshot, f"{key} points to missing message entry {record.value!r}"
         elif key.startswith("unhandled_message:"):
             assert isinstance(value, dict), f"{key} must store an object"
-            json.loads(value.get("payload", ""))
+            record = decode_dataclass(
+                UnhandledMessageRecord,
+                value,
+                boundary="kv",
+                contract="unhandled_message:",
+                direction="decode",
+            )
+            json.loads(record.payload)
         elif key.startswith("unknown_event:"):
             assert isinstance(value, dict), f"{key} must store an object"
-            json.loads(value.get("payload", ""))
+            record = decode_dataclass(
+                UnknownEventRecord,
+                value,
+                boundary="kv",
+                contract="unknown_event:",
+                direction="decode",
+            )
+            json.loads(record.payload)
         elif key == "unread_total":
-            assert isinstance(value, int), "unread_total must be an integer"
+            decode_dataclass(
+                UnreadTotalRecord, {"value": value}, boundary="kv", contract="unread_total", direction="decode"
+            )
         elif key.startswith("sticker_cache:"):
-            assert isinstance(value, str), f"{key} must store a cache path"
+            decode_dataclass(
+                StickerCacheRecord,
+                {"value": value},
+                boundary="kv",
+                contract="sticker_cache:",
+                direction="decode",
+            )
         else:
             raise AssertionError(f"unexpected KV key {key}")

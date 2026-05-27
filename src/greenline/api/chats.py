@@ -4,17 +4,13 @@ from daemon_types import Contact as DaemonContact
 from greenline import qml_events
 from greenline.api.common import SuccessResponse, ui_chat
 from greenline.contracts.daemon import daemon_client
+from greenline.contracts.kv import GreenlineKV
+from greenline.contracts.validation import BoundaryValidationError
 from greenline.store.identity import canonicalize_contact_jid
 from greenline.store.mentions import build_mention_candidate, validate_mention_spans
-from models import (
-    ChatListEntry,
-    ChatListItem,
-    ChatListResponse,
-    ContactItem,
-    ContactListResponse,
-)
+from greenline.store.records import DraftMentionsRecord, DraftRecord, MentionSpanRecord
+from models import ChatListEntry, ChatListResponse, ContactItem, ContactListResponse
 from ut_components.crash import crash_reporter
-from ut_components.kv import KV
 from ut_components.utils import dataclass_to_dict
 
 
@@ -63,30 +59,28 @@ def get_contact_list() -> ContactListResponse:
 @dataclass_to_dict
 def get_chat_list() -> ChatListResponse:
     try:
-        with KV() as kv:
-            entries = kv.get_partial("chat:")
-            drafts = {key.removeprefix("draft:"): str(value or "") for key, value in kv.get_partial("draft:")}
+        with GreenlineKV() as kv:
+            entries = kv.get_partial_records("chat:")
+            drafts = {key.removeprefix("draft:"): value.value for key, value in kv.get_partial_records("draft:")}
 
         chats = []
         for _, value in entries:
-            chat = ui_chat(ChatListItem(**value))
+            chat = ui_chat(value)
             draft = drafts.get(chat.id, "")
             chats.append(ChatListEntry(**asdict(chat), draft=draft, has_draft=draft != ""))
         chats.sort(key=lambda chat: chat.last_message_timestamp, reverse=True)
         return ChatListResponse(success=True, chats=chats, message="")
+    except BoundaryValidationError:
+        raise
     except Exception as error:
         return ChatListResponse(success=False, chats=[], message=str(error))
 
 
 @crash_reporter
 def get_chat_info(chat_id: str) -> dict[str, object]:
-    with KV() as kv:
-        data = kv.get(f"chat:{chat_id}")
-    if not data:
-        return {"success": False}
-    try:
-        chat = ChatListItem(**data)
-    except (TypeError, KeyError):
+    with GreenlineKV() as kv:
+        chat = kv.get_record(f"chat:{chat_id}")
+    if chat is None:
         return {"success": False}
     return {
         "success": True,
@@ -118,14 +112,14 @@ def get_group_mention_candidates(chat_id: str) -> GroupMentionCandidatesResponse
 @crash_reporter
 @dataclass_to_dict
 def get_chat_draft(chat_id: str) -> ChatDraftResponse:
-    with KV() as kv:
-        draft = kv.get(f"draft:{chat_id}", default="")
-        draft_mentions = kv.get(f"draft_mentions:{chat_id}", default=[])
+    with GreenlineKV() as kv:
+        draft = kv.get_record(f"draft:{chat_id}", default=DraftRecord(""))
+        draft_mentions = kv.get_record(f"draft_mentions:{chat_id}", default=DraftMentionsRecord([]))
 
-    draft_text = str(draft or "")
+    draft_text = draft.value
     mention_spans = validate_mention_spans(
         draft_text,
-        draft_mentions if isinstance(draft_mentions, list) else None,
+        [asdict(span) for span in draft_mentions.value],
     )
     return ChatDraftResponse(success=True, text=draft_text, mention_spans=mention_spans)
 
@@ -139,11 +133,14 @@ def set_chat_draft(
 ) -> SuccessResponse:
     draft_text = str(text)
     validated_spans = validate_mention_spans(draft_text, mention_spans)
-    with KV() as kv:
+    with GreenlineKV() as kv:
         if draft_text != "":
-            kv.put(f"draft:{chat_id}", draft_text)
+            kv.put_record(f"draft:{chat_id}", DraftRecord(draft_text))
             if validated_spans:
-                kv.put(f"draft_mentions:{chat_id}", validated_spans)
+                kv.put_record(
+                    f"draft_mentions:{chat_id}",
+                    DraftMentionsRecord([MentionSpanRecord(**span) for span in validated_spans]),
+                )
             else:
                 kv.delete(f"draft_mentions:{chat_id}")
         else:
@@ -156,21 +153,19 @@ def set_chat_draft(
 @crash_reporter
 @dataclass_to_dict
 def toggle_mute(chat_id: str) -> SuccessResponse:
-    with KV() as kv:
-        data = kv.get(f"chat:{chat_id}")
-        if data is None:
+    with GreenlineKV() as kv:
+        chat = kv.get_record(f"chat:{chat_id}")
+        if chat is None:
             return SuccessResponse(success=False, message="Chat not found")
-        chat = ChatListItem(**data)
         new_muted = not chat.muted
 
     daemon_client().set_muted(chat_id, new_muted)
 
-    with KV() as kv:
-        data = kv.get(f"chat:{chat_id}")
-        if data is not None:
-            chat = ChatListItem(**data)
+    with GreenlineKV() as kv:
+        chat = kv.get_record(f"chat:{chat_id}")
+        if chat is not None:
             chat.muted = new_muted
-            kv.put(f"chat:{chat_id}", asdict(chat))
+            kv.put_record(f"chat:{chat_id}", chat)
             qml_events.emit_chat_list_update([chat])
 
     return SuccessResponse(success=True, message="")

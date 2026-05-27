@@ -57,9 +57,10 @@ def decode_dataclass(
     boundary: str,
     contract: str | None = None,
     direction: str | None = None,
+    strict: bool = False,
 ) -> T:
     try:
-        return from_dict(data_class=data_class, data=data, config=Config(cast=[Enum]))
+        return from_dict(data_class=data_class, data=data, config=Config(cast=[Enum], strict=strict))
     except Exception as exc:
         report_validation_failure(boundary, exc, payload=data, contract=contract, direction=direction)
         raise

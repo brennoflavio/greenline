@@ -14,9 +14,14 @@ from qml_contract_helpers import (
 )
 
 import main
+from greenline.contracts.kv import GreenlineKV
 from greenline.contracts.validation import BoundaryValidationError
+from greenline.store.records import (
+    PendingOutboxRecord,
+    StickerCacheRecord,
+    StoredMessageRecord,
+)
 from models import MessageType, ReadReceipt
-from ut_components.kv import KV
 
 
 def _event_payloads(fake_pyotherside, name: str) -> list[object]:
@@ -105,13 +110,15 @@ def test_send_text_message_boundary_failure_remains_pending(fake_daemon_rpc, fak
 
     validate_api_response("send_text_message", result)
     assert result["success"] is True
-    with KV() as kv:
-        outbox_entry = kv.get(f"pending-outbox:{DEFAULT_CHAT_ID}:pending-boundary-1")
-        indexed_key = kv.get(f"message_index:{DEFAULT_CHAT_ID}:pending-boundary-1")
-        stored_message = kv.get(indexed_key)
-    assert outbox_entry["attempt_count"] == 1
-    assert outbox_entry["next_attempt_at"] >= int(time.time())
-    assert stored_message["send_status"] == "pending"
+    with GreenlineKV() as kv:
+        outbox_entry = kv.get_record(f"pending-outbox:{DEFAULT_CHAT_ID}:pending-boundary-1")
+        indexed_key = kv.get_record(f"message_index:{DEFAULT_CHAT_ID}:pending-boundary-1")
+        stored_message = kv.get_record(indexed_key.value)
+    assert isinstance(outbox_entry, PendingOutboxRecord)
+    assert isinstance(stored_message, StoredMessageRecord)
+    assert outbox_entry.attempt_count == 1
+    assert outbox_entry.next_attempt_at >= int(time.time())
+    assert stored_message.send_status == "pending"
     _assert_all_contract_events(fake_pyotherside_module)
 
 
@@ -217,9 +224,9 @@ def test_delete_message_contract_success_and_failure(fake_daemon_rpc, fake_pyoth
 
 def test_get_cached_stickers_contract(tmp_path) -> None:
     sticker_path = make_media_file(tmp_path, "cached.webp")
-    with KV() as kv:
-        kv.put("sticker_cache:one", sticker_path)
-        kv.put("sticker_cache:missing", str(tmp_path / "missing.webp"))
+    with GreenlineKV() as kv:
+        kv.put_record("sticker_cache:one", StickerCacheRecord(sticker_path))
+        kv.put_record("sticker_cache:missing", StickerCacheRecord(str(tmp_path / "missing.webp")))
 
     result = main.get_cached_stickers()
 

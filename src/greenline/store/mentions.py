@@ -3,6 +3,7 @@ from dataclasses import replace
 from typing import Any, Dict, List, Optional, Tuple
 
 from greenline.contracts.daemon import daemon_client
+from greenline.contracts.kv import GreenlineKV
 from greenline.store.identity import (
     _LID_JID_SUFFIX,
     _strip_device_suffix,
@@ -12,7 +13,6 @@ from greenline.store.identity import (
 )
 from greenline.store.media import _quoted_message_preview
 from models import ChatListItem, Message
-from ut_components.kv import KV
 
 _MENTION_TOKEN_RE = re.compile(r"@([0-9][0-9A-Za-z:._-]*)")
 _MENTION_PLACEHOLDER_RE = re.compile("\ue000(\\d+)\ue001")
@@ -44,7 +44,7 @@ def normalize_mentioned_jids(
 
     needs_rpc = any(_strip_device_suffix(str(jid)).endswith(_LID_JID_SUFFIX) for jid in mentioned_jids if jid)
     rpc = daemon_client() if needs_rpc else None
-    with KV() as kv:
+    with GreenlineKV() as kv:
         return [
             canonicalize_contact_jid(str(jid), jid_map=jid_map, kv=kv, rpc=rpc) if jid else "" for jid in mentioned_jids
         ]

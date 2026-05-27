@@ -1,9 +1,8 @@
 import os
 import shutil
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, cast
 
 from greenline import qml_events
 from greenline.api.common import (
@@ -11,6 +10,7 @@ from greenline.api.common import (
     ui_message,
 )
 from greenline.contracts.daemon import daemon_client
+from greenline.contracts.kv import GreenlineKV
 from greenline.store.media import resolve_media_message_content
 from greenline.store.mentions import validate_mention_spans
 from greenline.store.messages import (
@@ -18,19 +18,20 @@ from greenline.store.messages import (
     _message_preview,
     _update_chat_after_edit,
 )
+from greenline.store.records import (
+    StoredMessageRecord,
+    message_from_record,
+    stored_message_record,
+)
 from greenline.store.repository import (
     get_message_entry_with_key as _lookup_message_entry_with_key,
 )
-from greenline.store.repository import (
-    sanitize_message_payload,
-)
-from models import ChatListItem, Message, MessagesResponse, MessageType, ReadReceipt
+from models import Message, MessagesResponse, MessageType, ReadReceipt
 from pending_outbox import queue_and_attempt_send
 from unread_counter import decrement_unread_total, get_unread_total
 from ut_components import mimetypes as mime_types
 from ut_components.config import get_cache_path
 from ut_components.crash import crash_reporter
-from ut_components.kv import KV
 from ut_components.utils import dataclass_to_dict
 from whatsmeow_types import MessageInfo
 
@@ -51,20 +52,20 @@ class DownloadMediaResponse:
     message: str
 
 
-def _get_message_entry_with_key(chat_id: str, message_id: str) -> tuple[str, dict[str, object]] | tuple[None, None]:
-    with KV() as kv:
+def _get_message_entry_with_key(chat_id: str, message_id: str) -> tuple[str, StoredMessageRecord] | tuple[None, None]:
+    with GreenlineKV() as kv:
         return _lookup_message_entry_with_key(kv, chat_id, message_id)
 
 
-def _get_message_entry(chat_id: str, message_id: str) -> dict[str, object] | None:
+def _get_message_entry(chat_id: str, message_id: str) -> StoredMessageRecord | None:
     _, entry = _get_message_entry_with_key(chat_id, message_id)
     return entry
 
 
-def _is_local_only_message_entry(entry: dict[str, object]) -> bool:
-    message_id = str(entry.get("id") or "")
-    send_status = str(entry.get("send_status") or "")
-    return message_id.startswith("pending-") or message_id.startswith("failed-") or send_status in ("pending", "failed")
+def _is_local_only_message_entry(entry: StoredMessageRecord) -> bool:
+    return (
+        entry.id.startswith("pending-") or entry.id.startswith("failed-") or entry.send_status in ("pending", "failed")
+    )
 
 
 def _resolve_reply_context(chat_id: str, reply_context: dict[str, object] | None) -> dict[str, object] | None:
@@ -102,8 +103,7 @@ def _resolve_reply_context(chat_id: str, reply_context: dict[str, object] | None
     if entry is None:
         return resolved
 
-    msg_fields = {field.name for field in Message.__dataclass_fields__.values()}
-    stored_msg = Message(**{key: value for key, value in entry.items() if key in msg_fields})  # type: ignore[arg-type]
+    stored_msg = message_from_record(entry)
     rendered_msg = ui_message(stored_msg)
 
     resolved["from_me"] = stored_msg.is_outgoing
@@ -116,7 +116,7 @@ def _resolve_reply_context(chat_id: str, reply_context: dict[str, object] | None
         resolved["participant_raw"] = ""
         resolved["participant_canonical"] = ""
 
-    raw = entry.get("raw")
+    raw = entry.raw
     quoted_message = raw.get("Message") if isinstance(raw, dict) else None
     if isinstance(quoted_message, dict):
         resolved["quoted_message"] = quoted_message
@@ -129,8 +129,8 @@ def _resolve_reply_context(chat_id: str, reply_context: dict[str, object] | None
     return resolved
 
 
-def _resolve_message_reply_context(chat_id: str, entry: dict[str, object]) -> dict[str, object] | None:
-    reply_id = str(entry.get("reply_to_id") or "").strip()
+def _resolve_message_reply_context(chat_id: str, entry: StoredMessageRecord) -> dict[str, object] | None:
+    reply_id = entry.reply_to_id.strip()
     if not reply_id:
         return None
 
@@ -138,11 +138,11 @@ def _resolve_message_reply_context(chat_id: str, entry: dict[str, object]) -> di
         chat_id,
         {
             "reply_to_id": reply_id,
-            "reply_participant": str(entry.get("reply_to_sender_raw") or entry.get("reply_to_sender_id") or ""),
-            "reply_participant_raw": str(entry.get("reply_to_sender_raw") or ""),
-            "reply_participant_canonical": str(entry.get("reply_to_sender_id") or ""),
-            "reply_to_text": str(entry.get("reply_to_text") or ""),
-            "from_me": bool(entry.get("reply_to_from_me")),
+            "reply_participant": entry.reply_to_sender_raw or entry.reply_to_sender_id,
+            "reply_participant_raw": entry.reply_to_sender_raw,
+            "reply_participant_canonical": entry.reply_to_sender_id,
+            "reply_to_text": entry.reply_to_text,
+            "from_me": entry.reply_to_from_me,
         },
     )
 
@@ -212,8 +212,8 @@ def get_messages(chat_id: str, cursor: str = "", page_size: int = 100) -> Messag
     next_cursor = ""
     has_more = False
     cursor_value = cursor or None
-    with KV() as kv:
-        page_entries, _ = kv.get_partial_page(
+    with GreenlineKV() as kv:
+        page_entries, _ = kv.get_partial_page_records(
             f"message:{chat_id}:",
             page_size=page_size + 1,
             cursor=cursor_value,
@@ -224,10 +224,7 @@ def get_messages(chat_id: str, cursor: str = "", page_size: int = 100) -> Messag
         if has_more and entries:
             next_cursor = entries[-1][0]
 
-        msg_fields = {field.name for field in Message.__dataclass_fields__.values()}
-        messages = [
-            Message(**{key: value for key, value in value.items() if key in msg_fields}) for _, value in entries
-        ]
+        messages = [message_from_record(value) for _, value in entries]
         messages.sort(key=lambda message: (message.timestamp_unix, message.id))
         rendered_messages = [ui_message(message) for message in messages]
 
@@ -243,27 +240,26 @@ def get_messages(chat_id: str, cursor: str = "", page_size: int = 100) -> Messag
 @crash_reporter
 @dataclass_to_dict
 def mark_messages_as_read(chat_id: str) -> SuccessResponse:
-    with KV() as kv:
-        entries = kv.get_partial(f"message:{chat_id}:")
+    with GreenlineKV() as kv:
+        entries = kv.get_partial_records(f"message:{chat_id}:")
         unread_by_sender: dict[str, list[str]] = {}
         for _key, value in entries:
-            if value.get("is_outgoing") or value.get("read_receipt") == ReadReceipt.READ:
+            if value.is_outgoing or value.read_receipt == ReadReceipt.READ:
                 continue
-            sender = str(value.get("sender_raw") or value.get("sender") or "")
-            unread_by_sender.setdefault(sender, []).append(value["id"])
+            sender = value.sender_raw or value.sender
+            unread_by_sender.setdefault(sender, []).append(value.id)
 
     rpc = daemon_client()
     for sender, ids in unread_by_sender.items():
         rpc.mark_read(chat_id, ids, sender_jid=sender)
 
-    with KV() as kv:
-        existing = kv.get(f"chat:{chat_id}")
-        if existing:
-            chat = ChatListItem(**existing)
+    with GreenlineKV() as kv:
+        chat = kv.get_record(f"chat:{chat_id}")
+        if chat is not None:
             prev_unread = chat.unread_count
             if prev_unread > 0:
                 chat.unread_count = 0
-                kv.put(f"chat:{chat_id}", asdict(chat))
+                kv.put_record(f"chat:{chat_id}", chat)
                 qml_events.emit_chat_list_update([chat])
                 decrement_unread_total(prev_unread)
 
@@ -326,22 +322,19 @@ def edit_text_message(chat_id: str, message_id: str, text: str) -> SuccessRespon
     if entry_key is None or entry is None:
         return SuccessResponse(success=False, message="Message not found")
 
-    if not entry.get("is_outgoing"):
+    if not entry.is_outgoing:
         return SuccessResponse(success=False, message="Only sent messages can be edited")
 
     if _is_local_only_message_entry(entry):
         return SuccessResponse(success=False, message="Message has not been sent yet")
 
-    if str(entry.get("type") or "") != MessageType.TEXT.value:
+    if entry.type != MessageType.TEXT:
         return SuccessResponse(success=False, message="Only text messages can be edited")
 
-    mentioned_jids = entry.get("mentioned_jids") if isinstance(entry.get("mentioned_jids"), list) else []
-    mention_spans = entry.get("mention_spans") if isinstance(entry.get("mention_spans"), list) else []
-    if mentioned_jids or mention_spans:
+    if entry.mentioned_jids or entry.mention_spans:
         return SuccessResponse(success=False, message="Mention messages cannot be edited yet")
 
-    raw_timestamp_unix = entry.get("timestamp_unix")
-    timestamp_unix = raw_timestamp_unix if isinstance(raw_timestamp_unix, int) else 0
+    timestamp_unix = entry.timestamp_unix
     if timestamp_unix <= 0 or int(time.time()) - timestamp_unix > EDIT_WINDOW_SECONDS:
         return SuccessResponse(success=False, message="Message can no longer be edited")
 
@@ -353,15 +346,12 @@ def edit_text_message(chat_id: str, message_id: str, text: str) -> SuccessRespon
     except Exception as error:
         return SuccessResponse(success=False, message=str(error))
 
-    msg_fields = {field.name for field in Message.__dataclass_fields__.values()}
-    updated_msg = Message(**{key: value for key, value in entry.items() if key in msg_fields})  # type: ignore[arg-type]
+    updated_msg = message_from_record(entry)
     updated_msg.text = normalized_text
     updated_msg.edited = True
 
-    updated_entry = dict(entry)
-    updated_entry.update(asdict(updated_msg))
-    with KV() as kv:
-        kv.put(entry_key, updated_entry)
+    with GreenlineKV() as kv:
+        kv.put_record(entry_key, stored_message_record(updated_msg, entry.raw))
         chat = _update_chat_after_edit(kv, updated_msg, MessageInfo())
 
     qml_events.emit_message_upsert([updated_msg])
@@ -376,13 +366,13 @@ def delete_message(chat_id: str, message_id: str) -> SuccessResponse:
     if entry_key is None or entry is None:
         return SuccessResponse(success=False, message="Message not found")
 
-    if not entry.get("is_outgoing"):
+    if not entry.is_outgoing:
         return SuccessResponse(success=False, message="Only sent messages can be deleted")
 
     if _is_local_only_message_entry(entry):
         return SuccessResponse(success=False, message="Message has not been sent yet")
 
-    if str(entry.get("type") or "") == MessageType.DELETED.value:
+    if entry.type == MessageType.DELETED:
         return SuccessResponse(success=False, message="Message already deleted")
 
     try:
@@ -390,14 +380,11 @@ def delete_message(chat_id: str, message_id: str) -> SuccessResponse:
     except Exception as error:
         return SuccessResponse(success=False, message=str(error))
 
-    msg_fields = {field.name for field in Message.__dataclass_fields__.values()}
-    existing_msg = Message(**cast(Any, {key: value for key, value in entry.items() if key in msg_fields}))
+    existing_msg = message_from_record(entry)
     deleted_msg = _merge_deleted_message(existing_msg, existing_msg.sender)
 
-    updated_entry = dict(entry)
-    updated_entry.update(asdict(deleted_msg))
-    with KV() as kv:
-        kv.put(entry_key, updated_entry)
+    with GreenlineKV() as kv:
+        kv.put_record(entry_key, stored_message_record(deleted_msg, entry.raw))
         chat = _update_chat_after_edit(kv, deleted_msg, MessageInfo())
 
     qml_events.emit_message_upsert([deleted_msg])
@@ -619,12 +606,12 @@ def send_contact_message(
 @crash_reporter
 @dataclass_to_dict
 def get_cached_stickers() -> dict[str, object]:
-    with KV() as kv:
-        entries = kv.get_partial("sticker_cache:")
+    with GreenlineKV() as kv:
+        entries = kv.get_partial_records("sticker_cache:")
     stickers = []
-    for _, file_path in entries:
-        if file_path and os.path.exists(str(file_path)):
-            stickers.append("file://" + str(file_path))
+    for _, record in entries:
+        if record.value and os.path.exists(record.value):
+            stickers.append("file://" + record.value)
     return {"success": True, "stickers": stickers}
 
 
@@ -632,12 +619,10 @@ def get_cached_stickers() -> dict[str, object]:
 @dataclass_to_dict
 def download_media(chat_id: str, message_id: str, media_type: str) -> DownloadMediaResponse:
     entry_key, entry = _get_message_entry_with_key(chat_id, message_id)
-    if entry_key is None or entry is None or entry.get("raw") is None:
+    if entry_key is None or entry is None or entry.raw is None:
         return DownloadMediaResponse(success=False, media_path="", message="Message not found")
 
-    raw = entry["raw"]
-    if not isinstance(raw, dict):
-        return DownloadMediaResponse(success=False, media_path="", message="Message not found")
+    raw = entry.raw
 
     msg_content = raw.get("Message", {})
     field_name = _MEDIA_TYPE_MAP.get(media_type)
@@ -683,11 +668,9 @@ def download_media(chat_id: str, message_id: str, media_type: str) -> DownloadMe
         return DownloadMediaResponse(success=False, media_path="", message="Failed to download media")
 
     media_path = "file://" + file_path
-    entry["media_path"] = media_path
-    with KV() as kv:
-        kv.put(entry_key, sanitize_message_payload(entry))
-
-    msg_fields = {field.name for field in Message.__dataclass_fields__.values()}
-    msg = Message(**{key: value for key, value in entry.items() if key in msg_fields})  # type: ignore[arg-type]
+    msg = message_from_record(entry)
+    msg.media_path = media_path
+    with GreenlineKV() as kv:
+        kv.put_record(entry_key, stored_message_record(msg, entry.raw))
     qml_events.emit_message_upsert([msg])
     return DownloadMediaResponse(success=True, media_path=media_path, message="")

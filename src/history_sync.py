@@ -14,6 +14,7 @@ from constants import (
     WHATSAPP_JID_SUFFIX,
 )
 from greenline.contracts.daemon import daemon_client
+from greenline.contracts.kv import GreenlineKV
 from greenline.store.identity import canonicalize_contact_jid, remember_chat
 from greenline.store.media import (
     _contact_preview,
@@ -25,9 +26,13 @@ from greenline.store.media import (
     template_message_text,
 )
 from greenline.store.mentions import quoted_message_template, template_mention_text
+from greenline.store.records import (
+    LidMapRecord,
+    MessageIndexRecord,
+    stored_message_record,
+)
 from greenline.store.repository import message_index_key, message_storage_key
 from models import ChatListItem, Message, MessageType, ReadReceipt
-from ut_components.kv import KV
 from ut_components.utils import enum_to_str as _enum_to_str
 from whatsmeow_types import (
     HistorySyncConversation,
@@ -65,7 +70,7 @@ def handle_history_sync(event: Any) -> Dict[str, Dict[str, Any]]:
     jid_map = _build_jid_map(evt)
     chat_updates: Dict[str, Dict[str, Any]] = {}
 
-    with KV() as kv:
+    with GreenlineKV() as kv:
         for conv in conversations:
             chat_jid = canonicalize_contact_jid(conv.ID, jid_map=jid_map) if conv.ID else ""
             if not chat_jid:
@@ -310,7 +315,7 @@ def _extract_context_info_from_dict(
 
 
 def _process_messages(
-    kv: KV,
+    kv: GreenlineKV,
     conv: HistorySyncConversation,
     chat_jid: str,
     jid_map: Dict[str, str],
@@ -319,8 +324,8 @@ def _process_messages(
     if not messages:
         return
 
-    existing_entries = kv.get_partial(f"message:{chat_jid}:")
-    existing_ids: Set[str] = {v.get("id", "") for _, v in existing_entries}
+    existing_entries = kv.get_partial_records(f"message:{chat_jid}:")
+    existing_ids: Set[str] = {v.id for _, v in existing_entries}
 
     for msg_wrap in messages:
         inner = msg_wrap.message
@@ -406,14 +411,12 @@ def _process_messages(
         msg.thumbnail_path = _extract_thumbnail({"Message": content}, msg_id)
 
         key = message_storage_key(chat_jid, ts_unix, msg_id)
-        data = asdict(msg)
-        data["raw"] = {"Message": content}
-        kv.put_cached(key, data)
-        kv.put_cached(message_index_key(chat_jid, msg_id), key)
+        kv.put_cached_record(key, stored_message_record(msg, {"Message": content}))
+        kv.put_cached_record(message_index_key(chat_jid, msg_id), MessageIndexRecord(key))
 
 
 def _process_conversation(
-    kv: KV,
+    kv: GreenlineKV,
     conv: HistorySyncConversation,
     chat_jid: str,
     jid_map: Dict[str, str],
@@ -422,10 +425,10 @@ def _process_conversation(
     latest_msg = _find_latest_message(conv)
 
     chat_key = f"chat:{chat_jid}"
-    existing = kv.get(chat_key)
+    existing = kv.get_record(chat_key)
 
     if existing is not None:
-        chat = ChatListItem(**existing)
+        chat = existing
         changed = False
 
         if latest_msg is not None and latest_msg.messageTimestamp > chat.last_message_timestamp:
@@ -448,7 +451,7 @@ def _process_conversation(
         if not changed:
             return None
 
-        kv.put_cached(chat_key, asdict(chat))
+        kv.put_cached_record(chat_key, chat)
         remember_chat(chat)
         return _enum_to_str(asdict(chat))  # type: ignore[no-any-return, no-untyped-call]
 
@@ -490,13 +493,13 @@ def _process_conversation(
         last_message_type=last_message_type,
     )
 
-    kv.put_cached(chat_key, asdict(chat))
+    kv.put_cached_record(chat_key, chat)
     remember_chat(chat)
     return _enum_to_str(asdict(chat))  # type: ignore[no-any-return, no-untyped-call]
 
 
 def _process_pushnames(
-    kv: KV,
+    kv: GreenlineKV,
     pushnames: List[HistorySyncPushname],
     jid_map: Dict[str, str],
     chat_updates: Dict[str, Dict[str, Any]],
@@ -506,7 +509,7 @@ def _process_pushnames(
             continue
         jid = canonicalize_contact_jid(pn.ID, jid_map=jid_map)
         chat_key = f"chat:{jid}"
-        existing = kv.get(chat_key)
+        existing = kv.get_record(chat_key)
         if existing is None:
             chat = ChatListItem(
                 id=jid,
@@ -521,22 +524,22 @@ def _process_pushnames(
                 push_name=pn.pushname,
             )
         else:
-            chat = ChatListItem(**existing)
+            chat = existing
             if chat.push_name:
                 continue
             chat.push_name = pn.pushname
             if chat.name == jid or chat.name == jid.replace(WHATSAPP_JID_SUFFIX, ""):
                 chat.name = pn.pushname
-        kv.put_cached(chat_key, asdict(chat))
+        kv.put_cached_record(chat_key, chat)
         remember_chat(chat)
         chat_updates[jid] = _enum_to_str(asdict(chat))  # type: ignore[no-untyped-call]
 
 
 def _process_lid_mappings(
-    kv: KV,
+    kv: GreenlineKV,
     mappings: List[PhoneNumberToLidMapping],
 ) -> None:
     for mapping in mappings:
         if mapping.lidJID and mapping.pnJID:
             canonical_lid = canonicalize_contact_jid(mapping.lidJID, jid_map={mapping.lidJID: mapping.lidJID})
-            kv.put_cached(f"lid_map:{canonical_lid}", canonicalize_contact_jid(mapping.pnJID))
+            kv.put_cached_record(f"lid_map:{canonical_lid}", LidMapRecord(canonicalize_contact_jid(mapping.pnJID)))

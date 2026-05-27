@@ -58,6 +58,22 @@ When adding or changing a daemon RPC:
 
 Only update the scanner allowlist in `tests/tools/check_daemon_rpc_boundary.py` for true low-level boundary code or scanner/fake infrastructure. Do not allowlist normal app modules to work around the guard.
 
+## KV boundary workflow
+
+Greenline-owned KV storage must go through `src/greenline/contracts/kv.py`. The low-level `ut_components.kv.KV` remains framework storage only; app code gets a dataclass guarantee from `GreenlineKV`.
+
+When adding or changing a Greenline KV key:
+
+1. Add or reuse a dataclass record in `src/greenline/store/records.py`. Object keys store dict-shaped records; scalar/list keys use single-field `value` wrappers so the on-disk JSON shape stays unchanged.
+2. Register the key or prefix in `KV_CONTRACTS` with the expected record type and storage mode.
+3. Read/write through `GreenlineKV.get_record()`, `put_record()`, `get_partial_records()`, or cached variants. Do not use raw `KV()` in app modules.
+4. Decode failures and invalid writes are strict in production. Missing keys may use explicit typed defaults, but malformed stored rows should raise after boundary logging with `boundary="kv"`.
+5. Convert dataclasses to dicts only at API/QML serializer boundaries or raw snapshot assertions.
+6. Add focused tests for the new record shape and update fixture/snapshot validation when a new key family is introduced.
+7. Run `uv run python tests/tools/check_kv_boundary.py` and the affected pytest targets.
+
+Only update the KV scanner allowlist for true framework or boundary code (`src/ut_components/*`, `src/greenline/contracts/kv.py`) or intentionally raw test snapshot infrastructure. Do not allowlist normal app modules to work around the guard.
+
 ## Pre-commit enforcement
 
 Pre-commit runs the contract scanners and pytest. It fails when:
@@ -68,5 +84,6 @@ Pre-commit runs the contract scanners and pytest. It fails when:
 - A registry entry exists for a removed API/event.
 - App code bypasses the QML bridge with raw `pyotherside.send(...)`.
 - App code bypasses the daemon boundary with direct `DaemonRPC` imports, `DaemonRPC()` construction, or `rpc.DaemonRPC` access.
+- App code bypasses the KV boundary with raw `ut_components.kv.KV` imports, `KV()` construction, or `ut_components.kv.KV` access.
 
 Use the scanner failure output as the checklist for what contract or boundary update is missing.

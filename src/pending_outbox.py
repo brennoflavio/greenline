@@ -1,15 +1,22 @@
 import os
 import threading
 import time
-from dataclasses import asdict, replace
+from dataclasses import replace
 from datetime import datetime, timedelta
 from typing import Callable
 
 from daemon_types import SendMessageReply
 from greenline import qml_events
 from greenline.contracts.daemon import daemon_client
+from greenline.contracts.kv import GreenlineKV
 from greenline.store.mentions import mention_transport_payload
 from greenline.store.messages import upsert_chat
+from greenline.store.records import (
+    PendingOutboxRecord,
+    StoredMessageRecord,
+    message_from_record,
+    stored_message_record,
+)
 from greenline.store.repository import (
     delete_message_index,
 )
@@ -22,7 +29,6 @@ from greenline.store.repository import (
 )
 from models import ChatListItem, Message, MessageType, ReadReceipt
 from ut_components.event import Event
-from ut_components.kv import KV
 from whatsmeow_types import MessageInfo
 
 PENDING_RETRY_INTERVAL_SECONDS = 5
@@ -46,14 +52,9 @@ def _pending_send_token(chat_id: str, message_id: str) -> str:
     return f"{chat_id}:{message_id}"
 
 
-def _get_message_entry_with_key(chat_id: str, message_id: str) -> tuple[str, dict[str, object]] | tuple[None, None]:
-    with KV() as kv:
+def _get_message_entry_with_key(chat_id: str, message_id: str) -> tuple[str, StoredMessageRecord] | tuple[None, None]:
+    with GreenlineKV() as kv:
         return _lookup_message_entry_with_key(kv, chat_id, message_id)
-
-
-def _message_from_entry(entry: dict[str, object]) -> Message:
-    msg_fields = {f.name for f in Message.__dataclass_fields__.values()}
-    return Message(**{k: v for k, v in entry.items() if k in msg_fields})  # type: ignore[arg-type]
 
 
 def _local_media_path(media_path: str) -> str:
@@ -62,8 +63,8 @@ def _local_media_path(media_path: str) -> str:
     return media_path
 
 
-def _message_storage_payload(message: Message) -> dict[str, object]:
-    data = asdict(message)
+def _message_storage_record(message: Message) -> StoredMessageRecord:
+    raw = None
 
     if message.type == MessageType.CONTACT and message.media_path:
         contact_path = _local_media_path(message.media_path)
@@ -71,7 +72,7 @@ def _message_storage_payload(message: Message) -> dict[str, object]:
             try:
                 with open(contact_path, encoding="utf-8-sig") as f:
                     vcard = f.read()
-                data["raw"] = {
+                raw = {
                     "Message": {
                         "contactMessage": {
                             "displayName": message.file_name or "Contact",
@@ -82,7 +83,7 @@ def _message_storage_payload(message: Message) -> dict[str, object]:
             except Exception:
                 pass
 
-    return data
+    return stored_message_record(message, raw)
 
 
 def _parse_duration_seconds(duration: str) -> int:
@@ -127,17 +128,17 @@ def _emit_message_change(message: Message, chat: ChatListItem | None = None) -> 
 
 def _store_pending_message(message: Message) -> ChatListItem:
     storage_key = _message_storage_key(message.chat_id, message.timestamp_unix, message.id)
-    with KV() as kv:
-        kv.put(storage_key, _message_storage_payload(message))
+    with GreenlineKV() as kv:
+        kv.put_record(storage_key, _message_storage_record(message))
         put_message_index(kv, message.chat_id, message.id, storage_key)
-        kv.put(
+        kv.put_record(
             _pending_outbox_key(message.chat_id, message.id),
-            {
-                "chat_id": message.chat_id,
-                "message_id": message.id,
-                "attempt_count": 0,
-                "next_attempt_at": 0,
-            },
+            PendingOutboxRecord(
+                chat_id=message.chat_id,
+                message_id=message.id,
+                attempt_count=0,
+                next_attempt_at=0,
+            ),
         )
 
     return upsert_chat(message, MessageInfo())
@@ -158,37 +159,37 @@ def _finish_pending_send(chat_id: str, message_id: str) -> None:
 
 
 def _clear_pending_outbox_entry(chat_id: str, message_id: str) -> None:
-    with KV() as kv:
+    with GreenlineKV() as kv:
         kv.delete(_pending_outbox_key(chat_id, message_id))
 
 
 def _schedule_pending_retry(chat_id: str, message_id: str) -> None:
     key = _pending_outbox_key(chat_id, message_id)
-    with KV() as kv:
-        existing = kv.get(key) or {}
-        attempt_count = int(existing.get("attempt_count") or 0) + 1
+    with GreenlineKV() as kv:
+        existing = kv.get_record(key, default=PendingOutboxRecord(chat_id, message_id, 0, 0))
+        attempt_count = existing.attempt_count + 1
         delay_seconds = min(
             PENDING_RETRY_MAX_BACKOFF_SECONDS,
             PENDING_RETRY_INTERVAL_SECONDS * (2 ** min(attempt_count - 1, 5)),
         )
-        kv.put(
+        kv.put_record(
             key,
-            {
-                "chat_id": chat_id,
-                "message_id": message_id,
-                "attempt_count": attempt_count,
-                "next_attempt_at": int(time.time()) + delay_seconds,
-            },
+            PendingOutboxRecord(
+                chat_id=chat_id,
+                message_id=message_id,
+                attempt_count=attempt_count,
+                next_attempt_at=int(time.time()) + delay_seconds,
+            ),
         )
 
 
-def _mark_pending_message_failed(entry_key: str, entry: dict[str, object]) -> None:
-    failed_message = _message_from_entry(entry)
+def _mark_pending_message_failed(entry_key: str, entry: StoredMessageRecord) -> None:
+    failed_message = message_from_record(entry)
     failed_message.send_status = "failed"
     failed_message.read_receipt = ReadReceipt.NONE
 
-    with KV() as kv:
-        kv.put(entry_key, _message_storage_payload(failed_message))
+    with GreenlineKV() as kv:
+        kv.put_record(entry_key, _message_storage_record(failed_message))
         kv.delete(_pending_outbox_key(failed_message.chat_id, failed_message.id))
 
     chat = upsert_chat(failed_message, MessageInfo())
@@ -277,11 +278,11 @@ def _complete_pending_send(entry_key: str, pending_message: Message, result: Sen
     )
 
     sent_storage_key = _message_storage_key(sent_message.chat_id, sent_message.timestamp_unix, sent_message.id)
-    with KV() as kv:
+    with GreenlineKV() as kv:
         kv.delete(entry_key)
         delete_message_index(kv, pending_message.chat_id, pending_message.id)
         kv.delete(_pending_outbox_key(pending_message.chat_id, pending_message.id))
-        kv.put(sent_storage_key, _message_storage_payload(sent_message))
+        kv.put_record(sent_storage_key, _message_storage_record(sent_message))
         put_message_index(kv, sent_message.chat_id, sent_message.id, sent_storage_key)
 
     chat = upsert_chat(sent_message, MessageInfo())
@@ -302,11 +303,11 @@ def _attempt_pending_send(
             _clear_pending_outbox_entry(chat_id, message_id)
             return False
 
-        if str(entry.get("send_status") or "") != "pending":
+        if entry.send_status != "pending":
             _clear_pending_outbox_entry(chat_id, message_id)
             return False
 
-        pending_message = _message_from_entry(entry)
+        pending_message = message_from_record(entry)
         try:
             result = _send_pending_message_via_rpc(pending_message, resolve_reply_context)
         except (FileNotFoundError, UnsupportedPendingMessageTypeError):
@@ -337,19 +338,17 @@ class PendingMessageRetryEvent(Event):
         self._resolve_reply_context = resolve_reply_context
 
     def trigger(self, metadata: dict[str, object] | None) -> None:
-        with KV() as kv:
-            pending_entries = kv.get_partial(PENDING_OUTBOX_KEY_PREFIX)
+        with GreenlineKV() as kv:
+            pending_entries = kv.get_partial_records(PENDING_OUTBOX_KEY_PREFIX)
 
         now = int(time.time())
         for key, value in pending_entries:
-            chat_id = str(value.get("chat_id") or "") if isinstance(value, dict) else ""
-            message_id = str(value.get("message_id") or "") if isinstance(value, dict) else ""
-            raw_next_attempt_at = value.get("next_attempt_at") if isinstance(value, dict) else 0
-            next_attempt_at = raw_next_attempt_at if isinstance(raw_next_attempt_at, int) else 0
+            chat_id = value.chat_id
+            message_id = value.message_id
             if not chat_id or not message_id:
-                with KV() as kv:
+                with GreenlineKV() as kv:
                     kv.delete(key)
                 continue
-            if next_attempt_at > now:
+            if value.next_attempt_at > now:
                 continue
             _attempt_pending_send(chat_id, message_id, self._resolve_reply_context)

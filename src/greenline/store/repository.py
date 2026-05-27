@@ -1,10 +1,15 @@
 from dataclasses import asdict
 from typing import Any, Dict, Optional, Tuple
 
+from greenline.contracts.kv import GreenlineKV
 from greenline.store.identity import resolve_sender_name, resolve_sender_photo
 from greenline.store.mentions import render_message_mentions
+from greenline.store.records import (
+    MessageIndexRecord,
+    StoredMessageRecord,
+    message_from_record,
+)
 from models import Message, MessageType, UiMessage
-from ut_components.kv import KV
 
 _MESSAGE_FIELDS = set(Message.__dataclass_fields__.keys())
 _DELETED_MESSAGE_PREVIEW = "Deleted message"
@@ -25,44 +30,52 @@ def message_index_key(chat_id: str, message_id: str) -> str:
     return f"message_index:{chat_id}:{message_id}"
 
 
-def put_message_index(kv: KV, chat_id: str, message_id: str, storage_key: str) -> None:
+def _greenline_kv(kv: Any) -> GreenlineKV:
+    if isinstance(kv, GreenlineKV):
+        return kv
+    return GreenlineKV(kv)
+
+
+def put_message_index(kv: Any, chat_id: str, message_id: str, storage_key: str) -> None:
     if not chat_id or not message_id or not storage_key:
         return
-    kv.put(message_index_key(chat_id, message_id), storage_key)
+    _greenline_kv(kv).put_record(message_index_key(chat_id, message_id), MessageIndexRecord(storage_key))
 
 
-def delete_message_index(kv: KV, chat_id: str, message_id: str) -> None:
+def delete_message_index(kv: Any, chat_id: str, message_id: str) -> None:
     if not chat_id or not message_id:
         return
-    kv.delete(message_index_key(chat_id, message_id))
+    _greenline_kv(kv).delete(message_index_key(chat_id, message_id))
 
 
 def get_message_entry_with_key(
-    kv: KV,
+    kv: Any,
     chat_id: str,
     message_id: str,
-) -> Tuple[str, Dict[str, Any]] | tuple[None, None]:
+) -> Tuple[str, StoredMessageRecord] | tuple[None, None]:
     if not chat_id or not message_id:
         return None, None
 
-    indexed_key = kv.get(message_index_key(chat_id, message_id))
-    if not isinstance(indexed_key, str) or not indexed_key:
+    typed_kv = _greenline_kv(kv)
+    index_record = typed_kv.get_record(message_index_key(chat_id, message_id))
+    if not isinstance(index_record, MessageIndexRecord) or not index_record.value:
         return None, None
 
-    indexed_value = kv.get(indexed_key)
+    indexed_key = index_record.value
+    indexed_value = typed_kv.get_record(indexed_key)
     if (
         indexed_key.startswith(f"message:{chat_id}:")
-        and isinstance(indexed_value, dict)
-        and indexed_value.get("id") == message_id
-        and indexed_value.get("chat_id") == chat_id
+        and isinstance(indexed_value, StoredMessageRecord)
+        and indexed_value.id == message_id
+        and indexed_value.chat_id == chat_id
     ):
         return indexed_key, indexed_value
 
-    delete_message_index(kv, chat_id, message_id)
+    delete_message_index(typed_kv, chat_id, message_id)
     return None, None
 
 
-def _find_message_entry(kv: KV, chat_id: str, message_id: str) -> Tuple[str, Dict[str, Any]] | tuple[None, None]:
+def _find_message_entry(kv: Any, chat_id: str, message_id: str) -> Tuple[str, StoredMessageRecord] | tuple[None, None]:
     return get_message_entry_with_key(kv, chat_id, message_id)
 
 
@@ -70,12 +83,12 @@ def _get_stored_message(chat_id: str, message_id: str) -> Optional[Message]:
     if not chat_id or not message_id:
         return None
 
-    with KV() as kv:
+    with GreenlineKV() as kv:
         _, value = _find_message_entry(kv, chat_id, message_id)
     if value is None:
         return None
 
-    return Message(**{key: value for key, value in value.items() if key in _MESSAGE_FIELDS})
+    return message_from_record(value)
 
 
 def _resolve_reply_preview_text(message: Message) -> str:

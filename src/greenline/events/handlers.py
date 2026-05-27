@@ -1,28 +1,35 @@
 import json
 import os
-from dataclasses import asdict
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any, Dict, cast
 
 from dacite import from_dict
 
 from constants import NEWSLETTER_SERVER, STATUS_BROADCAST_JID
 from greenline import qml_payloads
 from greenline.contracts.daemon import daemon_client
+from greenline.contracts.kv import GreenlineKV
+from greenline.contracts.validation import BoundaryValidationError
 from greenline.store.identity import (
     canonicalize_contact_jid,
     remember_chat,
     update_chat_name,
 )
 from greenline.store.messages import store_message, store_undecryptable_message
-from greenline.store.repository import sanitize_message_payload
+from greenline.store.records import (
+    StickerCacheRecord,
+    StoredMessageRecord,
+    UnhandledMessageRecord,
+    UnknownEventRecord,
+    message_from_record,
+    stored_message_record,
+)
 from greenline.ui import dataclass_to_ui_dict, enum_to_str
 from history_sync import handle_history_sync
 from models import ChatListItem, Message, MessageType, ReadReceipt
 from receipt_store import process_receipt
 from rpc import DaemonNotReadyError, DaemonTimeoutError
 from unread_counter import reconcile_unread_total
-from ut_components.kv import KV
 from whatsmeow_types import (
     BlocklistEvent,
     BusinessNameEvent,
@@ -64,20 +71,21 @@ def _auto_download_sticker(msg: Message, raw: Dict[str, Any]) -> str:
     file_sha256 = sticker.get("fileSHA256", "")
     if file_sha256:
         cache_key = f"sticker_cache:{file_sha256}"
-        with KV() as kv:
-            cached_path = kv.get(cache_key)
-        if cached_path and os.path.exists(str(cached_path)):
-            media_path = "file://" + str(cached_path)
+        with GreenlineKV() as kv:
+            cached = cast(StickerCacheRecord | None, kv.get_record(cache_key))
+        if cached is not None and os.path.exists(cached.value):
+            media_path = "file://" + cached.value
             key = f"message:{msg.chat_id}:{msg.timestamp_unix}:{msg.id}"
-            with KV() as kv:
-                entry = kv.get(key)
-                if entry:
-                    entry["media_path"] = media_path
-                    kv.put(key, sanitize_message_payload(entry))
+            with GreenlineKV() as kv:
+                entry = cast(StoredMessageRecord | None, kv.get_record(key))
+                if entry is not None:
+                    updated = message_from_record(entry)
+                    updated.media_path = media_path
+                    kv.put_record(key, stored_message_record(updated, entry.raw))
             return media_path
 
     try:
-        file_path = (
+        file_path = str(
             daemon_client()
             .download_media(
                 direct_path=direct_path,
@@ -96,16 +104,17 @@ def _auto_download_sticker(msg: Message, raw: Dict[str, Any]) -> str:
         return ""
 
     if file_sha256:
-        with KV() as kv:
-            kv.put(f"sticker_cache:{file_sha256}", file_path)
+        with GreenlineKV() as kv:
+            kv.put_record(f"sticker_cache:{file_sha256}", StickerCacheRecord(file_path))
 
     media_path = "file://" + str(file_path)
     key = f"message:{msg.chat_id}:{msg.timestamp_unix}:{msg.id}"
-    with KV() as kv:
-        entry = kv.get(key)
-        if entry:
-            entry["media_path"] = media_path
-            kv.put(key, sanitize_message_payload(entry))
+    with GreenlineKV() as kv:
+        entry = cast(StoredMessageRecord | None, kv.get_record(key))
+        if entry is not None:
+            updated = message_from_record(entry)
+            updated.media_path = media_path
+            kv.put_record(key, stored_message_record(updated, entry.raw))
 
     return media_path
 
@@ -187,13 +196,12 @@ def _handle_contact(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None
 
     ts = int(datetime.fromisoformat(evt.Timestamp).timestamp()) if evt.Timestamp else 0
 
-    with KV() as kv:
+    with GreenlineKV() as kv:
         key = f"chat:{jid}"
-        data = kv.get(key)
-        if data is not None:
-            chat = ChatListItem(**data)
+        chat = kv.get_record(key)
+        if chat is not None:
             if update_chat_name(chat, ts, full_name=name):
-                kv.put(key, asdict(chat))
+                kv.put_record(key, chat)
                 remember_chat(chat)
                 chat_updates[chat.id] = dataclass_to_ui_dict(chat)
         else:
@@ -210,7 +218,7 @@ def _handle_contact(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None
                 full_name=name,
                 name_updated_at=ts,
             )
-            kv.put(key, asdict(chat))
+            kv.put_record(key, chat)
             remember_chat(chat)
             chat_updates[chat.id] = dataclass_to_ui_dict(chat)
 
@@ -224,13 +232,12 @@ def _handle_push_name(event: Any, chat_updates: dict[str, dict[str, Any]]) -> No
 
     ts = int(datetime.fromisoformat(evt.Message.Timestamp).timestamp()) if evt.Message.Timestamp else 0
 
-    with KV() as kv:
+    with GreenlineKV() as kv:
         key = f"chat:{jid}"
-        data = kv.get(key)
-        if data is not None:
-            chat = ChatListItem(**data)
+        chat = kv.get_record(key)
+        if chat is not None:
             if update_chat_name(chat, ts, push_name=evt.NewPushName):
-                kv.put(key, asdict(chat))
+                kv.put_record(key, chat)
                 remember_chat(chat)
                 chat_updates[chat.id] = dataclass_to_ui_dict(chat)
 
@@ -244,13 +251,12 @@ def _handle_business_name(event: Any, chat_updates: dict[str, dict[str, Any]]) -
 
     ts = int(datetime.fromisoformat(evt.Message.Timestamp).timestamp()) if evt.Message.Timestamp else 0
 
-    with KV() as kv:
+    with GreenlineKV() as kv:
         key = f"chat:{jid}"
-        data = kv.get(key)
-        if data is not None:
-            chat = ChatListItem(**data)
+        chat = kv.get_record(key)
+        if chat is not None:
             if update_chat_name(chat, ts, business_name=evt.NewBusinessName):
-                kv.put(key, asdict(chat))
+                kv.put_record(key, chat)
                 remember_chat(chat)
                 chat_updates[chat.id] = dataclass_to_ui_dict(chat)
 
@@ -264,15 +270,14 @@ def _handle_mute(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None:
     action = raw.get("Action") or {}
     muted = action.get("muted", False)
 
-    with KV() as kv:
+    with GreenlineKV() as kv:
         key = f"chat:{jid}"
-        data = kv.get(key)
-        if data is None:
+        chat = kv.get_record(key)
+        if chat is None:
             return
-        chat = ChatListItem(**data)
         if chat.muted != muted:
             chat.muted = muted
-            kv.put(key, asdict(chat))
+            kv.put_record(key, chat)
             chat_updates[chat.id] = dataclass_to_ui_dict(chat)
 
 
@@ -290,15 +295,14 @@ def _handle_picture(
     avatar_path = daemon_client().sync_avatar(jid).AvatarPath
     photo = "file://" + avatar_path if avatar_path else ""
 
-    with KV() as kv:
+    with GreenlineKV() as kv:
         key = f"chat:{jid}"
-        data = kv.get(key)
-        if data is None:
+        chat = kv.get_record(key)
+        if chat is None:
             return
-        chat = ChatListItem(**data)
         if chat.photo != photo:
             chat.photo = photo
-            kv.put(key, asdict(chat))
+            kv.put_record(key, chat)
             remember_chat(chat)
             chat_updates[chat.id] = dataclass_to_ui_dict(chat)
             photo_updates.append({"jid": jid, "photo": photo})
@@ -374,30 +378,30 @@ def _parse_ignored_event(event: Any, data_class: Any) -> None:
 
 def _save_unhandled_message(event: Any, raw: Dict[str, Any]) -> None:
     info = raw.get("Info", {})
-    with KV() as kv:
-        kv.put(
+    with GreenlineKV() as kv:
+        kv.put_record(
             f"unhandled_message:{event.id}",
-            {
-                "event_id": event.id,
-                "info_type": info.get("Type", ""),
-                "media_type": info.get("MediaType", ""),
-                "chat": info.get("Chat", ""),
-                "sender": info.get("Sender", ""),
-                "message_id": info.get("ID", ""),
-                "timestamp": info.get("Timestamp", ""),
-                "payload": event.payload or "",
-            },
+            UnhandledMessageRecord(
+                event_id=event.id,
+                info_type=str(info.get("Type", "")),
+                media_type=str(info.get("MediaType", "")),
+                chat=str(info.get("Chat", "")),
+                sender=str(info.get("Sender", "")),
+                message_id=str(info.get("ID", "")),
+                timestamp=str(info.get("Timestamp", "")),
+                payload=event.payload or "",
+            ),
         )
 
 
 def _handle_unknown(event: Any) -> None:
-    with KV() as kv:
-        kv.put(
+    with GreenlineKV() as kv:
+        kv.put_record(
             f"unknown_event:{event.event_type}:{event.id}",
-            {
-                "event_type": event.event_type,
-                "payload": event.payload or "",
-            },
+            UnknownEventRecord(
+                event_type=event.event_type,
+                payload=event.payload or "",
+            ),
         )
 
 
@@ -420,7 +424,7 @@ def dispatch_event(
             presence_updates,
             chat_presence_updates,
         )
-    except (ConnectionRefusedError, DaemonNotReadyError, DaemonTimeoutError):
+    except (ConnectionRefusedError, DaemonNotReadyError, DaemonTimeoutError, BoundaryValidationError):
         raise
     except Exception:
         _handle_unknown(event)

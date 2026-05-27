@@ -10,7 +10,8 @@ from daemon_event_helpers import (
     seed_prerequisite_kv,
 )
 
-from ut_components.kv import KV
+from greenline.contracts.kv import GreenlineKV
+from greenline.store.records import DaemonLastEventIDRecord
 
 LAST_EVENT_ID_KEY = "daemon:last_event_id"
 
@@ -48,10 +49,10 @@ def test_process_events_once_advances_and_deletes_processed_events(fake_daemon_r
 
     assert fake_daemon_rpc.list_events_calls == [{"after_id": 0, "limit": 7}]
     assert fake_daemon_rpc.delete_events_calls == [39]
-    with KV() as kv:
-        assert kv.get(LAST_EVENT_ID_KEY) == 39
-        assert kv.get("chat:fixture-chat-1@s.whatsapp.net") is not None
-        assert kv.get("message:fixture-chat-1@s.whatsapp.net:1735732800:fixture-message-001") is not None
+    with GreenlineKV() as kv:
+        assert kv.get_record(LAST_EVENT_ID_KEY) == DaemonLastEventIDRecord(39)
+        assert kv.get_record("chat:fixture-chat-1@s.whatsapp.net") is not None
+        assert kv.get_record("message:fixture-chat-1@s.whatsapp.net:1735732800:fixture-message-001") is not None
 
 
 def test_daemon_event_handler_emits_batched_qml_payloads(fake_daemon_rpc) -> None:
@@ -114,5 +115,5 @@ def test_daemon_event_handler_emits_batched_qml_payloads(fake_daemon_rpc) -> Non
             "state": "composing",
         }
     ]
-    with KV() as kv:
-        assert kv.get(LAST_EVENT_ID_KEY) == 1097
+    with GreenlineKV() as kv:
+        assert kv.get_record(LAST_EVENT_ID_KEY) == DaemonLastEventIDRecord(1097)

@@ -1,18 +1,22 @@
-from ut_components.kv import KV
+from typing import cast
+
+from greenline.contracts.kv import GreenlineKV
+from greenline.store.records import UnreadTotalRecord
+from models import ChatListItem
 
 UNREAD_TOTAL_KEY = "unread_total"
 
 
 def get_unread_total() -> int:
-    with KV() as kv:
-        return int(kv.get(UNREAD_TOTAL_KEY, default=0))
+    with GreenlineKV() as kv:
+        return kv.get_record(UNREAD_TOTAL_KEY, default=UnreadTotalRecord(0)).value
 
 
 def increment_unread_total(amount: int = 1) -> int:
-    with KV() as kv:
-        total = int(kv.get(UNREAD_TOTAL_KEY, default=0))
+    with GreenlineKV() as kv:
+        total = kv.get_record(UNREAD_TOTAL_KEY, default=UnreadTotalRecord(0)).value
         total = max(0, total + amount)
-        kv.put(UNREAD_TOTAL_KEY, total)
+        kv.put_record(UNREAD_TOTAL_KEY, UnreadTotalRecord(total))
     return total
 
 
@@ -21,8 +25,8 @@ def decrement_unread_total(amount: int = 1) -> int:
 
 
 def reconcile_unread_total() -> int:
-    with KV() as kv:
-        entries = kv.get_partial("chat:")
-        total = sum(int(v.get("unread_count", 0)) for _, v in entries)
-        kv.put(UNREAD_TOTAL_KEY, total)
+    with GreenlineKV() as kv:
+        entries = kv.get_partial_records("chat:")
+        total = sum(cast(ChatListItem, chat).unread_count for _, chat in entries)
+        kv.put_record(UNREAD_TOTAL_KEY, UnreadTotalRecord(total))
     return total

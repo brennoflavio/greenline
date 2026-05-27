@@ -25,8 +25,7 @@ def _last_event(fake_pyotherside, name: str):
 
 def test_get_chat_list_contract_includes_full_chat_and_draft() -> None:
     chat = seed_chat(DEFAULT_CHAT_ID, muted=True, photo="file:///tmp/photo.jpg")
-    with KV() as kv:
-        kv.put(f"draft:{chat.id}", "Draft text")
+    seed_draft(chat.id, "Draft text", [])
 
     result = main.get_chat_list()
 
@@ -36,14 +35,12 @@ def test_get_chat_list_contract_includes_full_chat_and_draft() -> None:
     assert result["chats"][0]["has_draft"] is True
 
 
-def test_get_chat_list_contract_handles_malformed_chat() -> None:
+def test_get_chat_list_contract_rejects_malformed_chat() -> None:
     with KV() as kv:
         kv.put("chat:broken", {"id": "broken"})
 
-    result = main.get_chat_list()
-
-    validate_api_response("get_chat_list", result)
-    assert result == {"success": False, "chats": [], "message": result["message"]}
+    with pytest.raises(Exception):
+        main.get_chat_list()
 
 
 def test_get_contact_list_contract_success_and_failure(fake_daemon_rpc, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -92,9 +89,8 @@ def test_get_chat_info_contract_success_missing_and_malformed() -> None:
 
     with KV() as kv:
         kv.put("chat:broken", {"id": "broken"})
-    malformed = main.get_chat_info("broken")
-    validate_api_response("get_chat_info", malformed)
-    assert malformed == {"success": False}
+    with pytest.raises(Exception):
+        main.get_chat_info("broken")
 
 
 def test_get_group_mention_candidates_contract_success_and_failure(

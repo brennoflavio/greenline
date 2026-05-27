@@ -58,6 +58,13 @@ repos:
         pass_filenames: false
         always_run: true
 
+      - id: kv-boundary
+        name: Check KV boundary
+        entry: uv run python tests/tools/check_kv_boundary.py
+        language: system
+        pass_filenames: false
+        always_run: true
+
       - id: pytest
         name: Run pytest
         entry: uv run pytest

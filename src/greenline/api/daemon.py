@@ -13,16 +13,21 @@ from daemon import (
 )
 from greenline.api.common import SuccessResponse
 from greenline.contracts.daemon import daemon_client
+from greenline.contracts.kv import GreenlineKV
+from greenline.contracts.validation import BoundaryValidationError
 from greenline.events.chat_sync import ChatListUpdateEvent, DaemonEventHandler
 from greenline.events.session import LAST_EVENT_ID_KEY, SessionStatusEvent
 from greenline.session import SessionStatusResponse, build_session_status_response
 from greenline.store.identity import clear_chat_runtime_cache
+from greenline.store.records import (
+    DaemonLastEventIDRecord,
+    NotificationsSuppressedRecord,
+)
 from pending_outbox import PendingMessageRetryEvent
 from unread_counter import reconcile_unread_total
 from ut_components.config import get_cache_path, get_config_path
 from ut_components.crash import crash_reporter
 from ut_components.event import get_event_dispatcher
-from ut_components.kv import KV
 from ut_components.utils import dataclass_to_dict
 
 NOTIFICATIONS_SUPPRESSED_KEY = "notifications_suppressed"
@@ -72,10 +77,12 @@ def check_daemon_version() -> EnsureDaemonVersionResponse:
 
 def get_sync_status() -> bool:
     try:
-        with KV() as kv:
-            last_id = kv.get(LAST_EVENT_ID_KEY, default=0)
+        with GreenlineKV() as kv:
+            last_id = kv.get_record(LAST_EVENT_ID_KEY, default=DaemonLastEventIDRecord(0)).value
         reply = daemon_client().list_events(after_id=last_id, limit=1)
         return bool(reply.Events)
+    except BoundaryValidationError:
+        raise
     except Exception:
         return False
 
@@ -168,9 +175,14 @@ def uninstall_daemon() -> SuccessResponse:
 @dataclass_to_dict
 def get_settings() -> SettingsResponse:
     try:
-        with KV() as kv:
-            suppressed = bool(kv.get(NOTIFICATIONS_SUPPRESSED_KEY, default=False))
+        with GreenlineKV() as kv:
+            suppressed = kv.get_record(
+                NOTIFICATIONS_SUPPRESSED_KEY,
+                default=NotificationsSuppressedRecord(False),
+            ).value
         return SettingsResponse(success=True, notifications_suppressed=suppressed)
+    except BoundaryValidationError:
+        raise
     except Exception:
         return SettingsResponse(success=False, notifications_suppressed=False)
 
@@ -179,8 +191,8 @@ def get_settings() -> SettingsResponse:
 @dataclass_to_dict
 def set_notifications_suppressed(suppressed: bool) -> SuccessResponse:
     try:
-        with KV() as kv:
-            kv.put(NOTIFICATIONS_SUPPRESSED_KEY, bool(suppressed))
+        with GreenlineKV() as kv:
+            kv.put_record(NOTIFICATIONS_SUPPRESSED_KEY, NotificationsSuppressedRecord(bool(suppressed)))
         return SuccessResponse(success=True, message="")
     except Exception as error:
         return SuccessResponse(success=False, message=str(error))

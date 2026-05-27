@@ -1,13 +1,18 @@
 from __future__ import annotations
 
-from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
+from greenline.contracts.kv import GreenlineKV
 from greenline.store.identity import remember_chat
+from greenline.store.records import (
+    DraftMentionsRecord,
+    DraftRecord,
+    MentionSpanRecord,
+    stored_message_record,
+)
 from greenline.store.repository import message_storage_key, put_message_index
 from models import ChatListItem, Message, MessageType, ReadReceipt
-from ut_components.kv import KV
 
 DEFAULT_CHAT_ID = "111@s.whatsapp.net"
 DEFAULT_SENDER_ID = "222@s.whatsapp.net"
@@ -51,8 +56,8 @@ def seed_chat(
         business_name=business_name,
         name_updated_at=name_updated_at,
     )
-    with KV() as kv:
-        kv.put(f"chat:{chat_id}", asdict(chat))
+    with GreenlineKV() as kv:
+        kv.put_record(f"chat:{chat_id}", chat)
     remember_chat(chat)
     return chat
 
@@ -141,12 +146,9 @@ def seed_message(
         link_description="Description" if message_type == MessageType.LINK_PREVIEW else "",
         link_url="https://example.test" if message_type == MessageType.LINK_PREVIEW else "",
     )
-    payload = asdict(message)
-    if raw is not None:
-        payload["raw"] = raw
     storage_key = message_storage_key(chat_id, timestamp_unix, message_id)
-    with KV() as kv:
-        kv.put(storage_key, payload)
+    with GreenlineKV() as kv:
+        kv.put_record(storage_key, stored_message_record(message, raw))
         put_message_index(kv, chat_id, message_id, storage_key)
     return message
 
@@ -175,9 +177,11 @@ def seed_draft(
 ) -> None:
     if mention_spans is None:
         mention_spans = [{"jid": DEFAULT_SENDER_ID, "label": "Sender", "start": 6, "length": 7}]
-    with KV() as kv:
-        kv.put(f"draft:{chat_id}", text)
-        kv.put(f"draft_mentions:{chat_id}", mention_spans)
+    with GreenlineKV() as kv:
+        kv.put_record(f"draft:{chat_id}", DraftRecord(text))
+        kv.put_record(
+            f"draft_mentions:{chat_id}", DraftMentionsRecord([MentionSpanRecord(**span) for span in mention_spans])
+        )
 
 
 def make_mention_span(

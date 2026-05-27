@@ -3,8 +3,9 @@ from typing import Any, Dict, Optional
 
 from constants import GROUP_JID_SUFFIX, WHATSAPP_JID_SUFFIX
 from greenline.contracts.daemon import DaemonClientProtocol, daemon_client
+from greenline.contracts.kv import GreenlineKV
+from greenline.store.records import LidMapRecord
 from models import ChatListItem, ReadReceipt
-from ut_components.kv import KV
 
 _CHAT_RUNTIME_CACHE: Dict[str, Dict[str, Any]] = {}
 _STATUS_BROADCAST_JID = "status@broadcast"
@@ -28,12 +29,12 @@ def _get_chat_data(chat_jid: str) -> Optional[Dict[str, Any]]:
     if cached is not None:
         return cached
 
-    with KV() as kv:
-        data = kv.get(f"chat:{chat_jid}")
-    if data is None:
+    with GreenlineKV() as kv:
+        chat = kv.get_record(f"chat:{chat_jid}")
+    if chat is None:
         return None
 
-    cached_data = dict(data)
+    cached_data = asdict(chat)
     _CHAT_RUNTIME_CACHE[chat_jid] = cached_data
     return cached_data
 
@@ -102,11 +103,17 @@ def _strip_device_suffix(jid: str) -> str:
     return f"{user}@{server}"
 
 
+def _get_lid_map_record(kv: Any, key: str) -> LidMapRecord | None:
+    typed_kv = kv if isinstance(kv, GreenlineKV) else GreenlineKV(kv)
+    record = typed_kv.get_record(key)
+    return record if isinstance(record, LidMapRecord) else None
+
+
 def canonicalize_contact_jid(
     jid: str,
     *,
     jid_map: Optional[Dict[str, str]] = None,
-    kv: Optional[KV] = None,
+    kv: Optional[Any] = None,
     rpc: Optional[DaemonClientProtocol] = None,
 ) -> str:
     if not _is_contact_identity_jid(jid):
@@ -122,16 +129,16 @@ def canonicalize_contact_jid(
     if resolved is None and stripped_jid.endswith(_LID_JID_SUFFIX):
         cached = None
         if kv is None:
-            with KV() as lid_kv:
-                cached = lid_kv.get(f"lid_map:{stripped_jid}")
+            with GreenlineKV() as lid_kv:
+                cached = lid_kv.get_record(f"lid_map:{stripped_jid}")
                 if cached is None:
-                    cached = lid_kv.get(f"lid_map:{jid}")
+                    cached = lid_kv.get_record(f"lid_map:{jid}")
         else:
-            cached = kv.get(f"lid_map:{stripped_jid}")
+            cached = _get_lid_map_record(kv, f"lid_map:{stripped_jid}")
             if cached is None:
-                cached = kv.get(f"lid_map:{jid}")
+                cached = _get_lid_map_record(kv, f"lid_map:{jid}")
         if cached is not None:
-            resolved = str(cached)
+            resolved = cached.value
 
     if resolved is None and stripped_jid.endswith(_LID_JID_SUFFIX):
         try:
@@ -156,10 +163,9 @@ def upsert_identity_chat(
 
     chat_id = canonicalize_contact_jid(chat_id)
     chat_key = f"chat:{chat_id}"
-    with KV() as kv:
-        existing = kv.get(chat_key)
-        if existing is not None:
-            chat = ChatListItem(**existing)
+    with GreenlineKV() as kv:
+        chat = kv.get_record(chat_key)
+        if chat is not None:
             changed = update_chat_name(
                 chat,
                 timestamp,
@@ -168,7 +174,7 @@ def upsert_identity_chat(
                 business_name=business_name,
             )
             if changed:
-                kv.put(chat_key, asdict(chat))
+                kv.put_record(chat_key, chat)
         else:
             display_name = full_name or push_name or business_name or chat_id.replace(WHATSAPP_JID_SUFFIX, "")
             chat = ChatListItem(
@@ -186,6 +192,6 @@ def upsert_identity_chat(
                 business_name=business_name,
                 name_updated_at=timestamp,
             )
-            kv.put(chat_key, asdict(chat))
+            kv.put_record(chat_key, chat)
 
     remember_chat(chat)
