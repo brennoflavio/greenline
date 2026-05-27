@@ -28,7 +28,10 @@ def _fixture_event(path: str, *, event_id: int | None = None):
 def _ignored_events(start: int, count: int):
     import daemon_types
 
-    return [daemon_types.StoredEvent(id=start + offset, event_type="AppState", payload="{}") for offset in range(count)]
+    return [
+        daemon_types.StoredEvent(id=start + offset, event_type="AppState", payload="{}", created_at=0)
+        for offset in range(count)
+    ]
 
 
 def _payloads_for(event_name: str) -> list[Any]:

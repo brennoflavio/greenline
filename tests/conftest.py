@@ -101,7 +101,9 @@ class FakeDaemonRPC:
     contacts: list[daemon_types.Contact] = []
     groups: list[daemon_types.Group] = []
     group_participants: dict[str, list[daemon_types.GroupParticipant]] = {}
-    session_status: daemon_types.SessionStatusReply = daemon_types.SessionStatusReply()
+    session_status: daemon_types.SessionStatusReply = daemon_types.SessionStatusReply(
+        LoggedIn=False, QRCode="", QRImage=""
+    )
     pair_phone_code: str = "12345678"
     pair_phone_calls: list[str] = []
     ping_result: str = "pong"
@@ -137,7 +139,7 @@ class FakeDaemonRPC:
         cls.contacts = []
         cls.groups = []
         cls.group_participants = {}
-        cls.session_status = daemon_types.SessionStatusReply()
+        cls.session_status = daemon_types.SessionStatusReply(LoggedIn=False, QRCode="", QRImage="")
         cls.pair_phone_code = "12345678"
         cls.pair_phone_calls = []
         cls.ping_result = "pong"
@@ -170,7 +172,7 @@ class FakeDaemonRPC:
         self.__class__.list_events_calls.append({"after_id": after_id, "limit": limit})
         if self.__class__.list_event_batches:
             return daemon_types.ListEventsReply(Events=self.__class__.list_event_batches.pop(0))
-        return daemon_types.ListEventsReply()
+        return daemon_types.ListEventsReply(Events=[])
 
     def delete_events(self, up_to_id: int) -> EmptyReply:
         self.__class__.delete_events_calls.append(up_to_id)

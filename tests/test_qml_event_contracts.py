@@ -26,7 +26,7 @@ def test_session_status_event_contract(fake_daemon_rpc, fake_pyotherside_module)
     from greenline.events.session import SessionStatusEvent
     from ut_components.event import EventDispatcher
 
-    fake_daemon_rpc.session_status = daemon_types.SessionStatusReply(LoggedIn=True, QRImage="")
+    fake_daemon_rpc.session_status = daemon_types.SessionStatusReply(LoggedIn=True, QRCode="", QRImage="")
     dispatcher = EventDispatcher()
     dispatcher.register_event(SessionStatusEvent())
     dispatcher.schedule("session-status")

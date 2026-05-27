@@ -37,7 +37,7 @@ class EmptyReply:
 
 @dataclass
 class PingReply:
-    Message: str = ""
+    Message: str
 
 
 @dataclass
@@ -58,7 +58,7 @@ class EnsureJIDRequest:
 
 @dataclass
 class EnsureJIDReply:
-    JID: str = ""
+    JID: str
 
 
 @dataclass
@@ -116,14 +116,14 @@ class DeleteMessageRequest:
 
 @dataclass
 class EditMessageReply:
-    MessageID: str = ""
-    Timestamp: int = 0
+    MessageID: str
+    Timestamp: int
 
 
 @dataclass
 class DeleteMessageReply:
-    MessageID: str = ""
-    Timestamp: int = 0
+    MessageID: str
+    Timestamp: int
 
 
 @dataclass
@@ -148,7 +148,7 @@ class DownloadMediaRequest:
 
 @dataclass
 class DownloadMediaReply:
-    FilePath: str = ""
+    FilePath: str
 
 
 @dataclass
@@ -278,7 +278,7 @@ def _reply_context_fields(reply_context: Optional[dict[str, Any]]) -> dict[str, 
 
 
 def _with_empty_list(data: Any, key: str) -> Any:
-    if isinstance(data, dict) and data.get(key) is None:
+    if isinstance(data, dict) and key in data and data[key] is None:
         data = dict(data)
         data[key] = []
     return data

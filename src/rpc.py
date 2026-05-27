@@ -91,13 +91,13 @@ class DaemonRPC:
 
     def get_groups(self) -> GetGroupsReply:
         data = self._call("Service.GetGroups")
-        if data.get("Groups") is None:
+        if "Groups" in data and data["Groups"] is None:
             data["Groups"] = []
         return from_dict(data_class=GetGroupsReply, data=data)
 
     def get_group_participants(self, chat_jid: str) -> GetGroupParticipantsReply:
         data = self._call("Service.GetGroupParticipants", {"ChatJID": chat_jid})
-        if data.get("Participants") is None:
+        if "Participants" in data and data["Participants"] is None:
             data["Participants"] = []
         return from_dict(data_class=GetGroupParticipantsReply, data=data)
 
@@ -108,7 +108,7 @@ class DaemonRPC:
 
     def list_events(self, after_id: int = 0, limit: int = 100) -> ListEventsReply:
         data = self._call("Service.ListEvents", {"AfterID": after_id, "Limit": limit})
-        if data.get("Events") is None:
+        if "Events" in data and data["Events"] is None:
             data["Events"] = []
         return from_dict(data_class=ListEventsReply, data=data)
 

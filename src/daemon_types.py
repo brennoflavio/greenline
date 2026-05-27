@@ -1,94 +1,94 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import List
 
 
 @dataclass
 class SessionStatusReply:
-    LoggedIn: bool = False
-    QRCode: str = ""
-    QRImage: str = ""
+    LoggedIn: bool
+    QRCode: str
+    QRImage: str
 
 
 @dataclass
 class VersionReply:
-    GitCommit: str = ""
+    GitCommit: str
 
 
 @dataclass
 class Contact:
-    jid: str = ""
-    display_name: str = ""
-    first_name: str = ""
-    full_name: str = ""
-    push_name: str = ""
-    business_name: str = ""
-    avatar_path: str = ""
+    jid: str
+    display_name: str
+    first_name: str
+    full_name: str
+    push_name: str
+    business_name: str
+    avatar_path: str
 
 
 @dataclass
 class GetContactsReply:
-    Contacts: List[Contact] = field(default_factory=list)
+    Contacts: List[Contact]
 
 
 @dataclass
 class Group:
-    jid: str = ""
-    name: str = ""
-    topic: str = ""
-    avatar_path: str = ""
+    jid: str
+    name: str
+    topic: str
+    avatar_path: str
 
 
 @dataclass
 class GetGroupsReply:
-    Groups: List[Group] = field(default_factory=list)
+    Groups: List[Group]
 
 
 @dataclass
 class GroupParticipant:
-    jid: str = ""
-    phone_number_jid: str = ""
-    lid_jid: str = ""
-    display_name: str = ""
-    is_admin: bool = False
-    is_super_admin: bool = False
+    jid: str
+    phone_number_jid: str
+    lid_jid: str
+    display_name: str
+    is_admin: bool
+    is_super_admin: bool
 
 
 @dataclass
 class GetGroupParticipantsReply:
-    Participants: List[GroupParticipant] = field(default_factory=list)
+    Participants: List[GroupParticipant]
 
 
 @dataclass
 class StoredEvent:
-    id: int = 0
-    event_type: str = ""
-    payload: str = ""
-    created_at: int = 0
+    id: int
+    event_type: str
+    payload: str
+    created_at: int
 
 
 @dataclass
 class ListEventsReply:
-    Events: List[StoredEvent] = field(default_factory=list)
+    Events: List[StoredEvent]
 
 
 @dataclass
 class SendMessageReply:
-    MessageID: str = ""
-    Timestamp: int = 0
+    MessageID: str
+    Timestamp: int
 
 
 @dataclass
 class SyncAvatarReply:
-    AvatarPath: str = ""
+    AvatarPath: str
 
 
 @dataclass
 class GetChatSettingsReply:
-    MutedUntil: int = 0
+    MutedUntil: int
 
 
 @dataclass
 class PairPhoneReply:
-    Code: str = ""
+    Code: str

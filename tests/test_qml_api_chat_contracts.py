@@ -100,6 +100,8 @@ def test_get_group_mention_candidates_contract_success_and_failure(
         "group@g.us": [
             daemon_types.GroupParticipant(
                 jid=DEFAULT_SENDER_ID,
+                phone_number_jid=DEFAULT_SENDER_ID,
+                lid_jid="",
                 display_name="Sender",
                 is_admin=True,
                 is_super_admin=False,

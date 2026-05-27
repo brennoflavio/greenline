@@ -35,7 +35,7 @@ def test_check_daemon_version_contract(fake_daemon_service) -> None:
 
 
 def test_get_sync_status_contract_success_and_failure(fake_daemon_rpc, monkeypatch: pytest.MonkeyPatch) -> None:
-    fake_daemon_rpc.queue_events([daemon_types.StoredEvent(id=1, event_type="Presence", payload="{}")])
+    fake_daemon_rpc.queue_events([daemon_types.StoredEvent(id=1, event_type="Presence", payload="{}", created_at=0)])
     success = main.get_sync_status()
     validate_api_response("get_sync_status", success)
     assert success is True
@@ -86,7 +86,7 @@ def test_check_daemon_status_contract(fake_daemon_service) -> None:
 
 
 def test_get_session_status_contract_success_and_failure(fake_daemon_rpc, monkeypatch: pytest.MonkeyPatch) -> None:
-    fake_daemon_rpc.session_status = daemon_types.SessionStatusReply(LoggedIn=True, QRImage="")
+    fake_daemon_rpc.session_status = daemon_types.SessionStatusReply(LoggedIn=True, QRCode="", QRImage="")
     success = main.get_session_status()
     validate_api_response("get_session_status", success)
     assert success == {"logged_in": True, "qr_image_path": ""}

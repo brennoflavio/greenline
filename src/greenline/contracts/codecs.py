@@ -6,7 +6,11 @@ from typing import Any, TypeVar, cast
 
 from dacite import Config, from_dict
 
-from greenline.contracts.validation import report_validation_failure, validate_json_like
+from greenline.contracts.validation import (
+    BoundaryValidationError,
+    report_validation_failure,
+    validate_json_like,
+)
 
 T = TypeVar("T")
 
@@ -63,4 +67,4 @@ def decode_dataclass(
         return from_dict(data_class=data_class, data=data, config=Config(cast=[Enum], strict=strict))
     except Exception as exc:
         report_validation_failure(boundary, exc, payload=data, contract=contract, direction=direction)
-        raise
+        raise BoundaryValidationError(str(exc)) from exc

@@ -152,7 +152,7 @@ def test_daemon_boundary_encodes_request_and_decodes_send_message_reply() -> Non
     ]
 
 
-def test_daemon_boundary_normalizes_missing_event_list() -> None:
+def test_daemon_boundary_normalizes_null_event_list() -> None:
     transport = FakeTransport({"Service.ListEvents": {"Events": None}})
     daemon = GreenlineDaemon(transport=transport)  # type: ignore[arg-type]
 
@@ -160,6 +160,14 @@ def test_daemon_boundary_normalizes_missing_event_list() -> None:
 
     assert reply.Events == []
     assert transport.calls == [("Service.ListEvents", {"AfterID": 3, "Limit": 4})]
+
+
+def test_daemon_boundary_rejects_missing_event_list() -> None:
+    transport = FakeTransport({"Service.ListEvents": {}})
+    daemon = GreenlineDaemon(transport=transport)  # type: ignore[arg-type]
+
+    with pytest.raises(BoundaryValidationError):
+        daemon.list_events(after_id=3, limit=4)
 
 
 def test_daemon_boundary_decodes_no_payload_replies() -> None:
@@ -173,6 +181,11 @@ def test_daemon_boundary_decodes_no_payload_replies() -> None:
                     {
                         "jid": "contact-1@s.whatsapp.net",
                         "display_name": "Contact One",
+                        "first_name": "",
+                        "full_name": "Contact One",
+                        "push_name": "",
+                        "business_name": "",
+                        "avatar_path": "",
                     }
                 ]
             },
@@ -183,7 +196,17 @@ def test_daemon_boundary_decodes_no_payload_replies() -> None:
     assert daemon.ping() == PingReply(Message="pong")
     assert daemon.get_version() == VersionReply(GitCommit="abc123")
     assert daemon.get_session_status() == SessionStatusReply(LoggedIn=True, QRCode="qr", QRImage="image")
-    assert daemon.get_contacts().Contacts == [Contact(jid="contact-1@s.whatsapp.net", display_name="Contact One")]
+    assert daemon.get_contacts().Contacts == [
+        Contact(
+            jid="contact-1@s.whatsapp.net",
+            display_name="Contact One",
+            first_name="",
+            full_name="Contact One",
+            push_name="",
+            business_name="",
+            avatar_path="",
+        )
+    ]
     assert transport.calls == [
         ("Service.Ping", {}),
         ("Service.GetVersion", {}),
@@ -201,7 +224,7 @@ def test_daemon_client_factory_is_injectable() -> None:
         set_daemon_client_factory(None)
 
 
-def test_daemon_boundary_normalizes_missing_group_list() -> None:
+def test_daemon_boundary_normalizes_null_group_list() -> None:
     transport = FakeTransport({"Service.GetGroups": {"Groups": None}})
     daemon = GreenlineDaemon(transport=transport)  # type: ignore[arg-type]
 
@@ -218,8 +241,11 @@ def test_daemon_boundary_decodes_group_participants_sync_avatar_settings_and_pai
                 "Participants": [
                     {
                         "jid": "participant@s.whatsapp.net",
+                        "phone_number_jid": "participant@s.whatsapp.net",
+                        "lid_jid": "",
                         "display_name": "Participant",
                         "is_admin": True,
+                        "is_super_admin": False,
                     }
                 ]
             },
@@ -231,7 +257,14 @@ def test_daemon_boundary_decodes_group_participants_sync_avatar_settings_and_pai
     daemon = GreenlineDaemon(transport=transport)  # type: ignore[arg-type]
 
     assert daemon.get_group_participants("group@g.us").Participants == [
-        GroupParticipant(jid="participant@s.whatsapp.net", display_name="Participant", is_admin=True)
+        GroupParticipant(
+            jid="participant@s.whatsapp.net",
+            phone_number_jid="participant@s.whatsapp.net",
+            lid_jid="",
+            display_name="Participant",
+            is_admin=True,
+            is_super_admin=False,
+        )
     ]
     assert daemon.sync_avatar("contact@s.whatsapp.net") == SyncAvatarReply(AvatarPath="/tmp/avatar.jpg")
     assert daemon.get_chat_settings("chat-1") == GetChatSettingsReply(MutedUntil=12345)
@@ -364,7 +397,7 @@ def test_daemon_boundary_logs_invalid_typed_reply(
     transport = FakeTransport({"Service.SendMessage": {"MessageID": "message-1", "Timestamp": "later"}})
     daemon = GreenlineDaemon(transport=transport)  # type: ignore[arg-type]
 
-    with pytest.raises(Exception):
+    with pytest.raises(BoundaryValidationError):
         daemon.send_message("chat-1", "text")
 
     assert "daemon_rpc contract=Service.SendMessage direction=decode validation failed" in caplog.text
@@ -379,7 +412,8 @@ def test_daemon_boundary_rejects_missing_send_message_fields(
     with pytest.raises(BoundaryValidationError):
         daemon.send_message("chat-1", "text")
 
-    assert "Service.SendMessage reply requires non-empty MessageID" in caplog.text
+    assert "daemon_rpc contract=Service.SendMessage direction=decode validation failed" in caplog.text
+    assert 'missing value for field "MessageID"' in caplog.text
 
 
 def test_daemon_boundary_logs_invalid_scalar_reply(caplog: pytest.LogCaptureFixture) -> None:
