@@ -12,7 +12,7 @@ if str(SRC) not in sys.path:
 if str(ROOT / "tests") not in sys.path:
     sys.path.insert(0, str(ROOT / "tests"))
 
-from contracts.qml_registry import API_CONTRACTS, EVENT_CONTRACTS
+from greenline.contracts.qml import API_CONTRACTS, EVENT_CONTRACTS
 
 QML_CALL_RE = re.compile(r"(?:python\.)?call\(\s*['\"]main\.([A-Za-z_][A-Za-z0-9_]*)['\"]")
 QML_HANDLER_RE = re.compile(r"setHandler\(\s*['\"]([^'\"]+)['\"]")
@@ -61,6 +61,38 @@ def exported_main_callables() -> set[str]:
     }
 
 
+def qml_api_wrapped_main_callables() -> tuple[dict[str, str], list[str]]:
+    module = ast.parse((SRC / "main.py").read_text())
+    wrapped: dict[str, str] = {}
+    invalid: list[str] = []
+
+    for node in module.body:
+        if not isinstance(node, ast.Assign) or len(node.targets) != 1 or not isinstance(node.targets[0], ast.Name):
+            continue
+        target = node.targets[0].id
+        value = node.value
+        if not isinstance(value, ast.Call) or not isinstance(value.func, ast.Call):
+            continue
+        decorator_call = value.func
+        if not isinstance(decorator_call.func, ast.Name) or decorator_call.func.id != "qml_api":
+            continue
+        if (
+            len(decorator_call.args) != 1
+            or not isinstance(decorator_call.args[0], ast.Constant)
+            or not isinstance(decorator_call.args[0].value, str)
+            or len(value.args) != 1
+            or not isinstance(value.args[0], ast.Name)
+        ):
+            invalid.append(target)
+            continue
+        contract = decorator_call.args[0].value
+        wrapped[target] = contract
+        if contract != target or value.args[0].id != target:
+            invalid.append(f"{target} = qml_api({contract!r})({value.args[0].id})")
+
+    return wrapped, invalid
+
+
 def bridge_event_names() -> set[str]:
     module = ast.parse((SRC / "greenline" / "qml_events.py").read_text())
     event_names: set[str] = set()
@@ -72,6 +104,21 @@ def bridge_event_names() -> set[str]:
         if not node.args or not isinstance(node.args[0], ast.Constant) or not isinstance(node.args[0].value, str):
             continue
         event_names.add(node.args[0].value)
+    return event_names
+
+
+def framework_validated_event_names() -> set[str]:
+    event_names: set[str] = set()
+    for path in (SRC / "greenline" / "events").rglob("*.py"):
+        module = ast.parse(path.read_text())
+        for node in ast.walk(module):
+            if not isinstance(node, ast.Call):
+                continue
+            if not isinstance(node.func, ast.Name) or node.func.id != "validate_qml_event":
+                continue
+            if not node.args or not isinstance(node.args[0], ast.Constant) or not isinstance(node.args[0].value, str):
+                continue
+            event_names.add(node.args[0].value)
     return event_names
 
 
@@ -122,11 +169,26 @@ def coverage_errors() -> list[str]:
     errors.extend(_format_missing("QML main.* calls missing API contracts:", qml_calls - api_contracts))
     errors.extend(_format_missing("src/main.py exported callables missing API contracts:", exported - api_contracts))
     errors.extend(_format_missing("API contracts for functions not exported by src/main.py:", api_contracts - exported))
+    wrapped, invalid_wrappers = qml_api_wrapped_main_callables()
+    errors.extend(_format_missing("src/main.py exported callables missing qml_api wrappers:", exported - set(wrapped)))
+    errors.extend(
+        _format_missing("qml_api wrappers for functions not exported by src/main.py:", set(wrapped) - exported)
+    )
+    if invalid_wrappers:
+        errors.append("Invalid src/main.py qml_api wrappers:")
+        errors.extend(f"  - {wrapper}" for wrapper in sorted(invalid_wrappers))
     errors.extend(_format_missing("QML setHandler events missing event contracts:", handlers - event_contracts))
     errors.extend(_format_missing("Event contracts not used by QML setHandler:", event_contracts - handlers))
     bridge_events = bridge_event_names()
     errors.extend(
         _format_missing("QML bridge _send event names missing event contracts:", bridge_events - event_contracts)
+    )
+    framework_validated_events = framework_validated_event_names()
+    errors.extend(
+        _format_missing(
+            "Non-bridge QML event contracts missing validate_qml_event calls:",
+            event_contracts - bridge_events - framework_validated_events,
+        )
     )
 
     raw_usages = raw_pyotherside_usages()

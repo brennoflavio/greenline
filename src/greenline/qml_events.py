@@ -4,10 +4,13 @@ from dataclasses import asdict, is_dataclass
 from typing import Any, Iterable, Mapping
 
 from greenline import qml_payloads
+from greenline.contracts.qml import validate_qml_event
 from models import ChatListItem, Message
 
 
 def _send(event_name: str, payload: Any) -> None:
+    validate_qml_event(event_name, payload)
+
     import pyotherside
 
     pyotherside.send(event_name, payload)
