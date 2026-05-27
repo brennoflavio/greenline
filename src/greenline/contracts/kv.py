@@ -94,7 +94,6 @@ def _encode_value(contract: KVContract[Any], record: Any) -> Any:
     payload = encode_dataclass(
         record,
         boundary="kv",
-        raise_on_error=True,
         contract=contract.name,
         direction="encode",
     )

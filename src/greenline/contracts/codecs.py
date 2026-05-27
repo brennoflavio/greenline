@@ -33,21 +33,18 @@ def encode_dataclass(
     value: Any,
     *,
     boundary: str,
-    raise_on_error: bool = False,
     contract: str | None = None,
     direction: str | None = None,
 ) -> dict[str, Any]:
     if not (is_dataclass(value) and not isinstance(value, type)):
         error = f"expected dataclass instance, got {type(value).__name__}"
         report_validation_failure(boundary, error, payload=value, contract=contract, direction=direction)
-        if raise_on_error:
-            raise TypeError(error)
-        return {}
+        raise TypeError(error)
     payload = cast(dict[str, Any], to_json_like(asdict(value)))
     validate_json_like(
         payload,
         boundary=boundary,
-        raise_on_error=raise_on_error,
+        raise_on_error=True,
         contract=contract,
         direction=direction,
     )

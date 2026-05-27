@@ -30,10 +30,29 @@ class SamplePayload:
     nested: NestedPayload = field(default_factory=NestedPayload)
 
 
+@dataclass
+class InvalidJsonPayload:
+    path: Path
+
+
 def test_encode_dataclass_returns_json_like_payload() -> None:
-    payload = encode_dataclass(SamplePayload(chat_id="chat-1"), boundary="test.request", raise_on_error=True)
+    payload = encode_dataclass(SamplePayload(chat_id="chat-1"), boundary="test.request")
 
     assert payload == {"chat_id": "chat-1", "tags": ["text"], "nested": {"kind": "text"}}
+
+
+def test_invalid_encode_is_logged_before_reraising(caplog: pytest.LogCaptureFixture) -> None:
+    with pytest.raises(TypeError):
+        encode_dataclass({"chat_id": "chat-1"}, boundary="test.request")
+
+    assert "test.request validation failed" in caplog.text
+
+
+def test_non_json_like_encode_is_logged_before_reraising(caplog: pytest.LogCaptureFixture) -> None:
+    with pytest.raises(BoundaryValidationError):
+        encode_dataclass(InvalidJsonPayload(path=Path("avatar.jpg")), boundary="test.request")
+
+    assert "test.request validation failed" in caplog.text
 
 
 def test_decode_dataclass_casts_strings_to_enums() -> None:
@@ -47,14 +66,14 @@ def test_decode_dataclass_casts_strings_to_enums() -> None:
 
 
 def test_invalid_decode_is_logged_before_reraising(caplog: pytest.LogCaptureFixture) -> None:
-    with pytest.raises(Exception):
+    with pytest.raises(BoundaryValidationError):
         decode_dataclass(SamplePayload, {"tags": ["text"]}, boundary="test.reply")
 
     assert "test.reply validation failed" in caplog.text
 
 
 def test_validation_failure_logs_boundary_contract_and_direction(caplog: pytest.LogCaptureFixture) -> None:
-    with pytest.raises(Exception):
+    with pytest.raises(BoundaryValidationError):
         decode_dataclass(
             SamplePayload,
             {"tags": ["text"]},
