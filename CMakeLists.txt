@@ -58,11 +58,21 @@ message(STATUS "Build version is: ${BUILD_VERSION}")
 add_definitions(-DBUILD_VERSION="${BUILD_VERSION}")
 
 # Git commit hash for daemon version checking
-execute_process(
-  COMMAND git rev-parse HEAD
-  OUTPUT_VARIABLE GIT_COMMIT_HASH
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
+if(DEFINED ENV{GITHUB_SHA} AND NOT "$ENV{GITHUB_SHA}" STREQUAL "")
+  set(GIT_COMMIT_HASH "$ENV{GITHUB_SHA}")
+else()
+  execute_process(
+    COMMAND git rev-parse HEAD
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_COMMIT_HASH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+  )
+endif()
+if(NOT GIT_COMMIT_HASH)
+  message(FATAL_ERROR "Could not resolve git commit hash for version.txt")
+endif()
+message(STATUS "Git commit hash is: ${GIT_COMMIT_HASH}")
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/version.txt "${GIT_COMMIT_HASH}")
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/version.txt DESTINATION ${DATA_DIR}src)
 
