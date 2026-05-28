@@ -335,9 +335,10 @@ def assert_pair_phone_response(payload: Any) -> None:
 
 def assert_settings_response(payload: Any) -> None:
     response = _assert_dict(payload, "SettingsResponse")
-    _assert_keys(response, {"success", "notifications_suppressed"}, "SettingsResponse")
+    _assert_keys(response, {"success", "notifications_suppressed", "error_reporting"}, "SettingsResponse")
     _assert_bool(response, "success", "SettingsResponse")
     _assert_bool(response, "notifications_suppressed", "SettingsResponse")
+    _assert_bool(response, "error_reporting", "SettingsResponse")
 
 
 def assert_phone_number_response(payload: Any) -> None:
@@ -442,6 +443,11 @@ class PairPhoneRequest:
 @dataclass(frozen=True)
 class SetNotificationsSuppressedRequest:
     suppressed: bool
+
+
+@dataclass(frozen=True)
+class SetErrorReportingRequest:
+    enabled: bool
 
 
 @dataclass(frozen=True)
@@ -621,6 +627,12 @@ API_CONTRACTS: dict[str, ApiContract] = {
         assert_success_response,
         "dict",
         request_type=SetNotificationsSuppressedRequest,
+    ),
+    "set_error_reporting": ApiContract(
+        "set_error_reporting",
+        assert_success_response,
+        "dict",
+        request_type=SetErrorReportingRequest,
     ),
     "start_event_loop": ApiContract(
         "start_event_loop",

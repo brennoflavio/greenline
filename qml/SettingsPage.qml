@@ -58,6 +58,26 @@ Page {
             }
 
             ConfigurationGroup {
+                title: i18n.tr("Diagnostics")
+
+                ToggleOption {
+                    id: errorReportingToggle
+
+                    title: i18n.tr("Error Reporting")
+                    subtitle: i18n.tr("Upload app crashes and data validation failures to help diagnose issues")
+                    checked: true
+                    onToggled: function(newChecked) {
+                        python.call('main.set_error_reporting', [newChecked], function(result) {
+                            if (!result.success)
+                                errorReportingToggle.checked = !errorReportingToggle.checked;
+
+                        });
+                    }
+                }
+
+            }
+
+            ConfigurationGroup {
                 title: i18n.tr("Data")
 
                 Item {
@@ -106,9 +126,10 @@ Page {
             addImportPath(Qt.resolvedUrl('../src/'));
             importModule('main', function() {
                 call('main.get_settings', [], function(result) {
-                    if (result.success)
+                    if (result.success) {
                         notificationsToggle.checked = !result.notifications_suppressed;
-
+                        errorReportingToggle.checked = result.error_reporting;
+                    }
                 });
             });
         }

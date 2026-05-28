@@ -12,6 +12,7 @@ from greenline.store.records import (
     DaemonLastEventIDRecord,
     DraftMentionsRecord,
     DraftRecord,
+    ErrorReportingRecord,
     LidMapRecord,
     MessageIndexRecord,
     NotificationsSuppressedRecord,
@@ -42,6 +43,7 @@ KV_CONTRACTS: tuple[KVContract[Any], ...] = (
     KVContract("daemon:last_event_id", DaemonLastEventIDRecord, "scalar", prefix=False),
     KVContract("unread_total", UnreadTotalRecord, "scalar", prefix=False),
     KVContract("notifications_suppressed", NotificationsSuppressedRecord, "scalar", prefix=False),
+    KVContract("crash.enabled", ErrorReportingRecord, "scalar", prefix=False),
     KVContract("pending-outbox:", PendingOutboxRecord),
     KVContract("unhandled_message:", UnhandledMessageRecord),
     KVContract("unknown_event:", UnknownEventRecord),
@@ -88,6 +90,7 @@ def _encode_value(contract: KVContract[Any], record: Any) -> Any:
             payload=record,
             contract=contract.name,
             direction="encode",
+            dataclass_name=contract.record_type.__name__,
         )
         raise TypeError(error)
 
@@ -160,11 +163,19 @@ class GreenlineKV:
                     payload={"key": key},
                     contract=contract.name,
                     direction="decode",
+                    dataclass_name=contract.record_type.__name__,
                 )
                 return None
             if not isinstance(default, contract.record_type):
                 error = f"default for {key!r} must be {contract.record_type.__name__}"
-                report_validation_failure("kv", error, payload=default, contract=contract.name, direction="decode")
+                report_validation_failure(
+                    "kv",
+                    error,
+                    payload=default,
+                    contract=contract.name,
+                    direction="decode",
+                    dataclass_name=contract.record_type.__name__,
+                )
                 raise TypeError(error)
             return default
         return _decode_value(contract, value)

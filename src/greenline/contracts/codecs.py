@@ -63,5 +63,12 @@ def decode_dataclass(
     try:
         return from_dict(data_class=data_class, data=data, config=Config(cast=[Enum], strict=strict))
     except Exception as exc:
-        report_validation_failure(boundary, exc, payload=data, contract=contract, direction=direction)
+        report_validation_failure(
+            boundary,
+            exc,
+            payload=data,
+            contract=contract,
+            direction=direction,
+            dataclass_name=data_class.__name__,
+        )
         raise BoundaryValidationError(str(exc)) from exc

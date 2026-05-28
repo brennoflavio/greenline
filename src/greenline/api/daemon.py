@@ -19,11 +19,17 @@ from greenline.contracts.qml import (
     JidRequest,
     PairPhoneRequest,
     SendPresenceRequest,
+    SetErrorReportingRequest,
     SetNotificationsSuppressedRequest,
 )
 from greenline.contracts.validation import BoundaryValidationError
 from greenline.events.chat_sync import ChatListUpdateEvent, DaemonEventHandler
 from greenline.events.session import LAST_EVENT_ID_KEY, SessionStatusEvent
+from greenline.reporting import (
+    crash_reporter,
+    get_error_reporting,
+)
+from greenline.reporting import set_error_reporting as set_error_reporting_preference
 from greenline.session import SessionStatusResponse, build_session_status_response
 from greenline.store.identity import clear_chat_runtime_cache
 from greenline.store.records import (
@@ -33,7 +39,6 @@ from greenline.store.records import (
 from pending_outbox import PendingMessageRetryEvent
 from unread_counter import reconcile_unread_total
 from ut_components.config import get_cache_path, get_config_path
-from ut_components.crash import crash_reporter
 from ut_components.event import get_event_dispatcher
 from ut_components.utils import dataclass_to_dict
 
@@ -67,6 +72,7 @@ class PairPhoneResponse:
 class SettingsResponse:
     success: bool
     notifications_suppressed: bool
+    error_reporting: bool
 
 
 @dataclass
@@ -191,11 +197,15 @@ def get_settings() -> SettingsResponse:
                 NOTIFICATIONS_SUPPRESSED_KEY,
                 default=NotificationsSuppressedRecord(False),
             ).value
-        return SettingsResponse(success=True, notifications_suppressed=suppressed)
+        return SettingsResponse(
+            success=True,
+            notifications_suppressed=suppressed,
+            error_reporting=get_error_reporting(),
+        )
     except BoundaryValidationError:
         raise
     except Exception:
-        return SettingsResponse(success=False, notifications_suppressed=False)
+        return SettingsResponse(success=False, notifications_suppressed=False, error_reporting=True)
 
 
 @crash_reporter
@@ -204,6 +214,16 @@ def set_notifications_suppressed(request: SetNotificationsSuppressedRequest) -> 
     try:
         with GreenlineKV() as kv:
             kv.put_record(NOTIFICATIONS_SUPPRESSED_KEY, NotificationsSuppressedRecord(request.suppressed))
+        return SuccessResponse(success=True, message="")
+    except Exception as error:
+        return SuccessResponse(success=False, message=str(error))
+
+
+@crash_reporter
+@dataclass_to_dict
+def set_error_reporting(request: SetErrorReportingRequest) -> SuccessResponse:
+    try:
+        set_error_reporting_preference(request.enabled)
         return SuccessResponse(success=True, message="")
     except Exception as error:
         return SuccessResponse(success=False, message=str(error))

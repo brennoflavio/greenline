@@ -49,6 +49,7 @@ from greenline.api.daemon import (
     pair_phone,
     ping_daemon,
     send_presence,
+    set_error_reporting,
     set_notifications_suppressed,
     start_event_loop,
     subscribe_presence,
@@ -101,6 +102,7 @@ send_sticker_message = qml_api("send_sticker_message")(send_sticker_message)
 send_text_message = qml_api("send_text_message")(send_text_message)
 send_video_message = qml_api("send_video_message")(send_video_message)
 set_chat_draft = qml_api("set_chat_draft")(set_chat_draft)
+set_error_reporting = qml_api("set_error_reporting")(set_error_reporting)
 set_notifications_suppressed = qml_api("set_notifications_suppressed")(set_notifications_suppressed)
 start_event_loop = qml_api("start_event_loop")(start_event_loop)
 subscribe_presence = qml_api("subscribe_presence")(subscribe_presence)
@@ -138,6 +140,7 @@ __all__ = [
     "pair_phone",
     "ping_daemon",
     "send_presence",
+    "set_error_reporting",
     "set_notifications_suppressed",
     "start_event_loop",
     "subscribe_presence",

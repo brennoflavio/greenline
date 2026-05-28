@@ -25,6 +25,7 @@ from greenline.contracts.qml import (
     SendTextMessageRequest,
     SendVideoMessageRequest,
 )
+from greenline.reporting import crash_reporter
 from greenline.store.mentions import validate_mention_spans
 from greenline.store.messages import (
     _merge_deleted_message,
@@ -44,7 +45,6 @@ from pending_outbox import queue_and_attempt_send
 from unread_counter import decrement_unread_total, get_unread_total
 from ut_components import mimetypes as mime_types
 from ut_components.config import get_cache_path
-from ut_components.crash import crash_reporter
 from ut_components.utils import dataclass_to_dict
 from whatsmeow_types import MessageInfo
 

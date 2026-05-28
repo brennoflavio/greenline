@@ -294,6 +294,7 @@ def _decode_empty_reply(data: Any, *, contract: str) -> EmptyReply:
             payload=data,
             contract=contract,
             direction="decode",
+            dataclass_name=EmptyReply.__name__,
         )
     return EmptyReply()
 
@@ -308,6 +309,7 @@ def _decode_ping_reply(data: Any) -> PingReply:
         payload=data,
         contract="Service.Ping",
         direction="decode",
+        dataclass_name=PingReply.__name__,
     )
     raise error
 
@@ -328,6 +330,7 @@ def _decode_send_message_reply(data: Any) -> SendMessageReply:
             payload=data,
             contract="Service.SendMessage",
             direction="decode",
+            dataclass_name=SendMessageReply.__name__,
         )
         raise error
     return reply

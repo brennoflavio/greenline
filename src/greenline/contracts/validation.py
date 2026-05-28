@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import is_dataclass
+from dataclasses import asdict, is_dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Any
+
+from greenline.reporting import post_error_report
 
 LOGGER = logging.getLogger("greenline.contracts")
 
@@ -22,6 +24,39 @@ def _format_validation_scope(boundary: str, contract: str | None, direction: str
     return " ".join(parts)
 
 
+def _normalize_validation_payload(value: Any, *, seen: set[int] | None = None) -> Any:
+    if value is None or type(value) in (str, int, float, bool):
+        return value
+
+    if seen is None:
+        seen = set()
+
+    if isinstance(value, (dict, list, tuple, set, frozenset)) or (is_dataclass(value) and not isinstance(value, type)):
+        identity = id(value)
+        if identity in seen:
+            return "<recursive>"
+        seen = set(seen)
+        seen.add(identity)
+
+    if is_dataclass(value) and not isinstance(value, type):
+        return _normalize_validation_payload(asdict(value), seen=seen)
+    if isinstance(value, Enum):
+        return _normalize_validation_payload(value.value, seen=seen)
+    if isinstance(value, Path):
+        return str(value)
+    if isinstance(value, BaseException):
+        return {"type": type(value).__name__, "message": str(value)}
+    if isinstance(value, dict):
+        return {str(key): _normalize_validation_payload(item, seen=seen) for key, item in value.items()}
+    if isinstance(value, (list, tuple, set, frozenset)):
+        return [_normalize_validation_payload(item, seen=seen) for item in value]
+    if isinstance(value, (bytes, bytearray, memoryview)):
+        return repr(bytes(value))
+    if isinstance(value, type):
+        return value.__name__
+    return repr(value)
+
+
 def report_validation_failure(
     boundary: str,
     error: BaseException | str,
@@ -29,14 +64,34 @@ def report_validation_failure(
     payload: Any | None = None,
     contract: str | None = None,
     direction: str | None = None,
+    dataclass_name: str | None = None,
 ) -> None:
     message = str(error)
+    scope = _format_validation_scope(boundary, contract, direction)
     LOGGER.warning(
         "%s validation failed: %s",
-        _format_validation_scope(boundary, contract, direction),
+        scope,
         message,
-        extra={"payload": payload, "boundary": boundary, "contract": contract, "direction": direction},
+        extra={
+            "payload": payload,
+            "boundary": boundary,
+            "contract": contract,
+            "direction": direction,
+            "dataclass": dataclass_name,
+        },
     )
+    try:
+        post_error_report(
+            f"{scope} validation failed: {message}",
+            failure=message,
+            data=_normalize_validation_payload(payload),
+            dataclass=dataclass_name,
+            boundary=boundary,
+            contract=contract,
+            direction=direction,
+        )
+    except Exception:
+        pass
 
 
 def _json_like_error(value: Any, path: str) -> str | None:

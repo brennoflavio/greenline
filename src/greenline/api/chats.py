@@ -7,6 +7,7 @@ from greenline.contracts.daemon import daemon_client
 from greenline.contracts.kv import GreenlineKV
 from greenline.contracts.qml import ChatIdRequest, SetChatDraftRequest
 from greenline.contracts.validation import BoundaryValidationError
+from greenline.reporting import crash_reporter
 from greenline.store.identity import canonicalize_contact_jid
 from greenline.store.mentions import build_mention_candidate, validate_mention_spans
 from greenline.store.records import DraftMentionsRecord, DraftRecord
@@ -17,7 +18,6 @@ from models import (
     ContactListResponse,
     MentionSpan,
 )
-from ut_components.crash import crash_reporter
 from ut_components.utils import dataclass_to_dict
 
 

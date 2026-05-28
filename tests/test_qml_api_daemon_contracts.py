@@ -152,15 +152,19 @@ def test_install_and_uninstall_daemon_contracts(fake_daemon_service) -> None:
 def test_settings_contracts() -> None:
     initial = main.get_settings()
     validate_api_response("get_settings", initial)
-    assert initial == {"success": True, "notifications_suppressed": False}
+    assert initial == {"success": True, "notifications_suppressed": False, "error_reporting": True}
 
-    changed = main.set_notifications_suppressed(True)
-    validate_api_response("set_notifications_suppressed", changed)
-    assert changed == {"success": True, "message": ""}
+    changed_notifications = main.set_notifications_suppressed(True)
+    validate_api_response("set_notifications_suppressed", changed_notifications)
+    assert changed_notifications == {"success": True, "message": ""}
+
+    changed_reporting = main.set_error_reporting(False)
+    validate_api_response("set_error_reporting", changed_reporting)
+    assert changed_reporting == {"success": True, "message": ""}
 
     updated = main.get_settings()
     validate_api_response("get_settings", updated)
-    assert updated == {"success": True, "notifications_suppressed": True}
+    assert updated == {"success": True, "notifications_suppressed": True, "error_reporting": False}
 
 
 def test_clear_data_contract(monkeypatch: pytest.MonkeyPatch, fake_daemon_service) -> None:

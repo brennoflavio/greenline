@@ -84,6 +84,11 @@ class NotificationsSuppressedRecord:
 
 
 @dataclass
+class ErrorReportingRecord:
+    value: bool
+
+
+@dataclass
 class LidMapRecord:
     value: str
 

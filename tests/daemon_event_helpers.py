@@ -19,6 +19,7 @@ import daemon_types
 import whatsmeow_types
 from greenline.contracts.codecs import decode_dataclass
 from greenline.store.records import (
+    ErrorReportingRecord,
     MessageIndexRecord,
     StickerCacheRecord,
     StoredMessageRecord,
@@ -480,6 +481,14 @@ def validate_kv_snapshot(snapshot: dict[str, Any]) -> None:
         elif key == "unread_total":
             decode_dataclass(
                 UnreadTotalRecord, {"value": value}, boundary="kv", contract="unread_total", direction="decode"
+            )
+        elif key == "crash.enabled":
+            decode_dataclass(
+                ErrorReportingRecord,
+                {"value": value},
+                boundary="kv",
+                contract="crash.enabled",
+                direction="decode",
             )
         elif key.startswith("sticker_cache:"):
             decode_dataclass(
