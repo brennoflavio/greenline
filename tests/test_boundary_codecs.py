@@ -153,6 +153,9 @@ def test_invalid_decode_posts_structured_validation_report(monkeypatch: pytest.M
     assert payload["boundary"] == "daemon_rpc"
     assert payload["contract"] == "Service.SendMessage"
     assert payload["direction"] == "decode"
+    assert payload["trace"] == []
+    assert isinstance(payload["stack"], list)
+    assert payload["stack"]
     assert str(payload["report"]).startswith(
         "daemon_rpc contract=Service.SendMessage direction=decode validation failed:"
     )
@@ -184,22 +187,25 @@ def test_validation_failure_normalizes_non_json_payload(monkeypatch: pytest.Monk
         dataclass_name="SamplePayload",
     )
 
-    assert posts == [
-        {
-            "report": "daemon_rpc contract=Service.SendMessage direction=decode validation failed: bad payload",
-            "failure": "bad payload",
-            "data": {
-                "sample": {"chat_id": "chat-1", "tags": ["text"], "nested": {"kind": "text"}},
-                "path": "avatar.jpg",
-                "items": ["text"],
-                "error": {"type": "RuntimeError", "message": "boom"},
-            },
-            "dataclass": "SamplePayload",
-            "boundary": "daemon_rpc",
-            "contract": "Service.SendMessage",
-            "direction": "decode",
-        }
-    ]
+    assert len(posts) == 1
+    payload = posts[0]
+    assert (
+        payload["report"] == "daemon_rpc contract=Service.SendMessage direction=decode validation failed: bad payload"
+    )
+    assert payload["failure"] == "bad payload"
+    assert payload["data"] == {
+        "sample": {"chat_id": "chat-1", "tags": ["text"], "nested": {"kind": "text"}},
+        "path": "avatar.jpg",
+        "items": ["text"],
+        "error": {"type": "RuntimeError", "message": "boom"},
+    }
+    assert payload["dataclass"] == "SamplePayload"
+    assert payload["boundary"] == "daemon_rpc"
+    assert payload["contract"] == "Service.SendMessage"
+    assert payload["direction"] == "decode"
+    assert payload["trace"] == []
+    assert isinstance(payload["stack"], list)
+    assert payload["stack"]
 
 
 def test_validation_failure_does_not_post_when_reporting_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -251,6 +257,25 @@ def test_validation_failure_does_not_post_during_pytest_by_default(monkeypatch: 
     assert posts == []
 
 
+def test_validation_failure_includes_trace_context(monkeypatch: pytest.MonkeyPatch) -> None:
+    posts: list[dict[str, object]] = []
+    monkeypatch.setenv("GREENLINE_ENABLE_REPORTING_IN_TESTS", "1")
+    reporting.set_error_reporting(True)
+    monkeypatch.setattr(reporting, "CRASH_REPORT_URL", "https://example.test/report")
+
+    def fake_post(*, url: str, json: dict[str, object]):
+        posts.append(json)
+        return object()
+
+    monkeypatch.setattr(reporting.http, "post", fake_post)
+
+    with reporting.error_trace_context("event", event_type="Message", event_id=42):
+        report_validation_failure("daemon_rpc", "bad payload", payload={"chat_id": "chat-1"})
+
+    assert len(posts) == 1
+    assert posts[0]["trace"] == [{"name": "event", "event_type": "Message", "event_id": 42}]
+
+
 def test_crash_reporter_posts_and_reraises(monkeypatch: pytest.MonkeyPatch) -> None:
     posts: list[dict[str, object]] = []
     monkeypatch.setenv("GREENLINE_ENABLE_REPORTING_IN_TESTS", "1")
@@ -272,6 +297,7 @@ def test_crash_reporter_posts_and_reraises(monkeypatch: pytest.MonkeyPatch) -> N
 
     assert len(posts) == 1
     assert "RuntimeError: boom" in str(posts[0]["report"])
+    assert posts[0]["trace"] == [{"name": "call", "function": f"{explode.__module__}.explode"}]
 
 
 @pytest.mark.parametrize(

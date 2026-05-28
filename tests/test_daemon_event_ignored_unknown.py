@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 
+import pytest
 from daemon_event_helpers import (
     DispatchResult,
     kv_diff,
@@ -11,6 +12,9 @@ from daemon_event_helpers import (
 from test_daemon_event_coverage import DAEMON_EVENT_CONTRACTS
 
 import daemon_types
+import greenline.reporting as reporting
+from greenline.contracts.validation import report_validation_failure
+from greenline.events import handlers
 from greenline.events.handlers import dispatch_event
 
 EMPTY_OUTPUT = {
@@ -91,3 +95,33 @@ def test_unknown_event_type_stores_json_payload_without_outputs() -> None:
         "deleted": {},
     }
     json.loads(diff["added"]["unknown_event:FixtureUnknownEvent:2001"]["payload"])
+
+
+def test_dispatch_event_reports_event_trace_context(monkeypatch: pytest.MonkeyPatch) -> None:
+    posts: list[dict[str, object]] = []
+    monkeypatch.setenv("GREENLINE_ENABLE_REPORTING_IN_TESTS", "1")
+    reporting.set_error_reporting(True)
+    monkeypatch.setattr(reporting, "CRASH_REPORT_URL", "https://example.test/report")
+
+    def fake_post(*, url: str, json: dict[str, object]):
+        posts.append(json)
+        return object()
+
+    def fake_dispatch_inner(*args: object, **kwargs: object) -> None:
+        report_validation_failure("daemon_rpc", "bad payload", payload={"chat_id": "chat-1"})
+
+    monkeypatch.setattr(reporting.http, "post", fake_post)
+    monkeypatch.setattr(handlers, "_dispatch_event_inner", fake_dispatch_inner)
+
+    dispatch_event(
+        daemon_types.StoredEvent(id=3001, event_type="Message", payload="{}", created_at=0),
+        {},
+        [],
+        [],
+        [],
+        [],
+        [],
+    )
+
+    assert len(posts) == 1
+    assert posts[0]["trace"] == [{"name": "event", "event_type": "Message", "event_id": 3001}]

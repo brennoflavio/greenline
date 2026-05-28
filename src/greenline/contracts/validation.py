@@ -6,7 +6,11 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from greenline.reporting import post_error_report
+from greenline.reporting import (
+    capture_stack_summary,
+    current_error_trace,
+    post_error_report,
+)
 
 LOGGER = logging.getLogger("greenline.contracts")
 
@@ -80,6 +84,8 @@ def report_validation_failure(
             "dataclass": dataclass_name,
         },
     )
+    trace = current_error_trace()
+    stack = capture_stack_summary(skip=1)
     try:
         post_error_report(
             f"{scope} validation failed: {message}",
@@ -89,6 +95,8 @@ def report_validation_failure(
             boundary=boundary,
             contract=contract,
             direction=direction,
+            trace=trace,
+            stack=stack,
         )
     except Exception:
         pass

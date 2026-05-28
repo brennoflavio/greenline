@@ -180,11 +180,20 @@ def test_prefix_reads_paged_reads_and_cached_writes() -> None:
         assert next_cursor is None
 
 
-def test_missing_key_without_default_logs_kv_metadata(caplog: pytest.LogCaptureFixture) -> None:
+def test_missing_key_without_default_returns_none_without_logging(caplog: pytest.LogCaptureFixture) -> None:
     caplog.set_level(logging.WARNING, logger="greenline.contracts")
 
     with GreenlineKV() as kv:
         assert kv.get_record("unread_total") is None
+
+    assert not any("missing KV key" in record.message for record in caplog.records)
+
+
+def test_missing_required_key_logs_kv_metadata(caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level(logging.WARNING, logger="greenline.contracts")
+
+    with GreenlineKV() as kv:
+        assert kv.get_record("unread_total", required=True) is None
 
     assert any(
         record.boundary == "kv"

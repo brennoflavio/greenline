@@ -147,24 +147,25 @@ class GreenlineKV:
         self._kv.put_cached(key, _encode_value(contract, record), ttl_seconds=ttl_seconds)
 
     @overload
-    def get_record(self, key: str) -> Any | None: ...
+    def get_record(self, key: str, *, required: bool = False) -> Any | None: ...
 
     @overload
-    def get_record(self, key: str, default: T) -> T: ...
+    def get_record(self, key: str, default: T, *, required: bool = False) -> T: ...
 
-    def get_record(self, key: str, default: Any = _MISSING) -> Any | None:
+    def get_record(self, key: str, default: Any = _MISSING, *, required: bool = False) -> Any | None:
         contract = _contract_for(key)
         value = self._kv.get(key, default=_MISSING)
         if value is _MISSING:
             if default is _MISSING:
-                report_validation_failure(
-                    "kv",
-                    f"missing KV key {key!r}",
-                    payload={"key": key},
-                    contract=contract.name,
-                    direction="decode",
-                    dataclass_name=contract.record_type.__name__,
-                )
+                if required:
+                    report_validation_failure(
+                        "kv",
+                        f"missing KV key {key!r}",
+                        payload={"key": key},
+                        contract=contract.name,
+                        direction="decode",
+                        dataclass_name=contract.record_type.__name__,
+                    )
                 return None
             if not isinstance(default, contract.record_type):
                 error = f"default for {key!r} must be {contract.record_type.__name__}"

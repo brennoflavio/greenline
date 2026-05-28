@@ -10,6 +10,7 @@ from greenline import qml_payloads
 from greenline.contracts.daemon import daemon_client
 from greenline.contracts.kv import GreenlineKV
 from greenline.contracts.validation import BoundaryValidationError
+from greenline.reporting import error_trace_context
 from greenline.store.identity import (
     canonicalize_contact_jid,
     remember_chat,
@@ -407,20 +408,21 @@ def dispatch_event(
     presence_updates: list[dict[str, Any]],
     chat_presence_updates: list[dict[str, Any]],
 ) -> None:
-    try:
-        _dispatch_event_inner(
-            event,
-            chat_updates,
-            message_upserts,
-            message_updates,
-            photo_updates,
-            presence_updates,
-            chat_presence_updates,
-        )
-    except (ConnectionRefusedError, DaemonNotReadyError, DaemonTimeoutError, BoundaryValidationError):
-        raise
-    except Exception:
-        _handle_unknown(event)
+    with error_trace_context("event", event_type=getattr(event, "event_type", ""), event_id=getattr(event, "id", None)):
+        try:
+            _dispatch_event_inner(
+                event,
+                chat_updates,
+                message_upserts,
+                message_updates,
+                photo_updates,
+                presence_updates,
+                chat_presence_updates,
+            )
+        except (ConnectionRefusedError, DaemonNotReadyError, DaemonTimeoutError, BoundaryValidationError):
+            raise
+        except Exception:
+            _handle_unknown(event)
 
 
 def _dispatch_event_inner(
