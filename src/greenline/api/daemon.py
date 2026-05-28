@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 from daemon import (
     ensure_daemon_version,
+    get_expected_daemon_version,
     install_background_service_files,
     is_daemon_active,
     is_daemon_installed,
@@ -73,6 +74,7 @@ class SettingsResponse:
     success: bool
     notifications_suppressed: bool
     error_reporting: bool
+    build_version: str
 
 
 @dataclass
@@ -201,11 +203,17 @@ def get_settings() -> SettingsResponse:
             success=True,
             notifications_suppressed=suppressed,
             error_reporting=get_error_reporting(),
+            build_version=get_expected_daemon_version() or "",
         )
     except BoundaryValidationError:
         raise
     except Exception:
-        return SettingsResponse(success=False, notifications_suppressed=False, error_reporting=True)
+        return SettingsResponse(
+            success=False,
+            notifications_suppressed=False,
+            error_reporting=True,
+            build_version="",
+        )
 
 
 @crash_reporter

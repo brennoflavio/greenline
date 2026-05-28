@@ -149,10 +149,17 @@ def test_install_and_uninstall_daemon_contracts(fake_daemon_service) -> None:
     assert fake_daemon_service.uninstall_calls == 1
 
 
-def test_settings_contracts() -> None:
+def test_settings_contracts(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(api_daemon, "get_expected_daemon_version", lambda: "deadbeef")
+
     initial = main.get_settings()
     validate_api_response("get_settings", initial)
-    assert initial == {"success": True, "notifications_suppressed": False, "error_reporting": True}
+    assert initial == {
+        "success": True,
+        "notifications_suppressed": False,
+        "error_reporting": True,
+        "build_version": "deadbeef",
+    }
 
     changed_notifications = main.set_notifications_suppressed(True)
     validate_api_response("set_notifications_suppressed", changed_notifications)
@@ -164,7 +171,12 @@ def test_settings_contracts() -> None:
 
     updated = main.get_settings()
     validate_api_response("get_settings", updated)
-    assert updated == {"success": True, "notifications_suppressed": True, "error_reporting": False}
+    assert updated == {
+        "success": True,
+        "notifications_suppressed": True,
+        "error_reporting": False,
+        "build_version": "deadbeef",
+    }
 
 
 def test_clear_data_contract(monkeypatch: pytest.MonkeyPatch, fake_daemon_service) -> None:

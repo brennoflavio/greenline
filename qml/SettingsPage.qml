@@ -78,6 +78,46 @@ Page {
             }
 
             ConfigurationGroup {
+                title: i18n.tr("About")
+
+                Item {
+                    width: parent.width
+                    height: aboutContent.height + units.gu(2)
+
+                    Column {
+                        id: aboutContent
+
+                        spacing: units.gu(0.5)
+
+                        anchors {
+                            top: parent.top
+                            left: parent.left
+                            right: parent.right
+                            margins: units.gu(2)
+                        }
+
+                        Label {
+                            text: i18n.tr("Build Version")
+                            color: theme.palette.normal.backgroundText
+                        }
+
+                        Label {
+                            id: buildVersionLabel
+
+                            text: i18n.tr("Unknown")
+                            fontSize: "small"
+                            color: theme.palette.normal.backgroundSecondaryText
+                            wrapMode: Text.WrapAnywhere
+                            width: parent.width
+                        }
+
+                    }
+
+                }
+
+            }
+
+            ConfigurationGroup {
                 title: i18n.tr("Data")
 
                 Item {
@@ -126,6 +166,7 @@ Page {
             addImportPath(Qt.resolvedUrl('../src/'));
             importModule('main', function() {
                 call('main.get_settings', [], function(result) {
+                    buildVersionLabel.text = result.build_version || i18n.tr("Unknown");
                     if (result.success) {
                         notificationsToggle.checked = !result.notifications_suppressed;
                         errorReportingToggle.checked = result.error_reporting;

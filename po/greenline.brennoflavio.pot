@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-28 03:30+0000\n"
+"POT-Creation-Date: 2026-05-28 04:55+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -218,7 +218,7 @@ msgstr ""
 msgid "Requesting pairing code..."
 msgstr ""
 
-#: ../qml/PhonePairingPage.qml:120 ../qml/SettingsPage.qml:148
+#: ../qml/PhonePairingPage.qml:120 ../qml/SettingsPage.qml:186
 #: ../qml/components/ChatAttachmentDialog.qml:56
 #: ../qml/components/EditMessageDialog.qml:26
 #: ../qml/components/VoiceMessageRecorderDialog.qml:85
@@ -243,7 +243,7 @@ msgstr ""
 msgid "Group"
 msgstr ""
 
-#: ../qml/ProfilePage.qml:102 ../qml/SettingsPage.qml:173
+#: ../qml/ProfilePage.qml:102 ../qml/SettingsPage.qml:211
 #: ../qml/ut_components/AppHeader.qml:94
 msgid "Settings"
 msgstr ""
@@ -285,28 +285,40 @@ msgid "Upload app crashes and data validation failures to help diagnose issues"
 msgstr ""
 
 #: ../qml/SettingsPage.qml:81
+msgid "About"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:100
+msgid "Build Version"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:107 ../qml/SettingsPage.qml:166
+msgid "Unknown"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:118
 msgid "Data"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:95
+#: ../qml/SettingsPage.qml:132
 msgid ""
 "Uninstall the daemon, log out from WhatsApp, and delete all local data "
 "including messages, settings and cache."
 msgstr ""
 
-#: ../qml/SettingsPage.qml:110 ../qml/SettingsPage.qml:144
-#: ../qml/SettingsPage.qml:153
+#: ../qml/SettingsPage.qml:147 ../qml/SettingsPage.qml:182
+#: ../qml/SettingsPage.qml:191
 msgid "Reset App"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:145
+#: ../qml/SettingsPage.qml:183
 msgid ""
 "This will uninstall the daemon, log out from WhatsApp, and delete all local "
 "data. You will need to reinstall the daemon and scan the QR code again to "
 "reconnect."
 msgstr ""
 
-#: ../qml/SettingsPage.qml:169
+#: ../qml/SettingsPage.qml:207
 msgid "Resetting app..."
 msgstr ""
 

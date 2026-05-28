@@ -82,10 +82,14 @@ def ensure_service_file() -> bool:
     return True
 
 
-def get_expected_version() -> str:
+def get_expected_daemon_version() -> str | None:
     version_path = os.path.join(get_app_data_path(), "src", "version.txt")
-    with open(version_path) as f:
-        return f.read().strip()
+    try:
+        with open(version_path) as f:
+            build_version = f.read().strip()
+    except FileNotFoundError:
+        return None
+    return build_version or None
 
 
 def ensure_daemon_version() -> bool:
@@ -97,9 +101,8 @@ def ensure_daemon_version() -> bool:
     if not is_daemon_active():
         return service_updated
 
-    try:
-        expected = get_expected_version()
-    except FileNotFoundError:
+    expected = get_expected_daemon_version()
+    if not expected:
         return service_updated
 
     from greenline.contracts.daemon import daemon_client

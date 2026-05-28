@@ -335,10 +335,13 @@ def assert_pair_phone_response(payload: Any) -> None:
 
 def assert_settings_response(payload: Any) -> None:
     response = _assert_dict(payload, "SettingsResponse")
-    _assert_keys(response, {"success", "notifications_suppressed", "error_reporting"}, "SettingsResponse")
+    _assert_keys(
+        response, {"success", "notifications_suppressed", "error_reporting", "build_version"}, "SettingsResponse"
+    )
     _assert_bool(response, "success", "SettingsResponse")
     _assert_bool(response, "notifications_suppressed", "SettingsResponse")
     _assert_bool(response, "error_reporting", "SettingsResponse")
+    _assert_str(response, "build_version", "SettingsResponse")
 
 
 def assert_phone_number_response(payload: Any) -> None:
