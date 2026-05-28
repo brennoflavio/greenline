@@ -1,4 +1,5 @@
 import functools
+import json
 import os
 import traceback
 from contextlib import contextmanager
@@ -9,6 +10,7 @@ from constants import CRASH_REPORT_URL
 from ut_components import http
 
 ERROR_REPORTING_KEY = "crash.enabled"
+REPORT_METADATA_MARKER = "\n\n--- greenline metadata ---\n"
 _TRACE_CONTEXT: ContextVar[tuple[dict[str, Any], ...]] = ContextVar("greenline_error_trace_context", default=())
 P = ParamSpec("P")
 R = TypeVar("R")
@@ -64,6 +66,31 @@ def capture_stack_summary(limit: int = 12, *, skip: int = 0) -> list[dict[str, A
     return summary
 
 
+def get_build_version() -> str:
+    try:
+        from daemon import get_expected_daemon_version
+
+        return get_expected_daemon_version() or ""
+    except Exception:
+        return ""
+
+
+def _format_report(report: str, **payload: Any) -> str:
+    metadata = dict(payload)
+    metadata["build_version"] = get_build_version()
+    return (
+        report.rstrip()
+        + REPORT_METADATA_MARKER
+        + json.dumps(
+            metadata,
+            ensure_ascii=False,
+            indent=2,
+            sort_keys=True,
+            default=repr,
+        )
+    )
+
+
 def post_error_report(report: str, **payload: Any) -> object | None:
     if not CRASH_REPORT_URL or _reporting_blocked_for_tests():
         return None
@@ -74,9 +101,7 @@ def post_error_report(report: str, **payload: Any) -> object | None:
     except Exception:
         return None
 
-    body = {"report": report}
-    body.update(payload)
-    return http.post(url=CRASH_REPORT_URL, json=body)
+    return http.post(url=CRASH_REPORT_URL, json={"report": _format_report(report, **payload)})
 
 
 def crash_reporter(func: Callable[P, R]) -> Callable[P, R]:

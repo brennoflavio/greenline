@@ -102,6 +102,7 @@ def test_dispatch_event_reports_event_trace_context(monkeypatch: pytest.MonkeyPa
     monkeypatch.setenv("GREENLINE_ENABLE_REPORTING_IN_TESTS", "1")
     reporting.set_error_reporting(True)
     monkeypatch.setattr(reporting, "CRASH_REPORT_URL", "https://example.test/report")
+    monkeypatch.setattr(reporting, "get_build_version", lambda: "test-commit")
 
     def fake_post(*, url: str, json: dict[str, object]):
         posts.append(json)
@@ -124,4 +125,9 @@ def test_dispatch_event_reports_event_trace_context(monkeypatch: pytest.MonkeyPa
     )
 
     assert len(posts) == 1
-    assert posts[0]["trace"] == [{"name": "event", "event_type": "Message", "event_id": 3001}]
+    assert posts[0].keys() == {"report"}
+    _prefix, marker, metadata = str(posts[0]["report"]).partition(reporting.REPORT_METADATA_MARKER)
+    assert marker == reporting.REPORT_METADATA_MARKER
+    parsed = json.loads(metadata)
+    assert parsed["build_version"] == "test-commit"
+    assert parsed["trace"] == [{"name": "event", "event_type": "Message", "event_id": 3001}]

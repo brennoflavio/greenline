@@ -13,6 +13,7 @@ from greenline.contracts.validation import (
     BoundaryValidationError,
     report_validation_failure,
 )
+from greenline.reporting import error_trace_context
 from models import (
     ChatListEntry,
     ChatListItem,
@@ -715,63 +716,64 @@ def request_arg_bounds(request_type: type[object] | None) -> tuple[int, int]:
 
 
 def decode_qml_request(name: str, args: tuple[object, ...], kwargs: dict[str, object]) -> object | None:
-    payload = {"args": list(args), "kwargs": dict(kwargs)}
-    contract = API_CONTRACTS.get(name)
-    if contract is None:
-        raise _validation_error(
-            "qml_api", name, payload, f"No QML API contract registered for {name!r}", direction="decode"
-        )
+    with error_trace_context("qml_api", contract=name, direction="decode"):
+        payload = {"args": list(args), "kwargs": dict(kwargs)}
+        contract = API_CONTRACTS.get(name)
+        if contract is None:
+            raise _validation_error(
+                "qml_api", name, payload, f"No QML API contract registered for {name!r}", direction="decode"
+            )
 
-    if kwargs:
-        raise _validation_error(
-            "qml_api",
-            name,
-            payload,
-            "QML API calls do not accept keyword arguments",
-            direction="decode",
-        )
-
-    request_type = contract.request_type
-    if request_type is None:
-        if args:
+        if kwargs:
             raise _validation_error(
                 "qml_api",
                 name,
                 payload,
-                f"QML API {name!r} does not accept positional arguments (got {len(args)})",
+                "QML API calls do not accept keyword arguments",
                 direction="decode",
             )
-        return None
 
-    min_args, max_args = request_arg_bounds(request_type)
-    if len(args) < min_args:
-        raise _validation_error(
-            "qml_api",
-            name,
-            payload,
-            f"QML API {name!r} expects at least {min_args} positional arguments, got {len(args)}",
-            direction="decode",
-        )
-    if len(args) > max_args:
-        raise _validation_error(
-            "qml_api",
-            name,
-            payload,
-            f"QML API {name!r} expects at most {max_args} positional arguments, got {len(args)}",
-            direction="decode",
-        )
+        request_type = contract.request_type
+        if request_type is None:
+            if args:
+                raise _validation_error(
+                    "qml_api",
+                    name,
+                    payload,
+                    f"QML API {name!r} does not accept positional arguments (got {len(args)})",
+                    direction="decode",
+                )
+            return None
 
-    request_fields = fields(cast(Any, request_type))
-    raw_request = {request_fields[index].name: value for index, value in enumerate(args)}
-    normalized_request = cast(dict[str, object], _normalize_qml_request_value(request_type, raw_request))
-    return decode_dataclass(
-        request_type,
-        normalized_request,
-        boundary="qml_api",
-        contract=name,
-        direction="decode",
-        strict=True,
-    )
+        min_args, max_args = request_arg_bounds(request_type)
+        if len(args) < min_args:
+            raise _validation_error(
+                "qml_api",
+                name,
+                payload,
+                f"QML API {name!r} expects at least {min_args} positional arguments, got {len(args)}",
+                direction="decode",
+            )
+        if len(args) > max_args:
+            raise _validation_error(
+                "qml_api",
+                name,
+                payload,
+                f"QML API {name!r} expects at most {max_args} positional arguments, got {len(args)}",
+                direction="decode",
+            )
+
+        request_fields = fields(cast(Any, request_type))
+        raw_request = {request_fields[index].name: value for index, value in enumerate(args)}
+        normalized_request = cast(dict[str, object], _normalize_qml_request_value(request_type, raw_request))
+        return decode_dataclass(
+            request_type,
+            normalized_request,
+            boundary="qml_api",
+            contract=name,
+            direction="decode",
+            strict=True,
+        )
 
 
 def _validation_error(
@@ -787,36 +789,39 @@ def _validation_error(
 
 
 def validate_qml_response(name: str, payload: object) -> None:
-    contract = API_CONTRACTS.get(name)
-    if contract is None:
-        raise _validation_error("qml_api", name, payload, f"No QML API contract registered for {name!r}")
-    try:
-        contract.validator(payload)
-    except (AssertionError, BoundaryValidationError) as error:
-        raise _validation_error("qml_api", name, payload, error) from error
+    with error_trace_context("qml_api", contract=name, direction="encode"):
+        contract = API_CONTRACTS.get(name)
+        if contract is None:
+            raise _validation_error("qml_api", name, payload, f"No QML API contract registered for {name!r}")
+        try:
+            contract.validator(payload)
+        except (AssertionError, BoundaryValidationError) as error:
+            raise _validation_error("qml_api", name, payload, error) from error
 
 
 def validate_qml_event(name: str, payload: object) -> None:
-    contract = EVENT_CONTRACTS.get(name)
-    if contract is None:
-        raise _validation_error("qml_event", name, payload, f"No QML event contract registered for {name!r}")
-    try:
-        contract.validator(payload)
-    except (AssertionError, BoundaryValidationError) as error:
-        raise _validation_error("qml_event", name, payload, error) from error
+    with error_trace_context("qml_event", contract=name, direction="encode"):
+        contract = EVENT_CONTRACTS.get(name)
+        if contract is None:
+            raise _validation_error("qml_event", name, payload, f"No QML event contract registered for {name!r}")
+        try:
+            contract.validator(payload)
+        except (AssertionError, BoundaryValidationError) as error:
+            raise _validation_error("qml_event", name, payload, error) from error
 
 
 def qml_api(name: str) -> Callable[[Callable[..., R]], Callable[..., R]]:
     def decorate(func: Callable[..., R]) -> Callable[..., R]:
         @wraps(func)
         def wrapper(*args: object, **kwargs: object) -> R:
-            request = decode_qml_request(name, args, dict(kwargs))
-            if request is None:
-                result = func()
-            else:
-                result = func(request)
-            validate_qml_response(name, result)
-            return result
+            with error_trace_context("qml_api", contract=name, direction="call"):
+                request = decode_qml_request(name, args, dict(kwargs))
+                if request is None:
+                    result = func()
+                else:
+                    result = func(request)
+                validate_qml_response(name, result)
+                return result
 
         return cast(Callable[..., R], wrapper)
 

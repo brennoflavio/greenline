@@ -8,6 +8,7 @@ from greenline.contracts.validation import (
     BoundaryValidationError,
     report_validation_failure,
 )
+from greenline.reporting import error_trace_context
 from greenline.store.records import (
     DaemonLastEventIDRecord,
     DraftMentionsRecord,
@@ -139,12 +140,14 @@ class GreenlineKV:
         self._kv.close()
 
     def put_record(self, key: str, record: Any, ttl_seconds: int | None = None) -> None:
-        contract = _contract_for(key)
-        self._kv.put(key, _encode_value(contract, record), ttl_seconds=ttl_seconds)
+        with error_trace_context("kv", key=key, direction="encode"):
+            contract = _contract_for(key)
+            self._kv.put(key, _encode_value(contract, record), ttl_seconds=ttl_seconds)
 
     def put_cached_record(self, key: str, record: Any, ttl_seconds: int | None = None) -> None:
-        contract = _contract_for(key)
-        self._kv.put_cached(key, _encode_value(contract, record), ttl_seconds=ttl_seconds)
+        with error_trace_context("kv", key=key, direction="encode"):
+            contract = _contract_for(key)
+            self._kv.put_cached(key, _encode_value(contract, record), ttl_seconds=ttl_seconds)
 
     @overload
     def get_record(self, key: str, *, required: bool = False) -> Any | None: ...
@@ -153,37 +156,43 @@ class GreenlineKV:
     def get_record(self, key: str, default: T, *, required: bool = False) -> T: ...
 
     def get_record(self, key: str, default: Any = _MISSING, *, required: bool = False) -> Any | None:
-        contract = _contract_for(key)
-        value = self._kv.get(key, default=_MISSING)
-        if value is _MISSING:
-            if default is _MISSING:
-                if required:
+        with error_trace_context("kv", key=key, direction="decode"):
+            contract = _contract_for(key)
+            value = self._kv.get(key, default=_MISSING)
+            if value is _MISSING:
+                if default is _MISSING:
+                    if required:
+                        report_validation_failure(
+                            "kv",
+                            f"missing KV key {key!r}",
+                            payload={"key": key},
+                            contract=contract.name,
+                            direction="decode",
+                            dataclass_name=contract.record_type.__name__,
+                        )
+                    return None
+                if not isinstance(default, contract.record_type):
+                    error = f"default for {key!r} must be {contract.record_type.__name__}"
                     report_validation_failure(
                         "kv",
-                        f"missing KV key {key!r}",
-                        payload={"key": key},
+                        error,
+                        payload=default,
                         contract=contract.name,
                         direction="decode",
                         dataclass_name=contract.record_type.__name__,
                     )
-                return None
-            if not isinstance(default, contract.record_type):
-                error = f"default for {key!r} must be {contract.record_type.__name__}"
-                report_validation_failure(
-                    "kv",
-                    error,
-                    payload=default,
-                    contract=contract.name,
-                    direction="decode",
-                    dataclass_name=contract.record_type.__name__,
-                )
-                raise TypeError(error)
-            return default
-        return _decode_value(contract, value)
+                    raise TypeError(error)
+                return default
+            return _decode_value(contract, value)
 
     def get_partial_records(self, beginning: str) -> list[tuple[str, Any]]:
-        contract = _contract_for(beginning)
-        return [(key, _decode_value(contract, value)) for key, value in self._kv.get_partial(beginning)]
+        with error_trace_context("kv", key=beginning, direction="decode"):
+            contract = _contract_for(beginning)
+            records: list[tuple[str, Any]] = []
+            for key, value in self._kv.get_partial(beginning):
+                with error_trace_context("kv", key=key, direction="decode"):
+                    records.append((key, _decode_value(contract, value)))
+            return records
 
     def get_partial_page_records(
         self,
@@ -192,22 +201,29 @@ class GreenlineKV:
         cursor: str | None = None,
         reverse: bool = False,
     ) -> tuple[list[tuple[str, Any]], str | None]:
-        contract = _contract_for(beginning)
-        rows, next_cursor = self._kv.get_partial_page(
-            beginning,
-            page_size=page_size,
-            cursor=cursor,
-            reverse=reverse,
-        )
-        return [(key, _decode_value(contract, value)) for key, value in rows], next_cursor
+        with error_trace_context("kv", key=beginning, direction="decode", cursor=cursor, reverse=reverse):
+            contract = _contract_for(beginning)
+            rows, next_cursor = self._kv.get_partial_page(
+                beginning,
+                page_size=page_size,
+                cursor=cursor,
+                reverse=reverse,
+            )
+            records: list[tuple[str, Any]] = []
+            for key, value in rows:
+                with error_trace_context("kv", key=key, direction="decode"):
+                    records.append((key, _decode_value(contract, value)))
+            return records, next_cursor
 
     def delete(self, key: str) -> None:
-        _contract_for(key)
-        self._kv.delete(key)
+        with error_trace_context("kv", key=key, direction="delete"):
+            _contract_for(key)
+            self._kv.delete(key)
 
     def delete_partial(self, beginning: str) -> None:
-        _contract_for(beginning)
-        self._kv.delete_partial(beginning)
+        with error_trace_context("kv", key=beginning, direction="delete"):
+            _contract_for(beginning)
+            self._kv.delete_partial(beginning)
 
     def commit_cached(self) -> None:
         self._kv.commit_cached()
