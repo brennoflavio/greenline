@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-28 06:07+0000\n"
+"POT-Creation-Date: 2026-05-29 03:59+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -71,7 +71,7 @@ msgstr ""
 msgid "No internet connection. Connect and try again."
 msgstr ""
 
-#: ../qml/ChatPage.qml:153 ../qml/ChatPage.qml:851
+#: ../qml/ChatPage.qml:153 ../qml/ChatPage.qml:893
 msgid "Failed to download media"
 msgstr ""
 
@@ -83,56 +83,71 @@ msgstr ""
 msgid "Failed to send audio"
 msgstr ""
 
-#: ../qml/ChatPage.qml:523
+#: ../qml/ChatPage.qml:512 ../qml/DocumentPreviewPage.qml:42
+#: ../qml/DocumentPreviewPage.qml:97
+#: ../qml/components/ChatAttachmentDialog.qml:41
+#: ../qml/components/DocumentMessage.qml:58
+msgid "Document"
+msgstr ""
+
+#: ../qml/ChatPage.qml:524
+msgid "Failed to send document"
+msgstr ""
+
+#: ../qml/ChatPage.qml:565
 msgid "Failed to send contact"
 msgstr ""
 
-#: ../qml/ChatPage.qml:607
+#: ../qml/ChatPage.qml:649
 msgid "WhatsApp messages read today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:608
+#: ../qml/ChatPage.qml:650
 msgid "No WhatsApp messages read today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:616
+#: ../qml/ChatPage.qml:658
 msgid "WhatsApp messages sent today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:617
+#: ../qml/ChatPage.qml:659
 msgid "No WhatsApp messages sent today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:640
+#: ../qml/ChatPage.qml:682
 msgid "Scroll up to load older messages first"
 msgstr ""
 
-#: ../qml/ChatPage.qml:646
+#: ../qml/ChatPage.qml:688
 msgid "Copied to clipboard"
 msgstr ""
 
-#: ../qml/ChatPage.qml:804
+#: ../qml/ChatPage.qml:846
 msgid "recording audio..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:804
+#: ../qml/ChatPage.qml:846
 msgid "typing..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:893
+#: ../qml/ChatPage.qml:936
 msgid "Send Photo"
 msgstr ""
 
-#: ../qml/ChatPage.qml:904
+#: ../qml/ChatPage.qml:947
 msgid "Send Video"
 msgstr ""
 
-#: ../qml/ChatPage.qml:915
+#: ../qml/ChatPage.qml:958
+msgid "Send Document"
+msgstr ""
+
+#: ../qml/ChatPage.qml:969
 msgid "Send Contact"
 msgstr ""
 
 #: ../qml/ContactPreviewPage.qml:42 ../qml/ContactPreviewPage.qml:97
-#: ../qml/components/ChatAttachmentDialog.qml:48
+#: ../qml/components/ChatAttachmentDialog.qml:57
 #: ../qml/components/ContactMessage.qml:47
 msgid "Contact"
 msgstr ""
@@ -180,11 +195,6 @@ msgstr ""
 msgid "Setup"
 msgstr ""
 
-#: ../qml/DocumentPreviewPage.qml:42 ../qml/DocumentPreviewPage.qml:97
-#: ../qml/components/DocumentMessage.qml:58
-msgid "Document"
-msgstr ""
-
 #: ../qml/DocumentPreviewPage.qml:50
 msgid "Downloaded"
 msgstr ""
@@ -218,8 +228,8 @@ msgstr ""
 msgid "Requesting pairing code..."
 msgstr ""
 
-#: ../qml/PhonePairingPage.qml:120 ../qml/SettingsPage.qml:189
-#: ../qml/components/ChatAttachmentDialog.qml:56
+#: ../qml/PhonePairingPage.qml:120 ../qml/SettingsPage.qml:210
+#: ../qml/components/ChatAttachmentDialog.qml:65
 #: ../qml/components/EditMessageDialog.qml:26
 #: ../qml/components/VoiceMessageRecorderDialog.qml:85
 msgid "Cancel"
@@ -243,7 +253,7 @@ msgstr ""
 msgid "Group"
 msgstr ""
 
-#: ../qml/ProfilePage.qml:102 ../qml/SettingsPage.qml:214
+#: ../qml/ProfilePage.qml:102 ../qml/SettingsPage.qml:235
 #: ../qml/ut_components/AppHeader.qml:94
 msgid "Settings"
 msgstr ""
@@ -281,44 +291,56 @@ msgid "Error Reporting"
 msgstr ""
 
 #: ../qml/SettingsPage.qml:67
-msgid "Upload app crashes and data validation failures to help diagnose issues"
+msgid "Report app errors to help diagnose issues"
 msgstr ""
 
 #: ../qml/SettingsPage.qml:81
+msgid "Daemon"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:86
+msgid "Stop Daemon on Exit"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:87
+msgid "Stop the daemon when the app closes and disable boot autostart"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:101
 msgid "About"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:100
+#: ../qml/SettingsPage.qml:120
 msgid "Build Version"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:107 ../qml/SettingsPage.qml:169
+#: ../qml/SettingsPage.qml:127 ../qml/SettingsPage.qml:189
 msgid "Unknown"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:121
+#: ../qml/SettingsPage.qml:141
 msgid "Data"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:135
+#: ../qml/SettingsPage.qml:155
 msgid ""
 "Uninstall the daemon, log out from WhatsApp, and delete all local data "
 "including messages, settings and cache."
 msgstr ""
 
-#: ../qml/SettingsPage.qml:150 ../qml/SettingsPage.qml:185
-#: ../qml/SettingsPage.qml:194
+#: ../qml/SettingsPage.qml:170 ../qml/SettingsPage.qml:206
+#: ../qml/SettingsPage.qml:215
 msgid "Reset App"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:186
+#: ../qml/SettingsPage.qml:207
 msgid ""
 "This will uninstall the daemon, log out from WhatsApp, and delete all local "
 "data. You will need to reinstall the daemon and scan the QR code again to "
 "reconnect."
 msgstr ""
 
-#: ../qml/SettingsPage.qml:210
+#: ../qml/SettingsPage.qml:231
 msgid "Resetting app..."
 msgstr ""
 
@@ -332,23 +354,23 @@ msgstr ""
 msgid "Send Sticker"
 msgstr ""
 
-#: ../qml/VideoPreviewPage.qml:67 ../qml/components/ChatAttachmentDialog.qml:24
+#: ../qml/VideoPreviewPage.qml:67 ../qml/components/ChatAttachmentDialog.qml:25
 msgid "Video"
 msgstr ""
 
-#: ../qml/components/ChatAttachmentDialog.qml:13
+#: ../qml/components/ChatAttachmentDialog.qml:14
 msgid "Send Attachment"
 msgstr ""
 
-#: ../qml/components/ChatAttachmentDialog.qml:16
+#: ../qml/components/ChatAttachmentDialog.qml:17
 msgid "Photo"
 msgstr ""
 
-#: ../qml/components/ChatAttachmentDialog.qml:32
+#: ../qml/components/ChatAttachmentDialog.qml:33
 msgid "Audio"
 msgstr ""
 
-#: ../qml/components/ChatAttachmentDialog.qml:40
+#: ../qml/components/ChatAttachmentDialog.qml:49
 msgid "Sticker"
 msgstr ""
 

@@ -11,6 +11,8 @@ from daemon import (
     is_daemon_installed,
     remove_background_service_files,
     run_subprocess,
+    set_daemon_service_enabled,
+    stop_daemon_service,
 )
 from greenline.api.common import SuccessResponse
 from greenline.contracts.daemon import daemon_client
@@ -22,6 +24,7 @@ from greenline.contracts.qml import (
     SendPresenceRequest,
     SetErrorReportingRequest,
     SetNotificationsSuppressedRequest,
+    SetStopDaemonOnExitRequest,
 )
 from greenline.contracts.validation import BoundaryValidationError
 from greenline.events.chat_sync import ChatListUpdateEvent, DaemonEventHandler
@@ -36,6 +39,7 @@ from greenline.store.identity import clear_chat_runtime_cache
 from greenline.store.records import (
     DaemonLastEventIDRecord,
     NotificationsSuppressedRecord,
+    StopDaemonOnExitRecord,
 )
 from pending_outbox import PendingMessageRetryEvent
 from unread_counter import reconcile_unread_total
@@ -44,6 +48,7 @@ from ut_components.event import get_event_dispatcher
 from ut_components.utils import dataclass_to_dict
 
 NOTIFICATIONS_SUPPRESSED_KEY = "notifications_suppressed"
+STOP_DAEMON_ON_EXIT_KEY = "daemon.stop_on_exit"
 
 
 @dataclass
@@ -73,6 +78,7 @@ class PairPhoneResponse:
 class SettingsResponse:
     success: bool
     notifications_suppressed: bool
+    stop_daemon_on_exit: bool
     error_reporting: bool
     build_version: str
 
@@ -199,9 +205,14 @@ def get_settings() -> SettingsResponse:
                 NOTIFICATIONS_SUPPRESSED_KEY,
                 default=NotificationsSuppressedRecord(False),
             ).value
+            stop_on_exit = kv.get_record(
+                STOP_DAEMON_ON_EXIT_KEY,
+                default=StopDaemonOnExitRecord(False),
+            ).value
         return SettingsResponse(
             success=True,
             notifications_suppressed=suppressed,
+            stop_daemon_on_exit=stop_on_exit,
             error_reporting=get_error_reporting(),
             build_version=get_expected_daemon_version() or "",
         )
@@ -211,6 +222,7 @@ def get_settings() -> SettingsResponse:
         return SettingsResponse(
             success=False,
             notifications_suppressed=False,
+            stop_daemon_on_exit=False,
             error_reporting=True,
             build_version="",
         )
@@ -232,6 +244,39 @@ def set_notifications_suppressed(request: SetNotificationsSuppressedRequest) -> 
 def set_error_reporting(request: SetErrorReportingRequest) -> SuccessResponse:
     try:
         set_error_reporting_preference(request.enabled)
+        return SuccessResponse(success=True, message="")
+    except Exception as error:
+        return SuccessResponse(success=False, message=str(error))
+
+
+def handle_application_exit() -> None:
+    try:
+        with GreenlineKV() as kv:
+            stop_on_exit = kv.get_record(
+                STOP_DAEMON_ON_EXIT_KEY,
+                default=StopDaemonOnExitRecord(False),
+            ).value
+        if stop_on_exit:
+            stop_daemon_service()
+    except Exception:
+        pass
+
+
+@crash_reporter
+@dataclass_to_dict
+def set_stop_daemon_on_exit(request: SetStopDaemonOnExitRequest) -> SuccessResponse:
+    try:
+        with GreenlineKV() as kv:
+            previous = kv.get_record(
+                STOP_DAEMON_ON_EXIT_KEY,
+                default=StopDaemonOnExitRecord(False),
+            )
+            kv.put_record(STOP_DAEMON_ON_EXIT_KEY, StopDaemonOnExitRecord(request.stop_on_exit))
+            try:
+                set_daemon_service_enabled(not request.stop_on_exit)
+            except Exception:
+                kv.put_record(STOP_DAEMON_ON_EXIT_KEY, previous)
+                raise
         return SuccessResponse(success=True, message="")
     except Exception as error:
         return SuccessResponse(success=False, message=str(error))

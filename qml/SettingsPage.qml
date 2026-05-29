@@ -64,12 +64,32 @@ Page {
                     id: errorReportingToggle
 
                     title: i18n.tr("Error Reporting")
-                    subtitle: i18n.tr("Upload app crashes and data validation failures to help diagnose issues")
+                    subtitle: i18n.tr("Report app errors to help diagnose issues")
                     checked: true
                     onToggled: function(newChecked) {
                         python.call('main.set_error_reporting', [newChecked], function(result) {
                             if (!result.success)
                                 errorReportingToggle.checked = !errorReportingToggle.checked;
+
+                        });
+                    }
+                }
+
+            }
+
+            ConfigurationGroup {
+                title: i18n.tr("Daemon")
+
+                ToggleOption {
+                    id: stopDaemonOnExitToggle
+
+                    title: i18n.tr("Stop Daemon on Exit")
+                    subtitle: i18n.tr("Stop the daemon when the app closes and disable boot autostart")
+                    checked: false
+                    onToggled: function(newChecked) {
+                        python.call('main.set_stop_daemon_on_exit', [newChecked], function(result) {
+                            if (!result.success)
+                                stopDaemonOnExitToggle.checked = !stopDaemonOnExitToggle.checked;
 
                         });
                     }
@@ -170,6 +190,7 @@ Page {
                     if (result.success) {
                         notificationsToggle.checked = !result.notifications_suppressed;
                         errorReportingToggle.checked = result.error_reporting;
+                        stopDaemonOnExitToggle.checked = result.stop_daemon_on_exit;
                     }
                 });
             });

@@ -47,6 +47,7 @@ sys.modules["pyotherside"] = fake_pyotherside
 class FakeDaemonService:
     installed = True
     active = True
+    enabled = True
     restarted = False
     install_calls = 0
     uninstall_calls = 0
@@ -56,6 +57,7 @@ class FakeDaemonService:
     def reset(cls) -> None:
         cls.installed = True
         cls.active = True
+        cls.enabled = True
         cls.restarted = False
         cls.install_calls = 0
         cls.uninstall_calls = 0
@@ -70,12 +72,14 @@ class FakeDaemonService:
         cls.install_calls += 1
         cls.installed = True
         cls.active = True
+        cls.enabled = True
 
     @classmethod
     def remove_background_service_files(cls) -> None:
         cls.uninstall_calls += 1
         cls.installed = False
         cls.active = False
+        cls.enabled = False
 
     @classmethod
     def is_daemon_installed(cls) -> bool:
@@ -91,6 +95,17 @@ class FakeDaemonService:
         if args[:3] == ["systemctl", "--user", "start"]:
             cls.active = True
         return types.SimpleNamespace(returncode=0, stdout="")
+
+    @classmethod
+    def set_daemon_service_enabled(cls, enabled: bool) -> None:
+        cls.enabled = enabled
+        action = "enable" if enabled else "disable"
+        cls.subprocess_calls.append(["systemctl", "--user", action, "greenline.service"])
+
+    @classmethod
+    def stop_daemon_service(cls) -> None:
+        cls.active = False
+        cls.subprocess_calls.append(["systemctl", "--user", "stop", "greenline.service"])
 
 
 class FakeDaemonRPC:
@@ -376,6 +391,8 @@ def isolated_greenline_runtime(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     monkeypatch.setattr(api_daemon, "is_daemon_installed", FakeDaemonService.is_daemon_installed)
     monkeypatch.setattr(api_daemon, "is_daemon_active", FakeDaemonService.is_daemon_active)
     monkeypatch.setattr(api_daemon, "run_subprocess", FakeDaemonService.run_subprocess)
+    monkeypatch.setattr(api_daemon, "set_daemon_service_enabled", FakeDaemonService.set_daemon_service_enabled)
+    monkeypatch.setattr(api_daemon, "stop_daemon_service", FakeDaemonService.stop_daemon_service)
 
     yield
 

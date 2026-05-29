@@ -89,6 +89,11 @@ class ErrorReportingRecord:
 
 
 @dataclass
+class StopDaemonOnExitRecord:
+    value: bool
+
+
+@dataclass
 class LidMapRecord:
     value: str
 

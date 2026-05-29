@@ -45,12 +45,14 @@ from greenline.api.daemon import (
     get_session_status,
     get_settings,
     get_sync_status,
+    handle_application_exit,
     install_daemon,
     pair_phone,
     ping_daemon,
     send_presence,
     set_error_reporting,
     set_notifications_suppressed,
+    set_stop_daemon_on_exit,
     start_event_loop,
     subscribe_presence,
     uninstall_daemon,
@@ -99,6 +101,7 @@ send_audio_message = qml_api("send_audio_message")(send_audio_message)
 send_contact_message = qml_api("send_contact_message")(send_contact_message)
 send_document_message = qml_api("send_document_message")(send_document_message)
 send_image_message = qml_api("send_image_message")(send_image_message)
+handle_application_exit = qml_api("handle_application_exit")(handle_application_exit)
 send_presence = qml_api("send_presence")(send_presence)
 send_sticker_message = qml_api("send_sticker_message")(send_sticker_message)
 send_text_message = qml_api("send_text_message")(send_text_message)
@@ -106,6 +109,7 @@ send_video_message = qml_api("send_video_message")(send_video_message)
 set_chat_draft = qml_api("set_chat_draft")(set_chat_draft)
 set_error_reporting = qml_api("set_error_reporting")(set_error_reporting)
 set_notifications_suppressed = qml_api("set_notifications_suppressed")(set_notifications_suppressed)
+set_stop_daemon_on_exit = qml_api("set_stop_daemon_on_exit")(set_stop_daemon_on_exit)
 start_event_loop = qml_api("start_event_loop")(start_event_loop)
 subscribe_presence = qml_api("subscribe_presence")(subscribe_presence)
 toggle_mute = qml_api("toggle_mute")(toggle_mute)
@@ -141,9 +145,11 @@ __all__ = [
     "install_daemon",
     "pair_phone",
     "ping_daemon",
+    "handle_application_exit",
     "send_presence",
     "set_error_reporting",
     "set_notifications_suppressed",
+    "set_stop_daemon_on_exit",
     "start_event_loop",
     "subscribe_presence",
     "uninstall_daemon",

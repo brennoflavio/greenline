@@ -7,9 +7,22 @@ import time
 from constants import SERVICE_DEST_PATH, SERVICE_NAME
 from ut_components.config import get_app_data_path
 
+SERVICE_UNIT = f"{SERVICE_NAME}.service"
+
 
 def run_subprocess(args: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(args, check=False, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+
+def set_daemon_service_enabled(enabled: bool) -> None:
+    action = "enable" if enabled else "disable"
+    result = run_subprocess(["systemctl", "--user", action, SERVICE_UNIT])
+    if result.returncode != 0:
+        raise ValueError(f"Error {action}ing service: {result.stdout}")
+
+
+def stop_daemon_service() -> None:
+    run_subprocess(["systemctl", "--user", "stop", SERVICE_UNIT])
 
 
 def reload_systemd(start: bool) -> None:
@@ -18,16 +31,14 @@ def reload_systemd(start: bool) -> None:
         raise ValueError(f"Error reloading systemd: {result.stdout}")
 
     if start:
-        result = run_subprocess(["systemctl", "--user", "start", f"{SERVICE_NAME}.service"])
+        result = run_subprocess(["systemctl", "--user", "start", SERVICE_UNIT])
         if result.returncode != 0:
             raise ValueError(f"Error starting service: {result.stdout}")
 
-        result = run_subprocess(["systemctl", "--user", "enable", f"{SERVICE_NAME}.service"])
-        if result.returncode != 0:
-            raise ValueError(f"Error enabling service: {result.stdout}")
+        set_daemon_service_enabled(True)
     else:
-        run_subprocess(["systemctl", "--user", "stop", f"{SERVICE_NAME}.service"])
-        run_subprocess(["systemctl", "--user", "disable", f"{SERVICE_NAME}.service"])
+        stop_daemon_service()
+        run_subprocess(["systemctl", "--user", "disable", SERVICE_UNIT])
 
 
 def install_background_service_files() -> None:

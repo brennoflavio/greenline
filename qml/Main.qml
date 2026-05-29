@@ -87,6 +87,14 @@ MainView {
         }
     }
 
+    Connections {
+        target: Qt.application
+        onAboutToQuit: {
+            python.call('main.handle_application_exit', [], function() {
+            });
+        }
+    }
+
     Rectangle {
         anchors.fill: parent
         z: 100

@@ -337,10 +337,13 @@ def assert_pair_phone_response(payload: Any) -> None:
 def assert_settings_response(payload: Any) -> None:
     response = _assert_dict(payload, "SettingsResponse")
     _assert_keys(
-        response, {"success", "notifications_suppressed", "error_reporting", "build_version"}, "SettingsResponse"
+        response,
+        {"success", "notifications_suppressed", "stop_daemon_on_exit", "error_reporting", "build_version"},
+        "SettingsResponse",
     )
     _assert_bool(response, "success", "SettingsResponse")
     _assert_bool(response, "notifications_suppressed", "SettingsResponse")
+    _assert_bool(response, "stop_daemon_on_exit", "SettingsResponse")
     _assert_bool(response, "error_reporting", "SettingsResponse")
     _assert_str(response, "build_version", "SettingsResponse")
 
@@ -452,6 +455,11 @@ class SetNotificationsSuppressedRequest:
 @dataclass(frozen=True)
 class SetErrorReportingRequest:
     enabled: bool
+
+
+@dataclass(frozen=True)
+class SetStopDaemonOnExitRequest:
+    stop_on_exit: bool
 
 
 @dataclass(frozen=True)
@@ -621,6 +629,12 @@ API_CONTRACTS: dict[str, ApiContract] = {
     "send_image_message": ApiContract(
         "send_image_message", assert_success_response, "dict", request_type=SendImageMessageRequest
     ),
+    "handle_application_exit": ApiContract(
+        "handle_application_exit",
+        assert_none_response,
+        "none",
+        notes="Fire-and-forget application shutdown hook.",
+    ),
     "send_presence": ApiContract(
         "send_presence",
         assert_none_response,
@@ -649,6 +663,12 @@ API_CONTRACTS: dict[str, ApiContract] = {
         assert_success_response,
         "dict",
         request_type=SetErrorReportingRequest,
+    ),
+    "set_stop_daemon_on_exit": ApiContract(
+        "set_stop_daemon_on_exit",
+        assert_success_response,
+        "dict",
+        request_type=SetStopDaemonOnExitRequest,
     ),
     "start_event_loop": ApiContract(
         "start_event_loop",

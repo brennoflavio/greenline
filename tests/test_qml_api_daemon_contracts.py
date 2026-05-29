@@ -157,6 +157,7 @@ def test_settings_contracts(monkeypatch: pytest.MonkeyPatch) -> None:
     assert initial == {
         "success": True,
         "notifications_suppressed": False,
+        "stop_daemon_on_exit": False,
         "error_reporting": True,
         "build_version": "deadbeef",
     }
@@ -174,9 +175,50 @@ def test_settings_contracts(monkeypatch: pytest.MonkeyPatch) -> None:
     assert updated == {
         "success": True,
         "notifications_suppressed": True,
+        "stop_daemon_on_exit": False,
         "error_reporting": False,
         "build_version": "deadbeef",
     }
+
+
+def test_stop_daemon_on_exit_setting_contract(fake_daemon_service, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(api_daemon, "get_expected_daemon_version", lambda: "deadbeef")
+
+    disabled = main.set_stop_daemon_on_exit(True)
+    validate_api_response("set_stop_daemon_on_exit", disabled)
+    assert disabled == {"success": True, "message": ""}
+    assert fake_daemon_service.enabled is False
+    assert ["systemctl", "--user", "disable", "greenline.service"] in fake_daemon_service.subprocess_calls
+
+    after_disable = main.get_settings()
+    validate_api_response("get_settings", after_disable)
+    assert after_disable["stop_daemon_on_exit"] is True
+
+    enabled = main.set_stop_daemon_on_exit(False)
+    validate_api_response("set_stop_daemon_on_exit", enabled)
+    assert enabled == {"success": True, "message": ""}
+    assert fake_daemon_service.enabled is True
+    assert ["systemctl", "--user", "enable", "greenline.service"] in fake_daemon_service.subprocess_calls
+
+    after_enable = main.get_settings()
+    validate_api_response("get_settings", after_enable)
+    assert after_enable["stop_daemon_on_exit"] is False
+
+
+def test_handle_application_exit_contract(fake_daemon_service) -> None:
+    skipped = main.handle_application_exit()
+    validate_api_response("handle_application_exit", skipped)
+    assert ["systemctl", "--user", "stop", "greenline.service"] not in fake_daemon_service.subprocess_calls
+
+    configured = main.set_stop_daemon_on_exit(True)
+    validate_api_response("set_stop_daemon_on_exit", configured)
+    assert configured == {"success": True, "message": ""}
+
+    fake_daemon_service.active = True
+    stopped = main.handle_application_exit()
+    validate_api_response("handle_application_exit", stopped)
+    assert ["systemctl", "--user", "stop", "greenline.service"] in fake_daemon_service.subprocess_calls
+    assert fake_daemon_service.active is False
 
 
 def test_clear_data_contract(monkeypatch: pytest.MonkeyPatch, fake_daemon_service) -> None:
