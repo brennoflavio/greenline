@@ -29,10 +29,124 @@ type Client struct {
 	disconnectCh chan struct{}
 	stopCh       chan string
 
-	keepAliveMu         sync.Mutex
-	keepAliveRecovering bool
-	recoveryMu          sync.Mutex
-	recoveryLastTime    map[appstate.WAPatchName]time.Time
+	connectionHealthMu sync.Mutex
+	connectionHealth   connectionHealthState
+	recoveryMu         sync.Mutex
+	recoveryLastTime   map[appstate.WAPatchName]time.Time
+}
+
+type connectionHealthState struct {
+	unhealthySince        time.Time
+	recoveryStartedAt     time.Time
+	keepAliveTimeoutCount int
+	keepAliveRecovering   bool
+}
+
+var (
+	keepAliveReconnectThreshold         = 45 * time.Second
+	keepAliveReconnectTimeoutCountLimit = 2
+	keepAliveStopThreshold              = 1 * time.Minute
+)
+
+type keepAliveDecision struct {
+	errorCount     int
+	lastSuccess    time.Time
+	unhealthyFor   time.Duration
+	recoveryFor    time.Duration
+	forceReconnect bool
+	stop           bool
+}
+
+func (h *connectionHealthState) markHealthy() {
+	h.unhealthySince = time.Time{}
+	h.recoveryStartedAt = time.Time{}
+	h.keepAliveTimeoutCount = 0
+	h.keepAliveRecovering = false
+}
+
+func (h *connectionHealthState) markDisconnected() {
+	h.keepAliveRecovering = false
+}
+
+func (h *connectionHealthState) clearRecovery() {
+	h.unhealthySince = time.Time{}
+	h.recoveryStartedAt = time.Time{}
+	h.keepAliveTimeoutCount = 0
+	h.keepAliveRecovering = false
+}
+
+func (h *connectionHealthState) beginRecovery(now time.Time) bool {
+	if h.keepAliveRecovering {
+		return false
+	}
+	h.keepAliveRecovering = true
+	if h.recoveryStartedAt.IsZero() {
+		h.recoveryStartedAt = now
+	}
+	return true
+}
+
+func (h *connectionHealthState) unhealthyDuration(now time.Time) time.Duration {
+	if h.unhealthySince.IsZero() {
+		return 0
+	}
+	return now.Sub(h.unhealthySince)
+}
+
+func (h *connectionHealthState) recoveryDuration(now time.Time) time.Duration {
+	if h.recoveryStartedAt.IsZero() {
+		return 0
+	}
+	return now.Sub(h.recoveryStartedAt)
+}
+
+func (h *connectionHealthState) shouldForceReconnect(now time.Time) bool {
+	if h.keepAliveRecovering {
+		return false
+	}
+	return h.unhealthyDuration(now) >= keepAliveReconnectThreshold || h.keepAliveTimeoutCount >= keepAliveReconnectTimeoutCountLimit
+}
+
+func (h *connectionHealthState) shouldStop(now time.Time) bool {
+	if h.recoveryStartedAt.IsZero() {
+		return false
+	}
+	return h.recoveryDuration(now) >= keepAliveStopThreshold
+}
+
+func (h *connectionHealthState) evaluateRecovery(now time.Time) keepAliveDecision {
+	decision := keepAliveDecision{
+		unhealthyFor: h.unhealthyDuration(now),
+		recoveryFor:  h.recoveryDuration(now),
+	}
+	if h.shouldStop(now) {
+		decision.stop = true
+		return decision
+	}
+	if h.shouldForceReconnect(now) {
+		decision.forceReconnect = h.beginRecovery(now)
+		decision.recoveryFor = h.recoveryDuration(now)
+	}
+	return decision
+}
+
+func (h *connectionHealthState) recordKeepAliveTimeout(now, lastSuccess time.Time, errorCount int) keepAliveDecision {
+	if errorCount > 0 {
+		h.keepAliveTimeoutCount = errorCount
+	} else {
+		h.keepAliveTimeoutCount++
+	}
+	if h.unhealthySince.IsZero() {
+		h.unhealthySince = now
+		if !lastSuccess.IsZero() {
+			h.unhealthySince = lastSuccess
+		}
+	}
+
+	decision := h.evaluateRecovery(now)
+	decision.errorCount = h.keepAliveTimeoutCount
+	decision.lastSuccess = lastSuccess
+	return decision
 }
 
 func New(dbPath string, logger *slog.Logger) (*Client, error) {
@@ -77,17 +191,31 @@ func New(dbPath string, logger *slog.Logger) (*Client, error) {
 func (c *Client) handleEvent(evt interface{}) {
 	switch v := evt.(type) {
 	case *events.Connected:
-		c.clearKeepAliveRecovery()
+		c.markConnectionHealthy()
+	case *events.KeepAliveRestored:
+		c.markConnectionHealthy()
 	case *events.Disconnected:
+		c.markConnectionDisconnected()
 		c.signalDisconnect()
 	case *events.KeepAliveTimeout:
-		if time.Since(v.LastSuccess) < whatsmeow.KeepAliveMaxFailTime || !c.beginKeepAliveRecovery() {
+		decision := c.recordKeepAliveTimeout(v.LastSuccess, v.ErrorCount)
+		if decision.stop {
+			c.log.Error("whatsmeow: keepalive recovery exceeded ceiling, stopping",
+				"error_count", decision.errorCount,
+				"last_success", decision.lastSuccess,
+				"unhealthy_for", decision.unhealthyFor,
+				"recovery_for", decision.recoveryFor)
+			c.signalStop("stuck connection")
 			return
 		}
-		c.log.Warn("whatsmeow: keepalive stalled, forcing reconnect",
-			"error_count", v.ErrorCount, "last_success", v.LastSuccess)
-		c.waCli.Disconnect()
-		c.signalDisconnect()
+		if !decision.forceReconnect {
+			return
+		}
+		c.forceReconnect("whatsmeow: keepalive stalled, forcing reconnect",
+			"error_count", decision.errorCount,
+			"last_success", decision.lastSuccess,
+			"unhealthy_for", decision.unhealthyFor,
+			"recovery_for", decision.recoveryFor)
 	case *events.LoggedOut:
 		c.log.Warn("whatsmeow: logged out", "reason", v.Reason.String())
 		c.signalStop(fmt.Sprintf("logged out: %s", v.Reason.String()))
@@ -110,20 +238,44 @@ func (c *Client) handleEvent(evt interface{}) {
 	}
 }
 
-func (c *Client) beginKeepAliveRecovery() bool {
-	c.keepAliveMu.Lock()
-	defer c.keepAliveMu.Unlock()
-	if c.keepAliveRecovering {
-		return false
-	}
-	c.keepAliveRecovering = true
-	return true
+func (c *Client) markConnectionHealthy() {
+	c.connectionHealthMu.Lock()
+	c.connectionHealth.markHealthy()
+	c.connectionHealthMu.Unlock()
 }
 
-func (c *Client) clearKeepAliveRecovery() {
-	c.keepAliveMu.Lock()
-	c.keepAliveRecovering = false
-	c.keepAliveMu.Unlock()
+func (c *Client) markConnectionDisconnected() {
+	c.connectionHealthMu.Lock()
+	c.connectionHealth.markDisconnected()
+	c.connectionHealthMu.Unlock()
+}
+
+func (c *Client) clearConnectionRecovery() {
+	c.connectionHealthMu.Lock()
+	c.connectionHealth.clearRecovery()
+	c.connectionHealthMu.Unlock()
+}
+
+func (c *Client) recordKeepAliveTimeout(lastSuccess time.Time, errorCount int) keepAliveDecision {
+	c.connectionHealthMu.Lock()
+	decision := c.connectionHealth.recordKeepAliveTimeout(time.Now(), lastSuccess, errorCount)
+	c.connectionHealthMu.Unlock()
+	return decision
+}
+
+func (c *Client) currentRecoveryDecision() keepAliveDecision {
+	c.connectionHealthMu.Lock()
+	decision := c.connectionHealth.evaluateRecovery(time.Now())
+	c.connectionHealthMu.Unlock()
+	return decision
+}
+
+func (c *Client) forceReconnect(msg string, args ...any) {
+	c.log.Warn(msg, args...)
+	if c.waCli.IsConnected() {
+		c.waCli.Disconnect()
+	}
+	c.signalDisconnect()
 }
 
 func (c *Client) signalDisconnect() {
@@ -169,6 +321,7 @@ func (c *Client) ConnectWithRetry(ctx context.Context, onQR func(code string)) {
 				continue
 			}
 
+			c.clearConnectionRecovery()
 			if err := c.waCli.Connect(); err != nil {
 				c.log.Error("whatsmeow: connect failed", "error", err)
 				if !c.sleepCtx(ctx, retryDelay) {
@@ -229,6 +382,7 @@ func (c *Client) ConnectWithRetry(ctx context.Context, onQR func(code string)) {
 					break
 				}
 
+				c.clearConnectionRecovery()
 				err := c.waCli.Connect()
 				if errors.Is(err, whatsmeow.ErrAlreadyConnected) {
 					c.log.Info("whatsmeow: already connected, skipping connect")
@@ -236,6 +390,15 @@ func (c *Client) ConnectWithRetry(ctx context.Context, onQR func(code string)) {
 				}
 				if err != nil {
 					c.log.Error("whatsmeow: connect failed", "error", err)
+					if !c.sleepCtx(ctx, retryDelay) {
+						return
+					}
+					continue
+				}
+				if !c.waCli.WaitForConnection(30 * time.Second) {
+					c.log.Warn("whatsmeow: timed out waiting for authenticated connection")
+					c.waCli.Disconnect()
+					c.drainDisconnect()
 					if !c.sleepCtx(ctx, retryDelay) {
 						return
 					}
@@ -249,17 +412,49 @@ func (c *Client) ConnectWithRetry(ctx context.Context, onQR func(code string)) {
 			c.drainDisconnectIfConnected()
 		}
 
+		if !c.waitForReconnect(ctx, retryDelay) {
+			return
+		}
+	}
+}
+
+func (c *Client) waitForReconnect(ctx context.Context, retryDelay time.Duration) bool {
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	for {
 		select {
 		case <-ctx.Done():
-			return
+			return false
 		case reason := <-c.stopCh:
 			c.log.Error("whatsmeow: permanent disconnect, stopping", "reason", reason)
-			return
+			return false
 		case <-c.disconnectCh:
 			c.log.Warn("whatsmeow: disconnected, will reconnect")
-			if !c.sleepCtx(ctx, retryDelay) {
-				return
+			return c.sleepCtx(ctx, retryDelay)
+		case <-ticker.C:
+			if !c.waCli.IsConnected() {
+				c.markConnectionDisconnected()
+				c.log.Warn("whatsmeow: connection lost without disconnect event, reconnecting")
+				c.signalDisconnect()
+				continue
 			}
+
+			decision := c.currentRecoveryDecision()
+			if decision.stop {
+				c.log.Error("whatsmeow: connection recovery exceeded ceiling, stopping",
+					"unhealthy_for", decision.unhealthyFor,
+					"recovery_for", decision.recoveryFor)
+				c.signalStop("stuck connection")
+				continue
+			}
+			if !decision.forceReconnect {
+				continue
+			}
+
+			c.forceReconnect("whatsmeow: keepalive still unhealthy, forcing reconnect",
+				"unhealthy_for", decision.unhealthyFor,
+				"recovery_for", decision.recoveryFor)
 		}
 	}
 }
