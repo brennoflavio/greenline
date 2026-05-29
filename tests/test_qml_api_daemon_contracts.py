@@ -57,7 +57,13 @@ def test_start_event_loop_contract(monkeypatch: pytest.MonkeyPatch) -> None:
     result = main.start_event_loop()
 
     validate_api_response("start_event_loop", result)
-    assert {"session-status", "daemon-event", "chat-list-update", "pending-message-retry"} == set(dispatcher.registered)
+    assert {
+        "session-status",
+        "daemon-event",
+        "chat-list-update",
+        "pending-message-send",
+        "pending-message-retry",
+    } == set(dispatcher.registered)
     assert dispatcher.started is True
 
 

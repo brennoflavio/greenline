@@ -28,12 +28,14 @@ from greenline.store.repository import (
     put_message_index,
 )
 from models import ChatListItem, Message, MessageType, ReadReceipt
-from ut_components.event import Event
+from ut_components.event import Event, get_event_dispatcher
 from whatsmeow_types import MessageInfo
 
-PENDING_RETRY_INTERVAL_SECONDS = 5
+PENDING_RETRY_INTERVAL_SECONDS = 1
 PENDING_RETRY_MAX_BACKOFF_SECONDS = 300
 PENDING_OUTBOX_KEY_PREFIX = "pending-outbox:"
+PENDING_SEND_EVENT_ID = "pending-message-send"
+PENDING_RETRY_EVENT_ID = "pending-message-retry"
 _PENDING_SEND_LOCK = threading.Lock()
 _PENDING_SEND_IN_FLIGHT: set[str] = set()
 
@@ -333,16 +335,36 @@ def _attempt_pending_send(
         _finish_pending_send(chat_id, message_id)
 
 
-def queue_and_attempt_send(message: Message, resolve_reply_context: ReplyContextResolver) -> None:
+def queue_and_attempt_send(message: Message, _resolve_reply_context: ReplyContextResolver) -> None:
     chat = _store_pending_message(message)
     _emit_message_change(message, chat)
-    _attempt_pending_send(message.chat_id, message.id, resolve_reply_context)
+    get_event_dispatcher().schedule(
+        PENDING_SEND_EVENT_ID,
+        metadata={"chat_id": message.chat_id, "message_id": message.id},
+    )
+
+
+class PendingMessageSendEvent(Event):
+    def __init__(self, resolve_reply_context: ReplyContextResolver) -> None:
+        super().__init__(id=PENDING_SEND_EVENT_ID)
+        self._resolve_reply_context = resolve_reply_context
+
+    def trigger(self, metadata: dict[str, object] | None) -> None:
+        if not metadata:
+            return
+
+        chat_id = str(metadata.get("chat_id") or "")
+        message_id = str(metadata.get("message_id") or "")
+        if not chat_id or not message_id:
+            return
+
+        _attempt_pending_send(chat_id, message_id, self._resolve_reply_context)
 
 
 class PendingMessageRetryEvent(Event):
     def __init__(self, resolve_reply_context: ReplyContextResolver) -> None:
         super().__init__(
-            id="pending-message-retry",
+            id=PENDING_RETRY_EVENT_ID,
             execution_interval=timedelta(seconds=PENDING_RETRY_INTERVAL_SECONDS),
         )
         self._resolve_reply_context = resolve_reply_context

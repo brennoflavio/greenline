@@ -363,9 +363,14 @@ def isolated_greenline_runtime(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     ut_components.setup("greenline.tests", None)
 
     import ut_components.config as ut_config
+    import ut_components.event as ut_event
 
     monkeypatch.setattr(ut_components, "APP_NAME_", "greenline.tests")
     monkeypatch.setattr(ut_config, "APP_NAME_", "greenline.tests")
+
+    if ut_event.EVENT_DISPATCHER:
+        ut_event.EVENT_DISPATCHER.stop()
+        ut_event.EVENT_DISPATCHER = None
 
     fake_pyotherside.sent.clear()
     FakeDaemonRPC.reset()
@@ -395,6 +400,10 @@ def isolated_greenline_runtime(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     monkeypatch.setattr(api_daemon, "stop_daemon_service", FakeDaemonService.stop_daemon_service)
 
     yield
+
+    if ut_event.EVENT_DISPATCHER:
+        ut_event.EVENT_DISPATCHER.stop()
+        ut_event.EVENT_DISPATCHER = None
 
     daemon_boundary.set_daemon_client_factory(None)
     identity.clear_chat_runtime_cache()

@@ -84,6 +84,7 @@ def test_chat_list_update_event_contract_from_mute_mark_read_edit_delete_and_pen
     seed_message(DEFAULT_CHAT_ID, "editable", is_outgoing=True, read_receipt=ReadReceipt.SENT, timestamp_unix=now - 1)
     seed_message(DEFAULT_CHAT_ID, "deletable", is_outgoing=True, read_receipt=ReadReceipt.SENT, timestamp_unix=now)
 
+    main.start_event_loop()
     main.toggle_mute(DEFAULT_CHAT_ID)
     main.mark_messages_as_read(DEFAULT_CHAT_ID)
     main.edit_text_message(DEFAULT_CHAT_ID, "editable", "Edited")

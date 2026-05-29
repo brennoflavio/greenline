@@ -33,6 +33,19 @@ def _assert_all_contract_events(fake_pyotherside) -> None:
         validate_event_payload(event_name, payload)
 
 
+def _start_dispatcher() -> None:
+    main.start_event_loop()
+
+
+def _wait_for(predicate, timeout: float = 2.0) -> None:
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if predicate():
+            return
+        time.sleep(0.01)
+    assert predicate()
+
+
 def test_get_messages_contract_pagination_and_sender_reply_fields() -> None:
     seed_sender_identity(DEFAULT_SENDER_ID, name="Alice", photo="file:///tmp/alice.jpg")
     seed_chat(DEFAULT_CHAT_ID)
@@ -89,10 +102,19 @@ def test_mark_messages_as_read_contract_and_chat_emit(fake_daemon_rpc, fake_pyot
 def test_send_text_message_contract_and_pending_outbox_emits(fake_daemon_rpc, fake_pyotherside_module) -> None:
     seed_chat(DEFAULT_CHAT_ID)
     seed_sender_identity(DEFAULT_SENDER_ID)
+    _start_dispatcher()
 
     result = main.send_text_message(DEFAULT_CHAT_ID, "Hello", "pending-text-1")
 
     validate_api_response("send_text_message", result)
+    _wait_for(lambda: len(fake_daemon_rpc.send_message_calls) >= 1)
+    _wait_for(
+        lambda: any(
+            payload[0]["id"] == "sent-message"
+            for payload in _event_payloads(fake_pyotherside_module, "message-upsert")
+            if payload
+        )
+    )
     assert fake_daemon_rpc.send_message_calls[0]["message_type"] == "text"
     _assert_all_contract_events(fake_pyotherside_module)
     message_updates = _event_payloads(fake_pyotherside_module, "message-upsert")
@@ -105,18 +127,27 @@ def test_send_text_message_boundary_failure_remains_pending(fake_daemon_rpc, fak
     seed_chat(DEFAULT_CHAT_ID)
     seed_sender_identity(DEFAULT_SENDER_ID)
     fake_daemon_rpc.send_message_exception = BoundaryValidationError("bad daemon reply")
+    _start_dispatcher()
 
     result = main.send_text_message(DEFAULT_CHAT_ID, "Hello", "pending-boundary-1")
 
     validate_api_response("send_text_message", result)
     assert result["success"] is True
+
+    def pending_attempt_recorded() -> bool:
+        with GreenlineKV() as kv:
+            outbox_entry = kv.get_record(f"pending-outbox:{DEFAULT_CHAT_ID}:pending-boundary-1")
+        return isinstance(outbox_entry, PendingOutboxRecord) and outbox_entry.attempt_count >= 1
+
+    _wait_for(pending_attempt_recorded)
+
     with GreenlineKV() as kv:
         outbox_entry = kv.get_record(f"pending-outbox:{DEFAULT_CHAT_ID}:pending-boundary-1")
         indexed_key = kv.get_record(f"message_index:{DEFAULT_CHAT_ID}:pending-boundary-1")
         stored_message = kv.get_record(indexed_key.value)
     assert isinstance(outbox_entry, PendingOutboxRecord)
     assert isinstance(stored_message, StoredMessageRecord)
-    assert outbox_entry.attempt_count == 1
+    assert outbox_entry.attempt_count >= 1
     assert outbox_entry.next_attempt_at >= int(time.time())
     assert stored_message.send_status == "pending"
     _assert_all_contract_events(fake_pyotherside_module)
@@ -124,6 +155,7 @@ def test_send_text_message_boundary_failure_remains_pending(fake_daemon_rpc, fak
 
 def test_send_media_message_contracts(tmp_path, fake_daemon_rpc, fake_pyotherside_module) -> None:
     seed_chat(DEFAULT_CHAT_ID)
+    _start_dispatcher()
     media_cases = [
         (
             "send_image_message",
@@ -165,6 +197,8 @@ def test_send_media_message_contracts(tmp_path, fake_daemon_rpc, fake_pyothersid
         result = function(*args)
         validate_api_response(api_name, result)
 
+    _wait_for(lambda: len(fake_daemon_rpc.send_message_calls) == 5)
+
     assert [call["message_type"] for call in fake_daemon_rpc.send_message_calls] == [
         "image",
         "video",
@@ -183,6 +217,7 @@ def test_send_media_message_contracts(tmp_path, fake_daemon_rpc, fake_pyothersid
 
 def test_send_audio_message_success_and_move_failure_contracts(tmp_path, fake_pyotherside_module) -> None:
     seed_chat(DEFAULT_CHAT_ID)
+    _start_dispatcher()
     audio_path = make_media_file(tmp_path, "audio.ogg")
 
     success = main.send_audio_message(DEFAULT_CHAT_ID, audio_path, 7, "temp-audio", None)

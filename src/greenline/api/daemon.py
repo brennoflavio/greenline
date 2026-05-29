@@ -41,7 +41,7 @@ from greenline.store.records import (
     NotificationsSuppressedRecord,
     StopDaemonOnExitRecord,
 )
-from pending_outbox import PendingMessageRetryEvent
+from pending_outbox import PendingMessageRetryEvent, PendingMessageSendEvent
 from unread_counter import reconcile_unread_total
 from ut_components.config import get_cache_path, get_config_path
 from ut_components.event import get_event_dispatcher
@@ -116,6 +116,7 @@ def start_event_loop() -> None:
     dispatcher.register_event(SessionStatusEvent())
     dispatcher.register_event(DaemonEventHandler())
     dispatcher.register_event(ChatListUpdateEvent())
+    dispatcher.register_event(PendingMessageSendEvent(_resolve_reply_context))
     dispatcher.register_event(PendingMessageRetryEvent(_resolve_reply_context))
     dispatcher.start()
 
