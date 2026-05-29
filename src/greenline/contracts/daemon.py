@@ -92,6 +92,7 @@ class SendMessageRequest:
     Type: str
     Text: str = ""
     FilePath: str = ""
+    FileName: str = ""
     Caption: str = ""
     DurationSeconds: int = 0
     PTT: bool = False
@@ -211,6 +212,7 @@ class DaemonClientProtocol(Protocol):
         msg_type: str,
         text: str = "",
         file_path: str = "",
+        file_name: str = "",
         caption: str = "",
         reply_context: Optional[dict[str, Any]] = None,
         mentioned_jids: Optional[list[str]] = None,
@@ -446,6 +448,7 @@ class GreenlineDaemon:
         msg_type: str,
         text: str = "",
         file_path: str = "",
+        file_name: str = "",
         caption: str = "",
         reply_context: Optional[dict[str, Any]] = None,
         mentioned_jids: Optional[list[str]] = None,
@@ -457,6 +460,7 @@ class GreenlineDaemon:
             Type=msg_type,
             Text=text,
             FilePath=file_path,
+            FileName=file_name,
             Caption=caption,
             DurationSeconds=int(duration_seconds),
             PTT=bool(ptt),

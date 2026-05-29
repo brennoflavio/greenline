@@ -530,6 +530,15 @@ class SendAudioMessageRequest:
 
 
 @dataclass(frozen=True)
+class SendDocumentMessageRequest:
+    chat_id: str
+    file_path: str
+    caption: str = ""
+    temp_id: str = ""
+    reply_context: ReplyContextRequest | None = None
+
+
+@dataclass(frozen=True)
 class SendStickerMessageRequest:
     chat_id: str
     file_path: str
@@ -605,6 +614,9 @@ API_CONTRACTS: dict[str, ApiContract] = {
     ),
     "send_contact_message": ApiContract(
         "send_contact_message", assert_success_response, "dict", request_type=SendContactMessageRequest
+    ),
+    "send_document_message": ApiContract(
+        "send_document_message", assert_success_response, "dict", request_type=SendDocumentMessageRequest
     ),
     "send_image_message": ApiContract(
         "send_image_message", assert_success_response, "dict", request_type=SendImageMessageRequest

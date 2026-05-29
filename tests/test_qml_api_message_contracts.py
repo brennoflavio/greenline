@@ -122,7 +122,7 @@ def test_send_text_message_boundary_failure_remains_pending(fake_daemon_rpc, fak
     _assert_all_contract_events(fake_pyotherside_module)
 
 
-def test_send_media_message_contracts(tmp_path, fake_pyotherside_module) -> None:
+def test_send_media_message_contracts(tmp_path, fake_daemon_rpc, fake_pyotherside_module) -> None:
     seed_chat(DEFAULT_CHAT_ID)
     media_cases = [
         (
@@ -136,6 +136,12 @@ def test_send_media_message_contracts(tmp_path, fake_pyotherside_module) -> None
             main.send_video_message,
             "video.mp4",
             [DEFAULT_CHAT_ID, "", "", "temp-video", None],
+        ),
+        (
+            "send_document_message",
+            main.send_document_message,
+            "document.pdf",
+            [DEFAULT_CHAT_ID, "", "", "temp-document", None],
         ),
         (
             "send_sticker_message",
@@ -159,7 +165,20 @@ def test_send_media_message_contracts(tmp_path, fake_pyotherside_module) -> None
         result = function(*args)
         validate_api_response(api_name, result)
 
+    assert [call["message_type"] for call in fake_daemon_rpc.send_message_calls] == [
+        "image",
+        "video",
+        "document",
+        "sticker",
+        "contact",
+    ]
+    document_call = fake_daemon_rpc.send_message_calls[2]
+    assert document_call["file_name"] == "document.pdf"
+    assert document_call["caption"] == ""
+
     _assert_all_contract_events(fake_pyotherside_module)
+    message_updates = _event_payloads(fake_pyotherside_module, "message-upsert")
+    assert any(update[0]["file_name"] == "document.pdf" for update in message_updates if update)
 
 
 def test_send_audio_message_success_and_move_failure_contracts(tmp_path, fake_pyotherside_module) -> None:
@@ -175,6 +194,19 @@ def test_send_audio_message_success_and_move_failure_contracts(tmp_path, fake_py
     _assert_all_contract_events(fake_pyotherside_module)
     message_updates = _event_payloads(fake_pyotherside_module, "message-upsert")
     assert message_updates[-1][0]["send_status"] == "failed"
+
+
+def test_send_document_message_copy_failure_contracts(tmp_path, fake_pyotherside_module) -> None:
+    seed_chat(DEFAULT_CHAT_ID)
+
+    failure = main.send_document_message(DEFAULT_CHAT_ID, str(tmp_path / "missing.pdf"), "", "failed-document", None)
+
+    validate_api_response("send_document_message", failure)
+    assert failure["success"] is False
+    _assert_all_contract_events(fake_pyotherside_module)
+    message_updates = _event_payloads(fake_pyotherside_module, "message-upsert")
+    assert message_updates[-1][0]["send_status"] == "failed"
+    assert message_updates[-1][0]["file_name"] == "missing.pdf"
 
 
 def test_edit_text_message_contract_success_and_failure(fake_daemon_rpc, fake_pyotherside_module) -> None:

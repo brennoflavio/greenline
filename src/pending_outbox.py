@@ -235,6 +235,16 @@ def _send_pending_message_via_rpc(
             reply_context=reply_context,
         )
 
+    if message.type == MessageType.DOCUMENT:
+        return rpc.send_message(
+            message.chat_id,
+            "document",
+            file_path=file_path,
+            file_name=message.file_name,
+            caption=message.caption,
+            reply_context=reply_context,
+        )
+
     if message.type == MessageType.AUDIO:
         return rpc.send_message(
             message.chat_id,

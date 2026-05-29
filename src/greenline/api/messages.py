@@ -20,6 +20,7 @@ from greenline.contracts.qml import (
     ReplyContextRequest,
     SendAudioMessageRequest,
     SendContactMessageRequest,
+    SendDocumentMessageRequest,
     SendImageMessageRequest,
     SendStickerMessageRequest,
     SendTextMessageRequest,
@@ -234,6 +235,11 @@ def _guess_audio_mimetype(file_path: str) -> str:
 
     guessed = mime_types.guess_type(file_path)[0]  # type: ignore[no-untyped-call]
     return guessed or "audio/ogg; codecs=opus"
+
+
+def _guess_document_mimetype(file_path: str) -> str:
+    guessed = mime_types.guess_type(file_path)[0]  # type: ignore[no-untyped-call]
+    return guessed or "application/octet-stream"
 
 
 @crash_reporter
@@ -525,6 +531,62 @@ def send_audio_message(request: SendAudioMessageRequest) -> SuccessResponse:
         duration=duration,
         media_path="file://" + cached_path,
         mimetype=_guess_audio_mimetype(cached_path),
+        send_status="pending",
+        temp_id=pending_id,
+    )
+    _apply_reply_context(pending_msg, resolved_reply_context)
+    queue_and_attempt_send(pending_msg, _resolve_reply_context)
+    return SuccessResponse(success=True, message="")
+
+
+@crash_reporter
+@dataclass_to_dict
+def send_document_message(request: SendDocumentMessageRequest) -> SuccessResponse:
+    resolved_reply_context = _resolve_reply_context(request.chat_id, request.reply_context)
+    now = datetime.now()
+    file_name = os.path.basename(request.file_path) or "Document"
+
+    cache_dir = os.path.join(get_cache_path(), "outgoing")
+    os.makedirs(cache_dir, exist_ok=True)
+    ext = os.path.splitext(request.file_path)[1]
+    cached_path = os.path.join(cache_dir, f"{request.temp_id or int(now.timestamp())}{ext}")
+
+    try:
+        shutil.copy2(request.file_path, cached_path)
+    except Exception as error:
+        failed_id = request.temp_id or f"failed-{int(now.timestamp())}"
+        failed_msg = Message(
+            id=failed_id,
+            chat_id=request.chat_id,
+            type=MessageType.DOCUMENT,
+            is_outgoing=True,
+            timestamp=now.strftime("%H:%M"),
+            timestamp_unix=int(now.timestamp()),
+            read_receipt=ReadReceipt.NONE,
+            caption=request.caption,
+            media_path="file://" + request.file_path,
+            mimetype=_guess_document_mimetype(request.file_path),
+            file_name=file_name,
+            send_status="failed",
+            temp_id=failed_id,
+        )
+        _apply_reply_context(failed_msg, resolved_reply_context)
+        qml_events.emit_message_upsert([failed_msg])
+        return SuccessResponse(success=False, message=str(error) or "Failed to prepare document")
+
+    pending_id = request.temp_id or f"pending-{int(now.timestamp())}"
+    pending_msg = Message(
+        id=pending_id,
+        chat_id=request.chat_id,
+        type=MessageType.DOCUMENT,
+        is_outgoing=True,
+        timestamp=now.strftime("%H:%M"),
+        timestamp_unix=int(now.timestamp()),
+        read_receipt=ReadReceipt.NONE,
+        caption=request.caption,
+        media_path="file://" + cached_path,
+        mimetype=_guess_document_mimetype(cached_path),
+        file_name=file_name,
         send_status="pending",
         temp_id=pending_id,
     )

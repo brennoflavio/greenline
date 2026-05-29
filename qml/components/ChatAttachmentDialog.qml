@@ -7,6 +7,7 @@ Dialog {
     signal photoRequested()
     signal videoRequested()
     signal audioRequested()
+    signal documentRequested()
     signal stickerRequested()
     signal contactRequested()
 
@@ -33,6 +34,14 @@ Dialog {
         onClicked: {
             PopupUtils.close(root);
             root.audioRequested();
+        }
+    }
+
+    Button {
+        text: i18n.tr("Document")
+        onClicked: {
+            PopupUtils.close(root);
+            root.documentRequested();
         }
     }
 

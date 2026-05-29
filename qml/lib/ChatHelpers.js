@@ -68,10 +68,15 @@ function chatPreview(chat, i18n) {
     return chat.last_message || "";
 }
 
-function contactNameFromPath(filePath, i18n) {
+function fileNameFromPath(filePath, fallbackName) {
     var cleanPath = filePath.toString().replace("file://", "");
     var parts = cleanPath.split("/");
     var name = parts.length > 0 ? parts[parts.length - 1] : "";
+    return name || fallbackName || "";
+}
+
+function contactNameFromPath(filePath, i18n) {
+    var name = fileNameFromPath(filePath, "");
     var dotIndex = name.lastIndexOf(".");
     if (dotIndex > 0)
         name = name.slice(0, dotIndex);

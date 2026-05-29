@@ -140,6 +140,7 @@ def test_daemon_boundary_encodes_request_and_decodes_send_message_reply() -> Non
                 "Type": "text",
                 "Text": "Hello",
                 "FilePath": "",
+                "FileName": "",
                 "Caption": "",
                 "DurationSeconds": 0,
                 "PTT": False,
@@ -147,6 +148,29 @@ def test_daemon_boundary_encodes_request_and_decodes_send_message_reply() -> Non
                 "ReplyParticipantJID": "sender-1",
                 "ReplyQuotedMessageJSON": '{"conversation":"Hi"}',
                 "MentionedJIDs": ["sender-1"],
+            },
+        )
+    ]
+
+
+def test_daemon_boundary_encodes_document_file_name() -> None:
+    transport = FakeTransport({"Service.SendMessage": {"MessageID": "message-1", "Timestamp": 123}})
+    daemon = GreenlineDaemon(transport=transport)  # type: ignore[arg-type]
+
+    daemon.send_message("chat-1", "document", file_path="/tmp/cache/pending-1.pdf", file_name="report.pdf")
+
+    assert transport.calls == [
+        (
+            "Service.SendMessage",
+            {
+                "ChatJID": "chat-1",
+                "Type": "document",
+                "Text": "",
+                "FilePath": "/tmp/cache/pending-1.pdf",
+                "FileName": "report.pdf",
+                "Caption": "",
+                "DurationSeconds": 0,
+                "PTT": False,
             },
         )
     ]

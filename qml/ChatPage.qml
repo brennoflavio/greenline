@@ -484,6 +484,48 @@ Page {
         });
     }
 
+    function sendDocumentMessage(filePath) {
+        var tempId = "pending-" + Date.now();
+        var now = new Date();
+        var timestampUnix = Math.floor(now.getTime() / 1000);
+        var hours = now.getHours().toString();
+        if (hours.length < 2)
+            hours = "0" + hours;
+
+        var minutes = now.getMinutes().toString();
+        if (minutes.length < 2)
+            minutes = "0" + minutes;
+
+        var replyContext = consumeReplyContext();
+        var pendingMsg = {
+            "id": tempId,
+            "chat_id": chatId,
+            "type": "document",
+            "is_outgoing": true,
+            "text": "",
+            "caption": "",
+            "timestamp": hours + ":" + minutes,
+            "timestamp_unix": timestampUnix,
+            "read_receipt": "",
+            "send_status": "pending",
+            "temp_id": tempId,
+            "file_name": ChatHelpers.fileNameFromPath(filePath, i18n.tr("Document")),
+            "media_path": "file://" + filePath,
+            "reply_to_id": replyContext ? replyContext.id : "",
+            "reply_to_sender": replyContext ? replyContext.sender : "",
+            "reply_to_text": replyContext ? replyContext.text : ""
+        };
+        var newMessages = messages.slice();
+        newMessages.push(pendingMsg);
+        messages = newMessages;
+        messagesSendAttemptsMetric.increment(1);
+        python.call('main.send_document_message', [chatId, filePath, "", tempId, replyContext], function(result) {
+            if (result && !result.success)
+                toast.show(result.message || i18n.tr("Failed to send document"));
+
+        });
+    }
+
     function sendContactMessage(filePath) {
         var tempId = "pending-" + Date.now();
         var now = new Date();
@@ -871,6 +913,7 @@ Page {
             onPhotoRequested: pageStack.push(mediaPickerPage)
             onVideoRequested: pageStack.push(videoPickerPage)
             onAudioRequested: PopupUtils.open(voiceMessageRecorderDialog, chatPage)
+            onDocumentRequested: pageStack.push(documentPickerPage)
             onStickerRequested: pageStack.push(stickerPickerComponent)
             onContactRequested: pageStack.push(contactPickerPage)
         }
@@ -904,6 +947,17 @@ Page {
             pickerTitle: i18n.tr("Send Video")
             pickerContentType: ContentType.Videos
             onFileSelected: sendVideoMessage(filePath)
+        }
+
+    }
+
+    Component {
+        id: documentPickerPage
+
+        ChatAttachmentPickerPage {
+            pickerTitle: i18n.tr("Send Document")
+            pickerContentType: ContentType.Documents
+            onFileSelected: sendDocumentMessage(filePath)
         }
 
     }

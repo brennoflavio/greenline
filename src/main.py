@@ -66,6 +66,7 @@ from greenline.api.messages import (
     mark_messages_as_read,
     send_audio_message,
     send_contact_message,
+    send_document_message,
     send_image_message,
     send_sticker_message,
     send_text_message,
@@ -96,6 +97,7 @@ pair_phone = qml_api("pair_phone")(pair_phone)
 ping_daemon = qml_api("ping_daemon")(ping_daemon)
 send_audio_message = qml_api("send_audio_message")(send_audio_message)
 send_contact_message = qml_api("send_contact_message")(send_contact_message)
+send_document_message = qml_api("send_document_message")(send_document_message)
 send_image_message = qml_api("send_image_message")(send_image_message)
 send_presence = qml_api("send_presence")(send_presence)
 send_sticker_message = qml_api("send_sticker_message")(send_sticker_message)
@@ -155,6 +157,7 @@ __all__ = [
     "mark_messages_as_read",
     "send_audio_message",
     "send_contact_message",
+    "send_document_message",
     "send_image_message",
     "send_sticker_message",
     "send_text_message",
