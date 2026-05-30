@@ -239,6 +239,32 @@ def test_clear_data_contract(monkeypatch: pytest.MonkeyPatch, fake_daemon_servic
     assert fake_daemon_service.uninstall_calls == 1
 
 
+def test_clear_data_contract_ignores_missing_files_during_directory_removal(
+    monkeypatch: pytest.MonkeyPatch, fake_daemon_service
+) -> None:
+    dispatcher = FakeDispatcher()
+    removed_paths: list[str] = []
+
+    def fake_rmtree(path: str, onexc) -> None:
+        removed_paths.append(path)
+        if path == "/tmp/config":
+            onexc(None, f"{path}/events.db-shm", FileNotFoundError())
+
+    monkeypatch.setattr(api_daemon, "get_event_dispatcher", lambda: dispatcher)
+    monkeypatch.setattr(api_daemon, "get_config_path", lambda: "/tmp/config")
+    monkeypatch.setattr(api_daemon, "get_cache_path", lambda: "/tmp/cache")
+    monkeypatch.setattr(api_daemon.os.path, "exists", lambda path: True)
+    monkeypatch.setattr(api_daemon.shutil, "rmtree", fake_rmtree)
+
+    result = main.clear_data()
+
+    validate_api_response("clear_data", result)
+    assert result == {"success": True}
+    assert dispatcher.stopped is True
+    assert removed_paths == ["/tmp/config", "/tmp/cache"]
+    assert fake_daemon_service.uninstall_calls == 1
+
+
 def test_get_phone_number_contract_success_and_failure(fake_daemon_rpc, monkeypatch: pytest.MonkeyPatch) -> None:
     fake_daemon_rpc.phone_numbers = {DEFAULT_CHAT_ID: "+15551234567"}
     success = main.get_phone_number(DEFAULT_CHAT_ID)

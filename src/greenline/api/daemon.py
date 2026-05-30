@@ -2,6 +2,7 @@ import os
 import shutil
 import time
 from dataclasses import dataclass
+from typing import Any, Callable
 
 from daemon import (
     ensure_daemon_version,
@@ -49,6 +50,21 @@ from ut_components.utils import dataclass_to_dict
 
 NOTIFICATIONS_SUPPRESSED_KEY = "notifications_suppressed"
 STOP_DAEMON_ON_EXIT_KEY = "daemon.stop_on_exit"
+
+
+def _ignore_missing_rmtree_error(function: Callable[..., Any], path: str, error: BaseException) -> None:
+    if isinstance(error, FileNotFoundError):
+        return
+    raise error
+
+
+def _rmtree_if_exists(path: str) -> None:
+    if not os.path.exists(path):
+        return
+    try:
+        shutil.rmtree(path, onexc=_ignore_missing_rmtree_error)
+    except FileNotFoundError:
+        pass
 
 
 @dataclass
@@ -295,12 +311,10 @@ def clear_data() -> ClearDataResponse:
         pass
 
     config_path = get_config_path()
-    if os.path.exists(config_path):
-        shutil.rmtree(config_path)
+    _rmtree_if_exists(config_path)
 
     cache_path = get_cache_path()
-    if os.path.exists(cache_path):
-        shutil.rmtree(cache_path)
+    _rmtree_if_exists(cache_path)
 
     clear_chat_runtime_cache()
     remove_background_service_files()
