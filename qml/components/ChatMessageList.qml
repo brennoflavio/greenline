@@ -69,6 +69,10 @@ Item {
         return message.text || "";
     }
 
+    function formattedMessageText(message) {
+        return message.formatted_text || "";
+    }
+
     function canEditMessage(message) {
         var messageId = message && message.id ? message.id : "";
         var timestampUnix = message && message.timestamp_unix ? message.timestamp_unix : 0;
@@ -206,6 +210,7 @@ Item {
 
         TextMessage {
             text: root.messageText(msg)
+            formattedText: root.formattedMessageText(msg)
             buttonText: msg.button_text || ""
             buttonUrl: msg.button_url || ""
             isOutgoing: msg.is_outgoing || false
@@ -213,6 +218,7 @@ Item {
             edited: msg.edited || false
             readReceipt: msg.read_receipt || ""
             sendStatus: msg.send_status || ""
+            formattedReplyToText: msg.formatted_reply_to_text || ""
         }
 
     }
@@ -222,6 +228,7 @@ Item {
 
         RichTextMessage {
             text: root.messageText(msg)
+            formattedText: root.formattedMessageText(msg)
             buttonText: msg.button_text || ""
             buttonUrl: msg.button_url || ""
             isOutgoing: msg.is_outgoing || false
@@ -235,6 +242,7 @@ Item {
             replyToId: msg.reply_to_id || ""
             replyToSender: msg.reply_to_sender || ""
             replyToText: msg.reply_to_text || ""
+            formattedReplyToText: msg.formatted_reply_to_text || ""
             onReplyClicked: root.scrollToMessage(messageId)
         }
 
@@ -248,6 +256,7 @@ Item {
             thumbnailSource: msg.thumbnail_path || ""
             mediaPath: msg.media_path || ""
             caption: msg.caption || ""
+            formattedCaption: msg.formatted_caption || ""
             buttonText: msg.button_text || ""
             buttonUrl: msg.button_url || ""
             isOutgoing: msg.is_outgoing || false
@@ -261,6 +270,7 @@ Item {
             replyToId: msg.reply_to_id || ""
             replyToSender: msg.reply_to_sender || ""
             replyToText: msg.reply_to_text || ""
+            formattedReplyToText: msg.formatted_reply_to_text || ""
             onReplyClicked: root.scrollToMessage(messageId)
             downloading: root.downloadingIds[msg.id] || false
             onDownloadRequested: root.downloadRequested(msg.id, "image")
@@ -274,6 +284,7 @@ Item {
         ImageGalleryMessage {
             images: msg.images || []
             caption: msg.caption || ""
+            formattedCaption: msg.formatted_caption || ""
             isOutgoing: msg.is_outgoing || false
             isGroup: root.isGroup
             timestamp: msg.timestamp || ""
@@ -285,6 +296,7 @@ Item {
             replyToId: msg.reply_to_id || ""
             replyToSender: msg.reply_to_sender || ""
             replyToText: msg.reply_to_text || ""
+            formattedReplyToText: msg.formatted_reply_to_text || ""
             onReplyClicked: root.scrollToMessage(messageId)
         }
 
@@ -297,6 +309,7 @@ Item {
             thumbnailSource: msg.thumbnail_path || ""
             mediaPath: msg.media_path || ""
             caption: msg.caption || ""
+            formattedCaption: msg.formatted_caption || ""
             duration: msg.duration || ""
             isOutgoing: msg.is_outgoing || false
             isGroup: root.isGroup
@@ -309,6 +322,7 @@ Item {
             replyToId: msg.reply_to_id || ""
             replyToSender: msg.reply_to_sender || ""
             replyToText: msg.reply_to_text || ""
+            formattedReplyToText: msg.formatted_reply_to_text || ""
             onReplyClicked: root.scrollToMessage(messageId)
             downloading: root.downloadingIds[msg.id] || false
             onDownloadRequested: root.downloadRequested(msg.id, "video")
@@ -333,6 +347,7 @@ Item {
             replyToId: msg.reply_to_id || ""
             replyToSender: msg.reply_to_sender || ""
             replyToText: msg.reply_to_text || ""
+            formattedReplyToText: msg.formatted_reply_to_text || ""
             onReplyClicked: root.scrollToMessage(messageId)
             downloading: root.downloadingIds[msg.id] || false
             onDownloadRequested: root.downloadRequested(msg.id, "audio")
@@ -346,6 +361,7 @@ Item {
         DocumentMessage {
             fileName: msg.file_name || ""
             caption: msg.caption || ""
+            formattedCaption: msg.formatted_caption || ""
             mediaPath: msg.media_path || ""
             isOutgoing: msg.is_outgoing || false
             isGroup: root.isGroup
@@ -358,6 +374,7 @@ Item {
             replyToId: msg.reply_to_id || ""
             replyToSender: msg.reply_to_sender || ""
             replyToText: msg.reply_to_text || ""
+            formattedReplyToText: msg.formatted_reply_to_text || ""
             onReplyClicked: root.scrollToMessage(messageId)
             downloading: root.downloadingIds[msg.id] || false
             onDownloadRequested: root.downloadRequested(msg.id, "document")
@@ -382,6 +399,7 @@ Item {
             replyToId: msg.reply_to_id || ""
             replyToSender: msg.reply_to_sender || ""
             replyToText: msg.reply_to_text || ""
+            formattedReplyToText: msg.formatted_reply_to_text || ""
             onReplyClicked: root.scrollToMessage(messageId)
         }
 
@@ -392,6 +410,7 @@ Item {
 
         LinkPreviewMessage {
             text: msg.text || ""
+            formattedText: msg.formatted_text || ""
             linkTitle: msg.link_title || ""
             linkDescription: msg.link_description || ""
             linkUrl: msg.link_url || ""
@@ -407,6 +426,7 @@ Item {
             replyToId: msg.reply_to_id || ""
             replyToSender: msg.reply_to_sender || ""
             replyToText: msg.reply_to_text || ""
+            formattedReplyToText: msg.formatted_reply_to_text || ""
             onReplyClicked: root.scrollToMessage(messageId)
         }
 
@@ -430,6 +450,7 @@ Item {
             replyToId: msg.reply_to_id || ""
             replyToSender: msg.reply_to_sender || ""
             replyToText: msg.reply_to_text || ""
+            formattedReplyToText: msg.formatted_reply_to_text || ""
             onReplyClicked: root.scrollToMessage(messageId)
         }
 

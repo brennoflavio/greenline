@@ -5,6 +5,8 @@ RichTextMessage {
     replyToId: ""
     replyToSender: ""
     replyToText: ""
+    formattedReplyToText: ""
+    formattedText: ""
     buttonText: ""
     buttonUrl: ""
 }

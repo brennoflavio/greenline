@@ -251,3 +251,9 @@ def seed_failed_message(chat_id: str = DEFAULT_CHAT_ID, message_id: str = "faile
         send_status="failed",
         temp_id=message_id,
     )
+
+
+def assert_formatted_message_fields(payload: dict[str, Any]) -> None:
+    assert isinstance(payload["formatted_text"], str)
+    assert isinstance(payload["formatted_caption"], str)
+    assert isinstance(payload["formatted_reply_to_text"], str)

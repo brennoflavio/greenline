@@ -8,8 +8,11 @@ MessageBubble {
     property string thumbnailSource: ""
     property string mediaPath: ""
     property string caption: ""
+    property string formattedCaption: ""
     property string duration: ""
     property bool downloading: false
+    readonly property bool usesFormattedCaption: formattedCaption !== ""
+    readonly property string displayCaption: usesFormattedCaption ? formattedCaption : caption
 
     signal downloadRequested()
 
@@ -98,7 +101,9 @@ MessageBubble {
     }
 
     Label {
-        text: root.caption
+        text: root.displayCaption
+        textFormat: root.usesFormattedCaption ? Text.RichText : Text.PlainText
+        onLinkActivated: Qt.openUrlExternally(link)
         fontSize: "small"
         color: "#303030"
         wrapMode: Text.WordWrap

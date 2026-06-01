@@ -107,6 +107,9 @@ class Message:
 
 @dataclass
 class UiMessage(Message):
+    formatted_text: str = ""
+    formatted_caption: str = ""
+    formatted_reply_to_text: str = ""
     sender_name: str = ""
     sender_photo: str = ""
     reply_to_sender: str = ""

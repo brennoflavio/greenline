@@ -7,10 +7,13 @@ MessageBubble {
     id: root
 
     property string text: ""
+    property string formattedText: ""
     property string linkTitle: ""
     property string linkDescription: ""
     property string linkUrl: ""
     property string thumbnailSource: ""
+    readonly property bool usesFormattedText: formattedText !== ""
+    readonly property string displayText: usesFormattedText ? formattedText : text
 
     copyableText: text || linkUrl
 
@@ -101,7 +104,9 @@ MessageBubble {
     }
 
     Label {
-        text: root.text
+        text: root.displayText
+        textFormat: root.usesFormattedText ? Text.RichText : Text.PlainText
+        onLinkActivated: Qt.openUrlExternally(link)
         fontSize: "small"
         color: "#303030"
         wrapMode: Text.WordWrap

@@ -5,6 +5,7 @@ MessageBubble {
     id: root
 
     property string text: ""
+    property string formattedText: ""
     property string buttonText: ""
     property string buttonUrl: ""
     property bool expanded: false
@@ -14,6 +15,8 @@ MessageBubble {
     readonly property real replyWidthHint: replyToId !== "" ? Math.max(replySenderMeasure.implicitWidth, replyTextMeasure.implicitWidth) + units.gu(3.5) : 0
     readonly property real buttonWidthHint: hasOpenableButton ? units.gu(24) : 0
     readonly property bool shouldCollapse: fullHeightMeasure.implicitHeight > collapsedHeightMeasure.implicitHeight + units.gu(0.1)
+    readonly property bool usesFormattedText: formattedText !== ""
+    readonly property string displayText: usesFormattedText ? formattedText : text
 
     copyableText: {
         var parts = [];
@@ -31,7 +34,8 @@ MessageBubble {
         id: textMeasure
 
         visible: false
-        text: root.text
+        text: root.displayText
+        textFormat: root.usesFormattedText ? Text.RichText : Text.PlainText
         fontSize: "small"
     }
 
@@ -57,7 +61,8 @@ MessageBubble {
         id: replyTextMeasure
 
         visible: false
-        text: root.replyToText
+        text: root.displayReplyToText
+        textFormat: root.usesFormattedReplyToText ? Text.RichText : Text.PlainText
         fontSize: "small"
     }
 
@@ -65,7 +70,8 @@ MessageBubble {
         id: fullHeightMeasure
 
         visible: false
-        text: root.text
+        text: root.displayText
+        textFormat: root.usesFormattedText ? Text.RichText : Text.PlainText
         fontSize: "small"
         wrapMode: Text.Wrap
         width: parent.width
@@ -75,7 +81,8 @@ MessageBubble {
         id: collapsedHeightMeasure
 
         visible: false
-        text: root.text
+        text: root.displayText
+        textFormat: root.usesFormattedText ? Text.RichText : Text.PlainText
         fontSize: "small"
         wrapMode: Text.Wrap
         width: parent.width
@@ -84,7 +91,9 @@ MessageBubble {
     }
 
     Label {
-        text: root.text
+        text: root.displayText
+        textFormat: root.usesFormattedText ? Text.RichText : Text.PlainText
+        onLinkActivated: Qt.openUrlExternally(link)
         fontSize: "small"
         color: "#303030"
         wrapMode: Text.Wrap

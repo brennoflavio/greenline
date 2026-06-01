@@ -6,6 +6,7 @@ from contracts.qml_registry import validate_api_response, validate_event_payload
 from qml_contract_helpers import (
     DEFAULT_CHAT_ID,
     DEFAULT_SENDER_ID,
+    assert_formatted_message_fields,
     make_media_file,
     raw_downloadable_media,
     seed_chat,
@@ -65,9 +66,12 @@ def test_get_messages_contract_pagination_and_sender_reply_fields() -> None:
     assert first_page["has_more"] is True
     assert first_page["next_cursor"]
     message = first_page["messages"][0]
+    assert_formatted_message_fields(message)
     assert message["sender_name"] == "Alice"
     assert message["sender_photo"] == "file:///tmp/alice.jpg"
     assert message["reply_to_sender"] == "Alice"
+    assert message["formatted_text"] == "Next"
+    assert message["formatted_reply_to_text"] == "Reply preview"
 
     second_page = main.get_messages(DEFAULT_CHAT_ID, first_page["next_cursor"], 10)
     validate_api_response("get_messages", second_page)

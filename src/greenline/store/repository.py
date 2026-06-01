@@ -1,8 +1,9 @@
 from typing import Any, Optional, Tuple
 
 from greenline.contracts.kv import GreenlineKV
+from greenline.qml_text import format_qml_text
 from greenline.store.identity import resolve_sender_name, resolve_sender_photo
-from greenline.store.mentions import render_message_mentions
+from greenline.store.mentions import render_mention_text, render_message_mentions
 from greenline.store.records import (
     MessageIndexRecord,
     StoredMessageRecord,
@@ -94,6 +95,10 @@ def _resolve_reply_preview_text(message: Message) -> str:
 
 
 def to_ui_message(message: Message) -> UiMessage:
+    formatted_text = format_qml_text(message.text, message.mentioned_jids)
+    formatted_caption = format_qml_text(message.caption, message.mentioned_jids)
+    reply_preview_text = _resolve_reply_preview_text(message)
+    formatted_reply_to_text = format_qml_text(reply_preview_text, message.reply_to_mentioned_jids)
     rendered = render_message_mentions(message)
 
     sender_name = ""
@@ -109,7 +114,10 @@ def to_ui_message(message: Message) -> UiMessage:
         reply_to_sender = resolve_sender_name(rendered.reply_to_sender_id)
 
     payload = dict(vars(rendered))
-    payload["reply_to_text"] = _resolve_reply_preview_text(rendered)
+    payload["formatted_text"] = formatted_text
+    payload["formatted_caption"] = formatted_caption
+    payload["reply_to_text"] = render_mention_text(reply_preview_text, message.reply_to_mentioned_jids)
+    payload["formatted_reply_to_text"] = formatted_reply_to_text
 
     return UiMessage(
         **payload,

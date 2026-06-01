@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-29 23:07+0000\n"
+"POT-Creation-Date: 2026-06-01 06:05+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -86,7 +86,7 @@ msgstr ""
 #: ../qml/ChatPage.qml:512 ../qml/DocumentPreviewPage.qml:42
 #: ../qml/DocumentPreviewPage.qml:97
 #: ../qml/components/ChatAttachmentDialog.qml:41
-#: ../qml/components/DocumentMessage.qml:58
+#: ../qml/components/DocumentMessage.qml:61
 msgid "Document"
 msgstr ""
 
@@ -398,24 +398,24 @@ msgstr ""
 msgid "View-once message. Open WhatsApp on your primary device to view it."
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:170
+#: ../qml/components/ChatMessageList.qml:174
 msgid "Delete"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:181
+#: ../qml/components/ChatMessageList.qml:185
 msgid "Reply"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:187
+#: ../qml/components/ChatMessageList.qml:191
 msgid "Edit"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:193
+#: ../qml/components/ChatMessageList.qml:197
 msgid "Copy"
 msgstr ""
 
 #: ../qml/components/ContactMessage.qml:55
-#: ../qml/components/DocumentMessage.qml:66
+#: ../qml/components/DocumentMessage.qml:69
 msgid "Tap to open"
 msgstr ""
 
@@ -427,11 +427,11 @@ msgstr ""
 msgid "Save to"
 msgstr ""
 
-#: ../qml/components/DocumentMessage.qml:66
+#: ../qml/components/DocumentMessage.qml:69
 msgid "Downloading..."
 msgstr ""
 
-#: ../qml/components/DocumentMessage.qml:66
+#: ../qml/components/DocumentMessage.qml:69
 msgid "Tap to download"
 msgstr ""
 
@@ -439,15 +439,15 @@ msgstr ""
 msgid "Edit Message"
 msgstr ""
 
-#: ../qml/components/MessageBubble.qml:197
+#: ../qml/components/MessageBubble.qml:202
 msgid "edited"
 msgstr ""
 
-#: ../qml/components/RichTextMessage.qml:120
+#: ../qml/components/RichTextMessage.qml:129
 msgid "Show less"
 msgstr ""
 
-#: ../qml/components/RichTextMessage.qml:120
+#: ../qml/components/RichTextMessage.qml:129
 msgid "Show more"
 msgstr ""
 
