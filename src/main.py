@@ -64,6 +64,7 @@ from greenline.api.messages import (
     download_media,
     edit_text_message,
     get_cached_stickers,
+    get_message_reactions,
     get_messages,
     mark_messages_as_read,
     send_audio_message,
@@ -88,6 +89,7 @@ get_chat_info = qml_api("get_chat_info")(get_chat_info)
 get_chat_list = qml_api("get_chat_list")(get_chat_list)
 get_contact_list = qml_api("get_contact_list")(get_contact_list)
 get_group_mention_candidates = qml_api("get_group_mention_candidates")(get_group_mention_candidates)
+get_message_reactions = qml_api("get_message_reactions")(get_message_reactions)
 get_messages = qml_api("get_messages")(get_messages)
 get_phone_number = qml_api("get_phone_number")(get_phone_number)
 get_session_status = qml_api("get_session_status")(get_session_status)
@@ -159,6 +161,7 @@ __all__ = [
     "download_media",
     "edit_text_message",
     "get_cached_stickers",
+    "get_message_reactions",
     "get_messages",
     "mark_messages_as_read",
     "send_audio_message",

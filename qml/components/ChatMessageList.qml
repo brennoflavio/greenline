@@ -19,6 +19,7 @@ Item {
     signal replyRequested(var message)
     signal editRequested(var message)
     signal deleteRequested(var message)
+    signal reactionsRequested(var message)
     signal copyRequested(string text)
     signal downloadRequested(string messageId, string mediaType)
     signal bottomReached()
@@ -193,6 +194,12 @@ Item {
                         onTriggered: root.editRequested(modelData)
                     },
                     Action {
+                        iconName: "like"
+                        text: i18n.tr("Reactions")
+                        enabled: !!modelData && !!modelData.has_reactions
+                        onTriggered: root.reactionsRequested(modelData)
+                    },
+                    Action {
                         iconName: "edit-copy"
                         text: i18n.tr("Copy")
                         enabled: messageLoader.item && messageLoader.item.copyableText
@@ -216,6 +223,7 @@ Item {
             isOutgoing: msg.is_outgoing || false
             timestamp: msg.timestamp || ""
             edited: msg.edited || false
+            hasReactions: msg.has_reactions || false
             readReceipt: msg.read_receipt || ""
             sendStatus: msg.send_status || ""
             formattedReplyToText: msg.formatted_reply_to_text || ""
@@ -235,6 +243,7 @@ Item {
             isGroup: root.isGroup
             timestamp: msg.timestamp || ""
             edited: msg.edited || false
+            hasReactions: msg.has_reactions || false
             readReceipt: msg.read_receipt || ""
             sendStatus: msg.send_status || ""
             senderName: msg.sender_name || ""
@@ -263,6 +272,7 @@ Item {
             isGroup: root.isGroup
             timestamp: msg.timestamp || ""
             edited: msg.edited || false
+            hasReactions: msg.has_reactions || false
             readReceipt: msg.read_receipt || ""
             sendStatus: msg.send_status || ""
             senderName: msg.sender_name || ""
@@ -289,6 +299,7 @@ Item {
             isGroup: root.isGroup
             timestamp: msg.timestamp || ""
             edited: msg.edited || false
+            hasReactions: msg.has_reactions || false
             readReceipt: msg.read_receipt || ""
             sendStatus: msg.send_status || ""
             senderName: msg.sender_name || ""
@@ -315,6 +326,7 @@ Item {
             isGroup: root.isGroup
             timestamp: msg.timestamp || ""
             edited: msg.edited || false
+            hasReactions: msg.has_reactions || false
             readReceipt: msg.read_receipt || ""
             sendStatus: msg.send_status || ""
             senderName: msg.sender_name || ""
@@ -340,6 +352,7 @@ Item {
             isGroup: root.isGroup
             timestamp: msg.timestamp || ""
             edited: msg.edited || false
+            hasReactions: msg.has_reactions || false
             readReceipt: msg.read_receipt || ""
             sendStatus: msg.send_status || ""
             senderName: msg.sender_name || ""
@@ -367,6 +380,7 @@ Item {
             isGroup: root.isGroup
             timestamp: msg.timestamp || ""
             edited: msg.edited || false
+            hasReactions: msg.has_reactions || false
             readReceipt: msg.read_receipt || ""
             sendStatus: msg.send_status || ""
             senderName: msg.sender_name || ""
@@ -392,6 +406,7 @@ Item {
             isGroup: root.isGroup
             timestamp: msg.timestamp || ""
             edited: msg.edited || false
+            hasReactions: msg.has_reactions || false
             readReceipt: msg.read_receipt || ""
             sendStatus: msg.send_status || ""
             senderName: msg.sender_name || ""
@@ -419,6 +434,7 @@ Item {
             isGroup: root.isGroup
             timestamp: msg.timestamp || ""
             edited: msg.edited || false
+            hasReactions: msg.has_reactions || false
             readReceipt: msg.read_receipt || ""
             sendStatus: msg.send_status || ""
             senderName: msg.sender_name || ""
@@ -443,6 +459,7 @@ Item {
             isGroup: root.isGroup
             timestamp: msg.timestamp || ""
             edited: msg.edited || false
+            hasReactions: msg.has_reactions || false
             readReceipt: msg.read_receipt || ""
             sendStatus: msg.send_status || ""
             senderName: msg.sender_name || ""

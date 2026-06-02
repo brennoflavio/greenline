@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from conftest import fake_pyotherside
@@ -9,7 +10,9 @@ from daemon_event_helpers import (
     normalize_snapshot_value,
     seed_prerequisite_kv,
 )
+from qml_contract_helpers import seed_chat, seed_message
 
+import daemon_types
 from greenline.contracts.kv import GreenlineKV
 from greenline.store.records import DaemonLastEventIDRecord
 
@@ -120,3 +123,48 @@ def test_daemon_event_handler_emits_batched_qml_payloads(fake_daemon_rpc) -> Non
     ]
     with GreenlineKV() as kv:
         assert kv.get_record(LAST_EVENT_ID_KEY) == DaemonLastEventIDRecord(1097)
+
+
+def test_reaction_event_uses_info_chat_to_update_direct_chat_message(fake_daemon_rpc) -> None:
+    import main
+    from greenline.events.chat_sync import DaemonEventHandler
+
+    chat_id = "peer@s.whatsapp.net"
+    sender_id = "peer@s.whatsapp.net"
+    seed_chat(chat_id, unread_count=0, is_group=False, muted=False)
+    seed_message(chat_id, "outgoing-1", is_outgoing=True, sender="", sender_raw="", text="Hello", reply_to_id="")
+
+    payload = json.loads(json.dumps(FIXTURE_BY_PATH["message/reaction_ignored.json"].payload))
+    payload["Info"]["Chat"] = "peer@lid"
+    payload["Info"]["IsGroup"] = False
+    payload["Info"]["Sender"] = "peer@lid"
+    payload["Info"]["SenderAlt"] = sender_id
+    payload["Info"]["PushName"] = "Peer"
+    payload["Message"]["reactionMessage"]["key"]["ID"] = "outgoing-1"
+    payload["Message"]["reactionMessage"]["key"]["remoteJID"] = "self@s.whatsapp.net"
+    payload["Message"]["reactionMessage"]["key"]["participant"] = sender_id
+    payload["Message"]["reactionMessage"]["text"] = "👍"
+
+    fake_daemon_rpc.ensure_jid_map = {
+        "peer@lid": chat_id,
+        sender_id: sender_id,
+        "self@s.whatsapp.net": "self@s.whatsapp.net",
+    }
+    fake_daemon_rpc.queue_events(
+        [daemon_types.StoredEvent(id=9001, event_type="Message", payload=json.dumps(payload), created_at=0)]
+    )
+
+    DaemonEventHandler()._do_trigger()
+
+    emitted = _payloads_for("message-upsert")
+    assert emitted
+    assert any(
+        message["id"] == "outgoing-1" and message["has_reactions"] is True for batch in emitted for message in batch
+    )
+
+    messages = main.get_messages(chat_id)
+    assert any(message["id"] == "outgoing-1" and message["has_reactions"] is True for message in messages["messages"])
+
+    with GreenlineKV() as kv:
+        assert kv.get_record(f"message_reaction:{chat_id}:outgoing-1:{sender_id}") is not None
+        assert kv.get_record(f"message_reaction:self@s.whatsapp.net:outgoing-1:{sender_id}") is None

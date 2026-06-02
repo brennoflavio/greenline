@@ -15,8 +15,14 @@ from greenline.store.identity import (
     canonicalize_contact_jid,
     remember_chat,
     update_chat_name,
+    upsert_identity_chat,
 )
 from greenline.store.messages import store_message, store_undecryptable_message
+from greenline.store.reactions import (
+    delete_message_reaction,
+    put_message_reaction,
+    refresh_message_reactions_flag,
+)
 from greenline.store.records import (
     StickerCacheRecord,
     StoredMessageRecord,
@@ -113,6 +119,45 @@ def _auto_download_sticker(msg: Message) -> str:
     return media_path
 
 
+def _handle_reaction_message(evt: MessageEvent, message_upserts: list[dict[str, Any]]) -> None:
+    reaction = evt.Message.reactionMessage
+    reaction_key = reaction.key if reaction is not None else None
+    target_message_id = str(reaction_key.ID or "") if reaction_key is not None else ""
+    if not target_message_id:
+        return
+
+    target_chat_id = str(evt.Info.Chat or "")
+    if not target_chat_id:
+        return
+
+    sender_jid = str(evt.Info.Sender or "")
+    if not sender_jid:
+        return
+
+    business_name = ""
+    if evt.Info.VerifiedName and evt.Info.VerifiedName.Details:
+        business_name = evt.Info.VerifiedName.Details.verifiedName
+    if not evt.Info.IsFromMe:
+        timestamp_unix = int(datetime.fromisoformat(evt.Info.Timestamp).timestamp()) if evt.Info.Timestamp else 0
+        upsert_identity_chat(
+            sender_jid,
+            timestamp_unix,
+            push_name=evt.Info.PushName,
+            business_name=business_name,
+        )
+
+    with GreenlineKV() as kv:
+        emoji = reaction.text if reaction is not None else ""
+        if emoji:
+            put_message_reaction(kv, target_chat_id, target_message_id, sender_jid, emoji)
+        else:
+            delete_message_reaction(kv, target_chat_id, target_message_id, sender_jid)
+        updated_message = refresh_message_reactions_flag(kv, target_chat_id, target_message_id)
+
+    if updated_message is not None:
+        message_upserts.append(dataclass_to_ui_dict(updated_message))
+
+
 def _handle_message(
     event: Any,
     chat_updates: dict[str, dict[str, Any]],
@@ -129,6 +174,9 @@ def _handle_message(
         evt.Info.Sender = canonicalize_contact_jid(daemon_client().ensure_jid(evt.Info.SenderAlt).JID)
     elif evt.Info.Sender:
         evt.Info.Sender = canonicalize_contact_jid(daemon_client().ensure_jid(evt.Info.Sender).JID)
+    if evt.Info.Type == "reaction":
+        _handle_reaction_message(evt, message_upserts)
+        return
     stored = store_message(evt, raw=raw)
     if stored is None:
         _save_unhandled_message(event, raw)

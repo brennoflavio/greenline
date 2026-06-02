@@ -76,6 +76,7 @@ class Message:
     timestamp_unix: int
     read_receipt: ReadReceipt
     edited: bool = False
+    has_reactions: bool = False
     sender: str = ""
     sender_raw: str = ""
     text: str = ""
@@ -122,6 +123,21 @@ class MessagesResponse:
     message: str
     next_cursor: str = ""
     has_more: bool = False
+
+
+@dataclass
+class MessageReactionItem:
+    jid: str
+    name: str
+    photo: str
+    emoji: str
+
+
+@dataclass
+class MessageReactionsResponse:
+    success: bool
+    reactions: List[MessageReactionItem]
+    message: str
 
 
 @dataclass

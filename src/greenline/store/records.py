@@ -28,6 +28,14 @@ class StoredMessageRecord(Message):
 
 
 @dataclass
+class MessageReactionRecord:
+    chat_id: str
+    message_id: str
+    sender_jid: str
+    emoji: str
+
+
+@dataclass
 class PendingOutboxRecord:
     chat_id: str
     message_id: str

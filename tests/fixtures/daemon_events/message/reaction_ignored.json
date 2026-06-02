@@ -3,7 +3,7 @@
     "info_type": "reaction",
     "media_type": "",
     "source": "sanitized from repository root kv.db",
-    "source_family": "unhandled_message"
+    "source_family": "reaction"
   },
   "event_type": "Message",
   "id": 17,
@@ -57,7 +57,7 @@
           "ID": "fixture-message-027",
           "fromMe": false,
           "participant": "fixture-user-13@lid",
-          "remoteJID": "fixture-group-10@g.us"
+          "remoteJID": "fixture-group-1@g.us"
         },
         "senderTimestampMS": 1,
         "text": "Fixture text."
@@ -70,7 +70,7 @@
           "ID": "fixture-message-027",
           "fromMe": false,
           "participant": "fixture-user-13@lid",
-          "remoteJID": "fixture-group-10@g.us"
+          "remoteJID": "fixture-group-1@g.us"
         },
         "senderTimestampMS": 1,
         "text": "Fixture text."

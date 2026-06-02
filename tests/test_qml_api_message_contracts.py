@@ -18,6 +18,7 @@ import main
 from greenline.contracts.kv import GreenlineKV
 from greenline.contracts.validation import BoundaryValidationError
 from greenline.store.records import (
+    MessageReactionRecord,
     PendingOutboxRecord,
     StickerCacheRecord,
     StoredMessageRecord,
@@ -58,7 +59,7 @@ def test_get_messages_contract_pagination_and_sender_reply_fields() -> None:
         text="Incoming",
         timestamp_unix=2,
     )
-    seed_message(DEFAULT_CHAT_ID, "message-2", is_outgoing=False, text="Next", timestamp_unix=3)
+    seed_message(DEFAULT_CHAT_ID, "message-2", is_outgoing=False, text="Next", timestamp_unix=3, has_reactions=True)
 
     first_page = main.get_messages(DEFAULT_CHAT_ID, "", 1)
 
@@ -72,9 +73,40 @@ def test_get_messages_contract_pagination_and_sender_reply_fields() -> None:
     assert message["reply_to_sender"] == "Alice"
     assert message["formatted_text"] == "Next"
     assert message["formatted_reply_to_text"] == "Reply preview"
+    assert message["has_reactions"] is True
 
     second_page = main.get_messages(DEFAULT_CHAT_ID, first_page["next_cursor"], 10)
     validate_api_response("get_messages", second_page)
+
+
+def test_get_message_reactions_contract_resolves_sender_details() -> None:
+    seed_sender_identity(DEFAULT_SENDER_ID, name="Alice", photo="file:///tmp/alice.jpg")
+    with GreenlineKV() as kv:
+        kv.put_record(
+            f"message_reaction:{DEFAULT_CHAT_ID}:message-1:{DEFAULT_SENDER_ID}",
+            MessageReactionRecord(
+                chat_id=DEFAULT_CHAT_ID,
+                message_id="message-1",
+                sender_jid=DEFAULT_SENDER_ID,
+                emoji="👍",
+            ),
+        )
+
+    result = main.get_message_reactions(DEFAULT_CHAT_ID, "message-1")
+
+    validate_api_response("get_message_reactions", result)
+    assert result == {
+        "success": True,
+        "reactions": [
+            {
+                "jid": DEFAULT_SENDER_ID,
+                "name": "Alice",
+                "photo": "file:///tmp/alice.jpg",
+                "emoji": "👍",
+            }
+        ],
+        "message": "",
+    }
 
 
 def test_mark_messages_as_read_contract_and_chat_emit(fake_daemon_rpc, fake_pyotherside_module) -> None:

@@ -155,6 +155,17 @@ Page {
         });
     }
 
+    function openMessageReactions(message) {
+        if (!message || !message.id || !message.has_reactions)
+            return ;
+
+        pageStack.push(Qt.resolvedUrl("MessageReactionsPage.qml"), {
+            "chatId": chatId,
+            "chatName": chatName,
+            "messageId": message.id
+        });
+    }
+
     function loadInitialMessages() {
         python.call('main.get_messages', [chatId, "", messagePageSize], function(result) {
             if (result && result.success) {
@@ -683,6 +694,7 @@ Page {
         onReplyRequested: chatPage.startReply(message)
         onEditRequested: chatPage.startEdit(message)
         onDeleteRequested: chatPage.deleteSelectedMessage(message)
+        onReactionsRequested: chatPage.openMessageReactions(message)
         onCopyRequested: {
             Clipboard.push(text);
             toast.show(i18n.tr("Copied to clipboard"));

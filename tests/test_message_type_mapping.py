@@ -47,7 +47,7 @@ def test_message_event_to_message_maps_fixture_variants(fixture) -> None:
     source_family = fixture.manifest_entry.get("source_family")
     expected_type = fixture.manifest_entry.get("stored_message_type")
 
-    if source_family == "unhandled_message" or expected_type == "deleted":
+    if source_family in {"unhandled_message", "reaction"} or expected_type == "deleted":
         assert message is None
         return
 
@@ -74,7 +74,7 @@ def test_store_message_fixture_variants_write_expected_kv(fixture) -> None:
     source_family = fixture.manifest_entry.get("source_family")
     expected_type = fixture.manifest_entry.get("stored_message_type")
 
-    if source_family == "unhandled_message":
+    if source_family in {"unhandled_message", "reaction"}:
         assert stored is None
         return
 

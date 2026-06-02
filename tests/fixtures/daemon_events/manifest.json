@@ -100,7 +100,7 @@
       "info_type": "reaction",
       "media_type": "",
       "path": "message/reaction_ignored.json",
-      "source_family": "unhandled_message"
+      "source_family": "reaction"
     },
     {
       "event_type": "Message",

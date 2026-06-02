@@ -56,6 +56,9 @@ def _assert_manifest_storage_intent(fixture, diff: dict) -> None:
         assert (
             f"unknown_event:{fixture.event_type}:{fixture.id}" in diff["added"]
         ), f"{fixture.relative_path} should store an unknown_event entry"
+    elif source_family == "reaction":
+        _assert_has_written_key(diff, "message_reaction:", fixture)
+        _assert_has_written_key(diff, "message:", fixture)
     elif source_family in {"parse_only", "presence", "chat_presence"}:
         _assert_empty_diff(fixture, diff)
     elif source_family in {"chat_update", "photo_update"}:
@@ -85,6 +88,13 @@ def _assert_manifest_output_intent(fixture, output: dict) -> None:
     if source_family == "message":
         assert output["message_upserts"], f"{fixture.relative_path} should emit message_upserts"
         assert output["chat_updates"], f"{fixture.relative_path} should emit chat_updates"
+    elif source_family == "reaction":
+        assert output["message_upserts"], f"{fixture.relative_path} should emit message_upserts"
+        assert output["chat_updates"] == {}, f"{fixture.relative_path} should not emit chat_updates"
+        assert output["message_updates"] == [], f"{fixture.relative_path} should not emit message_updates"
+        assert output["photo_updates"] == [], f"{fixture.relative_path} should not emit photo_updates"
+        assert output["presence_updates"] == [], f"{fixture.relative_path} should not emit presence_updates"
+        assert output["chat_presence_updates"] == [], f"{fixture.relative_path} should not emit chat_presence_updates"
     elif source_family in {"unhandled_message", "unknown_event", "parse_only"}:
         _assert_empty_output(fixture, output)
     elif source_family == "presence":

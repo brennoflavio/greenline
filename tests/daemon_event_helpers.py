@@ -21,6 +21,7 @@ from greenline.contracts.codecs import decode_dataclass
 from greenline.store.records import (
     ErrorReportingRecord,
     MessageIndexRecord,
+    MessageReactionRecord,
     StickerCacheRecord,
     StoredMessageRecord,
     UnhandledMessageRecord,
@@ -224,6 +225,7 @@ def seed_message(
     read_receipt: ReadReceipt = ReadReceipt.SENT,
     timestamp_unix: int = 1,
     is_outgoing: bool = True,
+    has_reactions: bool = False,
 ) -> Message:
     message = Message(
         id=message_id,
@@ -233,6 +235,7 @@ def seed_message(
         timestamp="11:59",
         timestamp_unix=timestamp_unix,
         read_receipt=read_receipt,
+        has_reactions=has_reactions,
         text=text,
     )
     storage_key = message_storage_key(chat_id, timestamp_unix, message_id)
@@ -377,6 +380,29 @@ def _seed_receipt_prerequisites(fixture: DaemonEventFixture) -> None:
         )
 
 
+def _seed_reaction_prerequisites(fixture: DaemonEventFixture) -> None:
+    if fixture.payload.get("Info", {}).get("Type") != "reaction":
+        return
+
+    reaction = fixture.payload.get("Message", {}).get("reactionMessage") or {}
+    reaction_key = reaction.get("key") or {}
+    chat_id = str(fixture.payload.get("Info", {}).get("Chat") or reaction_key.get("remoteJID") or "")
+    message_id = str(reaction_key.get("ID") or "")
+    if not chat_id or not message_id:
+        return
+
+    timestamp_unix = max(_event_timestamp_unix(fixture) - 1, 0)
+    seed_chat_with_message(
+        chat_id,
+        message_id,
+        message_read_receipt=ReadReceipt.NONE,
+        unread_count=1,
+        timestamp_unix=timestamp_unix,
+        text="Seed reaction target",
+        is_outgoing=False,
+    )
+
+
 def _seed_chat_update_prerequisites(fixture: DaemonEventFixture) -> None:
     if fixture.event_type in {"Mute", "Picture", "PushName", "BusinessName"}:
         chat_id = str(fixture.payload.get("JID") or "")
@@ -387,6 +413,7 @@ def _seed_chat_update_prerequisites(fixture: DaemonEventFixture) -> None:
 def seed_prerequisite_kv(fixture: DaemonEventFixture) -> None:
     if fixture.event_type == "Message":
         _seed_delete_prerequisites(fixture)
+        _seed_reaction_prerequisites(fixture)
     elif fixture.event_type == "Receipt":
         _seed_receipt_prerequisites(fixture)
     else:
@@ -468,6 +495,15 @@ def validate_kv_snapshot(snapshot: dict[str, Any]) -> None:
                 direction="decode",
             )
             json.loads(record.payload)
+        elif key.startswith("message_reaction:"):
+            assert isinstance(value, dict), f"{key} must store an object"
+            decode_dataclass(
+                MessageReactionRecord,
+                value,
+                boundary="kv",
+                contract="message_reaction:",
+                direction="decode",
+            )
         elif key.startswith("unknown_event:"):
             assert isinstance(value, dict), f"{key} must store an object"
             record = decode_dataclass(

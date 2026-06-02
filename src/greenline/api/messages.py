@@ -16,6 +16,7 @@ from greenline.contracts.qml import (
     DeleteMessageRequest,
     DownloadMediaRequest,
     EditTextMessageRequest,
+    GetMessageReactionsRequest,
     GetMessagesRequest,
     ReplyContextRequest,
     SendAudioMessageRequest,
@@ -27,12 +28,14 @@ from greenline.contracts.qml import (
     SendVideoMessageRequest,
 )
 from greenline.reporting import crash_reporter
+from greenline.store.identity import resolve_sender_name, resolve_sender_photo
 from greenline.store.mentions import validate_mention_spans
 from greenline.store.messages import (
     _merge_deleted_message,
     _message_preview,
     _update_chat_after_edit,
 )
+from greenline.store.reactions import list_message_reactions
 from greenline.store.records import (
     StoredMessageRecord,
     message_from_record,
@@ -41,7 +44,14 @@ from greenline.store.records import (
 from greenline.store.repository import (
     get_message_entry_with_key as _lookup_message_entry_with_key,
 )
-from models import Message, MessagesResponse, MessageType, ReadReceipt
+from models import (
+    Message,
+    MessageReactionItem,
+    MessageReactionsResponse,
+    MessagesResponse,
+    MessageType,
+    ReadReceipt,
+)
 from pending_outbox import queue_and_attempt_send
 from unread_counter import decrement_unread_total, get_unread_total
 from ut_components import mimetypes as mime_types
@@ -271,6 +281,26 @@ def get_messages(request: GetMessagesRequest) -> MessagesResponse:
         next_cursor=next_cursor,
         has_more=has_more,
     )
+
+
+@crash_reporter
+@dataclass_to_dict
+def get_message_reactions(request: GetMessageReactionsRequest) -> MessageReactionsResponse:
+    with GreenlineKV() as kv:
+        entries = list_message_reactions(kv, request.chat_id, request.message_id)
+
+    reactions = [
+        MessageReactionItem(
+            jid=record.sender_jid,
+            name=resolve_sender_name(record.sender_jid),
+            photo=resolve_sender_photo(record.sender_jid),
+            emoji=record.emoji,
+        )
+        for _key, record in entries
+    ]
+    reactions.sort(key=lambda reaction: (reaction.name, reaction.jid, reaction.emoji))
+
+    return MessageReactionsResponse(success=True, reactions=reactions, message="")
 
 
 @crash_reporter

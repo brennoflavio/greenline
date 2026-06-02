@@ -5,6 +5,7 @@ import logging
 import pytest
 
 from greenline.contracts.qml import (
+    GetMessageReactionsRequest,
     PairPhoneRequest,
     ReplyContextRequest,
     SendTextMessageRequest,
@@ -45,6 +46,14 @@ def test_validate_qml_response_logs_and_raises_on_invalid_payload(caplog: pytest
         validate_qml_response("get_sync_status", {"syncing": True})
 
     _assert_contract_log(caplog, boundary="qml_api", contract="get_sync_status")
+
+
+def test_validate_qml_response_rejects_invalid_get_message_reactions_payload() -> None:
+    with pytest.raises(BoundaryValidationError):
+        validate_qml_response(
+            "get_message_reactions",
+            {"success": True, "reactions": [{"jid": "a", "name": "Alice", "photo": ""}], "message": ""},
+        )
 
 
 def test_missing_qml_contract_logs_and_raises(caplog: pytest.LogCaptureFixture) -> None:
@@ -122,6 +131,12 @@ def test_decode_qml_request_normalizes_integer_valued_floats() -> None:
     assert isinstance(request, SendTextMessageRequest)
     assert request.mention_spans[0].start == 0
     assert request.mention_spans[0].length == 5
+
+
+def test_decode_qml_request_returns_get_message_reactions_dataclass() -> None:
+    request = decode_qml_request("get_message_reactions", ("chat@s.whatsapp.net", "message-1"), {})
+
+    assert request == GetMessageReactionsRequest(chat_id="chat@s.whatsapp.net", message_id="message-1")
 
 
 def test_decode_qml_request_logs_invalid_primitive_type(caplog: pytest.LogCaptureFixture) -> None:

@@ -19,6 +19,7 @@ from models import (
     ChatListItem,
     ContactItem,
     MentionSpan,
+    MessageReactionItem,
     MessageType,
     ReadReceipt,
     UiMessage,
@@ -33,6 +34,7 @@ UI_MESSAGE_FIELDS = {field.name for field in fields(UiMessage)}
 CHAT_LIST_ITEM_FIELDS = {field.name for field in fields(ChatListItem)}
 CHAT_LIST_ENTRY_FIELDS = {field.name for field in fields(ChatListEntry)}
 CONTACT_ITEM_FIELDS = {field.name for field in fields(ContactItem)}
+MESSAGE_REACTION_ITEM_FIELDS = {field.name for field in fields(MessageReactionItem)}
 
 
 def _require(condition: bool, message: str) -> None:
@@ -170,7 +172,7 @@ def assert_ui_message(payload: Any, path: str = "UiMessage") -> None:
         "reply_to_sender",
     ):
         _assert_str(message, key, path)
-    for key in ("is_outgoing", "edited", "reply_to_from_me"):
+    for key in ("is_outgoing", "edited", "has_reactions", "reply_to_from_me"):
         _assert_bool(message, key, path)
     _assert_int(message, "timestamp_unix", path)
     _require(message["type"] in MESSAGE_TYPES, f"{path}.type has unknown value {message['type']!r}")
@@ -261,6 +263,23 @@ def assert_contact_list_response(payload: Any) -> None:
     contacts = _assert_list(response, "contacts", "ContactListResponse")
     for index, contact in enumerate(contacts):
         assert_contact_item(contact, f"ContactListResponse.contacts[{index}]")
+
+
+def assert_message_reaction_item(payload: Any, path: str = "MessageReactionItem") -> None:
+    reaction = _assert_dict(payload, path)
+    _assert_keys(reaction, MESSAGE_REACTION_ITEM_FIELDS, path)
+    for key in MESSAGE_REACTION_ITEM_FIELDS:
+        _assert_str(reaction, key, path)
+
+
+def assert_message_reactions_response(payload: Any) -> None:
+    response = _assert_dict(payload, "MessageReactionsResponse")
+    _assert_keys(response, {"success", "reactions", "message"}, "MessageReactionsResponse")
+    _assert_bool(response, "success", "MessageReactionsResponse")
+    _assert_str(response, "message", "MessageReactionsResponse")
+    reactions = _assert_list(response, "reactions", "MessageReactionsResponse")
+    for index, reaction in enumerate(reactions):
+        assert_message_reaction_item(reaction, f"MessageReactionsResponse.reactions[{index}]")
 
 
 def assert_chat_info_response(payload: Any) -> None:
@@ -478,6 +497,12 @@ class GetMessagesRequest:
 
 
 @dataclass(frozen=True)
+class GetMessageReactionsRequest:
+    chat_id: str
+    message_id: str
+
+
+@dataclass(frozen=True)
 class SetChatDraftRequest:
     chat_id: str
     text: str
@@ -603,6 +628,12 @@ API_CONTRACTS: dict[str, ApiContract] = {
     "get_contact_list": ApiContract("get_contact_list", assert_contact_list_response, "dict"),
     "get_group_mention_candidates": ApiContract(
         "get_group_mention_candidates", assert_group_mention_candidates_response, "dict", request_type=ChatIdRequest
+    ),
+    "get_message_reactions": ApiContract(
+        "get_message_reactions",
+        assert_message_reactions_response,
+        "dict",
+        request_type=GetMessageReactionsRequest,
     ),
     "get_messages": ApiContract("get_messages", assert_messages_response, "dict", request_type=GetMessagesRequest),
     "get_phone_number": ApiContract("get_phone_number", assert_phone_number_response, "dict", request_type=JidRequest),

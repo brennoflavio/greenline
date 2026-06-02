@@ -23,6 +23,7 @@ from greenline.store.mentions import (
     _template_text_from_context_info,
     quoted_message_template,
 )
+from greenline.store.reactions import apply_message_reactions_flag
 from greenline.store.records import message_from_record, stored_message_record
 from greenline.store.repository import (
     _find_message_entry,
@@ -522,6 +523,7 @@ def store_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = None) -> Op
                 canonicalize_contact_jid(str(evt.Info.Sender or "")),
                 str(evt.Info.Sender or ""),
             )
+            deleted_msg = apply_message_reactions_flag(deleted_msg, kv)
             kv.put_record(existing_key, stored_message_record(deleted_msg, raw))
             chat = _update_chat_after_edit(kv, deleted_msg, evt.Info)
             return StoredMessage(message=deleted_msg, chat=chat)
@@ -548,6 +550,7 @@ def store_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = None) -> Op
                 return None
             existing_msg = message_from_record(existing_value)
             msg = _merge_edited_message(existing_msg, msg)
+            msg = apply_message_reactions_flag(msg, kv)
             kv.put_record(existing_key, stored_message_record(msg, raw))
             put_message_index(kv, msg.chat_id, msg.id, existing_key)
             chat = _update_chat_after_edit(kv, msg, evt.Info)
@@ -555,6 +558,7 @@ def store_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = None) -> Op
 
         key = message_storage_key(msg.chat_id, msg.timestamp_unix, msg.id)
         already_stored = kv.get_record(key) is not None
+        msg = apply_message_reactions_flag(msg, kv)
         kv.put_record(key, stored_message_record(msg, raw))
         put_message_index(kv, msg.chat_id, msg.id, key)
 
@@ -580,6 +584,7 @@ def store_undecryptable_message(
     key = message_storage_key(msg.chat_id, msg.timestamp_unix, msg.id)
     with GreenlineKV() as kv:
         already_stored = kv.get_record(key) is not None
+        msg = apply_message_reactions_flag(msg, kv)
         kv.put_record(key, stored_message_record(msg, raw))
         put_message_index(kv, msg.chat_id, msg.id, key)
 

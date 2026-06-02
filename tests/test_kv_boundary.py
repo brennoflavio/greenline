@@ -8,6 +8,7 @@ from greenline.contracts.kv import GreenlineKV
 from greenline.store.records import (
     DraftMentionsRecord,
     MessageIndexRecord,
+    MessageReactionRecord,
     UnreadTotalRecord,
     stored_message_record,
 )
@@ -70,6 +71,7 @@ def test_object_records_round_trip_without_changing_storage_shape() -> None:
             "name_updated_at": 0,
         }
         raw_message = raw_kv.get(f"message:{message.chat_id}:{message.timestamp_unix}:{message.id}")
+        assert raw_message["has_reactions"] is False
         assert raw_message["reply_quote_payload_json"] == '{"conversation":"hello"}'
         assert raw_message["raw"] == {"Message": {"conversation": "hello"}}
 
@@ -138,11 +140,18 @@ def test_stored_message_mention_spans_remain_typed_while_storage_is_json_like() 
 
 def test_scalar_and_list_records_preserve_raw_values() -> None:
     spans = DraftMentionsRecord([MentionSpan("sender@s.whatsapp.net", "Sender", 0, 7)])
+    reaction = MessageReactionRecord(
+        chat_id="chat@s.whatsapp.net",
+        message_id="m1",
+        sender_jid="sender@s.whatsapp.net",
+        emoji="👍",
+    )
 
     with GreenlineKV() as kv:
         kv.put_record("unread_total", UnreadTotalRecord(3))
         kv.put_record("message_index:chat@s.whatsapp.net:m1", MessageIndexRecord("message:chat@s.whatsapp.net:1:m1"))
         kv.put_record("draft_mentions:chat@s.whatsapp.net", spans)
+        kv.put_record("message_reaction:chat@s.whatsapp.net:m1:sender@s.whatsapp.net", reaction)
 
     with KV() as raw_kv:
         assert raw_kv.get("unread_total") == 3
@@ -150,6 +159,12 @@ def test_scalar_and_list_records_preserve_raw_values() -> None:
         assert raw_kv.get("draft_mentions:chat@s.whatsapp.net") == [
             {"jid": "sender@s.whatsapp.net", "label": "Sender", "start": 0, "length": 7}
         ]
+        assert raw_kv.get("message_reaction:chat@s.whatsapp.net:m1:sender@s.whatsapp.net") == {
+            "chat_id": "chat@s.whatsapp.net",
+            "message_id": "m1",
+            "sender_jid": "sender@s.whatsapp.net",
+            "emoji": "👍",
+        }
 
     with GreenlineKV() as kv:
         assert kv.get_record("unread_total") == UnreadTotalRecord(3)
@@ -159,6 +174,7 @@ def test_scalar_and_list_records_preserve_raw_values() -> None:
         draft_mentions = kv.get_record("draft_mentions:chat@s.whatsapp.net")
         assert draft_mentions == spans
         assert isinstance(draft_mentions.value[0], MentionSpan)
+        assert kv.get_record("message_reaction:chat@s.whatsapp.net:m1:sender@s.whatsapp.net") == reaction
 
 
 def test_prefix_reads_paged_reads_and_cached_writes() -> None:

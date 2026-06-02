@@ -53,6 +53,7 @@ def test_message_serializers_match_initial_load_for_every_type(message_type: Mes
     assert expected["sender_name"] == "Alice"
     assert expected["sender_photo"] == "file:///tmp/alice.jpg"
     assert expected["reply_to_sender"] == "Alice"
+    assert expected["has_reactions"] is False
     assert isinstance(expected["formatted_text"], str)
     assert isinstance(expected["formatted_caption"], str)
     assert expected["formatted_reply_to_text"] == expected["reply_to_text"]
@@ -70,6 +71,20 @@ def test_message_bridge_payload_accepts_stored_dict_without_dropping_reply_or_se
     assert payload["sender_name"] == "Alice"
     assert payload["sender_photo"] == "file:///tmp/alice.jpg"
     assert payload["reply_to_sender"] == "Alice"
+
+
+def test_message_serializers_preserve_has_reactions_flag() -> None:
+    seed_sender_identity(DEFAULT_SENDER_ID, name="Alice", photo="file:///tmp/alice.jpg")
+    seed_chat(DEFAULT_CHAT_ID)
+    message = seed_message(DEFAULT_CHAT_ID, "message-reactions", is_outgoing=False, has_reactions=True)
+
+    payload = qml_payloads.ui_message(message)
+    bridge_payload = qml_events.message_upsert_payload([asdict(message)])[0]
+
+    assert payload["has_reactions"] is True
+    assert bridge_payload["has_reactions"] is True
+    assert_ui_message(payload)
+    assert_ui_message(bridge_payload)
 
 
 def test_message_serializers_preserve_plain_mentions_and_emit_greenline_anchor() -> None:

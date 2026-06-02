@@ -10,6 +10,7 @@ Item {
     property bool isOutgoing: false
     property bool isGroup: false
     property bool edited: false
+    property bool hasReactions: false
     property string timestamp: ""
     property string readReceipt: ""
     property string sendStatus: ""
@@ -200,6 +201,15 @@ Item {
                 fontSize: "xx-small"
                 color: "#999999"
                 visible: bubble.edited
+                anchors.verticalCenter: parent.verticalCenter
+            }
+
+            Icon {
+                name: "like"
+                height: units.gu(1.2)
+                width: units.gu(1.2)
+                color: "#999999"
+                visible: bubble.hasReactions
                 anchors.verticalCenter: parent.verticalCenter
             }
 
