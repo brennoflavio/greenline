@@ -61,7 +61,7 @@ MessageBubble {
                     text: root.fileName || i18n.tr("Document")
                     fontSize: "small"
                     color: "#303030"
-                    wrapMode: Text.WordWrap
+                    wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                     width: parent.width
                 }
 
