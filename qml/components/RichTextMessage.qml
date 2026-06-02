@@ -61,8 +61,8 @@ MessageBubble {
         id: replyTextMeasure
 
         visible: false
-        text: root.displayReplyToText
-        textFormat: root.usesFormattedReplyToText ? Text.RichText : Text.PlainText
+        text: root.replyToText
+        textFormat: Text.PlainText
         fontSize: "small"
     }
 

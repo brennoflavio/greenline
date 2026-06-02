@@ -21,8 +21,6 @@ Item {
     property string replyToText: ""
     property string formattedReplyToText: ""
     property bool showSender: isGroup && !isOutgoing && senderName !== ""
-    readonly property bool usesFormattedReplyToText: formattedReplyToText !== ""
-    readonly property string displayReplyToText: usesFormattedReplyToText ? formattedReplyToText : replyToText
     property color bubbleColor: isOutgoing ? "#dcf8c6" : "#d4e6f9"
 
     signal replyClicked(string messageId)
@@ -151,9 +149,8 @@ Item {
                     }
 
                     Label {
-                        text: bubble.displayReplyToText
-                        textFormat: bubble.usesFormattedReplyToText ? Text.RichText : Text.PlainText
-                        onLinkActivated: Qt.openUrlExternally(link)
+                        text: bubble.replyToText
+                        textFormat: Text.PlainText
                         fontSize: "small"
                         color: "#666666"
                         elide: Text.ElideRight
