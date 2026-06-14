@@ -317,7 +317,10 @@ def mark_messages_as_read(request: ChatIdRequest) -> SuccessResponse:
 
     rpc = daemon_client()
     for sender, ids in unread_by_sender.items():
-        rpc.mark_read(request.chat_id, ids, sender_jid=sender)
+        try:
+            rpc.mark_read(request.chat_id, ids, sender_jid=sender)
+        except Exception:
+            pass
 
     with GreenlineKV() as kv:
         chat = kv.get_record(f"chat:{request.chat_id}")

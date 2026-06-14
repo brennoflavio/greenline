@@ -135,6 +135,45 @@ def test_mark_messages_as_read_contract_and_chat_emit(fake_daemon_rpc, fake_pyot
     assert chat_updates[-1][0]["unread_count"] == 0
 
 
+def test_mark_messages_as_read_ignores_daemon_failures(fake_daemon_rpc, fake_pyotherside_module, monkeypatch) -> None:
+    seed_chat(DEFAULT_CHAT_ID, unread_count=2)
+    seed_message(
+        DEFAULT_CHAT_ID,
+        "incoming-1",
+        is_outgoing=False,
+        read_receipt=ReadReceipt.NONE,
+        timestamp_unix=1,
+    )
+    seed_message(
+        DEFAULT_CHAT_ID,
+        "incoming-2",
+        is_outgoing=False,
+        read_receipt=ReadReceipt.NONE,
+        timestamp_unix=2,
+    )
+
+    def fail_mark_read(self, chat_id: str, message_ids: list[str], sender_jid: str = ""):
+        raise RuntimeError("websocket not connected")
+
+    monkeypatch.setattr(fake_daemon_rpc, "mark_read", fail_mark_read)
+
+    result = main.mark_messages_as_read(DEFAULT_CHAT_ID)
+
+    validate_api_response("mark_messages_as_read", result)
+    assert result == {"success": True, "message": ""}
+    _assert_all_contract_events(fake_pyotherside_module)
+    chat_updates = _event_payloads(fake_pyotherside_module, "chat-list-update")
+    assert chat_updates[-1][0]["unread_count"] == 0
+    assert fake_daemon_rpc.clear_chat_notifications_calls[-1] == [DEFAULT_CHAT_ID]
+    assert fake_daemon_rpc.set_notification_counter_calls[-1] == {"count": 0, "visible": False}
+
+    with GreenlineKV() as kv:
+        chat = kv.get_record(f"chat:{DEFAULT_CHAT_ID}")
+
+    assert chat is not None
+    assert chat.unread_count == 0
+
+
 def test_send_text_message_contract_and_pending_outbox_emits(fake_daemon_rpc, fake_pyotherside_module) -> None:
     seed_chat(DEFAULT_CHAT_ID)
     seed_sender_identity(DEFAULT_SENDER_ID)
