@@ -115,6 +115,9 @@ Item {
         if (type === "contact")
             return contactComponent;
 
+        if (type === "location")
+            return locationComponent;
+
         if (type === "sticker")
             return stickerComponent;
 
@@ -402,6 +405,31 @@ Item {
         ContactMessage {
             contactName: msg.file_name || ""
             mediaPath: msg.media_path || ""
+            isOutgoing: msg.is_outgoing || false
+            isGroup: root.isGroup
+            timestamp: msg.timestamp || ""
+            edited: msg.edited || false
+            hasReactions: msg.has_reactions || false
+            readReceipt: msg.read_receipt || ""
+            sendStatus: msg.send_status || ""
+            senderName: msg.sender_name || ""
+            senderPhoto: msg.sender_photo || ""
+            replyToId: msg.reply_to_id || ""
+            replyToSender: msg.reply_to_sender || ""
+            replyToText: msg.reply_to_text || ""
+            formattedReplyToText: msg.formatted_reply_to_text || ""
+            onReplyClicked: root.scrollToMessage(messageId)
+        }
+
+    }
+
+    Component {
+        id: locationComponent
+
+        LocationMessage {
+            title: msg.text || ""
+            detail: msg.caption || ""
+            linkUrl: msg.link_url || ""
             isOutgoing: msg.is_outgoing || false
             isGroup: root.isGroup
             timestamp: msg.timestamp || ""

@@ -19,6 +19,53 @@ def _contact_preview(display_name: str) -> str:
     return f"👤 {name}" if name else "👤 Contact"
 
 
+def _location_coordinate(value: Any) -> str:
+    try:
+        float(value)
+    except (TypeError, ValueError):
+        return ""
+
+    if isinstance(value, str):
+        return value.strip()
+    return str(value)
+
+
+def location_coordinates(latitude: Any, longitude: Any) -> str:
+    lat = _location_coordinate(latitude)
+    lng = _location_coordinate(longitude)
+    if not lat or not lng:
+        return ""
+    return f"{lat}, {lng}"
+
+
+def location_title(name: str, latitude: Any, longitude: Any) -> str:
+    title = str(name or "").strip()
+    return title or location_coordinates(latitude, longitude)
+
+
+def location_link_url(url: str, latitude: Any, longitude: Any) -> str:
+    location_url = str(url or "").strip()
+    if location_url:
+        return location_url
+
+    coords = location_coordinates(latitude, longitude)
+    if not coords:
+        return ""
+    return f"geo:{coords.replace(', ', ',')}"
+
+
+def location_preview(title: str, detail: str) -> str:
+    preview_title = str(title or "").strip()
+    if preview_title:
+        return f"📍 {preview_title}"
+
+    preview_detail = str(detail or "").strip()
+    if preview_detail:
+        return f"📍 {preview_detail}"
+
+    return "📍 Location"
+
+
 def persist_contact_vcard(chat_id: str, message_id: str, display_name: str, vcard: str) -> str:
     if not vcard:
         return ""
@@ -190,6 +237,12 @@ def _quoted_message_preview(quoted: Optional[Dict[str, Any]]) -> str:
     contact = quoted.get("contactMessage")
     if contact:
         return _contact_preview(contact.get("displayName", ""))
+    location = quoted.get("locationMessage")
+    if isinstance(location, dict) and not location.get("isLive"):
+        return location_preview(
+            location_title(location.get("name", ""), location.get("degreesLatitude"), location.get("degreesLongitude")),
+            location.get("address", ""),
+        )
     if quoted.get("stickerMessage"):
         return "🏷️ Sticker"
     template_image = resolve_media_message_content(quoted, "imageMessage")

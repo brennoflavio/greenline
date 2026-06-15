@@ -1,0 +1,100 @@
+{
+  "_meta": {
+    "source": "handwritten minimal daemon-shaped JSON",
+    "source_family": "message",
+    "stored_message_type": "location"
+  },
+  "event_type": "Message",
+  "id": 41,
+  "payload": {
+    "Info": {
+      "AddressingMode": "lid",
+      "BroadcastListOwner": "",
+      "BroadcastRecipients": null,
+      "Category": "",
+      "Chat": "fixture-chat-48@s.whatsapp.net",
+      "DeviceSentMeta": null,
+      "Edit": "",
+      "ID": "fixture-message-048",
+      "IsFromMe": false,
+      "IsGroup": false,
+      "MediaType": "location",
+      "MsgBotInfo": {
+        "EditSenderTimestampMS": "2025-01-01T12:48:00+00:00",
+        "EditTargetID": "",
+        "EditType": ""
+      },
+      "MsgMetaInfo": {
+        "DeprecatedLIDSession": null,
+        "TargetChat": "",
+        "TargetID": "",
+        "TargetSender": "",
+        "ThreadMessageID": "",
+        "ThreadMessageSenderJID": ""
+      },
+      "Multicast": false,
+      "PushName": "Fixture Location Sender",
+      "RecipientAlt": "",
+      "Sender": "fixture-user-48@lid",
+      "SenderAlt": "fixture-user-48@s.whatsapp.net",
+      "ServerID": 1,
+      "Timestamp": "2025-01-01T12:48:00+00:00",
+      "Type": "media",
+      "VerifiedName": null
+    },
+    "IsBotInvoke": false,
+    "IsDocumentWithCaption": false,
+    "IsEdit": false,
+    "IsEphemeral": false,
+    "IsLottieSticker": false,
+    "IsViewOnce": false,
+    "IsViewOnceV2": false,
+    "IsViewOnceV2Extension": false,
+    "Message": {
+      "locationMessage": {
+        "JPEGThumbnail": "REDACTED_JPEGTHUMBNAIL",
+        "URL": "",
+        "address": "1600 Amphitheatre Parkway, Mountain View, CA",
+        "contextInfo": {
+          "participant": "fixture-user-49@s.whatsapp.net",
+          "quotedMessage": {
+            "conversation": "Quoted fixture text."
+          },
+          "stanzaID": "fixture-quoted-048"
+        },
+        "degreesLatitude": 37.4219999,
+        "degreesLongitude": -122.0840575,
+        "isLive": false,
+        "name": "Fixture Place"
+      },
+      "messageContextInfo": {
+        "messageSecret": "REDACTED_MESSAGESECRET"
+      }
+    },
+    "NewsletterMeta": null,
+    "RawMessage": {
+      "locationMessage": {
+        "JPEGThumbnail": "REDACTED_JPEGTHUMBNAIL",
+        "URL": "",
+        "address": "1600 Amphitheatre Parkway, Mountain View, CA",
+        "contextInfo": {
+          "participant": "fixture-user-49@s.whatsapp.net",
+          "quotedMessage": {
+            "conversation": "Quoted fixture text."
+          },
+          "stanzaID": "fixture-quoted-048"
+        },
+        "degreesLatitude": 37.4219999,
+        "degreesLongitude": -122.0840575,
+        "isLive": false,
+        "name": "Fixture Place"
+      },
+      "messageContextInfo": {
+        "messageSecret": "REDACTED_MESSAGESECRET"
+      }
+    },
+    "RetryCount": 0,
+    "SourceWebMsg": null,
+    "UnavailableRequestID": ""
+  }
+}

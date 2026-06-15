@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-02 06:15+0000\n"
+"POT-Creation-Date: 2026-06-15 17:03+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -169,7 +169,7 @@ msgid "Share"
 msgstr ""
 
 #: ../qml/ContactPreviewPage.qml:101 ../qml/DocumentPreviewPage.qml:101
-#: ../qml/ImagePreviewPage.qml:67 ../qml/MessageReactionsPage.qml:191
+#: ../qml/ImagePreviewPage.qml:67 ../qml/MessageReactionsPage.qml:197
 #: ../qml/VideoPreviewPage.qml:71 ../qml/components/ChatPageHeader.qml:18
 #: ../qml/ut_components/AppHeader.qml:78
 msgid "Back"
@@ -207,16 +207,16 @@ msgstr ""
 msgid "Failed to load reactions"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:161
+#: ../qml/MessageReactionsPage.qml:166
 msgid "Loading reactions…"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:178
+#: ../qml/MessageReactionsPage.qml:183
 msgid "No reactions yet"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:187
-#: ../qml/components/ChatMessageList.qml:198
+#: ../qml/MessageReactionsPage.qml:193
+#: ../qml/components/ChatMessageList.qml:201
 msgid "Reactions"
 msgstr ""
 
@@ -415,28 +415,30 @@ msgstr ""
 msgid "View-once message. Open WhatsApp on your primary device to view it."
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:175
+#: ../qml/components/ChatMessageList.qml:178
 msgid "Delete"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:186
+#: ../qml/components/ChatMessageList.qml:189
 msgid "Reply"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:192
+#: ../qml/components/ChatMessageList.qml:195
 msgid "Edit"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:204
+#: ../qml/components/ChatMessageList.qml:207
 msgid "Copy"
 msgstr ""
 
 #: ../qml/components/ContactMessage.qml:55
 #: ../qml/components/DocumentMessage.qml:69
+#: ../qml/components/LocationMessage.qml:56
 msgid "Tap to open"
 msgstr ""
 
 #: ../qml/components/ContactMessage.qml:55
+#: ../qml/components/LocationMessage.qml:56
 msgid "Unavailable"
 msgstr ""
 

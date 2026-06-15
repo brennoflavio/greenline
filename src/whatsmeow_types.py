@@ -159,6 +159,29 @@ class ExtendedTextMessage:
 
 
 @dataclass
+class LocationMessage:
+    degreesLatitude: float = 0.0
+    degreesLongitude: float = 0.0
+    name: str = ""
+    address: str = ""
+    URL: str = ""
+    isLive: bool = False
+    JPEGThumbnail: str = ""
+    contextInfo: Optional[ContextInfo] = None
+
+
+@dataclass
+class LiveLocationMessage:
+    degreesLatitude: float = 0.0
+    degreesLongitude: float = 0.0
+    caption: str = ""
+    sequenceNumber: int = 0
+    timeOffset: int = 0
+    JPEGThumbnail: str = ""
+    contextInfo: Optional[ContextInfo] = None
+
+
+@dataclass
 class ReactionKey:
     remoteJID: str = ""
     fromMe: bool = False
@@ -319,6 +342,8 @@ class MessageContent:
     audioMessage: Optional[AudioMessage] = None
     documentMessage: Optional[DocumentMessage] = None
     contactMessage: Optional[ContactMessage] = None
+    locationMessage: Optional[LocationMessage] = None
+    liveLocationMessage: Optional[LiveLocationMessage] = None
     stickerMessage: Optional[StickerMessage] = None
     reactionMessage: Optional[ReactionMessage] = None
     senderKeyDistributionMessage: Optional[SenderKeyDistributionMessage] = None

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from typing import Any
 
 import pytest
+from dacite import from_dict
 from daemon_event_helpers import load_fixtures, seed_prerequisite_kv
 
 from greenline.contracts.kv import GreenlineKV
@@ -27,6 +29,11 @@ FIELD_EXPECTATIONS: dict[str, dict[str, Any]] = {
     "message/voice.json": {"mimetype": "audio/ogg; codecs=opus", "duration": "0:13"},
     "message/document.json": {"mimetype": "application/pdf", "file_name": "fixture-document.pdf"},
     "message/contact.json": {"mimetype": "text/x-vcard", "file_name": "Fixture text."},
+    "message/location.json": {
+        "text": "Fixture Place",
+        "caption": "1600 Amphitheatre Parkway, Mountain View, CA",
+        "link_url": "geo:37.4219999,-122.0840575",
+    },
     "message/sticker.json": {"mimetype": "image/webp"},
     "message/template_message.json": {"text": "Fixture text.\n\nFixture text."},
     "message/unhandled_media_gif.json": {"mimetype": "video/mp4", "duration": "0:01"},
@@ -60,6 +67,18 @@ def test_message_event_to_message_maps_fixture_variants(fixture) -> None:
 
     for field, expected in FIELD_EXPECTATIONS.get(fixture.relative_path, {}).items():
         assert getattr(message, field) == expected
+
+
+def test_location_message_marked_live_stays_unhandled() -> None:
+    location_fixture = next(fixture for fixture in MESSAGE_FIXTURES if fixture.relative_path == "message/location.json")
+    payload = deepcopy(location_fixture.payload)
+    payload["Message"]["locationMessage"]["isLive"] = True
+    payload["RawMessage"]["locationMessage"]["isLive"] = True
+
+    evt = from_dict(data_class=location_fixture.data_class, data=payload)
+
+    assert message_event_to_message(evt, raw=payload) is None
+    assert store_message(evt, raw=payload) is None
 
 
 @pytest.mark.parametrize("fixture", MESSAGE_FIXTURES, ids=[fixture.param_id for fixture in MESSAGE_FIXTURES])

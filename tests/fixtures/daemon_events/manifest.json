@@ -56,6 +56,12 @@
     },
     {
       "event_type": "Message",
+      "path": "message/location.json",
+      "source_family": "message",
+      "stored_message_type": "location"
+    },
+    {
+      "event_type": "Message",
       "path": "message/sticker.json",
       "source_family": "message",
       "stored_message_type": "sticker"
@@ -231,6 +237,11 @@
     {
       "event_type": "HistorySync",
       "path": "history_sync/conversation_text.json",
+      "source_family": "history_sync"
+    },
+    {
+      "event_type": "HistorySync",
+      "path": "history_sync/conversation_location.json",
       "source_family": "history_sync"
     }
   ]

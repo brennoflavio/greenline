@@ -132,17 +132,35 @@ def seed_message(
         has_reactions=has_reactions,
         sender=sender if not is_outgoing else "",
         sender_raw=sender_raw if not is_outgoing else "",
-        text=text if message_type in (MessageType.TEXT, MessageType.LINK_PREVIEW) else "",
+        text=(
+            text
+            if message_type in (MessageType.TEXT, MessageType.LINK_PREVIEW)
+            else ("Fixture Location" if message_type == MessageType.LOCATION else "")
+        ),
         mentioned_jids=mentioned_jids or [],
         mention_spans=[_mention_span(span) for span in mention_spans or []],
         image_source=media_path if message_type in (MessageType.IMAGE, MessageType.VIEW_ONCE) else "",
-        caption="Caption" if message_type in (MessageType.IMAGE, MessageType.VIDEO, MessageType.DOCUMENT) else "",
+        caption=(
+            "Caption"
+            if message_type in (MessageType.IMAGE, MessageType.VIDEO, MessageType.DOCUMENT)
+            else ("Fixture Address" if message_type == MessageType.LOCATION else "")
+        ),
         images=[media_path] if message_type == MessageType.IMAGE_GALLERY else [],
         duration="0:07" if message_type in (MessageType.AUDIO, MessageType.VOICE) else "",
         sticker_source=media_path if message_type == MessageType.STICKER else "",
-        media_path=media_path if message_type not in (MessageType.TEXT, MessageType.LINK_PREVIEW) else "",
-        thumbnail_path="file:///tmp/thumb.jpg" if message_type in (MessageType.VIDEO, MessageType.DOCUMENT) else "",
-        mimetype="application/octet-stream" if message_type not in (MessageType.TEXT, MessageType.LINK_PREVIEW) else "",
+        media_path=(
+            media_path if message_type not in (MessageType.TEXT, MessageType.LINK_PREVIEW, MessageType.LOCATION) else ""
+        ),
+        thumbnail_path=(
+            "file:///tmp/thumb.jpg"
+            if message_type in (MessageType.VIDEO, MessageType.DOCUMENT, MessageType.LOCATION)
+            else ""
+        ),
+        mimetype=(
+            "application/octet-stream"
+            if message_type not in (MessageType.TEXT, MessageType.LINK_PREVIEW, MessageType.LOCATION)
+            else ""
+        ),
         file_name="file.bin" if message_type in (MessageType.DOCUMENT, MessageType.CONTACT) else "",
         send_status=send_status,
         temp_id=temp_id,
@@ -156,7 +174,11 @@ def seed_message(
         button_url="https://example.test" if message_type == MessageType.LINK_PREVIEW else "",
         link_title="Example" if message_type == MessageType.LINK_PREVIEW else "",
         link_description="Description" if message_type == MessageType.LINK_PREVIEW else "",
-        link_url="https://example.test" if message_type == MessageType.LINK_PREVIEW else "",
+        link_url=(
+            "https://example.test"
+            if message_type == MessageType.LINK_PREVIEW
+            else ("geo:1,2" if message_type == MessageType.LOCATION else "")
+        ),
     )
     storage_key = message_storage_key(chat_id, timestamp_unix, message_id)
     with GreenlineKV() as kv:

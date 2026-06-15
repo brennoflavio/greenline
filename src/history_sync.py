@@ -19,6 +19,9 @@ from greenline.store.identity import canonicalize_contact_jid, remember_chat
 from greenline.store.media import (
     _contact_preview,
     extract_thumbnail_from_message_content,
+    location_link_url,
+    location_preview,
+    location_title,
     persist_contact_vcard,
     resolve_media_message_content,
     template_message_button,
@@ -134,6 +137,9 @@ def _derive_type_from_content(content: Dict[str, Any]) -> Optional[MessageType]:
         return MessageType.DOCUMENT
     if content.get("contactMessage"):
         return MessageType.CONTACT
+    location = content.get("locationMessage")
+    if isinstance(location, dict) and not location.get("isLive"):
+        return MessageType.LOCATION
     if content.get("stickerMessage"):
         return MessageType.STICKER
     return None
@@ -141,8 +147,8 @@ def _derive_type_from_content(content: Dict[str, Any]) -> Optional[MessageType]:
 
 def _extract_content_fields(
     content: Dict[str, Any], chat_id: str, message_id: str, jid_map: Dict[str, str]
-) -> Tuple[str, List[str], str, str, str, str, str]:
-    """Returns (text, mentioned_jids, caption, mimetype, file_name, duration, media_path)."""
+) -> Tuple[str, List[str], str, str, str, str, str, str]:
+    """Returns (text, mentioned_jids, caption, mimetype, file_name, duration, media_path, link_url)."""
     text = ""
     mentioned_jids: List[str] = []
     caption = ""
@@ -150,6 +156,7 @@ def _extract_content_fields(
     file_name = ""
     duration = ""
     media_path = ""
+    link_url = ""
 
     img = resolve_media_message_content(content, "imageMessage")
 
@@ -168,6 +175,7 @@ def _extract_content_fields(
     aud = content.get("audioMessage")
     doc = content.get("documentMessage")
     contact = content.get("contactMessage")
+    location = content.get("locationMessage")
     stk = content.get("stickerMessage")
 
     if img:
@@ -208,10 +216,20 @@ def _extract_content_fields(
         file_name = contact.get("displayName", "")
         mimetype = "text/x-vcard"
         media_path = persist_contact_vcard(chat_id, message_id, file_name, contact.get("vcard", ""))
+    elif isinstance(location, dict) and not location.get("isLive"):
+        text = location_title(
+            location.get("name", ""), location.get("degreesLatitude"), location.get("degreesLongitude")
+        )
+        caption = str(location.get("address", "")).strip()
+        link_url = location_link_url(
+            str(location.get("URL") or location.get("url") or ""),
+            location.get("degreesLatitude"),
+            location.get("degreesLongitude"),
+        )
     elif stk:
         mimetype = stk.get("mimetype", "")
 
-    return text, mentioned_jids, caption, mimetype, file_name, duration, media_path
+    return text, mentioned_jids, caption, mimetype, file_name, duration, media_path, link_url
 
 
 def _extract_link_preview_fields(content: Dict[str, Any]) -> Tuple[str, str, str]:
@@ -247,6 +265,17 @@ def _message_preview(content: Dict[str, Any], jid_map: Dict[str, str]) -> Tuple[
             vid.get("caption") or "🎥 Video",
             (vid.get("contextInfo") or {}).get("mentionedJID"),
             jid_map=jid_map,
+        )
+    location = content.get("locationMessage")
+    if isinstance(location, dict) and not location.get("isLive"):
+        return (
+            location_preview(
+                location_title(
+                    location.get("name", ""), location.get("degreesLatitude"), location.get("degreesLongitude")
+                ),
+                location.get("address", ""),
+            ),
+            [],
         )
     if content.get("audioMessage"):
         return "🎵 Audio", []
@@ -295,6 +324,8 @@ def _extract_context_info_from_dict(
         "audioMessage",
         "documentMessage",
         "contactMessage",
+        "locationMessage",
+        "liveLocationMessage",
         "stickerMessage",
     ):
         sub = content.get(field_name)
@@ -346,7 +377,7 @@ def _process_messages(
             continue
 
         ts_display = datetime.fromtimestamp(ts_unix).strftime("%H:%M")
-        text, mentioned_jids, caption, mimetype, file_name, duration, media_path = _extract_content_fields(
+        text, mentioned_jids, caption, mimetype, file_name, duration, media_path, link_url = _extract_content_fields(
             content,
             chat_jid,
             msg_id,
@@ -370,9 +401,11 @@ def _process_messages(
             reply_to_mentioned_jids,
         ) = _extract_context_info_from_dict(content, jid_map)
 
-        link_title, link_description, link_url = (
+        link_title, link_description, preview_link_url = (
             _extract_link_preview_fields(content) if msg_type == MessageType.LINK_PREVIEW else ("", "", "")
         )
+        if preview_link_url:
+            link_url = preview_link_url
 
         button_text, button_url = (
             template_message_button(content) if msg_type in (MessageType.IMAGE, MessageType.TEXT) else ("", "")

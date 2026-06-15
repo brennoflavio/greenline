@@ -288,6 +288,8 @@ def quoted_message_template(
         "audioMessage",
         "documentMessage",
         "contactMessage",
+        "locationMessage",
+        "liveLocationMessage",
         "stickerMessage",
     ):
         sub = quoted.get(field_name)

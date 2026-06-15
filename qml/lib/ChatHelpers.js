@@ -20,6 +20,18 @@ function messageMentionedJids(message) {
     return message && message.mentioned_jids ? message.mentioned_jids : [];
 }
 
+function locationPreview(title, detail) {
+    var previewTitle = title ? title.toString().trim() : "";
+    if (previewTitle !== "")
+        return "📍 " + previewTitle;
+
+    var previewDetail = detail ? detail.toString().trim() : "";
+    if (previewDetail !== "")
+        return "📍 " + previewDetail;
+
+    return "📍 Location";
+}
+
 function messagePreview(message, i18n, extraPreviews) {
     if (!message)
         return "";
@@ -29,6 +41,9 @@ function messagePreview(message, i18n, extraPreviews) {
 
     if (message.type === "view_once")
         return tr(i18n, "View-once message. Open WhatsApp on your primary device to view it.");
+
+    if (message.type === "location")
+        return locationPreview(message.text, message.caption);
 
     if (message.text)
         return message.text;
@@ -46,7 +61,8 @@ function messagePreview(message, i18n, extraPreviews) {
         "audio": "🎵 Audio",
         "voice": "🎵 Audio",
         "document": "📄 Document",
-        "sticker": "🏷️ Sticker"
+        "sticker": "🏷️ Sticker",
+        "location": "📍 Location"
     };
     if (extraPreviews) {
         for (var type in extraPreviews)

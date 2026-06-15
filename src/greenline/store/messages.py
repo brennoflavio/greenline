@@ -13,6 +13,9 @@ from greenline.store.identity import (
 from greenline.store.media import (
     _contact_preview,
     extract_thumbnail_from_message_content,
+    location_link_url,
+    location_preview,
+    location_title,
     persist_contact_vcard,
     resolve_media_message_content,
     template_message_button,
@@ -49,6 +52,8 @@ def _extract_context_info(content: MessageContent) -> tuple[str, str, str, bool,
         content.audioMessage,
         content.documentMessage,
         content.contactMessage,
+        content.locationMessage,
+        content.liveLocationMessage,
         content.stickerMessage,
     ):
         if sub is not None and getattr(sub, "contextInfo", None) is not None:
@@ -84,6 +89,8 @@ def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = 
         and content.audioMessage is None
         and content.documentMessage is None
         and content.contactMessage is None
+        and content.locationMessage is None
+        and content.liveLocationMessage is None
         and content.stickerMessage is None
     )
     if is_protocol_only:
@@ -99,12 +106,19 @@ def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = 
             content.audioMessage is not None,
             content.documentMessage is not None,
             content.contactMessage is not None,
+            content.locationMessage is not None,
             content.stickerMessage is not None,
             template_image is not None,
             template_text,
         )
     )
     if info.Edit == "1" and not has_supported_content:
+        return None
+
+    raw_location = raw_content.get("locationMessage") if isinstance(raw_content.get("locationMessage"), dict) else None
+    if (content.locationMessage is not None and content.locationMessage.isLive) or (
+        raw_location is not None and raw_location.get("isLive")
+    ):
         return None
 
     msg_type = _derive_message_type_from_content(content, raw_content)
@@ -134,6 +148,9 @@ def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = 
     mimetype = ""
     file_name = ""
     media_path = ""
+    link_title = ""
+    link_description = ""
+    link_url = ""
 
     if content.imageMessage:
         if content.imageMessage.caption:
@@ -171,12 +188,36 @@ def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = 
         file_name = content.contactMessage.displayName
         mimetype = "text/x-vcard"
         media_path = persist_contact_vcard(chat_id, info.ID, file_name, content.contactMessage.vcard)
+    elif content.locationMessage or (msg_type == MessageType.LOCATION and raw_location is not None):
+        location_message = content.locationMessage
+        raw_location_dict = raw_location or {}
+        location_name = (
+            location_message.name if location_message is not None else str(raw_location_dict.get("name", ""))
+        )
+        location_address = (
+            location_message.address if location_message is not None else raw_location_dict.get("address", "")
+        )
+        location_url = (
+            location_message.URL
+            if location_message is not None
+            else str(raw_location_dict.get("URL") or raw_location_dict.get("url") or "")
+        )
+        latitude = (
+            location_message.degreesLatitude
+            if location_message is not None
+            else raw_location_dict.get("degreesLatitude")
+        )
+        longitude = (
+            location_message.degreesLongitude
+            if location_message is not None
+            else raw_location_dict.get("degreesLongitude")
+        )
+        text = location_title(location_name, latitude, longitude)
+        caption = str(location_address or "").strip()
+        link_url = location_link_url(location_url, latitude, longitude)
     elif content.stickerMessage:
         mimetype = content.stickerMessage.mimetype
 
-    link_title = ""
-    link_description = ""
-    link_url = ""
     if msg_type == MessageType.LINK_PREVIEW and content.extendedTextMessage:
         ext = content.extendedTextMessage
         link_title = ext.title
@@ -245,6 +286,8 @@ def _derive_message_type_from_content(
         return MessageType.DOCUMENT
     if content.contactMessage:
         return MessageType.CONTACT
+    if content.locationMessage and not content.locationMessage.isLive:
+        return MessageType.LOCATION
     if content.stickerMessage:
         return MessageType.STICKER
     if content.extendedTextMessage:
@@ -271,6 +314,8 @@ def _derive_message_type(info_type: str, media_type: str) -> Optional[MessageTyp
             return MessageType.DOCUMENT
         if media_type == "vcard":
             return MessageType.CONTACT
+        if media_type == "location":
+            return MessageType.LOCATION
         if media_type in ("sticker", "user_created_sticker"):
             return MessageType.STICKER
         if media_type == "url":
@@ -314,6 +359,8 @@ def undecryptable_event_to_message(
 def _message_preview_data(msg: Message) -> tuple[str, List[str]]:
     if msg.type == MessageType.DELETED:
         return "Deleted message", []
+    if msg.type == MessageType.LOCATION:
+        return location_preview(msg.text, msg.caption), []
     if msg.text:
         return msg.text, list(msg.mentioned_jids)
     if msg.caption:
@@ -327,6 +374,7 @@ def _message_preview_data(msg: Message) -> tuple[str, List[str]]:
         MessageType.DOCUMENT: "📄 Document",
         MessageType.STICKER: "🏷️ Sticker",
         MessageType.LINK_PREVIEW: "🔗 Link",
+        MessageType.LOCATION: "📍 Location",
     }
     return previews.get(msg.type, msg.type), []
 

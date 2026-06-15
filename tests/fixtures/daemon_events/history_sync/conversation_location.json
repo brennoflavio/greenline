@@ -1,0 +1,63 @@
+{
+  "_meta": {
+    "source": "handwritten minimal daemon-shaped JSON",
+    "source_family": "history_sync"
+  },
+  "event_type": "HistorySync",
+  "id": 42,
+  "payload": {
+    "Data": {
+      "chunkOrder": 1,
+      "companionMetaNonce": "",
+      "conversations": [
+        {
+          "ID": "fixture-chat-49@s.whatsapp.net",
+          "conversationTimestamp": 1735735680,
+          "messages": [
+            {
+              "message": {
+                "key": {
+                  "ID": "fixture-message-049",
+                  "fromMe": false,
+                  "remoteJID": "fixture-chat-49@s.whatsapp.net"
+                },
+                "message": {
+                  "locationMessage": {
+                    "JPEGThumbnail": "REDACTED_JPEGTHUMBNAIL",
+                    "URL": "https://maps.app.goo.gl/fixture-location",
+                    "address": "History sync fixture location.",
+                    "contextInfo": {
+                      "participant": "fixture-user-50@s.whatsapp.net",
+                      "quotedMessage": {
+                        "conversation": "History sync quoted text."
+                      },
+                      "stanzaID": "fixture-quoted-049"
+                    },
+                    "degreesLatitude": 40.689247,
+                    "degreesLongitude": -74.044502,
+                    "isLive": false,
+                    "name": ""
+                  }
+                },
+                "messageTimestamp": 1735735680,
+                "participant": "fixture-user-49@s.whatsapp.net",
+                "status": 0
+              },
+              "msgOrderID": 1
+            }
+          ],
+          "name": "Fixture History Location Chat",
+          "unreadCount": 1
+        }
+      ],
+      "globalSettings": null,
+      "pastParticipants": null,
+      "phoneNumberToLidMappings": null,
+      "progress": 100,
+      "pushnames": null,
+      "recentStickers": null,
+      "statusV3Messages": null,
+      "syncType": 1
+    }
+  }
+}
