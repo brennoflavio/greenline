@@ -19,9 +19,8 @@ from greenline.store.identity import canonicalize_contact_jid, remember_chat
 from greenline.store.media import (
     _contact_preview,
     extract_thumbnail_from_message_content,
-    location_link_url,
     location_preview,
-    location_title,
+    normalized_location_fields,
     persist_contact_vcard,
     resolve_media_message_content,
     template_message_button,
@@ -137,12 +136,21 @@ def _derive_type_from_content(content: Dict[str, Any]) -> Optional[MessageType]:
         return MessageType.DOCUMENT
     if content.get("contactMessage"):
         return MessageType.CONTACT
-    location = content.get("locationMessage")
-    if isinstance(location, dict) and not location.get("isLive"):
+    if isinstance(content.get("locationMessage"), dict) or isinstance(content.get("liveLocationMessage"), dict):
         return MessageType.LOCATION
     if content.get("stickerMessage"):
         return MessageType.STICKER
     return None
+
+
+def _history_message_content(inner: HistorySyncInnerMessage) -> Dict[str, Any]:
+    content = dict(inner.message) if isinstance(inner.message, dict) else {}
+    if isinstance(inner.finalLiveLocation, dict):
+        existing_live = content.get("liveLocationMessage")
+        merged_live = dict(existing_live) if isinstance(existing_live, dict) else {}
+        merged_live.update(inner.finalLiveLocation)
+        content["liveLocationMessage"] = merged_live
+    return content
 
 
 def _extract_content_fields(
@@ -176,6 +184,7 @@ def _extract_content_fields(
     doc = content.get("documentMessage")
     contact = content.get("contactMessage")
     location = content.get("locationMessage")
+    live_location = content.get("liveLocationMessage")
     stk = content.get("stickerMessage")
 
     if img:
@@ -216,15 +225,10 @@ def _extract_content_fields(
         file_name = contact.get("displayName", "")
         mimetype = "text/x-vcard"
         media_path = persist_contact_vcard(chat_id, message_id, file_name, contact.get("vcard", ""))
-    elif isinstance(location, dict) and not location.get("isLive"):
-        text = location_title(
-            location.get("name", ""), location.get("degreesLatitude"), location.get("degreesLongitude")
-        )
-        caption = str(location.get("address", "")).strip()
-        link_url = location_link_url(
-            str(location.get("URL") or location.get("url") or ""),
-            location.get("degreesLatitude"),
-            location.get("degreesLongitude"),
+    elif isinstance(location, dict) or isinstance(live_location, dict):
+        text, caption, link_url = normalized_location_fields(
+            location if isinstance(location, dict) else None,
+            live_location if isinstance(live_location, dict) else None,
         )
     elif stk:
         mimetype = stk.get("mimetype", "")
@@ -267,16 +271,13 @@ def _message_preview(content: Dict[str, Any], jid_map: Dict[str, str]) -> Tuple[
             jid_map=jid_map,
         )
     location = content.get("locationMessage")
-    if isinstance(location, dict) and not location.get("isLive"):
-        return (
-            location_preview(
-                location_title(
-                    location.get("name", ""), location.get("degreesLatitude"), location.get("degreesLongitude")
-                ),
-                location.get("address", ""),
-            ),
-            [],
+    live_location = content.get("liveLocationMessage")
+    if isinstance(location, dict) or isinstance(live_location, dict):
+        title, detail, _ = normalized_location_fields(
+            location if isinstance(location, dict) else None,
+            live_location if isinstance(live_location, dict) else None,
         )
+        return location_preview(title, detail), []
     if content.get("audioMessage"):
         return "🎵 Audio", []
     doc = content.get("documentMessage")
@@ -304,9 +305,12 @@ def _find_latest_message(
     latest_ts = 0
     for msg_wrap in conv.messages or []:
         inner = msg_wrap.message
-        if not inner.message or inner.messageStubType:
+        if inner.messageStubType:
             continue
-        if _derive_type_from_content(inner.message) is None:
+        content = _history_message_content(inner)
+        if not content:
+            continue
+        if _derive_type_from_content(content) is None:
             continue
         if inner.messageTimestamp > latest_ts:
             latest_ts = inner.messageTimestamp
@@ -364,8 +368,11 @@ def _process_messages(
         if not msg_id or msg_id in existing_ids:
             continue
 
-        content = inner.message
-        if not content or inner.messageStubType:
+        if inner.messageStubType:
+            continue
+
+        content = _history_message_content(inner)
+        if not content:
             continue
 
         msg_type = _derive_type_from_content(content)
@@ -444,7 +451,10 @@ def _process_messages(
         msg.thumbnail_path = extract_thumbnail_from_message_content(content, msg_id)
 
         key = message_storage_key(chat_jid, ts_unix, msg_id)
-        kv.put_cached_record(key, stored_message_record(msg, {"Message": content}))
+        raw_message: Dict[str, Any] = {"Message": content}
+        if isinstance(inner.finalLiveLocation, dict):
+            raw_message["FinalLiveLocation"] = inner.finalLiveLocation
+        kv.put_cached_record(key, stored_message_record(msg, raw_message))
         kv.put_cached_record(message_index_key(chat_jid, msg_id), MessageIndexRecord(key))
 
 
@@ -465,8 +475,9 @@ def _process_conversation(
         changed = False
 
         if latest_msg is not None and latest_msg.messageTimestamp > chat.last_message_timestamp:
-            preview, latest_preview_mentioned_jids = _message_preview(latest_msg.message or {}, jid_map)
-            msg_type = _derive_type_from_content(latest_msg.message or {}) if latest_msg.message else None
+            latest_content = _history_message_content(latest_msg)
+            preview, latest_preview_mentioned_jids = _message_preview(latest_content, jid_map)
+            msg_type = _derive_type_from_content(latest_content) if latest_content else None
             if preview:
                 chat.last_message = preview
                 chat.last_message_mentioned_jids = latest_preview_mentioned_jids
@@ -499,8 +510,9 @@ def _process_conversation(
     last_message_type = ""
     preview_mentioned_jids: List[str] = []
     if latest_msg is not None:
-        preview, preview_mentioned_jids = _message_preview(latest_msg.message or {}, jid_map)
-        last_message_type = str(_derive_type_from_content(latest_msg.message or {}) or "")
+        latest_content = _history_message_content(latest_msg)
+        preview, preview_mentioned_jids = _message_preview(latest_content, jid_map)
+        last_message_type = str(_derive_type_from_content(latest_content) or "")
         last_ts = latest_msg.messageTimestamp
         date = datetime.fromtimestamp(last_ts).strftime("%H:%M")
         if latest_msg.key.fromMe:

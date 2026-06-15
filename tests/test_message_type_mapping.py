@@ -34,6 +34,11 @@ FIELD_EXPECTATIONS: dict[str, dict[str, Any]] = {
         "caption": "1600 Amphitheatre Parkway, Mountain View, CA",
         "link_url": "geo:37.4219999,-122.0840575",
     },
+    "message/livelocation.json": {
+        "text": "0.0, 0.0",
+        "caption": "",
+        "link_url": "geo:0.0,0.0",
+    },
     "message/sticker.json": {"mimetype": "image/webp"},
     "message/template_message.json": {"text": "Fixture text.\n\nFixture text."},
     "message/unhandled_media_gif.json": {"mimetype": "video/mp4", "duration": "0:01"},
@@ -69,16 +74,31 @@ def test_message_event_to_message_maps_fixture_variants(fixture) -> None:
         assert getattr(message, field) == expected
 
 
-def test_location_message_marked_live_stays_unhandled() -> None:
+def test_live_location_variants_normalize_to_location() -> None:
     location_fixture = next(fixture for fixture in MESSAGE_FIXTURES if fixture.relative_path == "message/location.json")
     payload = deepcopy(location_fixture.payload)
     payload["Message"]["locationMessage"]["isLive"] = True
     payload["RawMessage"]["locationMessage"]["isLive"] = True
 
     evt = from_dict(data_class=location_fixture.data_class, data=payload)
+    mapped_location = message_event_to_message(evt, raw=payload)
+    stored_location = store_message(evt, raw=payload)
 
-    assert message_event_to_message(evt, raw=payload) is None
-    assert store_message(evt, raw=payload) is None
+    assert mapped_location is not None
+    assert mapped_location.type == MessageType.LOCATION
+    assert mapped_location.text == "37.4219999, -122.0840575"
+    assert mapped_location.caption == "1600 Amphitheatre Parkway, Mountain View, CA"
+    assert mapped_location.link_url == "geo:37.4219999,-122.0840575"
+    assert stored_location is not None
+    assert stored_location.message.type == MessageType.LOCATION
+
+    live_fixture = next(fixture for fixture in MESSAGE_FIXTURES if fixture.relative_path == "message/livelocation.json")
+    mapped_live = _mapped_message(live_fixture)
+
+    assert mapped_live is not None
+    assert mapped_live.type == MessageType.LOCATION
+    assert mapped_live.text == "0.0, 0.0"
+    assert mapped_live.link_url == "geo:0.0,0.0"
 
 
 @pytest.mark.parametrize("fixture", MESSAGE_FIXTURES, ids=[fixture.param_id for fixture in MESSAGE_FIXTURES])

@@ -141,8 +141,9 @@
       "event_type": "Message",
       "info_type": "media",
       "media_type": "livelocation",
-      "path": "message/unhandled_media_livelocation.json",
-      "source_family": "unhandled_message"
+      "path": "message/livelocation.json",
+      "source_family": "message",
+      "stored_message_type": "location"
     },
     {
       "event_type": "Message",
@@ -242,6 +243,11 @@
     {
       "event_type": "HistorySync",
       "path": "history_sync/conversation_location.json",
+      "source_family": "history_sync"
+    },
+    {
+      "event_type": "HistorySync",
+      "path": "history_sync/conversation_livelocation.json",
       "source_family": "history_sync"
     }
   ]

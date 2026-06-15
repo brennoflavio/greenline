@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-15 17:03+0000\n"
+"POT-Creation-Date: 2026-06-15 19:41+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -433,12 +433,12 @@ msgstr ""
 
 #: ../qml/components/ContactMessage.qml:55
 #: ../qml/components/DocumentMessage.qml:69
-#: ../qml/components/LocationMessage.qml:56
+#: ../qml/components/LocationMessage.qml:57
 msgid "Tap to open"
 msgstr ""
 
 #: ../qml/components/ContactMessage.qml:55
-#: ../qml/components/LocationMessage.qml:56
+#: ../qml/components/LocationMessage.qml:57
 msgid "Unavailable"
 msgstr ""
 

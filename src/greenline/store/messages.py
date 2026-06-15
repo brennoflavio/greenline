@@ -13,9 +13,8 @@ from greenline.store.identity import (
 from greenline.store.media import (
     _contact_preview,
     extract_thumbnail_from_message_content,
-    location_link_url,
     location_preview,
-    location_title,
+    normalized_location_fields,
     persist_contact_vcard,
     resolve_media_message_content,
     template_message_button,
@@ -76,6 +75,10 @@ def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = 
     raw_content = raw.get("Message", {}) if raw else {}
     chat_id = canonicalize_contact_jid(str(info.Chat or "")) if info.Chat else ""
     template_image = resolve_media_message_content(raw_content, "imageMessage")
+    raw_location = raw_content.get("locationMessage") if isinstance(raw_content.get("locationMessage"), dict) else None
+    raw_live_location = (
+        raw_content.get("liveLocationMessage") if isinstance(raw_content.get("liveLocationMessage"), dict) else None
+    )
 
     if info.Type == "reaction":
         return None
@@ -107,18 +110,15 @@ def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = 
             content.documentMessage is not None,
             content.contactMessage is not None,
             content.locationMessage is not None,
+            content.liveLocationMessage is not None,
             content.stickerMessage is not None,
             template_image is not None,
+            raw_location is not None,
+            raw_live_location is not None,
             template_text,
         )
     )
     if info.Edit == "1" and not has_supported_content:
-        return None
-
-    raw_location = raw_content.get("locationMessage") if isinstance(raw_content.get("locationMessage"), dict) else None
-    if (content.locationMessage is not None and content.locationMessage.isLive) or (
-        raw_location is not None and raw_location.get("isLive")
-    ):
         return None
 
     msg_type = _derive_message_type_from_content(content, raw_content)
@@ -188,33 +188,14 @@ def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = 
         file_name = content.contactMessage.displayName
         mimetype = "text/x-vcard"
         media_path = persist_contact_vcard(chat_id, info.ID, file_name, content.contactMessage.vcard)
-    elif content.locationMessage or (msg_type == MessageType.LOCATION and raw_location is not None):
-        location_message = content.locationMessage
-        raw_location_dict = raw_location or {}
-        location_name = (
-            location_message.name if location_message is not None else str(raw_location_dict.get("name", ""))
-        )
-        location_address = (
-            location_message.address if location_message is not None else raw_location_dict.get("address", "")
-        )
-        location_url = (
-            location_message.URL
-            if location_message is not None
-            else str(raw_location_dict.get("URL") or raw_location_dict.get("url") or "")
-        )
-        latitude = (
-            location_message.degreesLatitude
-            if location_message is not None
-            else raw_location_dict.get("degreesLatitude")
-        )
-        longitude = (
-            location_message.degreesLongitude
-            if location_message is not None
-            else raw_location_dict.get("degreesLongitude")
-        )
-        text = location_title(location_name, latitude, longitude)
-        caption = str(location_address or "").strip()
-        link_url = location_link_url(location_url, latitude, longitude)
+    elif (
+        content.locationMessage
+        or content.liveLocationMessage
+        or (msg_type == MessageType.LOCATION and (raw_location is not None or raw_live_location is not None))
+    ):
+        location_source = content.locationMessage or raw_location
+        live_location_source = content.liveLocationMessage or raw_live_location
+        text, caption, link_url = normalized_location_fields(location_source, live_location_source)
     elif content.stickerMessage:
         mimetype = content.stickerMessage.mimetype
 
@@ -274,6 +255,12 @@ def _derive_message_type_from_content(
     content: MessageContent,
     raw_content: Optional[Dict[str, Any]] = None,
 ) -> Optional[MessageType]:
+    raw_content = raw_content or {}
+    raw_location = raw_content.get("locationMessage") if isinstance(raw_content.get("locationMessage"), dict) else None
+    raw_live_location = (
+        raw_content.get("liveLocationMessage") if isinstance(raw_content.get("liveLocationMessage"), dict) else None
+    )
+
     if content.imageMessage or resolve_media_message_content(raw_content, "imageMessage"):
         return MessageType.IMAGE
     if template_message_text(raw_content):
@@ -286,7 +273,7 @@ def _derive_message_type_from_content(
         return MessageType.DOCUMENT
     if content.contactMessage:
         return MessageType.CONTACT
-    if content.locationMessage and not content.locationMessage.isLive:
+    if content.locationMessage or raw_location or content.liveLocationMessage or raw_live_location:
         return MessageType.LOCATION
     if content.stickerMessage:
         return MessageType.STICKER
@@ -314,7 +301,7 @@ def _derive_message_type(info_type: str, media_type: str) -> Optional[MessageTyp
             return MessageType.DOCUMENT
         if media_type == "vcard":
             return MessageType.CONTACT
-        if media_type == "location":
+        if media_type == "location" or media_type == "livelocation":
             return MessageType.LOCATION
         if media_type in ("sticker", "user_created_sticker"):
             return MessageType.STICKER

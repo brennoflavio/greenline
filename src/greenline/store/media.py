@@ -66,6 +66,47 @@ def location_preview(title: str, detail: str) -> str:
     return "📍 Location"
 
 
+def _location_value(source: Any, key: str) -> Any:
+    if source is None:
+        return None
+    if isinstance(source, dict):
+        return source.get(key)
+    return getattr(source, key, None)
+
+
+def _first_location_value(key: str, *sources: Any) -> Any:
+    for source in sources:
+        value = _location_value(source, key)
+        if value not in (None, ""):
+            return value
+    return None
+
+
+def normalized_location_fields(location: Any = None, live_location: Any = None) -> Tuple[str, str, str]:
+    latitude = _first_location_value("degreesLatitude", live_location, location)
+    longitude = _first_location_value("degreesLongitude", live_location, location)
+    is_live = live_location is not None or bool(_location_value(location, "isLive"))
+
+    if is_live:
+        title = location_title("", latitude, longitude)
+        caption = str(
+            _first_location_value("caption", live_location, location)
+            or _first_location_value("address", location)
+            or ""
+        ).strip()
+        url = str(
+            _first_location_value("URL", live_location, location)
+            or _first_location_value("url", live_location, location)
+            or ""
+        ).strip()
+        return title, caption, location_link_url(url, latitude, longitude)
+
+    title = location_title(str(_first_location_value("name", location) or ""), latitude, longitude)
+    caption = str(_first_location_value("address", location) or "").strip()
+    url = str(_first_location_value("URL", location) or _first_location_value("url", location) or "").strip()
+    return title, caption, location_link_url(url, latitude, longitude)
+
+
 def persist_contact_vcard(chat_id: str, message_id: str, display_name: str, vcard: str) -> str:
     if not vcard:
         return ""
@@ -238,11 +279,13 @@ def _quoted_message_preview(quoted: Optional[Dict[str, Any]]) -> str:
     if contact:
         return _contact_preview(contact.get("displayName", ""))
     location = quoted.get("locationMessage")
-    if isinstance(location, dict) and not location.get("isLive"):
-        return location_preview(
-            location_title(location.get("name", ""), location.get("degreesLatitude"), location.get("degreesLongitude")),
-            location.get("address", ""),
+    live_location = quoted.get("liveLocationMessage")
+    if isinstance(location, dict) or isinstance(live_location, dict):
+        title, detail, _ = normalized_location_fields(
+            location if isinstance(location, dict) else None,
+            live_location if isinstance(live_location, dict) else None,
         )
+        return location_preview(title, detail)
     if quoted.get("stickerMessage"):
         return "🏷️ Sticker"
     template_image = resolve_media_message_content(quoted, "imageMessage")

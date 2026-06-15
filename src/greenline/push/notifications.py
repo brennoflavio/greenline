@@ -271,7 +271,7 @@ def _extract_message_body(event: Dict[str, Any]) -> str:
         display_name = str(contact.get("displayName") or "").strip()
         return f"👤 {display_name}" if display_name else "👤 Contact"
 
-    if isinstance(message.get("locationMessage"), dict):
+    if isinstance(message.get("locationMessage"), dict) or isinstance(message.get("liveLocationMessage"), dict):
         return "📍 Location"
 
     return ""
