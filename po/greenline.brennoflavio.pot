@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-15 22:03+0000\n"
+"POT-Creation-Date: 2026-06-16 03:58+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -43,7 +43,23 @@ msgstr ""
 msgid "Link Device"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:95
+#: ../qml/ChatListPage.qml:17
+msgid "Share to chat"
+msgstr ""
+
+#: ../qml/ChatListPage.qml:34
+msgid "The shared file is no longer available"
+msgstr ""
+
+#: ../qml/ChatListPage.qml:46 ../qml/Main.qml:101
+msgid "Unsupported shared item"
+msgstr ""
+
+#: ../qml/ChatListPage.qml:54
+msgid "Failed to share file"
+msgstr ""
+
+#: ../qml/ChatListPage.qml:143
 msgid "No chats found"
 msgstr ""
 
@@ -201,6 +217,18 @@ msgstr ""
 
 #: ../qml/ImagePreviewPage.qml:63
 msgid "Image"
+msgstr ""
+
+#: ../qml/Main.qml:84
+msgid "No shared file was received"
+msgstr ""
+
+#: ../qml/Main.qml:92
+msgid "Only the first shared item will be used"
+msgstr ""
+
+#: ../qml/Main.qml:95
+msgid "Unable to open the shared file"
 msgstr ""
 
 #: ../qml/MessageReactionsPage.qml:30
@@ -395,11 +423,11 @@ msgstr ""
 msgid "Type a message..."
 msgstr ""
 
-#: ../qml/components/ChatListItem.qml:166
+#: ../qml/components/ChatListItem.qml:171
 msgid "Mute"
 msgstr ""
 
-#: ../qml/components/ChatListItem.qml:166
+#: ../qml/components/ChatListItem.qml:171
 msgid "Unmute"
 msgstr ""
 

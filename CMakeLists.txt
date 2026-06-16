@@ -80,6 +80,7 @@ configure_file(manifest.json.in ${CMAKE_CURRENT_BINARY_DIR}/manifest.json)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/manifest.json DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(FILES ${PROJECT_NAME}.apparmor DESTINATION ${DATA_DIR})
 install(FILES ${PROJECT_NAME}.dispatcher DESTINATION ${DATA_DIR})
+install(FILES ${PROJECT_NAME}-contenthub.json DESTINATION ${DATA_DIR})
 
 install(DIRECTORY assets DESTINATION ${DATA_DIR})
 install(DIRECTORY src DESTINATION ${DATA_DIR})

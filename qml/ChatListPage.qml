@@ -10,6 +10,52 @@ Page {
 
     property var chats: []
     property bool pythonReady: false
+    property bool shareSelectionMode: false
+    property bool shareSendInProgress: false
+    property string shareFilePath: ""
+    property string shareMediaType: ""
+    property string shareSelectionTitle: i18n.tr("Share to chat")
+
+    function openChatPage(chat) {
+        pageStack.push(Qt.resolvedUrl("ChatPage.qml"), {
+            "chatId": chat.id,
+            "chatName": chat.name,
+            "chatPhoto": chat.photo,
+            "isGroup": chat.is_group || false,
+            "initialUnreadCount": chat.unread_count || 0
+        });
+    }
+
+    function sendSharedMedia(chat) {
+        if (shareSendInProgress)
+            return ;
+
+        if (shareFilePath === "") {
+            toast.show(i18n.tr("The shared file is no longer available"));
+            return ;
+        }
+        var sendFunction = "";
+        if (shareMediaType === "image") {
+            sendFunction = "main.send_image_message";
+        } else if (shareMediaType === "video") {
+            sendFunction = "main.send_video_message";
+        } else if (shareMediaType === "document") {
+            sendFunction = "main.send_document_message";
+        } else {
+            toast.show(i18n.tr("Unsupported shared item"));
+            return ;
+        }
+        shareSendInProgress = true;
+        python.call(sendFunction, [chat.id, shareFilePath, "", "pending-" + Date.now(), null], function(result) {
+            if (result && !result.success) {
+                shareSendInProgress = false;
+                toast.show(result.message || i18n.tr("Failed to share file"));
+                return ;
+            }
+            pageStack.pop();
+            openChatPage(chat);
+        });
+    }
 
     function refreshChatList() {
         python.call('main.get_chat_list', [], function(result) {
@@ -75,14 +121,13 @@ Page {
             delegate: ChatListItem {
                 width: chatListView.width
                 chat: modelData
+                enabled: !chatListPage.shareSendInProgress
+                swipeActionsEnabled: !chatListPage.shareSelectionMode
                 onClicked: {
-                    pageStack.push(Qt.resolvedUrl("ChatPage.qml"), {
-                        "chatId": modelData.id,
-                        "chatName": modelData.name,
-                        "chatPhoto": modelData.photo,
-                        "isGroup": modelData.is_group || false,
-                        "initialUnreadCount": modelData.unread_count || 0
-                    });
+                    if (chatListPage.shareSelectionMode)
+                        sendSharedMedia(modelData);
+                    else
+                        openChatPage(modelData);
                 }
                 onMuteRequested: python.call('main.toggle_mute', [chatId])
             }
@@ -106,6 +151,10 @@ Page {
                 refreshPageState();
 
         }
+    }
+
+    Toast {
+        id: toast
     }
 
     Python {
@@ -150,10 +199,10 @@ Page {
     }
 
     header: AppHeader {
-        pageTitle: "Greenline"
-        isRootPage: true
+        pageTitle: chatListPage.shareSelectionMode ? chatListPage.shareSelectionTitle : "Greenline"
+        isRootPage: !chatListPage.shareSelectionMode
         appIconName: "call-start"
-        showSettingsButton: true
+        showSettingsButton: !chatListPage.shareSelectionMode
         onSettingsClicked: pageStack.push(Qt.resolvedUrl("SettingsPage.qml"))
     }
 

@@ -9,10 +9,12 @@ ListItem {
 
     property var chat: ({
     })
+    property bool swipeActionsEnabled: true
 
     signal muteRequested(string chatId)
 
     height: units.gu(8)
+    leadingActions: root.swipeActionsEnabled ? muteActions : null
 
     RowLayout {
         spacing: units.gu(1.5)
@@ -159,7 +161,9 @@ ListItem {
 
     }
 
-    leadingActions: ListItemActions {
+    ListItemActions {
+        id: muteActions
+
         actions: [
             Action {
                 iconName: root.chat.muted ? "audio-volume-high" : "audio-volume-muted"

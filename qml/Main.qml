@@ -15,8 +15,10 @@
  */
 
 import Lomiri.Components 1.3
+import Lomiri.Content 1.3
 import QtQuick 2.7
 import io.thp.pyotherside 1.4
+import "ut_components"
 
 MainView {
     id: root
@@ -25,6 +27,85 @@ MainView {
     property bool initComplete: false
     property bool isLoggedIn: false
     property string pendingChatUri: ""
+    property string pendingSharedFilePath: ""
+    property string pendingSharedMediaType: ""
+
+    function sharedFilePathFromUrl(fileUrl) {
+        if (!fileUrl)
+            return "";
+
+        var normalizedUrl = fileUrl.toString();
+        if (normalizedUrl.indexOf("file://") === 0)
+            normalizedUrl = normalizedUrl.substring(7);
+
+        return decodeURIComponent(normalizedUrl);
+    }
+
+    function normalizeSharedMediaType(contentType, filePath) {
+        if (contentType === ContentType.Pictures)
+            return "image";
+
+        if (contentType === ContentType.Videos)
+            return "video";
+
+        if (contentType === ContentType.Documents)
+            return "document";
+
+        var lowerPath = (filePath || "").toLowerCase();
+        if (/(\.jpg|\.jpeg|\.png|\.gif|\.bmp|\.webp|\.heic|\.heif|\.avif)$/i.test(lowerPath))
+            return "image";
+
+        if (/(\.mp4|\.mov|\.mkv|\.webm|\.avi|\.3gp|\.m4v)$/i.test(lowerPath))
+            return "video";
+
+        return lowerPath !== "" ? "document" : "";
+    }
+
+    function routePendingShare() {
+        if (pendingSharedFilePath === "" || pendingSharedMediaType === "")
+            return ;
+
+        var filePath = pendingSharedFilePath;
+        var mediaType = pendingSharedMediaType;
+        pendingSharedFilePath = "";
+        pendingSharedMediaType = "";
+        pageStack.push(Qt.resolvedUrl("ChatListPage.qml"), {
+            "shareSelectionMode": true,
+            "shareFilePath": filePath,
+            "shareMediaType": mediaType
+        });
+    }
+
+    function handleInboundTransfer(transfer) {
+        if (!transfer || !transfer.items || transfer.items.length === 0) {
+            if (transfer)
+                transfer.state = ContentTransfer.Charged;
+
+            shareToast.show(i18n.tr("No shared file was received"));
+            return ;
+        }
+        var filePath = sharedFilePathFromUrl(transfer.items[0].url);
+        var mediaType = normalizeSharedMediaType(transfer.contentType, filePath);
+        if (transfer.items.length > 1)
+            shareToast.show(i18n.tr("Only the first shared item will be used"));
+
+        if (filePath === "") {
+            shareToast.show(i18n.tr("Unable to open the shared file"));
+            transfer.state = ContentTransfer.Charged;
+            return ;
+        }
+        if (mediaType === "") {
+            shareToast.show(i18n.tr("Unsupported shared item"));
+            transfer.state = ContentTransfer.Charged;
+            return ;
+        }
+        pendingSharedFilePath = filePath;
+        pendingSharedMediaType = mediaType;
+        transfer.state = ContentTransfer.Charged;
+        if (isLoggedIn)
+            routePendingShare();
+
+    }
 
     function openChatFromUri(uri) {
         var prefix = "greenline://chat/";
@@ -46,10 +127,20 @@ MainView {
     }
 
     onIsLoggedInChanged: {
-        if (isLoggedIn && pendingChatUri !== "") {
+        if (!isLoggedIn)
+            return ;
+
+        if (pendingChatUri !== "") {
             openChatFromUri(pendingChatUri);
             pendingChatUri = "";
         }
+        if (pendingSharedFilePath !== "")
+            Qt.callLater(function() {
+            if (isLoggedIn && pendingSharedFilePath !== "")
+                routePendingShare();
+
+        });
+
     }
     objectName: 'mainView'
     applicationName: 'greenline.brennoflavio'
@@ -73,6 +164,12 @@ MainView {
             else
                 pendingChatUri = uri;
         }
+    }
+
+    Connections {
+        target: ContentHub
+        onImportRequested: handleInboundTransfer(transfer)
+        onShareRequested: handleInboundTransfer(transfer)
     }
 
     Connections {
@@ -109,6 +206,12 @@ MainView {
             fillMode: Image.PreserveAspectFit
         }
 
+    }
+
+    Toast {
+        id: shareToast
+
+        z: 200
     }
 
     Python {
