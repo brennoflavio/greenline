@@ -1,5 +1,6 @@
 import base64
 import json
+import math
 import os
 from typing import Any, Dict, Optional, Tuple
 
@@ -64,6 +65,38 @@ def location_preview(title: str, detail: str) -> str:
         return f"📍 {preview_detail}"
 
     return "📍 Location"
+
+
+def parse_location_coordinates(latitude: Any, longitude: Any) -> Tuple[float, float] | None:
+    try:
+        lat = float(latitude)
+        lng = float(longitude)
+    except (TypeError, ValueError):
+        return None
+
+    if not math.isfinite(lat) or not math.isfinite(lng):
+        return None
+
+    if lat < -90 or lat > 90 or lng < -180 or lng > 180:
+        return None
+
+    return lat, lng
+
+
+def parse_location_link_url(url: str) -> Tuple[float, float] | None:
+    raw = str(url or "").strip()
+    if not raw:
+        return None
+
+    if raw.lower().startswith("geo:"):
+        raw = raw[4:]
+
+    raw = raw.split(";", 1)[0].split("?", 1)[0].strip()
+    parts = raw.split(",", 1)
+    if len(parts) != 2:
+        return None
+
+    return parse_location_coordinates(parts[0].strip(), parts[1].strip())
 
 
 def _location_value(source: Any, key: str) -> Any:

@@ -228,6 +228,77 @@ def test_send_text_message_boundary_failure_remains_pending(fake_daemon_rpc, fak
     _assert_all_contract_events(fake_pyotherside_module)
 
 
+def test_send_location_message_contract_and_pending_outbox_emits(fake_daemon_rpc, fake_pyotherside_module) -> None:
+    seed_chat(DEFAULT_CHAT_ID)
+    seed_sender_identity(DEFAULT_SENDER_ID)
+    _start_dispatcher()
+
+    result = main.send_location_message(DEFAULT_CHAT_ID, 12.345, -67.89, "pending-location-1", None)
+
+    validate_api_response("send_location_message", result)
+    _wait_for(lambda: len(fake_daemon_rpc.send_message_calls) >= 1)
+    _wait_for(
+        lambda: any(
+            payload[0]["id"] == "sent-message"
+            for payload in _event_payloads(fake_pyotherside_module, "message-upsert")
+            if payload
+        )
+    )
+    location_call = fake_daemon_rpc.send_message_calls[0]
+    assert location_call["message_type"] == "location"
+    assert location_call["latitude"] == 12.345
+    assert location_call["longitude"] == -67.89
+    _assert_all_contract_events(fake_pyotherside_module)
+    message_updates = _event_payloads(fake_pyotherside_module, "message-upsert")
+    assert message_updates[0][0]["id"] == "pending-location-1"
+    assert message_updates[0][0]["type"] == "location"
+    assert message_updates[0][0]["text"] == "12.345, -67.89"
+    assert message_updates[0][0]["caption"] == ""
+    assert message_updates[0][0]["link_url"] == "geo:12.345,-67.89"
+    assert message_updates[-1][0]["temp_id"] == "pending-location-1"
+    assert message_updates[-1][0]["id"] == "sent-message"
+
+
+def test_send_location_message_boundary_failure_remains_pending(fake_daemon_rpc, fake_pyotherside_module) -> None:
+    seed_chat(DEFAULT_CHAT_ID)
+    seed_sender_identity(DEFAULT_SENDER_ID)
+    fake_daemon_rpc.send_message_exception = BoundaryValidationError("bad daemon reply")
+    _start_dispatcher()
+
+    result = main.send_location_message(DEFAULT_CHAT_ID, 10.0, 20.0, "pending-location-failure", None)
+
+    validate_api_response("send_location_message", result)
+    assert result["success"] is True
+
+    def pending_attempt_recorded() -> bool:
+        with GreenlineKV() as kv:
+            outbox_entry = kv.get_record(f"pending-outbox:{DEFAULT_CHAT_ID}:pending-location-failure")
+        return isinstance(outbox_entry, PendingOutboxRecord) and outbox_entry.attempt_count >= 1
+
+    _wait_for(pending_attempt_recorded)
+
+    with GreenlineKV() as kv:
+        outbox_entry = kv.get_record(f"pending-outbox:{DEFAULT_CHAT_ID}:pending-location-failure")
+        indexed_key = kv.get_record(f"message_index:{DEFAULT_CHAT_ID}:pending-location-failure")
+        stored_message = kv.get_record(indexed_key.value)
+    assert isinstance(outbox_entry, PendingOutboxRecord)
+    assert isinstance(stored_message, StoredMessageRecord)
+    assert outbox_entry.attempt_count >= 1
+    assert outbox_entry.next_attempt_at >= int(time.time())
+    assert stored_message.type == MessageType.LOCATION
+    assert stored_message.text == "10.0, 20.0"
+    assert stored_message.link_url == "geo:10.0,20.0"
+    assert stored_message.send_status == "pending"
+    _assert_all_contract_events(fake_pyotherside_module)
+
+
+def test_send_location_message_rejects_invalid_coordinates() -> None:
+    result = main.send_location_message(DEFAULT_CHAT_ID, 91.0, 20.0, "pending-location-invalid", None)
+
+    validate_api_response("send_location_message", result)
+    assert result == {"success": False, "message": "Invalid location coordinates"}
+
+
 def test_send_media_message_contracts(tmp_path, fake_daemon_rpc, fake_pyotherside_module) -> None:
     seed_chat(DEFAULT_CHAT_ID)
     _start_dispatcher()

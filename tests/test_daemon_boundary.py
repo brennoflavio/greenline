@@ -142,6 +142,8 @@ def test_daemon_boundary_encodes_request_and_decodes_send_message_reply() -> Non
                 "FilePath": "",
                 "FileName": "",
                 "Caption": "",
+                "Latitude": 0.0,
+                "Longitude": 0.0,
                 "DurationSeconds": 0,
                 "PTT": False,
                 "ReplyToMessageID": "quoted-1",
@@ -169,6 +171,33 @@ def test_daemon_boundary_encodes_document_file_name() -> None:
                 "FilePath": "/tmp/cache/pending-1.pdf",
                 "FileName": "report.pdf",
                 "Caption": "",
+                "Latitude": 0.0,
+                "Longitude": 0.0,
+                "DurationSeconds": 0,
+                "PTT": False,
+            },
+        )
+    ]
+
+
+def test_daemon_boundary_encodes_location_coordinates() -> None:
+    transport = FakeTransport({"Service.SendMessage": {"MessageID": "message-1", "Timestamp": 123}})
+    daemon = GreenlineDaemon(transport=transport)  # type: ignore[arg-type]
+
+    daemon.send_message("chat-1", "location", latitude=12.345, longitude=-67.89)
+
+    assert transport.calls == [
+        (
+            "Service.SendMessage",
+            {
+                "ChatJID": "chat-1",
+                "Type": "location",
+                "Text": "",
+                "FilePath": "",
+                "FileName": "",
+                "Caption": "",
+                "Latitude": 12.345,
+                "Longitude": -67.89,
                 "DurationSeconds": 0,
                 "PTT": False,
             },

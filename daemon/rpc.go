@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"math"
 	"mime"
 	"os"
 	"path/filepath"
@@ -503,11 +504,13 @@ func extensionFromMimetype(mimetype string) string {
 
 type SendMessageArgs struct {
 	ChatJID                string
-	Type                   string // "text", "image", "video", "audio", "sticker", "document", "contact"
+	Type                   string // "text", "image", "video", "audio", "sticker", "document", "contact", "location"
 	Text                   string
 	FilePath               string
 	FileName               string
 	Caption                string
+	Latitude               float64
+	Longitude              float64
 	DurationSeconds        int
 	PTT                    bool
 	ReplyToMessageID       string
@@ -850,6 +853,23 @@ func (s *Service) sendContactMessage(args *SendMessageArgs, replyContext *waE2E.
 	}, nil
 }
 
+func (s *Service) sendLocationMessage(args *SendMessageArgs, replyContext *waE2E.ContextInfo) (*waE2E.Message, error) {
+	if math.IsNaN(args.Latitude) || math.IsInf(args.Latitude, 0) || args.Latitude < -90 || args.Latitude > 90 {
+		return nil, fmt.Errorf("invalid latitude")
+	}
+	if math.IsNaN(args.Longitude) || math.IsInf(args.Longitude, 0) || args.Longitude < -180 || args.Longitude > 180 {
+		return nil, fmt.Errorf("invalid longitude")
+	}
+
+	return &waE2E.Message{
+		LocationMessage: &waE2E.LocationMessage{
+			DegreesLatitude:  proto.Float64(args.Latitude),
+			DegreesLongitude: proto.Float64(args.Longitude),
+			ContextInfo:      replyContext,
+		},
+	}, nil
+}
+
 func buildTextMessage(text string, replyContext *waE2E.ContextInfo) *waE2E.Message {
 	if replyContext != nil {
 		return &waE2E.Message{
@@ -935,6 +955,12 @@ func (s *Service) SendMessage(args *SendMessageArgs, reply *SendMessageReply) er
 		msg, err := s.sendContactMessage(args, replyContext)
 		if err != nil {
 			return fmt.Errorf("contact message: %w", err)
+		}
+		message = msg
+	case "location":
+		msg, err := s.sendLocationMessage(args, replyContext)
+		if err != nil {
+			return fmt.Errorf("location message: %w", err)
 		}
 		message = msg
 	default:

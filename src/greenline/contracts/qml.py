@@ -590,6 +590,15 @@ class SendContactMessageRequest:
     reply_context: ReplyContextRequest | None = None
 
 
+@dataclass(frozen=True)
+class SendLocationMessageRequest:
+    chat_id: str
+    latitude: float
+    longitude: float
+    temp_id: str = ""
+    reply_context: ReplyContextRequest | None = None
+
+
 ReturnKind = Literal["dict", "bool", "none"]
 R = TypeVar("R")
 
@@ -662,6 +671,9 @@ API_CONTRACTS: dict[str, ApiContract] = {
     ),
     "send_image_message": ApiContract(
         "send_image_message", assert_success_response, "dict", request_type=SendImageMessageRequest
+    ),
+    "send_location_message": ApiContract(
+        "send_location_message", assert_success_response, "dict", request_type=SendLocationMessageRequest
     ),
     "handle_application_exit": ApiContract(
         "handle_application_exit",

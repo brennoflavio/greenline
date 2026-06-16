@@ -10,6 +10,7 @@ Dialog {
     signal documentRequested()
     signal stickerRequested()
     signal contactRequested()
+    signal locationRequested()
 
     title: i18n.tr("Send Attachment")
 
@@ -58,6 +59,14 @@ Dialog {
         onClicked: {
             PopupUtils.close(root);
             root.contactRequested();
+        }
+    }
+
+    Button {
+        text: i18n.tr("Location")
+        onClicked: {
+            PopupUtils.close(root);
+            root.locationRequested();
         }
     }
 

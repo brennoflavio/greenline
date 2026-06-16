@@ -23,12 +23,18 @@ from greenline.contracts.qml import (
     SendContactMessageRequest,
     SendDocumentMessageRequest,
     SendImageMessageRequest,
+    SendLocationMessageRequest,
     SendStickerMessageRequest,
     SendTextMessageRequest,
     SendVideoMessageRequest,
 )
 from greenline.reporting import crash_reporter
 from greenline.store.identity import resolve_sender_name, resolve_sender_photo
+from greenline.store.media import (
+    location_coordinates,
+    location_link_url,
+    parse_location_coordinates,
+)
 from greenline.store.mentions import validate_mention_spans
 from greenline.store.messages import (
     _merge_deleted_message,
@@ -685,6 +691,41 @@ def send_contact_message(request: SendContactMessageRequest) -> SuccessResponse:
         media_path="file://" + cached_path,
         mimetype=_guess_contact_mimetype(cached_path),
         file_name=_extract_contact_display_name(vcard, request.file_path),
+        send_status="pending",
+        temp_id=pending_id,
+    )
+    _apply_reply_context(pending_msg, resolved_reply_context)
+    queue_and_attempt_send(pending_msg, _resolve_reply_context)
+    return SuccessResponse(success=True, message="")
+
+
+@crash_reporter
+@dataclass_to_dict
+def send_location_message(request: SendLocationMessageRequest) -> SuccessResponse:
+    resolved_reply_context = _resolve_reply_context(request.chat_id, request.reply_context)
+    coordinates = parse_location_coordinates(request.latitude, request.longitude)
+    if coordinates is None:
+        return SuccessResponse(success=False, message="Invalid location coordinates")
+
+    latitude, longitude = coordinates
+    text = location_coordinates(latitude, longitude)
+    link_url = location_link_url("", latitude, longitude)
+    if not text or not link_url:
+        return SuccessResponse(success=False, message="Invalid location coordinates")
+
+    now = datetime.now()
+    pending_id = request.temp_id or f"pending-{int(now.timestamp())}"
+    pending_msg = Message(
+        id=pending_id,
+        chat_id=request.chat_id,
+        type=MessageType.LOCATION,
+        is_outgoing=True,
+        timestamp=now.strftime("%H:%M"),
+        timestamp_unix=int(now.timestamp()),
+        read_receipt=ReadReceipt.NONE,
+        text=text,
+        caption="",
+        link_url=link_url,
         send_status="pending",
         temp_id=pending_id,
     )

@@ -8,6 +8,7 @@ from dacite import from_dict
 from daemon_event_helpers import load_fixtures, seed_prerequisite_kv
 
 from greenline.contracts.kv import GreenlineKV
+from greenline.store.media import parse_location_coordinates, parse_location_link_url
 from greenline.store.messages import (
     message_event_to_message,
     store_message,
@@ -99,6 +100,16 @@ def test_live_location_variants_normalize_to_location() -> None:
     assert mapped_live.type == MessageType.LOCATION
     assert mapped_live.text == "0.0, 0.0"
     assert mapped_live.link_url == "geo:0.0,0.0"
+
+
+def test_parse_location_link_url_round_trips_coordinates() -> None:
+    assert parse_location_coordinates(37.4219999, -122.0840575) == (37.4219999, -122.0840575)
+    assert parse_location_link_url("geo:37.4219999,-122.0840575") == (37.4219999, -122.0840575)
+    assert parse_location_link_url("geo:37.4219999,-122.0840575;u=35") == (37.4219999, -122.0840575)
+    assert parse_location_link_url("geo:37.4219999,-122.0840575?z=15") == (37.4219999, -122.0840575)
+    assert parse_location_link_url("geo:91,0") is None
+    assert parse_location_link_url("geo:37.4219999") is None
+    assert parse_location_link_url("") is None
 
 
 @pytest.mark.parametrize("fixture", MESSAGE_FIXTURES, ids=[fixture.param_id for fixture in MESSAGE_FIXTURES])

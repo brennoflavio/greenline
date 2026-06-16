@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-16 03:58+0000\n"
+"POT-Creation-Date: 2026-06-16 05:44+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -51,15 +51,15 @@ msgstr ""
 msgid "The shared file is no longer available"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:46 ../qml/Main.qml:101
+#: ../qml/ChatListPage.qml:45 ../qml/Main.qml:98
 msgid "Unsupported shared item"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:54
+#: ../qml/ChatListPage.qml:52
 msgid "Failed to share file"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:143
+#: ../qml/ChatListPage.qml:140
 msgid "No chats found"
 msgstr ""
 
@@ -87,7 +87,7 @@ msgstr ""
 msgid "No internet connection. Connect and try again."
 msgstr ""
 
-#: ../qml/ChatPage.qml:153 ../qml/ChatPage.qml:905
+#: ../qml/ChatPage.qml:153 ../qml/ChatPage.qml:947
 msgid "Failed to download media"
 msgstr ""
 
@@ -101,7 +101,7 @@ msgstr ""
 
 #: ../qml/ChatPage.qml:523 ../qml/DocumentPreviewPage.qml:42
 #: ../qml/DocumentPreviewPage.qml:97
-#: ../qml/components/ChatAttachmentDialog.qml:41
+#: ../qml/components/ChatAttachmentDialog.qml:42
 #: ../qml/components/DocumentMessage.qml:61
 msgid "Document"
 msgstr ""
@@ -114,56 +114,60 @@ msgstr ""
 msgid "Failed to send contact"
 msgstr ""
 
-#: ../qml/ChatPage.qml:660
+#: ../qml/ChatPage.qml:618
+msgid "Failed to send location"
+msgstr ""
+
+#: ../qml/ChatPage.qml:702
 msgid "WhatsApp messages read today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:661
+#: ../qml/ChatPage.qml:703
 msgid "No WhatsApp messages read today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:669
+#: ../qml/ChatPage.qml:711
 msgid "WhatsApp messages sent today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:670
+#: ../qml/ChatPage.qml:712
 msgid "No WhatsApp messages sent today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:693
+#: ../qml/ChatPage.qml:735
 msgid "Scroll up to load older messages first"
 msgstr ""
 
-#: ../qml/ChatPage.qml:700
+#: ../qml/ChatPage.qml:742
 msgid "Copied to clipboard"
 msgstr ""
 
-#: ../qml/ChatPage.qml:858
+#: ../qml/ChatPage.qml:900
 msgid "recording audio..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:858
+#: ../qml/ChatPage.qml:900
 msgid "typing..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:948
+#: ../qml/ChatPage.qml:1007
 msgid "Send Photo"
 msgstr ""
 
-#: ../qml/ChatPage.qml:959
+#: ../qml/ChatPage.qml:1018
 msgid "Send Video"
 msgstr ""
 
-#: ../qml/ChatPage.qml:970
+#: ../qml/ChatPage.qml:1029
 msgid "Send Document"
 msgstr ""
 
-#: ../qml/ChatPage.qml:981
+#: ../qml/ChatPage.qml:1040
 msgid "Send Contact"
 msgstr ""
 
 #: ../qml/ContactPreviewPage.qml:42 ../qml/ContactPreviewPage.qml:97
-#: ../qml/components/ChatAttachmentDialog.qml:57
+#: ../qml/components/ChatAttachmentDialog.qml:58
 #: ../qml/components/ContactMessage.qml:47
 msgid "Contact"
 msgstr ""
@@ -223,11 +227,11 @@ msgstr ""
 msgid "No shared file was received"
 msgstr ""
 
-#: ../qml/Main.qml:92
+#: ../qml/Main.qml:90
 msgid "Only the first shared item will be used"
 msgstr ""
 
-#: ../qml/Main.qml:95
+#: ../qml/Main.qml:93
 msgid "Unable to open the shared file"
 msgstr ""
 
@@ -274,8 +278,9 @@ msgid "Requesting pairing code..."
 msgstr ""
 
 #: ../qml/PhonePairingPage.qml:120 ../qml/SettingsPage.qml:210
-#: ../qml/components/ChatAttachmentDialog.qml:65
+#: ../qml/components/ChatAttachmentDialog.qml:74
 #: ../qml/components/EditMessageDialog.qml:26
+#: ../qml/components/LocationFetchDialog.qml:120
 #: ../qml/components/VoiceMessageRecorderDialog.qml:85
 msgid "Cancel"
 msgstr ""
@@ -399,35 +404,39 @@ msgstr ""
 msgid "Send Sticker"
 msgstr ""
 
-#: ../qml/VideoPreviewPage.qml:67 ../qml/components/ChatAttachmentDialog.qml:25
+#: ../qml/VideoPreviewPage.qml:67 ../qml/components/ChatAttachmentDialog.qml:26
 msgid "Video"
 msgstr ""
 
-#: ../qml/components/ChatAttachmentDialog.qml:14
+#: ../qml/components/ChatAttachmentDialog.qml:15
 msgid "Send Attachment"
 msgstr ""
 
-#: ../qml/components/ChatAttachmentDialog.qml:17
+#: ../qml/components/ChatAttachmentDialog.qml:18
 msgid "Photo"
 msgstr ""
 
-#: ../qml/components/ChatAttachmentDialog.qml:33
+#: ../qml/components/ChatAttachmentDialog.qml:34
 msgid "Audio"
 msgstr ""
 
-#: ../qml/components/ChatAttachmentDialog.qml:49
+#: ../qml/components/ChatAttachmentDialog.qml:50
 msgid "Sticker"
+msgstr ""
+
+#: ../qml/components/ChatAttachmentDialog.qml:66
+msgid "Location"
 msgstr ""
 
 #: ../qml/components/ChatComposer.qml:179
 msgid "Type a message..."
 msgstr ""
 
-#: ../qml/components/ChatListItem.qml:171
+#: ../qml/components/ChatListItem.qml:170
 msgid "Mute"
 msgstr ""
 
-#: ../qml/components/ChatListItem.qml:171
+#: ../qml/components/ChatListItem.qml:170
 msgid "Unmute"
 msgstr ""
 
@@ -484,6 +493,26 @@ msgstr ""
 
 #: ../qml/components/EditMessageDialog.qml:14
 msgid "Edit Message"
+msgstr ""
+
+#: ../qml/components/LocationFetchDialog.qml:62
+msgid "Location services are unavailable"
+msgstr ""
+
+#: ../qml/components/LocationFetchDialog.qml:71
+msgid "Share Current Location"
+msgstr ""
+
+#: ../qml/components/LocationFetchDialog.qml:72
+msgid "Fetching your current location…"
+msgstr ""
+
+#: ../qml/components/LocationFetchDialog.qml:103
+msgid "Unable to get current location"
+msgstr ""
+
+#: ../qml/components/LocationFetchDialog.qml:115
+msgid "Location request timed out"
 msgstr ""
 
 #: ../qml/components/MessageBubble.qml:200

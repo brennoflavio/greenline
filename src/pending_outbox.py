@@ -9,6 +9,7 @@ from daemon_types import SendMessageReply
 from greenline import qml_events
 from greenline.contracts.daemon import daemon_client
 from greenline.contracts.kv import GreenlineKV
+from greenline.store.media import parse_location_link_url
 from greenline.store.mentions import mention_transport_payload
 from greenline.store.messages import upsert_chat
 from greenline.store.records import (
@@ -43,6 +44,10 @@ ReplyContextResolver = Callable[[str, dict[str, object] | None], dict[str, objec
 
 
 class UnsupportedPendingMessageTypeError(ValueError):
+    pass
+
+
+class InvalidPendingMessageError(ValueError):
     pass
 
 
@@ -215,6 +220,20 @@ def _send_pending_message_via_rpc(
             mentioned_jids=mentioned_jids,
         )
 
+    if message.type == MessageType.LOCATION:
+        coordinates = parse_location_link_url(message.link_url)
+        if coordinates is None:
+            raise InvalidPendingMessageError("Missing location coordinates")
+
+        latitude, longitude = coordinates
+        return rpc.send_message(
+            message.chat_id,
+            "location",
+            latitude=latitude,
+            longitude=longitude,
+            reply_context=reply_context,
+        )
+
     file_path = _local_media_path(message.media_path)
     if not file_path or not os.path.exists(file_path):
         raise FileNotFoundError(file_path or "Missing cached outgoing media")
@@ -322,7 +341,7 @@ def _attempt_pending_send(
         pending_message = message_from_record(entry)
         try:
             result = _send_pending_message_via_rpc(pending_message, resolve_reply_context)
-        except (FileNotFoundError, UnsupportedPendingMessageTypeError):
+        except (FileNotFoundError, InvalidPendingMessageError, UnsupportedPendingMessageTypeError):
             _mark_pending_message_failed(entry_key, entry)
             return False
         except Exception:

@@ -578,6 +578,48 @@ Page {
         });
     }
 
+    function sendLocationMessage(latitude, longitude) {
+        var tempId = "pending-" + Date.now();
+        var now = new Date();
+        var timestampUnix = Math.floor(now.getTime() / 1000);
+        var hours = now.getHours().toString();
+        if (hours.length < 2)
+            hours = "0" + hours;
+
+        var minutes = now.getMinutes().toString();
+        if (minutes.length < 2)
+            minutes = "0" + minutes;
+
+        var replyContext = consumeReplyContext();
+        var coordinates = latitude + ", " + longitude;
+        var pendingMsg = {
+            "id": tempId,
+            "chat_id": chatId,
+            "type": "location",
+            "is_outgoing": true,
+            "text": coordinates,
+            "caption": "",
+            "link_url": "geo:" + latitude + "," + longitude,
+            "timestamp": hours + ":" + minutes,
+            "timestamp_unix": timestampUnix,
+            "read_receipt": "",
+            "send_status": "pending",
+            "temp_id": tempId,
+            "reply_to_id": replyContext ? replyContext.id : "",
+            "reply_to_sender": replyContext ? replyContext.sender : "",
+            "reply_to_text": replyContext ? replyContext.text : ""
+        };
+        var newMessages = messages.slice();
+        newMessages.push(pendingMsg);
+        messages = newMessages;
+        messagesSendAttemptsMetric.increment(1);
+        python.call('main.send_location_message', [chatId, latitude, longitude, tempId, replyContext], function(result) {
+            if (result && !result.success)
+                toast.show(result.message || i18n.tr("Failed to send location"));
+
+        });
+    }
+
     function sendMessage() {
         Qt.inputMethod.commit();
         if (chatComposer.text.length > 0) {
@@ -928,6 +970,7 @@ Page {
             onDocumentRequested: pageStack.push(documentPickerPage)
             onStickerRequested: pageStack.push(stickerPickerComponent)
             onContactRequested: pageStack.push(contactPickerPage)
+            onLocationRequested: PopupUtils.open(locationFetchDialog, chatPage)
         }
 
     }
@@ -937,6 +980,16 @@ Page {
 
         VoiceMessageRecorderDialog {
             onRecordingAccepted: sendAudioMessage(filePath, durationSeconds)
+        }
+
+    }
+
+    Component {
+        id: locationFetchDialog
+
+        LocationFetchDialog {
+            onLocationSelected: sendLocationMessage(latitude, longitude)
+            onFetchFailed: toast.show(message)
         }
 
     }

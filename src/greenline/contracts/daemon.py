@@ -94,6 +94,8 @@ class SendMessageRequest:
     FilePath: str = ""
     FileName: str = ""
     Caption: str = ""
+    Latitude: float = 0.0
+    Longitude: float = 0.0
     DurationSeconds: int = 0
     PTT: bool = False
     ReplyToMessageID: str | None = None
@@ -218,6 +220,8 @@ class DaemonClientProtocol(Protocol):
         mentioned_jids: Optional[list[str]] = None,
         duration_seconds: int = 0,
         ptt: bool = False,
+        latitude: float = 0.0,
+        longitude: float = 0.0,
     ) -> SendMessageReply: ...
 
     def edit_message(
@@ -454,6 +458,8 @@ class GreenlineDaemon:
         mentioned_jids: Optional[list[str]] = None,
         duration_seconds: int = 0,
         ptt: bool = False,
+        latitude: float = 0.0,
+        longitude: float = 0.0,
     ) -> SendMessageReply:
         request = SendMessageRequest(
             ChatJID=chat_jid,
@@ -462,6 +468,8 @@ class GreenlineDaemon:
             FilePath=file_path,
             FileName=file_name,
             Caption=caption,
+            Latitude=float(latitude),
+            Longitude=float(longitude),
             DurationSeconds=int(duration_seconds),
             PTT=bool(ptt),
             MentionedJIDs=list(mentioned_jids) if mentioned_jids else None,
