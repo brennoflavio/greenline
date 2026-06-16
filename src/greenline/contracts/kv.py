@@ -14,6 +14,7 @@ from greenline.store.records import (
     DraftMentionsRecord,
     DraftRecord,
     ErrorReportingRecord,
+    KVSchemaVersionRecord,
     LidMapRecord,
     MessageIndexRecord,
     MessageReactionRecord,
@@ -45,6 +46,7 @@ class KVContract(Generic[T]):
 KV_CONTRACTS: tuple[KVContract[Any], ...] = (
     KVContract("daemon:last_event_id", DaemonLastEventIDRecord, "scalar", prefix=False),
     KVContract("unread_total", UnreadTotalRecord, "scalar", prefix=False),
+    KVContract("kv.schema_version", KVSchemaVersionRecord, "scalar", prefix=False),
     KVContract("notifications_suppressed", NotificationsSuppressedRecord, "scalar", prefix=False),
     KVContract("crash.enabled", ErrorReportingRecord, "scalar", prefix=False),
     KVContract("daemon.stop_on_exit", StopDaemonOnExitRecord, "scalar", prefix=False),

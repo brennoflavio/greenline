@@ -49,6 +49,7 @@ from greenline.api.daemon import (
     install_daemon,
     pair_phone,
     ping_daemon,
+    run_storage_migrations,
     send_presence,
     set_error_reporting,
     set_notifications_suppressed,
@@ -100,6 +101,7 @@ install_daemon = qml_api("install_daemon")(install_daemon)
 mark_messages_as_read = qml_api("mark_messages_as_read")(mark_messages_as_read)
 pair_phone = qml_api("pair_phone")(pair_phone)
 ping_daemon = qml_api("ping_daemon")(ping_daemon)
+run_storage_migrations = qml_api("run_storage_migrations")(run_storage_migrations)
 send_audio_message = qml_api("send_audio_message")(send_audio_message)
 send_contact_message = qml_api("send_contact_message")(send_contact_message)
 send_document_message = qml_api("send_document_message")(send_document_message)
@@ -149,6 +151,7 @@ __all__ = [
     "install_daemon",
     "pair_phone",
     "ping_daemon",
+    "run_storage_migrations",
     "handle_application_exit",
     "send_presence",
     "set_error_reporting",

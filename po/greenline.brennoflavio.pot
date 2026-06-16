@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-16 05:44+0000\n"
+"POT-Creation-Date: 2026-06-16 22:12+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -150,19 +150,19 @@ msgstr ""
 msgid "typing..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:1007
+#: ../qml/ChatPage.qml:1001
 msgid "Send Photo"
 msgstr ""
 
-#: ../qml/ChatPage.qml:1018
+#: ../qml/ChatPage.qml:1012
 msgid "Send Video"
 msgstr ""
 
-#: ../qml/ChatPage.qml:1029
+#: ../qml/ChatPage.qml:1023
 msgid "Send Document"
 msgstr ""
 
-#: ../qml/ChatPage.qml:1040
+#: ../qml/ChatPage.qml:1034
 msgid "Send Contact"
 msgstr ""
 
@@ -280,7 +280,7 @@ msgstr ""
 #: ../qml/PhonePairingPage.qml:120 ../qml/SettingsPage.qml:210
 #: ../qml/components/ChatAttachmentDialog.qml:74
 #: ../qml/components/EditMessageDialog.qml:26
-#: ../qml/components/LocationFetchDialog.qml:120
+#: ../qml/components/LocationFetchDialog.qml:91
 #: ../qml/components/VoiceMessageRecorderDialog.qml:85
 msgid "Cancel"
 msgstr ""
@@ -495,23 +495,23 @@ msgstr ""
 msgid "Edit Message"
 msgstr ""
 
-#: ../qml/components/LocationFetchDialog.qml:62
+#: ../qml/components/LocationFetchDialog.qml:53
 msgid "Location services are unavailable"
 msgstr ""
 
-#: ../qml/components/LocationFetchDialog.qml:71
+#: ../qml/components/LocationFetchDialog.qml:60
 msgid "Share Current Location"
 msgstr ""
 
-#: ../qml/components/LocationFetchDialog.qml:72
+#: ../qml/components/LocationFetchDialog.qml:61
 msgid "Fetching your current location…"
 msgstr ""
 
-#: ../qml/components/LocationFetchDialog.qml:103
+#: ../qml/components/LocationFetchDialog.qml:77
 msgid "Unable to get current location"
 msgstr ""
 
-#: ../qml/components/LocationFetchDialog.qml:115
+#: ../qml/components/LocationFetchDialog.qml:87
 msgid "Location request timed out"
 msgstr ""
 

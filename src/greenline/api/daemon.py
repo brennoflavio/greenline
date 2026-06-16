@@ -36,6 +36,9 @@ from greenline.reporting import (
 )
 from greenline.reporting import set_error_reporting as set_error_reporting_preference
 from greenline.session import SessionStatusResponse, build_session_status_response
+from greenline.storage_migrations import (
+    run_storage_migrations as run_kv_storage_migrations,
+)
 from greenline.store.identity import clear_chat_runtime_cache
 from greenline.store.records import (
     DaemonLastEventIDRecord,
@@ -135,6 +138,10 @@ def start_event_loop() -> None:
     dispatcher.register_event(PendingMessageSendEvent(_resolve_reply_context))
     dispatcher.register_event(PendingMessageRetryEvent(_resolve_reply_context))
     dispatcher.start()
+
+
+def run_storage_migrations() -> None:
+    run_kv_storage_migrations()
 
 
 @crash_reporter

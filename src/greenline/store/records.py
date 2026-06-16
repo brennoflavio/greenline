@@ -111,6 +111,11 @@ class StickerCacheRecord:
     value: str
 
 
+@dataclass
+class KVSchemaVersionRecord:
+    value: int
+
+
 _MEDIA_DOWNLOAD_FIELDS = (
     ("image", "imageMessage"),
     ("video", "videoMessage"),

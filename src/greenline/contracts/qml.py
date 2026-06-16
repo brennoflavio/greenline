@@ -660,6 +660,12 @@ API_CONTRACTS: dict[str, ApiContract] = {
     ),
     "pair_phone": ApiContract("pair_phone", assert_pair_phone_response, "dict", request_type=PairPhoneRequest),
     "ping_daemon": ApiContract("ping_daemon", assert_success_response, "dict"),
+    "run_storage_migrations": ApiContract(
+        "run_storage_migrations",
+        assert_none_response,
+        "none",
+        notes="Runs pending storage migrations before startup reads.",
+    ),
     "send_audio_message": ApiContract(
         "send_audio_message", assert_success_response, "dict", request_type=SendAudioMessageRequest
     ),

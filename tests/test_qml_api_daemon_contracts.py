@@ -67,6 +67,20 @@ def test_start_event_loop_contract(monkeypatch: pytest.MonkeyPatch) -> None:
     assert dispatcher.started is True
 
 
+def test_run_storage_migrations_contract(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[str] = []
+
+    def fake_run_storage_migrations() -> None:
+        calls.append("ran")
+
+    monkeypatch.setattr(api_daemon, "run_kv_storage_migrations", fake_run_storage_migrations)
+
+    result = main.run_storage_migrations()
+
+    validate_api_response("run_storage_migrations", result)
+    assert calls == ["ran"]
+
+
 def test_ping_daemon_contract_success_and_failure(fake_daemon_rpc, monkeypatch: pytest.MonkeyPatch) -> None:
     success = main.ping_daemon()
     validate_api_response("ping_daemon", success)

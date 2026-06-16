@@ -220,34 +220,36 @@ MainView {
         Component.onCompleted: {
             addImportPath(Qt.resolvedUrl('../src/'));
             importModule('main', function() {
-                python.call('main.check_daemon_status', [], function(result) {
-                    if (!result.installed || !result.active) {
-                        initComplete = true;
-                        pageStack.push(Qt.resolvedUrl("DaemonSetupPage.qml"), {
-                            "daemonInstalled": result.installed
-                        });
-                        return ;
-                    }
-                    python.call('main.check_daemon_version', [], function() {
-                        python.call('main.get_session_status', [], function(session) {
-                            python.call('main.start_event_loop', [], function() {
-                            });
-                            if (session.logged_in) {
-                                python.call('main.send_presence', [true], function() {
-                                });
-                                pageStack.push(Qt.resolvedUrl("ChatListPage.qml"));
-                                isLoggedIn = true;
-                                var args = Qt.application.arguments;
-                                for (var i = 0; i < args.length; i++) {
-                                    if (args[i].indexOf("greenline://") === 0) {
-                                        openChatFromUri(args[i]);
-                                        break;
-                                    }
-                                }
-                            } else {
-                                pageStack.push(Qt.resolvedUrl("AuthorizationPage.qml"));
-                            }
+                python.call('main.run_storage_migrations', [], function() {
+                    python.call('main.check_daemon_status', [], function(result) {
+                        if (!result.installed || !result.active) {
                             initComplete = true;
+                            pageStack.push(Qt.resolvedUrl("DaemonSetupPage.qml"), {
+                                "daemonInstalled": result.installed
+                            });
+                            return ;
+                        }
+                        python.call('main.check_daemon_version', [], function() {
+                            python.call('main.get_session_status', [], function(session) {
+                                python.call('main.start_event_loop', [], function() {
+                                });
+                                if (session.logged_in) {
+                                    python.call('main.send_presence', [true], function() {
+                                    });
+                                    pageStack.push(Qt.resolvedUrl("ChatListPage.qml"));
+                                    isLoggedIn = true;
+                                    var args = Qt.application.arguments;
+                                    for (var i = 0; i < args.length; i++) {
+                                        if (args[i].indexOf("greenline://") === 0) {
+                                            openChatFromUri(args[i]);
+                                            break;
+                                        }
+                                    }
+                                } else {
+                                    pageStack.push(Qt.resolvedUrl("AuthorizationPage.qml"));
+                                }
+                                initComplete = true;
+                            });
                         });
                     });
                 });
