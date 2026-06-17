@@ -317,6 +317,12 @@ def clear_data() -> ClearDataResponse:
     except Exception:
         pass
 
+    remove_background_service_files()
+    for _ in range(10):
+        if not is_daemon_active():
+            break
+        time.sleep(0.1)
+
     config_path = get_config_path()
     _rmtree_if_exists(config_path)
 
@@ -324,7 +330,6 @@ def clear_data() -> ClearDataResponse:
     _rmtree_if_exists(cache_path)
 
     clear_chat_runtime_cache()
-    remove_background_service_files()
     return ClearDataResponse(success=True)
 
 

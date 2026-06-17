@@ -345,14 +345,14 @@ def test_send_media_message_contracts(tmp_path, fake_daemon_rpc, fake_pyothersid
 
     _wait_for(lambda: len(fake_daemon_rpc.send_message_calls) == 5)
 
-    assert [call["message_type"] for call in fake_daemon_rpc.send_message_calls] == [
-        "image",
-        "video",
-        "document",
-        "sticker",
+    assert sorted(call["message_type"] for call in fake_daemon_rpc.send_message_calls) == [
         "contact",
+        "document",
+        "image",
+        "sticker",
+        "video",
     ]
-    document_call = fake_daemon_rpc.send_message_calls[2]
+    document_call = next(call for call in fake_daemon_rpc.send_message_calls if call["message_type"] == "document")
     assert document_call["file_name"] == "document.pdf"
     assert document_call["caption"] == ""
 

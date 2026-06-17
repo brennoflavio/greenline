@@ -253,6 +253,38 @@ def test_clear_data_contract(monkeypatch: pytest.MonkeyPatch, fake_daemon_servic
     assert fake_daemon_service.uninstall_calls == 1
 
 
+def test_clear_data_stops_service_before_removing_directories(
+    monkeypatch: pytest.MonkeyPatch, fake_daemon_service
+) -> None:
+    dispatcher = FakeDispatcher()
+    calls: list[str] = []
+    daemon_active = iter([True, False])
+    sleeps: list[float] = []
+
+    def fake_remove_background_service_files() -> None:
+        calls.append("service")
+        fake_daemon_service.remove_background_service_files()
+
+    def fake_rmtree(path: str, onexc) -> None:
+        calls.append(path)
+
+    monkeypatch.setattr(api_daemon, "get_event_dispatcher", lambda: dispatcher)
+    monkeypatch.setattr(api_daemon, "remove_background_service_files", fake_remove_background_service_files)
+    monkeypatch.setattr(api_daemon, "is_daemon_active", lambda: next(daemon_active, False))
+    monkeypatch.setattr(api_daemon.time, "sleep", lambda seconds: sleeps.append(seconds))
+    monkeypatch.setattr(api_daemon, "get_config_path", lambda: "/tmp/config")
+    monkeypatch.setattr(api_daemon, "get_cache_path", lambda: "/tmp/cache")
+    monkeypatch.setattr(api_daemon.os.path, "exists", lambda path: True)
+    monkeypatch.setattr(api_daemon.shutil, "rmtree", fake_rmtree)
+
+    result = main.clear_data()
+
+    validate_api_response("clear_data", result)
+    assert result == {"success": True}
+    assert calls == ["service", "/tmp/config", "/tmp/cache"]
+    assert sleeps == [0.1]
+
+
 def test_clear_data_contract_ignores_missing_files_during_directory_removal(
     monkeypatch: pytest.MonkeyPatch, fake_daemon_service
 ) -> None:
