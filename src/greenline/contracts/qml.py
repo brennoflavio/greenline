@@ -181,7 +181,6 @@ def assert_ui_message(payload: Any, path: str = "UiMessage") -> None:
         f"{path}.read_receipt has unknown value {message['read_receipt']!r}",
     )
     _assert_string_list(message, "mentioned_jids", path)
-    _assert_string_list(message, "images", path)
     _assert_string_list(message, "reply_to_mentioned_jids", path)
     assert_mention_spans(message["mention_spans"], f"{path}.mention_spans")
 

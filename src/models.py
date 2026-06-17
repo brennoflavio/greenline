@@ -8,7 +8,6 @@ class MessageType(StrEnum):
     VIEW_ONCE = "view_once"
     DELETED = "deleted"
     IMAGE = "image"
-    IMAGE_GALLERY = "image_gallery"
     VIDEO = "video"
     VOICE = "voice"
     AUDIO = "audio"
@@ -85,7 +84,6 @@ class Message:
     mention_spans: List[MentionSpan] = field(default_factory=list)
     image_source: str = ""
     caption: str = ""
-    images: List[str] = field(default_factory=list)
     duration: str = ""
     sticker_source: str = ""
     media_path: str = ""

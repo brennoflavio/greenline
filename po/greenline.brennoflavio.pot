@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-16 22:12+0000\n"
+"POT-Creation-Date: 2026-06-17 00:16+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -248,7 +248,7 @@ msgid "No reactions yet"
 msgstr ""
 
 #: ../qml/MessageReactionsPage.qml:193
-#: ../qml/components/ChatMessageList.qml:201
+#: ../qml/components/ChatMessageList.qml:198
 msgid "Reactions"
 msgstr ""
 
@@ -452,19 +452,19 @@ msgstr ""
 msgid "View-once message. Open WhatsApp on your primary device to view it."
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:178
+#: ../qml/components/ChatMessageList.qml:175
 msgid "Delete"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:189
+#: ../qml/components/ChatMessageList.qml:186
 msgid "Reply"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:195
+#: ../qml/components/ChatMessageList.qml:192
 msgid "Edit"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:207
+#: ../qml/components/ChatMessageList.qml:204
 msgid "Copy"
 msgstr ""
 

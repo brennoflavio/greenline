@@ -100,9 +100,6 @@ Item {
         if (type === "image")
             return imageComponent;
 
-        if (type === "image_gallery")
-            return galleryComponent;
-
         if (type === "video")
             return videoComponent;
 
@@ -287,31 +284,6 @@ Item {
             onReplyClicked: root.scrollToMessage(messageId)
             downloading: root.downloadingIds[msg.id] || false
             onDownloadRequested: root.downloadRequested(msg.id, "image")
-        }
-
-    }
-
-    Component {
-        id: galleryComponent
-
-        ImageGalleryMessage {
-            images: msg.images || []
-            caption: msg.caption || ""
-            formattedCaption: msg.formatted_caption || ""
-            isOutgoing: msg.is_outgoing || false
-            isGroup: root.isGroup
-            timestamp: msg.timestamp || ""
-            edited: msg.edited || false
-            hasReactions: msg.has_reactions || false
-            readReceipt: msg.read_receipt || ""
-            sendStatus: msg.send_status || ""
-            senderName: msg.sender_name || ""
-            senderPhoto: msg.sender_photo || ""
-            replyToId: msg.reply_to_id || ""
-            replyToSender: msg.reply_to_sender || ""
-            replyToText: msg.reply_to_text || ""
-            formattedReplyToText: msg.formatted_reply_to_text || ""
-            onReplyClicked: root.scrollToMessage(messageId)
         }
 
     }

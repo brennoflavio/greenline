@@ -56,7 +56,6 @@ function messagePreview(message, i18n, extraPreviews) {
 
     var previews = {
         "image": "📷 Photo",
-        "image_gallery": "📷 Photo",
         "video": "🎥 Video",
         "audio": "🎵 Audio",
         "voice": "🎵 Audio",
