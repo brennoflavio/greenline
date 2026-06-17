@@ -58,7 +58,6 @@ function messagePreview(message, i18n, extraPreviews) {
         "image": "📷 Photo",
         "video": "🎥 Video",
         "audio": "🎵 Audio",
-        "voice": "🎵 Audio",
         "document": "📄 Document",
         "sticker": "🏷️ Sticker",
         "location": "📍 Location"

@@ -138,7 +138,7 @@
       "media_type": "contact_array",
       "path": "message/unhandled_media_contact_array.json",
       "source_family": "message",
-      "stored_message_type": "text"
+      "stored_message_type": "contact"
     },
     {
       "event_type": "Message",

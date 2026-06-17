@@ -18,6 +18,8 @@ from greenline.contracts.kv import GreenlineKV
 from greenline.store.identity import canonicalize_contact_jid, remember_chat
 from greenline.store.media import (
     _contact_preview,
+    combine_contact_vcards,
+    contact_array_display_name,
     extract_thumbnail_from_message_content,
     location_preview,
     normalized_location_fields,
@@ -135,7 +137,7 @@ def _derive_type_from_content(content: Dict[str, Any]) -> Optional[MessageType]:
         return MessageType.AUDIO
     if content.get("documentMessage"):
         return MessageType.DOCUMENT
-    if content.get("contactMessage"):
+    if content.get("contactMessage") or isinstance(content.get("contactsArrayMessage"), dict):
         return MessageType.CONTACT
     if isinstance(content.get("locationMessage"), dict) or isinstance(content.get("liveLocationMessage"), dict):
         return MessageType.LOCATION
@@ -196,6 +198,9 @@ def _extract_content_fields(
     aud = content.get("audioMessage")
     doc = content.get("documentMessage")
     contact = content.get("contactMessage")
+    contact_array = (
+        content.get("contactsArrayMessage") if isinstance(content.get("contactsArrayMessage"), dict) else None
+    )
     location = content.get("locationMessage")
     live_location = content.get("liveLocationMessage")
     stk = content.get("stickerMessage")
@@ -238,6 +243,11 @@ def _extract_content_fields(
         file_name = contact.get("displayName", "")
         mimetype = "text/x-vcard"
         media_path = persist_contact_vcard(chat_id, message_id, file_name, contact.get("vcard", ""))
+    elif contact_array is not None:
+        contacts = contact_array.get("contacts") if isinstance(contact_array.get("contacts"), list) else []
+        file_name = contact_array_display_name(contacts)
+        mimetype = "text/x-vcard"
+        media_path = persist_contact_vcard(chat_id, message_id, file_name, combine_contact_vcards(contacts))
     elif isinstance(location, dict) or isinstance(live_location, dict):
         text, caption, link_url = normalized_location_fields(
             location if isinstance(location, dict) else None,
@@ -303,6 +313,13 @@ def _message_preview(content: Dict[str, Any], jid_map: Dict[str, str]) -> Tuple[
     contact = content.get("contactMessage")
     if contact:
         return _contact_preview(contact.get("displayName", "")), []
+    contact_array = content.get("contactsArrayMessage")
+    if isinstance(contact_array, dict):
+        raw_contacts = contact_array.get("contacts")
+        contacts = (
+            [contact for contact in raw_contacts if isinstance(contact, dict)] if isinstance(raw_contacts, list) else []
+        )
+        return _contact_preview(contact_array_display_name(contacts)), []
     if content.get("stickerMessage"):
         return "🏷️ Sticker", []
     template_text = template_message_text(content)
@@ -344,6 +361,7 @@ def _extract_context_info_from_dict(
         "audioMessage",
         "documentMessage",
         "contactMessage",
+        "contactsArrayMessage",
         "locationMessage",
         "liveLocationMessage",
         "stickerMessage",

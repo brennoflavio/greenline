@@ -145,7 +145,7 @@ def seed_message(
             if message_type in (MessageType.IMAGE, MessageType.VIDEO, MessageType.DOCUMENT)
             else ("Fixture Address" if message_type == MessageType.LOCATION else "")
         ),
-        duration="0:07" if message_type in (MessageType.AUDIO, MessageType.VOICE) else "",
+        duration="0:07" if message_type == MessageType.AUDIO else "",
         sticker_source=media_path if message_type == MessageType.STICKER else "",
         media_path=(
             media_path if message_type not in (MessageType.TEXT, MessageType.LINK_PREVIEW, MessageType.LOCATION) else ""

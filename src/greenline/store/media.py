@@ -20,6 +20,27 @@ def _contact_preview(display_name: str) -> str:
     return f"👤 {name}" if name else "👤 Contact"
 
 
+def contact_array_display_name(contacts: list[dict[str, Any]]) -> str:
+    normalized_contacts = [contact for contact in contacts if isinstance(contact, dict)]
+    if len(normalized_contacts) == 1:
+        name = str(normalized_contacts[0].get("displayName") or "").strip()
+        return name or "Contact"
+    if normalized_contacts:
+        return f"{len(normalized_contacts)} contacts"
+    return "Contact"
+
+
+def combine_contact_vcards(contacts: list[dict[str, Any]]) -> str:
+    vcards: list[str] = []
+    for contact in contacts:
+        if not isinstance(contact, dict):
+            continue
+        vcard = str(contact.get("vcard") or "").strip()
+        if vcard:
+            vcards.append(vcard)
+    return "\n".join(vcards)
+
+
 def _location_coordinate(value: Any) -> str:
     try:
         float(value)
@@ -311,6 +332,11 @@ def _quoted_message_preview(quoted: Optional[Dict[str, Any]]) -> str:
     contact = quoted.get("contactMessage")
     if contact:
         return _contact_preview(contact.get("displayName", ""))
+    contacts_array = quoted.get("contactsArrayMessage")
+    if isinstance(contacts_array, dict):
+        contacts = contacts_array.get("contacts")
+        if isinstance(contacts, list):
+            return _contact_preview(contact_array_display_name(contacts))
     location = quoted.get("locationMessage")
     live_location = quoted.get("liveLocationMessage")
     if isinstance(location, dict) or isinstance(live_location, dict):

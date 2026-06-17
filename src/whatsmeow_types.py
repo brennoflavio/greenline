@@ -305,6 +305,12 @@ class ContactMessage:
 
 
 @dataclass
+class ContactsArrayMessage:
+    contacts: List[ContactMessage] = field(default_factory=list)
+    contextInfo: Optional[ContextInfo] = None
+
+
+@dataclass
 class StickerMessage:
     URL: str = ""
     fileSHA256: str = ""
@@ -342,6 +348,7 @@ class MessageContent:
     audioMessage: Optional[AudioMessage] = None
     documentMessage: Optional[DocumentMessage] = None
     contactMessage: Optional[ContactMessage] = None
+    contactsArrayMessage: Optional[ContactsArrayMessage] = None
     locationMessage: Optional[LocationMessage] = None
     liveLocationMessage: Optional[LiveLocationMessage] = None
     stickerMessage: Optional[StickerMessage] = None

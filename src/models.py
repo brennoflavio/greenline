@@ -9,7 +9,6 @@ class MessageType(StrEnum):
     DELETED = "deleted"
     IMAGE = "image"
     VIDEO = "video"
-    VOICE = "voice"
     AUDIO = "audio"
     DOCUMENT = "document"
     CONTACT = "contact"

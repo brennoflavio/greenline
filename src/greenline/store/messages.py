@@ -12,6 +12,8 @@ from greenline.store.identity import (
 )
 from greenline.store.media import (
     _contact_preview,
+    combine_contact_vcards,
+    contact_array_display_name,
     extract_thumbnail_from_message_content,
     location_preview,
     normalized_location_fields,
@@ -50,6 +52,7 @@ _SUPPORTED_MESSAGE_CONTENT_KEYS = {
     "audioMessage",
     "documentMessage",
     "contactMessage",
+    "contactsArrayMessage",
     "locationMessage",
     "liveLocationMessage",
     "stickerMessage",
@@ -99,6 +102,27 @@ def unsupported_message_text(
     return UNSUPPORTED_MESSAGE_TEXT.format(message_type=message_type)
 
 
+def _contact_array_contacts(
+    content: MessageContent,
+    raw_content: Optional[Dict[str, Any]] = None,
+) -> list[dict[str, str]]:
+    raw_contacts_array = raw_content.get("contactsArrayMessage") if raw_content else None
+    raw_contacts = raw_contacts_array.get("contacts") if isinstance(raw_contacts_array, dict) else None
+    if isinstance(raw_contacts, list):
+        return [contact for contact in raw_contacts if isinstance(contact, dict)]
+
+    if content.contactsArrayMessage is None:
+        return []
+
+    return [
+        {
+            "displayName": contact.displayName,
+            "vcard": contact.vcard,
+        }
+        for contact in content.contactsArrayMessage.contacts
+    ]
+
+
 def _extract_context_info(content: MessageContent) -> tuple[str, str, str, bool, str, List[str]]:
     ctx = None
     for sub in (
@@ -108,6 +132,7 @@ def _extract_context_info(content: MessageContent) -> tuple[str, str, str, bool,
         content.audioMessage,
         content.documentMessage,
         content.contactMessage,
+        content.contactsArrayMessage,
         content.locationMessage,
         content.liveLocationMessage,
         content.stickerMessage,
@@ -136,6 +161,10 @@ def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = 
     raw_live_location = (
         raw_content.get("liveLocationMessage") if isinstance(raw_content.get("liveLocationMessage"), dict) else None
     )
+    raw_contacts_array = (
+        raw_content.get("contactsArrayMessage") if isinstance(raw_content.get("contactsArrayMessage"), dict) else None
+    )
+    contact_array_contacts = _contact_array_contacts(content, raw_content)
 
     if info.Type == "reaction":
         return None
@@ -152,6 +181,8 @@ def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = 
             content.audioMessage is not None,
             content.documentMessage is not None,
             content.contactMessage is not None,
+            content.contactsArrayMessage is not None,
+            raw_contacts_array is not None,
             content.locationMessage is not None,
             content.liveLocationMessage is not None,
             content.stickerMessage is not None,
@@ -235,6 +266,10 @@ def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = 
         file_name = content.contactMessage.displayName
         mimetype = "text/x-vcard"
         media_path = persist_contact_vcard(chat_id, info.ID, file_name, content.contactMessage.vcard)
+    elif contact_array_contacts or content.contactsArrayMessage is not None:
+        file_name = contact_array_display_name(contact_array_contacts)
+        mimetype = "text/x-vcard"
+        media_path = persist_contact_vcard(chat_id, info.ID, file_name, combine_contact_vcards(contact_array_contacts))
     elif (
         content.locationMessage
         or content.liveLocationMessage
@@ -307,6 +342,9 @@ def _derive_message_type_from_content(
     raw_live_location = (
         raw_content.get("liveLocationMessage") if isinstance(raw_content.get("liveLocationMessage"), dict) else None
     )
+    raw_contacts_array = (
+        raw_content.get("contactsArrayMessage") if isinstance(raw_content.get("contactsArrayMessage"), dict) else None
+    )
 
     if content.imageMessage or resolve_media_message_content(raw_content, "imageMessage"):
         return MessageType.IMAGE
@@ -318,7 +356,7 @@ def _derive_message_type_from_content(
         return MessageType.AUDIO
     if content.documentMessage:
         return MessageType.DOCUMENT
-    if content.contactMessage:
+    if content.contactMessage or raw_contacts_array or content.contactsArrayMessage:
         return MessageType.CONTACT
     if content.locationMessage or raw_location or content.liveLocationMessage or raw_live_location:
         return MessageType.LOCATION
@@ -346,7 +384,7 @@ def _derive_message_type(info_type: str, media_type: str) -> Optional[MessageTyp
             return MessageType.AUDIO
         if media_type == "document":
             return MessageType.DOCUMENT
-        if media_type == "vcard":
+        if media_type in ("vcard", "contact_array"):
             return MessageType.CONTACT
         if media_type == "location" or media_type == "livelocation":
             return MessageType.LOCATION

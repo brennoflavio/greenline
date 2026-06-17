@@ -103,7 +103,7 @@ Item {
         if (type === "video")
             return videoComponent;
 
-        if (type === "voice" || type === "audio")
+        if (type === "audio")
             return voiceComponent;
 
         if (type === "document")
