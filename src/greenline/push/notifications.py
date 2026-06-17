@@ -12,6 +12,7 @@ from greenline.contracts.kv import GreenlineKV
 from greenline.contracts.validation import BoundaryValidationError
 from greenline.store.identity import resolve_sender_name
 from greenline.store.media import (
+    contact_array_display_name,
     resolve_media_message_content,
     template_message_caption,
 )
@@ -269,6 +270,15 @@ def _extract_message_body(event: Dict[str, Any]) -> str:
     contact = message.get("contactMessage")
     if isinstance(contact, dict):
         display_name = str(contact.get("displayName") or "").strip()
+        return f"👤 {display_name}" if display_name else "👤 Contact"
+
+    contacts_array = message.get("contactsArrayMessage")
+    if isinstance(contacts_array, dict):
+        raw_contacts = contacts_array.get("contacts")
+        contacts = (
+            [contact for contact in raw_contacts if isinstance(contact, dict)] if isinstance(raw_contacts, list) else []
+        )
+        display_name = contact_array_display_name(contacts)
         return f"👤 {display_name}" if display_name else "👤 Contact"
 
     if isinstance(message.get("locationMessage"), dict) or isinstance(message.get("liveLocationMessage"), dict):

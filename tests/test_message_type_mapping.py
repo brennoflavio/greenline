@@ -8,6 +8,7 @@ from dacite import from_dict
 from daemon_event_helpers import load_fixtures, seed_prerequisite_kv
 
 from greenline.contracts.kv import GreenlineKV
+from greenline.push.notifications import _extract_message_body
 from greenline.store.media import parse_location_coordinates, parse_location_link_url
 from greenline.store.messages import (
     message_event_to_message,
@@ -149,6 +150,14 @@ def test_unsupported_message_text_ignores_supported_metadata_only_events() -> No
     assert unsupported_message_text(info_type="text") is None
     assert unsupported_message_text({"messageContextInfo": {}}, info_type="text") is None
     assert unsupported_message_text({"senderKeyDistributionMessage": {"groupID": "fixture-group-20@g.us"}}) is None
+
+
+def test_notification_extracts_contacts_array_preview() -> None:
+    fixture = next(
+        fixture for fixture in MESSAGE_FIXTURES if fixture.relative_path == "message/unhandled_media_contact_array.json"
+    )
+
+    assert _extract_message_body(fixture.payload) == "👤 2 contacts"
 
 
 @pytest.mark.parametrize("fixture", MESSAGE_FIXTURES, ids=[fixture.param_id for fixture in MESSAGE_FIXTURES])
