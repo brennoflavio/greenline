@@ -113,14 +113,16 @@
       "info_type": "text",
       "media_type": "",
       "path": "message/unhandled_text.json",
-      "source_family": "unhandled_message"
+      "source_family": "message",
+      "stored_message_type": "text"
     },
     {
       "event_type": "Message",
       "info_type": "media",
       "media_type": "collection",
       "path": "message/unhandled_media_collection.json",
-      "source_family": "unhandled_message"
+      "source_family": "message",
+      "stored_message_type": "text"
     },
     {
       "event_type": "Message",
@@ -135,7 +137,8 @@
       "info_type": "media",
       "media_type": "contact_array",
       "path": "message/unhandled_media_contact_array.json",
-      "source_family": "unhandled_message"
+      "source_family": "message",
+      "stored_message_type": "text"
     },
     {
       "event_type": "Message",
@@ -150,14 +153,16 @@
       "info_type": "poll",
       "media_type": "",
       "path": "message/unhandled_poll.json",
-      "source_family": "unhandled_message"
+      "source_family": "message",
+      "stored_message_type": "text"
     },
     {
       "event_type": "Message",
       "info_type": "medianotify",
       "media_type": "",
       "path": "message/unhandled_medianotify.json",
-      "source_family": "unhandled_message"
+      "source_family": "message",
+      "stored_message_type": "text"
     },
     {
       "event_type": "Blocklist",

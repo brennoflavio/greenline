@@ -41,6 +41,63 @@ from whatsmeow_types import (
     UndecryptableMessageEvent,
 )
 
+UNSUPPORTED_MESSAGE_TEXT = "Unsupported Message type arrived: {message_type}"
+_SUPPORTED_MESSAGE_CONTENT_KEYS = {
+    "conversation",
+    "extendedTextMessage",
+    "imageMessage",
+    "videoMessage",
+    "audioMessage",
+    "documentMessage",
+    "contactMessage",
+    "locationMessage",
+    "liveLocationMessage",
+    "stickerMessage",
+    "templateMessage",
+}
+_IGNORED_MESSAGE_CONTENT_KEYS = {"messageContextInfo", "senderKeyDistributionMessage"}
+
+
+def unsupported_message_type_label(
+    raw_content: Optional[Dict[str, Any]] = None,
+    info_type: str = "",
+    media_type: str = "",
+) -> Optional[str]:
+    normalized_info_type = str(info_type or "")
+    normalized_media_type = str(media_type or "")
+
+    if (
+        normalized_info_type == "media"
+        and normalized_media_type
+        and not _derive_message_type(
+            normalized_info_type,
+            normalized_media_type,
+        )
+    ):
+        return normalized_media_type
+
+    if normalized_info_type and normalized_info_type not in {"text", "media"}:
+        return normalized_info_type
+
+    for key, value in (raw_content or {}).items():
+        if key in _SUPPORTED_MESSAGE_CONTENT_KEYS or key in _IGNORED_MESSAGE_CONTENT_KEYS:
+            continue
+        if value is not None:
+            return key
+
+    return None
+
+
+def unsupported_message_text(
+    raw_content: Optional[Dict[str, Any]] = None,
+    info_type: str = "",
+    media_type: str = "",
+) -> Optional[str]:
+    message_type = unsupported_message_type_label(raw_content, info_type, media_type)
+    if message_type is None:
+        return None
+    return UNSUPPORTED_MESSAGE_TEXT.format(message_type=message_type)
+
 
 def _extract_context_info(content: MessageContent) -> tuple[str, str, str, bool, str, List[str]]:
     ctx = None
@@ -82,21 +139,7 @@ def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = 
 
     if info.Type == "reaction":
         return None
-
-    is_protocol_only = (
-        content.protocolMessage is not None
-        and not content.conversation
-        and content.extendedTextMessage is None
-        and content.imageMessage is None
-        and content.videoMessage is None
-        and content.audioMessage is None
-        and content.documentMessage is None
-        and content.contactMessage is None
-        and content.locationMessage is None
-        and content.liveLocationMessage is None
-        and content.stickerMessage is None
-    )
-    if is_protocol_only:
+    if info.Edit == "7":
         return None
 
     template_text = template_message_text(raw_content)
@@ -122,12 +165,16 @@ def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = 
         return None
 
     msg_type = _derive_message_type_from_content(content, raw_content)
-    if msg_type is None:
+    if msg_type is None and has_supported_content:
         msg_type = _derive_message_type(info.Type, info.MediaType)
-    if msg_type is None:
-        return None
 
     text = ""
+    if msg_type is None:
+        text = unsupported_message_text(raw_content, info.Type, info.MediaType) or ""
+        if not text:
+            return None
+        msg_type = MessageType.TEXT
+
     caption = ""
     mentioned_jids: List[str] = []
     duration = ""
@@ -141,7 +188,7 @@ def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = 
             content.extendedTextMessage.text,
             content.extendedTextMessage.contextInfo,
         )
-    elif msg_type == MessageType.TEXT:
+    elif msg_type == MessageType.TEXT and not text:
         text = template_text
         button_text, button_url = template_message_button(raw_content)
 

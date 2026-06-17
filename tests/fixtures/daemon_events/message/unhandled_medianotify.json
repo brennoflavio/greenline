@@ -3,7 +3,8 @@
     "info_type": "medianotify",
     "media_type": "",
     "source": "sanitized from repository root kv.db",
-    "source_family": "unhandled_message"
+    "source_family": "message",
+    "stored_message_type": "text"
   },
   "event_type": "Message",
   "id": 24,

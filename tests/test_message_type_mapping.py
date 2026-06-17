@@ -14,13 +14,16 @@ from greenline.store.messages import (
     store_message,
     store_undecryptable_message,
     undecryptable_event_to_message,
+    unsupported_message_text,
 )
 from greenline.store.repository import message_index_key
+from history_sync import _message_preview, _resolve_type_and_fallback_text
 from models import MessageType
 
 MESSAGE_FIXTURES = [fixture for fixture in load_fixtures() if fixture.event_type in {"Message", "UndecryptableMessage"}]
 
 FIELD_EXPECTATIONS: dict[str, dict[str, Any]] = {
+    "message/buttons_message.json": {"text": "Unsupported Message type arrived: buttonsMessage"},
     "message/conversation.json": {"text": "Fixture message text."},
     "message/extended_text.json": {"text": "Fixture text."},
     "message/link_preview.json": {"link_title": "Fixture text.", "link_url": "Fixture text."},
@@ -41,8 +44,14 @@ FIELD_EXPECTATIONS: dict[str, dict[str, Any]] = {
         "link_url": "geo:0.0,0.0",
     },
     "message/sticker.json": {"mimetype": "image/webp"},
+    "message/template_button_reply.json": {"text": "Unsupported Message type arrived: templateButtonReplyMessage"},
     "message/template_message.json": {"text": "Fixture text.\n\nFixture text."},
+    "message/unhandled_media_collection.json": {"text": "Unsupported Message type arrived: collection"},
+    "message/unhandled_media_contact_array.json": {"text": "Unsupported Message type arrived: contact_array"},
     "message/unhandled_media_gif.json": {"mimetype": "video/mp4", "duration": "0:01"},
+    "message/unhandled_medianotify.json": {"text": "Unsupported Message type arrived: medianotify"},
+    "message/unhandled_poll.json": {"text": "Unsupported Message type arrived: poll"},
+    "message/unhandled_text.json": {"text": "Unsupported Message type arrived: protocolMessage"},
     "event/message.json": {"text": "Fixture message text."},
 }
 
@@ -110,6 +119,36 @@ def test_parse_location_link_url_round_trips_coordinates() -> None:
     assert parse_location_link_url("geo:91,0") is None
     assert parse_location_link_url("geo:37.4219999") is None
     assert parse_location_link_url("") is None
+
+
+def test_history_sync_unsupported_message_falls_back_to_text_preview() -> None:
+    content = {"protocolMessage": {"type": 9}}
+
+    msg_type, fallback_text = _resolve_type_and_fallback_text(content)
+    preview, mentioned_jids = _message_preview(content, {})
+
+    assert msg_type == MessageType.TEXT
+    assert fallback_text == "Unsupported Message type arrived: protocolMessage"
+    assert preview == fallback_text
+    assert mentioned_jids == []
+
+
+def test_history_sync_ignores_sender_key_distribution_messages() -> None:
+    content = {"senderKeyDistributionMessage": {"groupID": "fixture-group-20@g.us"}}
+
+    msg_type, fallback_text = _resolve_type_and_fallback_text(content)
+    preview, mentioned_jids = _message_preview(content, {})
+
+    assert msg_type is None
+    assert fallback_text == ""
+    assert preview == ""
+    assert mentioned_jids == []
+
+
+def test_unsupported_message_text_ignores_supported_metadata_only_events() -> None:
+    assert unsupported_message_text(info_type="text") is None
+    assert unsupported_message_text({"messageContextInfo": {}}, info_type="text") is None
+    assert unsupported_message_text({"senderKeyDistributionMessage": {"groupID": "fixture-group-20@g.us"}}) is None
 
 
 @pytest.mark.parametrize("fixture", MESSAGE_FIXTURES, ids=[fixture.param_id for fixture in MESSAGE_FIXTURES])

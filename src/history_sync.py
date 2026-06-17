@@ -28,6 +28,7 @@ from greenline.store.media import (
     template_message_text,
 )
 from greenline.store.mentions import quoted_message_template, template_mention_text
+from greenline.store.messages import unsupported_message_text
 from greenline.store.records import (
     LidMapRecord,
     MessageIndexRecord,
@@ -141,6 +142,18 @@ def _derive_type_from_content(content: Dict[str, Any]) -> Optional[MessageType]:
     if content.get("stickerMessage"):
         return MessageType.STICKER
     return None
+
+
+def _resolve_type_and_fallback_text(content: Dict[str, Any]) -> tuple[Optional[MessageType], str]:
+    msg_type = _derive_type_from_content(content)
+    if msg_type is not None:
+        return msg_type, ""
+
+    fallback_text = unsupported_message_text(raw_content=content) or ""
+    if fallback_text:
+        return MessageType.TEXT, fallback_text
+
+    return None, ""
 
 
 def _history_message_content(inner: HistorySyncInnerMessage) -> Dict[str, Any]:
@@ -295,6 +308,9 @@ def _message_preview(content: Dict[str, Any], jid_map: Dict[str, str]) -> Tuple[
     template_text = template_message_text(content)
     if template_text:
         return template_text, []
+    unsupported_text = unsupported_message_text(raw_content=content)
+    if unsupported_text:
+        return unsupported_text, []
     return "", []
 
 
@@ -310,7 +326,7 @@ def _find_latest_message(
         content = _history_message_content(inner)
         if not content:
             continue
-        if _derive_type_from_content(content) is None:
+        if _resolve_type_and_fallback_text(content)[0] is None:
             continue
         if inner.messageTimestamp > latest_ts:
             latest_ts = inner.messageTimestamp
@@ -375,7 +391,7 @@ def _process_messages(
         if not content:
             continue
 
-        msg_type = _derive_type_from_content(content)
+        msg_type, fallback_text = _resolve_type_and_fallback_text(content)
         if msg_type is None:
             continue
 
@@ -390,6 +406,8 @@ def _process_messages(
             msg_id,
             jid_map,
         )
+        if fallback_text:
+            text = fallback_text
 
         is_outgoing = inner.key.fromMe
         read_receipt = ReadReceipt.NONE
@@ -415,7 +433,9 @@ def _process_messages(
             link_url = preview_link_url
 
         button_text, button_url = (
-            template_message_button(content) if msg_type in (MessageType.IMAGE, MessageType.TEXT) else ("", "")
+            template_message_button(content)
+            if msg_type in (MessageType.IMAGE, MessageType.TEXT) and not fallback_text
+            else ("", "")
         )
 
         msg = Message(
@@ -477,7 +497,7 @@ def _process_conversation(
         if latest_msg is not None and latest_msg.messageTimestamp > chat.last_message_timestamp:
             latest_content = _history_message_content(latest_msg)
             preview, latest_preview_mentioned_jids = _message_preview(latest_content, jid_map)
-            msg_type = _derive_type_from_content(latest_content) if latest_content else None
+            msg_type = _resolve_type_and_fallback_text(latest_content)[0] if latest_content else None
             if preview:
                 chat.last_message = preview
                 chat.last_message_mentioned_jids = latest_preview_mentioned_jids
@@ -512,7 +532,7 @@ def _process_conversation(
     if latest_msg is not None:
         latest_content = _history_message_content(latest_msg)
         preview, preview_mentioned_jids = _message_preview(latest_content, jid_map)
-        last_message_type = str(_derive_type_from_content(latest_content) or "")
+        last_message_type = str(_resolve_type_and_fallback_text(latest_content)[0] or "")
         last_ts = latest_msg.messageTimestamp
         date = datetime.fromtimestamp(last_ts).strftime("%H:%M")
         if latest_msg.key.fromMe:
