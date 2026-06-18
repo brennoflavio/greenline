@@ -548,6 +548,19 @@ type DeleteMessageReply struct {
 	Timestamp int64
 }
 
+type SendReactionArgs struct {
+	ChatJID   string
+	MessageID string
+	SenderJID string
+	Reaction  string
+}
+
+type SendReactionReply struct {
+	MessageID string
+	Timestamp int64
+	OwnJID    string
+}
+
 func (s *Service) buildMessageContext(args *SendMessageArgs) (*waE2E.ContextInfo, error) {
 	if args.ReplyToMessageID == "" && len(args.MentionedJIDs) == 0 {
 		return nil, nil
@@ -1043,6 +1056,51 @@ func (s *Service) DeleteMessage(args *DeleteMessageArgs, reply *DeleteMessageRep
 
 	reply.MessageID = string(resp.ID)
 	reply.Timestamp = resp.Timestamp.Unix()
+	return nil
+}
+
+func (s *Service) SendReaction(args *SendReactionArgs, reply *SendReactionReply) error {
+	if err := s.requireLogin(); err != nil {
+		return err
+	}
+
+	chatJID, err := types.ParseJID(args.ChatJID)
+	if err != nil {
+		return fmt.Errorf("invalid chat JID: %w", err)
+	}
+	if strings.TrimSpace(args.MessageID) == "" {
+		return fmt.Errorf("message ID required")
+	}
+
+	ctx := context.Background()
+	var senderJID types.JID
+	if args.SenderJID != "" {
+		senderJID, err = types.ParseJID(args.SenderJID)
+		if err != nil {
+			return fmt.Errorf("invalid sender JID: %w", err)
+		}
+		senderJID = s.client.ResolveJID(ctx, senderJID)
+	}
+
+	ownJID := s.client.GetOwnJID()
+	if ownJID.IsEmpty() {
+		return fmt.Errorf("own JID unavailable")
+	}
+	ownJID = s.client.ResolveJID(ctx, ownJID)
+
+	message := s.client.BuildReaction(chatJID, senderJID, types.MessageID(args.MessageID), args.Reaction)
+
+	sendCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	resp, err := s.client.SendMessage(sendCtx, chatJID, message)
+	if err != nil {
+		return fmt.Errorf("send failed: %w", err)
+	}
+
+	reply.MessageID = string(resp.ID)
+	reply.Timestamp = resp.Timestamp.Unix()
+	reply.OwnJID = ownJID.String()
 	return nil
 }
 

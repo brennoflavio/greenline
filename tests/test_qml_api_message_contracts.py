@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 
+import pytest
 from contracts.qml_registry import validate_api_response, validate_event_payload
 from qml_contract_helpers import (
     DEFAULT_CHAT_ID,
@@ -19,6 +20,7 @@ from greenline.contracts.kv import GreenlineKV
 from greenline.contracts.validation import BoundaryValidationError
 from greenline.store.records import (
     MessageReactionRecord,
+    OwnJIDRecord,
     PendingOutboxRecord,
     StickerCacheRecord,
     StoredMessageRecord,
@@ -103,10 +105,216 @@ def test_get_message_reactions_contract_resolves_sender_details() -> None:
                 "name": "Alice",
                 "photo": "file:///tmp/alice.jpg",
                 "emoji": "👍",
+                "is_self": False,
             }
         ],
         "message": "",
     }
+
+
+def test_get_message_reactions_contract_prefers_push_name_for_self() -> None:
+    own_jid = "5519974236541@s.whatsapp.net"
+    seed_chat(
+        own_jid,
+        name="+55 19 97423-6541",
+        full_name="+55 19 97423-6541",
+        push_name="Brenno Flávio",
+        business_name="",
+        unread_count=0,
+        muted=False,
+    )
+    with GreenlineKV() as kv:
+        kv.put_record("self.jid", OwnJIDRecord(own_jid))
+        kv.put_record(
+            f"message_reaction:{DEFAULT_CHAT_ID}:message-1:{own_jid}",
+            MessageReactionRecord(
+                chat_id=DEFAULT_CHAT_ID,
+                message_id="message-1",
+                sender_jid=own_jid,
+                emoji="👍",
+            ),
+        )
+
+    result = main.get_message_reactions(DEFAULT_CHAT_ID, "message-1")
+
+    validate_api_response("get_message_reactions", result)
+    assert result == {
+        "success": True,
+        "reactions": [
+            {
+                "jid": own_jid,
+                "name": "Brenno Flávio",
+                "photo": "file:///tmp/chat.jpg",
+                "emoji": "👍",
+                "is_self": True,
+            }
+        ],
+        "message": "",
+    }
+
+
+def test_send_message_reaction_contract_adds_reaction_and_emits_update(
+    fake_daemon_rpc,
+    fake_pyotherside_module,
+) -> None:
+    seed_chat(DEFAULT_CHAT_ID)
+    seed_sender_identity(DEFAULT_SENDER_ID, name="Alice", photo="file:///tmp/alice.jpg")
+    seed_message(DEFAULT_CHAT_ID, "incoming-1", is_outgoing=False, reply_to_id="")
+
+    result = main.send_message_reaction(DEFAULT_CHAT_ID, "incoming-1", "👍")
+
+    validate_api_response("send_message_reaction", result)
+    assert fake_daemon_rpc.send_reaction_calls == [
+        {
+            "chat_id": DEFAULT_CHAT_ID,
+            "message_id": "incoming-1",
+            "reaction": "👍",
+            "sender_jid": DEFAULT_SENDER_ID,
+        }
+    ]
+    with GreenlineKV() as kv:
+        reaction = kv.get_record(
+            f"message_reaction:{DEFAULT_CHAT_ID}:incoming-1:{fake_daemon_rpc.send_reaction_result.OwnJID}"
+        )
+        own_jid = kv.get_record("self.jid")
+        indexed_key = kv.get_record(f"message_index:{DEFAULT_CHAT_ID}:incoming-1")
+        stored_message = kv.get_record(indexed_key.value)
+    assert isinstance(reaction, MessageReactionRecord)
+    assert isinstance(stored_message, StoredMessageRecord)
+    assert own_jid.value == fake_daemon_rpc.send_reaction_result.OwnJID
+    assert reaction.emoji == "👍"
+    assert stored_message.has_reactions is True
+    reactions = main.get_message_reactions(DEFAULT_CHAT_ID, "incoming-1")
+    validate_api_response("get_message_reactions", reactions)
+    assert reactions["reactions"][0]["is_self"] is True
+    _assert_all_contract_events(fake_pyotherside_module)
+    message_updates = _event_payloads(fake_pyotherside_module, "message-upsert")
+    assert message_updates[-1][0]["id"] == "incoming-1"
+    assert message_updates[-1][0]["has_reactions"] is True
+
+
+def test_send_message_reaction_contract_falls_back_to_chat_id_for_direct_history_messages(
+    fake_daemon_rpc,
+    fake_pyotherside_module,
+) -> None:
+    seed_chat(DEFAULT_CHAT_ID)
+    seed_message(DEFAULT_CHAT_ID, "history-1", is_outgoing=False, sender="", sender_raw="", reply_to_id="")
+
+    result = main.send_message_reaction(DEFAULT_CHAT_ID, "history-1", "❤️")
+
+    validate_api_response("send_message_reaction", result)
+    assert result == {"success": True, "message": ""}
+    assert fake_daemon_rpc.send_reaction_calls == [
+        {
+            "chat_id": DEFAULT_CHAT_ID,
+            "message_id": "history-1",
+            "reaction": "❤️",
+            "sender_jid": DEFAULT_CHAT_ID,
+        }
+    ]
+    _assert_all_contract_events(fake_pyotherside_module)
+
+
+def test_send_message_reaction_contract_removes_reaction_and_handles_outgoing_target(
+    fake_daemon_rpc,
+    fake_pyotherside_module,
+) -> None:
+    seed_chat(DEFAULT_CHAT_ID)
+    seed_message(DEFAULT_CHAT_ID, "outgoing-1", is_outgoing=True, has_reactions=True, reply_to_id="")
+    with GreenlineKV() as kv:
+        kv.put_record(
+            f"message_reaction:{DEFAULT_CHAT_ID}:outgoing-1:{fake_daemon_rpc.send_reaction_result.OwnJID}",
+            MessageReactionRecord(
+                chat_id=DEFAULT_CHAT_ID,
+                message_id="outgoing-1",
+                sender_jid=fake_daemon_rpc.send_reaction_result.OwnJID,
+                emoji="👍",
+            ),
+        )
+
+    result = main.send_message_reaction(DEFAULT_CHAT_ID, "outgoing-1", "")
+
+    validate_api_response("send_message_reaction", result)
+    assert fake_daemon_rpc.send_reaction_calls == [
+        {
+            "chat_id": DEFAULT_CHAT_ID,
+            "message_id": "outgoing-1",
+            "reaction": "",
+            "sender_jid": "",
+        }
+    ]
+    with GreenlineKV() as kv:
+        reaction = kv.get_record(
+            f"message_reaction:{DEFAULT_CHAT_ID}:outgoing-1:{fake_daemon_rpc.send_reaction_result.OwnJID}"
+        )
+        indexed_key = kv.get_record(f"message_index:{DEFAULT_CHAT_ID}:outgoing-1")
+        stored_message = kv.get_record(indexed_key.value)
+    assert reaction is None
+    assert isinstance(stored_message, StoredMessageRecord)
+    assert stored_message.has_reactions is False
+    _assert_all_contract_events(fake_pyotherside_module)
+    message_updates = _event_payloads(fake_pyotherside_module, "message-upsert")
+    assert message_updates[-1][0]["id"] == "outgoing-1"
+    assert message_updates[-1][0]["has_reactions"] is False
+
+
+@pytest.mark.parametrize(
+    ("message_id", "seed_kwargs", "expected_message"),
+    [
+        ("missing", None, "Message not found"),
+        (
+            "pending-1",
+            {"is_outgoing": True, "send_status": "pending", "temp_id": "pending-1"},
+            "Message has not been sent yet",
+        ),
+        (
+            "failed-1",
+            {"is_outgoing": True, "send_status": "failed", "temp_id": "failed-1"},
+            "Message has not been sent yet",
+        ),
+        ("deleted-1", {"is_outgoing": True, "message_type": MessageType.DELETED}, "Message already deleted"),
+    ],
+)
+def test_send_message_reaction_contract_rejects_invalid_targets(
+    message_id,
+    seed_kwargs,
+    expected_message,
+    fake_daemon_rpc,
+    fake_pyotherside_module,
+) -> None:
+    seed_chat(DEFAULT_CHAT_ID)
+    if seed_kwargs is not None:
+        seed_message(DEFAULT_CHAT_ID, message_id, reply_to_id="", **seed_kwargs)
+
+    result = main.send_message_reaction(DEFAULT_CHAT_ID, message_id, "👍")
+
+    validate_api_response("send_message_reaction", result)
+    assert result == {"success": False, "message": expected_message}
+    assert fake_daemon_rpc.send_reaction_calls == []
+    assert _event_payloads(fake_pyotherside_module, "message-upsert") == []
+
+
+def test_send_message_reaction_contract_returns_daemon_errors(
+    fake_daemon_rpc,
+    fake_pyotherside_module,
+) -> None:
+    seed_chat(DEFAULT_CHAT_ID)
+    seed_message(DEFAULT_CHAT_ID, "incoming-error", is_outgoing=False, reply_to_id="")
+    fake_daemon_rpc.send_reaction_exception = RuntimeError("send failed")
+
+    result = main.send_message_reaction(DEFAULT_CHAT_ID, "incoming-error", "👍")
+
+    validate_api_response("send_message_reaction", result)
+    assert result == {"success": False, "message": "send failed"}
+    assert fake_daemon_rpc.send_reaction_calls == [
+        {
+            "chat_id": DEFAULT_CHAT_ID,
+            "message_id": "incoming-error",
+            "reaction": "👍",
+            "sender_jid": DEFAULT_SENDER_ID,
+        }
+    ]
+    assert _event_payloads(fake_pyotherside_module, "message-upsert") == []
 
 
 def test_mark_messages_as_read_contract_and_chat_emit(fake_daemon_rpc, fake_pyotherside_module) -> None:

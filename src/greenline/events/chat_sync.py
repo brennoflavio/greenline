@@ -9,6 +9,7 @@ from greenline.events.handlers import dispatch_event
 from greenline.events.session import LAST_EVENT_ID_KEY
 from greenline.store.identity import (
     canonicalize_contact_jid,
+    preferred_contact_name,
     remember_chat,
     update_chat_name,
 )
@@ -184,7 +185,12 @@ class ChatListUpdateEvent(Event):
                 jid = canonicalize_contact_jid(contact.jid)
                 key = f"chat:{jid}"
                 photo = ("file://" + contact.avatar_path) if contact.avatar_path else ""
-                display_name = contact.full_name or contact.push_name or contact.business_name or jid
+                display_name = preferred_contact_name(
+                    jid,
+                    full_name=contact.full_name,
+                    push_name=contact.push_name,
+                    business_name=contact.business_name,
+                )
                 muted = self._is_muted(jid)
 
                 if key in existing:

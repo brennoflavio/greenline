@@ -12,6 +12,7 @@ from daemon_types import (
     ListEventsReply,
     PairPhoneReply,
     SendMessageReply,
+    SendReactionReply,
     SessionStatusReply,
     SyncAvatarReply,
     VersionReply,
@@ -118,6 +119,14 @@ class EditMessageRequest:
 class DeleteMessageRequest:
     ChatJID: str
     MessageID: str
+
+
+@dataclass
+class SendReactionRequest:
+    ChatJID: str
+    MessageID: str
+    SenderJID: str = ""
+    Reaction: str = ""
 
 
 @dataclass
@@ -233,6 +242,14 @@ class DaemonClientProtocol(Protocol):
     ) -> EditMessageReply: ...
 
     def delete_message(self, chat_jid: str, message_id: str) -> DeleteMessageReply: ...
+
+    def send_reaction(
+        self,
+        chat_jid: str,
+        message_id: str,
+        reaction: str,
+        sender_jid: str = "",
+    ) -> SendReactionReply: ...
 
     def get_chat_settings(self, chat_jid: str) -> GetChatSettingsReply: ...
 
@@ -356,6 +373,31 @@ def _decode_send_message_reply(data: Any) -> SendMessageReply:
                 contract="Service.SendMessage",
                 direction="decode",
                 dataclass_name=SendMessageReply.__name__,
+            )
+            raise error
+        return reply
+
+
+def _decode_send_reaction_reply(data: Any) -> SendReactionReply:
+    with error_trace_context("daemon_rpc", contract="Service.SendReaction", direction="decode"):
+        reply = decode_dataclass(
+            SendReactionReply,
+            data,
+            boundary="daemon_rpc",
+            contract="Service.SendReaction",
+            direction="decode",
+        )
+        if not reply.MessageID or reply.Timestamp <= 0 or not reply.OwnJID:
+            error = BoundaryValidationError(
+                "Service.SendReaction reply requires non-empty MessageID, OwnJID and positive Timestamp"
+            )
+            report_validation_failure(
+                "daemon_rpc",
+                error,
+                payload=data,
+                contract="Service.SendReaction",
+                direction="decode",
+                dataclass_name=SendReactionReply.__name__,
             )
             raise error
         return reply
@@ -500,6 +542,24 @@ class GreenlineDaemon:
             DeleteMessageRequest(ChatJID=chat_jid, MessageID=message_id),
         )
         return _decode_reply(DeleteMessageReply, data, contract="Service.DeleteMessage")
+
+    def send_reaction(
+        self,
+        chat_jid: str,
+        message_id: str,
+        reaction: str,
+        sender_jid: str = "",
+    ) -> SendReactionReply:
+        data = self._call(
+            "Service.SendReaction",
+            SendReactionRequest(
+                ChatJID=chat_jid,
+                MessageID=message_id,
+                SenderJID=sender_jid,
+                Reaction=reaction,
+            ),
+        )
+        return _decode_send_reaction_reply(data)
 
     def get_chat_settings(self, chat_jid: str) -> GetChatSettingsReply:
         data = self._call("Service.GetChatSettings", GetChatSettingsRequest(ChatJID=chat_jid))

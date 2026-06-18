@@ -4,21 +4,46 @@ from typing import Any, Dict, Optional
 from constants import GROUP_JID_SUFFIX, WHATSAPP_JID_SUFFIX
 from greenline.contracts.daemon import DaemonClientProtocol, daemon_client
 from greenline.contracts.kv import GreenlineKV
-from greenline.store.records import LidMapRecord
+from greenline.store.records import LidMapRecord, OwnJIDRecord
 from models import ChatListItem, ReadReceipt
 
 _CHAT_RUNTIME_CACHE: Dict[str, Dict[str, Any]] = {}
+_OWN_JID = ""
 _STATUS_BROADCAST_JID = "status@broadcast"
 _NEWSLETTER_JID_SUFFIX = "@newsletter"
 _LID_JID_SUFFIX = "@lid"
 
 
 def clear_chat_runtime_cache() -> None:
+    global _OWN_JID
     _CHAT_RUNTIME_CACHE.clear()
+    _OWN_JID = ""
 
 
 def remember_chat(chat: ChatListItem) -> None:
     _CHAT_RUNTIME_CACHE[chat.id] = asdict(chat)
+
+
+def remember_own_jid(jid: str) -> str:
+    global _OWN_JID
+    normalized = canonicalize_contact_jid(jid)
+    if not normalized:
+        return ""
+    _OWN_JID = normalized
+    with GreenlineKV() as kv:
+        kv.put_record("self.jid", OwnJIDRecord(normalized))
+    return normalized
+
+
+def get_own_jid() -> str:
+    global _OWN_JID
+    if _OWN_JID:
+        return _OWN_JID
+    with GreenlineKV() as kv:
+        record = kv.get_record("self.jid")
+    if isinstance(record, OwnJIDRecord):
+        _OWN_JID = record.value
+    return _OWN_JID
 
 
 def _get_chat_data(chat_jid: str) -> Optional[Dict[str, Any]]:
@@ -37,6 +62,19 @@ def _get_chat_data(chat_jid: str) -> Optional[Dict[str, Any]]:
     cached_data = asdict(chat)
     _CHAT_RUNTIME_CACHE[chat_jid] = cached_data
     return cached_data
+
+
+def preferred_contact_name(
+    jid: str,
+    *,
+    full_name: str = "",
+    push_name: str = "",
+    business_name: str = "",
+    fallback: str = "",
+) -> str:
+    if jid and jid == get_own_jid():
+        return push_name or full_name or business_name or fallback or jid.replace(WHATSAPP_JID_SUFFIX, "")
+    return full_name or push_name or business_name or fallback or jid.replace(WHATSAPP_JID_SUFFIX, "")
 
 
 def update_chat_name(
@@ -61,14 +99,26 @@ def update_chat_name(
         changed = True
     if changed:
         chat.name_updated_at = timestamp
-        chat.name = chat.full_name or chat.push_name or chat.business_name or chat.id
+        chat.name = preferred_contact_name(
+            chat.id,
+            full_name=chat.full_name,
+            push_name=chat.push_name,
+            business_name=chat.business_name,
+            fallback=chat.name,
+        )
     return changed
 
 
 def resolve_sender_name(sender_jid: str, push_name: str = "") -> str:
     data = _get_chat_data(sender_jid)
     if data is not None:
-        name = str(data.get("name", ""))
+        name = preferred_contact_name(
+            sender_jid,
+            full_name=str(data.get("full_name", "") or ""),
+            push_name=str(data.get("push_name", "") or ""),
+            business_name=str(data.get("business_name", "") or ""),
+            fallback=str(data.get("name", "") or ""),
+        )
         if name and name != sender_jid:
             return name
     if push_name:
@@ -176,7 +226,12 @@ def upsert_identity_chat(
             if changed:
                 kv.put_record(chat_key, chat)
         else:
-            display_name = full_name or push_name or business_name or chat_id.replace(WHATSAPP_JID_SUFFIX, "")
+            display_name = preferred_contact_name(
+                chat_id,
+                full_name=full_name,
+                push_name=push_name,
+                business_name=business_name,
+            )
             chat = ChatListItem(
                 id=chat_id,
                 name=display_name,

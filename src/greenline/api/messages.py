@@ -4,6 +4,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 
+from constants import GROUP_JID_SUFFIX
 from greenline import qml_events
 from greenline.api.common import (
     SuccessResponse,
@@ -24,12 +25,18 @@ from greenline.contracts.qml import (
     SendDocumentMessageRequest,
     SendImageMessageRequest,
     SendLocationMessageRequest,
+    SendMessageReactionRequest,
     SendStickerMessageRequest,
     SendTextMessageRequest,
     SendVideoMessageRequest,
 )
 from greenline.reporting import crash_reporter
-from greenline.store.identity import resolve_sender_name, resolve_sender_photo
+from greenline.store.identity import (
+    get_own_jid,
+    remember_own_jid,
+    resolve_sender_name,
+    resolve_sender_photo,
+)
 from greenline.store.media import (
     location_coordinates,
     location_link_url,
@@ -41,7 +48,12 @@ from greenline.store.messages import (
     _message_preview,
     _update_chat_after_edit,
 )
-from greenline.store.reactions import list_message_reactions
+from greenline.store.reactions import (
+    delete_message_reaction,
+    list_message_reactions,
+    put_message_reaction,
+    refresh_message_reactions_flag,
+)
 from greenline.store.records import (
     StoredMessageRecord,
     message_from_record,
@@ -295,12 +307,14 @@ def get_message_reactions(request: GetMessageReactionsRequest) -> MessageReactio
     with GreenlineKV() as kv:
         entries = list_message_reactions(kv, request.chat_id, request.message_id)
 
+    own_jid = get_own_jid()
     reactions = [
         MessageReactionItem(
             jid=record.sender_jid,
             name=resolve_sender_name(record.sender_jid),
             photo=resolve_sender_photo(record.sender_jid),
             emoji=record.emoji,
+            is_self=record.sender_jid == own_jid,
         )
         for _key, record in entries
     ]
@@ -457,6 +471,52 @@ def delete_message(request: DeleteMessageRequest) -> SuccessResponse:
 
     qml_events.emit_message_upsert([deleted_msg])
     qml_events.emit_chat_list_update([chat])
+    return SuccessResponse(success=True, message="")
+
+
+@crash_reporter
+@dataclass_to_dict
+def send_message_reaction(request: SendMessageReactionRequest) -> SuccessResponse:
+    entry = _get_message_entry(request.chat_id, request.message_id)
+    if entry is None:
+        return SuccessResponse(success=False, message="Message not found")
+
+    if _is_local_only_message_entry(entry):
+        return SuccessResponse(success=False, message="Message has not been sent yet")
+
+    if entry.type == MessageType.DELETED:
+        return SuccessResponse(success=False, message="Message already deleted")
+
+    sender_jid = ""
+    if not entry.is_outgoing:
+        sender_jid = entry.sender.strip()
+        if not sender_jid and not entry.chat_id.endswith(GROUP_JID_SUFFIX):
+            sender_jid = entry.chat_id
+        if not sender_jid:
+            return SuccessResponse(success=False, message="Message sender unavailable")
+
+    try:
+        reply = daemon_client().send_reaction(
+            request.chat_id,
+            request.message_id,
+            request.emoji,
+            sender_jid=sender_jid,
+        )
+    except Exception as error:
+        return SuccessResponse(success=False, message=str(error))
+
+    own_jid = remember_own_jid(reply.OwnJID)
+
+    with GreenlineKV() as kv:
+        if request.emoji:
+            put_message_reaction(kv, request.chat_id, request.message_id, own_jid, request.emoji)
+        else:
+            delete_message_reaction(kv, request.chat_id, request.message_id, own_jid)
+        updated_message = refresh_message_reactions_flag(kv, request.chat_id, request.message_id)
+
+    if updated_message is not None:
+        qml_events.emit_message_upsert([updated_message])
+
     return SuccessResponse(success=True, message="")
 
 

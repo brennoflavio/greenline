@@ -8,6 +8,7 @@ from greenline.contracts.qml import (
     GetMessageReactionsRequest,
     PairPhoneRequest,
     ReplyContextRequest,
+    SendMessageReactionRequest,
     SendTextMessageRequest,
     decode_qml_request,
     qml_api,
@@ -52,7 +53,11 @@ def test_validate_qml_response_rejects_invalid_get_message_reactions_payload() -
     with pytest.raises(BoundaryValidationError):
         validate_qml_response(
             "get_message_reactions",
-            {"success": True, "reactions": [{"jid": "a", "name": "Alice", "photo": ""}], "message": ""},
+            {
+                "success": True,
+                "reactions": [{"jid": "a", "name": "Alice", "photo": "", "emoji": "👍"}],
+                "message": "",
+            },
         )
 
 
@@ -137,6 +142,16 @@ def test_decode_qml_request_returns_get_message_reactions_dataclass() -> None:
     request = decode_qml_request("get_message_reactions", ("chat@s.whatsapp.net", "message-1"), {})
 
     assert request == GetMessageReactionsRequest(chat_id="chat@s.whatsapp.net", message_id="message-1")
+
+
+def test_decode_qml_request_returns_send_message_reaction_dataclass() -> None:
+    request = decode_qml_request("send_message_reaction", ("chat@s.whatsapp.net", "message-1", "👍"), {})
+
+    assert request == SendMessageReactionRequest(
+        chat_id="chat@s.whatsapp.net",
+        message_id="message-1",
+        emoji="👍",
+    )
 
 
 def test_decode_qml_request_logs_invalid_primitive_type(caplog: pytest.LogCaptureFixture) -> None:

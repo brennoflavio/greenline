@@ -129,6 +129,7 @@ class MessageReactionItem:
     name: str
     photo: str
     emoji: str
+    is_self: bool
 
 
 @dataclass

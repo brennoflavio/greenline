@@ -156,7 +156,7 @@ Page {
     }
 
     function openMessageReactions(message) {
-        if (!message || !message.id || !message.has_reactions)
+        if (!chatMessageList.canReactMessage(message))
             return ;
 
         pageStack.push(Qt.resolvedUrl("MessageReactionsPage.qml"), {

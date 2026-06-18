@@ -14,6 +14,7 @@ from daemon_types import (
     GroupParticipant,
     PairPhoneReply,
     SendMessageReply,
+    SendReactionReply,
     SessionStatusReply,
     SyncAvatarReply,
     VersionReply,
@@ -391,11 +392,16 @@ def test_daemon_boundary_ensure_jid_preserves_explicit_empty_reply() -> None:
     ]
 
 
-def test_daemon_boundary_edit_and_delete_message_decode_replies() -> None:
+def test_daemon_boundary_edit_delete_and_send_reaction_decode_replies() -> None:
     transport = FakeTransport(
         {
             "Service.EditMessage": {"MessageID": "message-1", "Timestamp": 123},
             "Service.DeleteMessage": {"MessageID": "message-1", "Timestamp": 124},
+            "Service.SendReaction": {
+                "MessageID": "reaction-1",
+                "Timestamp": 125,
+                "OwnJID": "me@s.whatsapp.net",
+            },
         }
     )
     daemon = GreenlineDaemon(transport=transport)  # type: ignore[arg-type]
@@ -404,12 +410,24 @@ def test_daemon_boundary_edit_and_delete_message_decode_replies() -> None:
         MessageID="message-1", Timestamp=123
     )
     assert daemon.delete_message("chat-1", "message-1") == DeleteMessageReply(MessageID="message-1", Timestamp=124)
+    assert daemon.send_reaction("chat-1", "message-1", "👍", sender_jid="sender-1@s.whatsapp.net") == (
+        SendReactionReply(MessageID="reaction-1", Timestamp=125, OwnJID="me@s.whatsapp.net")
+    )
     assert transport.calls == [
         (
             "Service.EditMessage",
             {"ChatJID": "chat-1", "MessageID": "message-1", "Text": "edited"},
         ),
         ("Service.DeleteMessage", {"ChatJID": "chat-1", "MessageID": "message-1"}),
+        (
+            "Service.SendReaction",
+            {
+                "ChatJID": "chat-1",
+                "MessageID": "message-1",
+                "SenderJID": "sender-1@s.whatsapp.net",
+                "Reaction": "👍",
+            },
+        ),
     ]
 
 
@@ -467,6 +485,16 @@ def test_daemon_boundary_rejects_missing_send_message_fields(
 
     assert "daemon_rpc contract=Service.SendMessage direction=decode validation failed" in caplog.text
     assert 'missing value for field "MessageID"' in caplog.text
+
+
+def test_daemon_boundary_logs_invalid_send_reaction_reply(caplog: pytest.LogCaptureFixture) -> None:
+    transport = FakeTransport({"Service.SendReaction": {"MessageID": "reaction-1", "Timestamp": 123}})
+    daemon = GreenlineDaemon(transport=transport)  # type: ignore[arg-type]
+
+    with pytest.raises(BoundaryValidationError):
+        daemon.send_reaction("chat-1", "message-1", "👍")
+
+    assert "daemon_rpc contract=Service.SendReaction direction=decode validation failed" in caplog.text
 
 
 def test_daemon_boundary_logs_invalid_scalar_reply(caplog: pytest.LogCaptureFixture) -> None:

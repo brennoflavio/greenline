@@ -73,6 +73,7 @@ from greenline.api.messages import (
     send_document_message,
     send_image_message,
     send_location_message,
+    send_message_reaction,
     send_sticker_message,
     send_text_message,
     send_video_message,
@@ -107,6 +108,7 @@ send_contact_message = qml_api("send_contact_message")(send_contact_message)
 send_document_message = qml_api("send_document_message")(send_document_message)
 send_image_message = qml_api("send_image_message")(send_image_message)
 send_location_message = qml_api("send_location_message")(send_location_message)
+send_message_reaction = qml_api("send_message_reaction")(send_message_reaction)
 handle_application_exit = qml_api("handle_application_exit")(handle_application_exit)
 send_presence = qml_api("send_presence")(send_presence)
 send_sticker_message = qml_api("send_sticker_message")(send_sticker_message)
@@ -171,6 +173,7 @@ __all__ = [
     "mark_messages_as_read",
     "send_audio_message",
     "send_contact_message",
+    "send_message_reaction",
     "send_document_message",
     "send_image_message",
     "send_location_message",

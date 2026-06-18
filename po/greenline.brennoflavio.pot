@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-17 14:29+0000\n"
+"POT-Creation-Date: 2026-06-18 05:41+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -189,7 +189,7 @@ msgid "Share"
 msgstr ""
 
 #: ../qml/ContactPreviewPage.qml:101 ../qml/DocumentPreviewPage.qml:101
-#: ../qml/ImagePreviewPage.qml:67 ../qml/MessageReactionsPage.qml:197
+#: ../qml/ImagePreviewPage.qml:67 ../qml/MessageReactionsPage.qml:297
 #: ../qml/VideoPreviewPage.qml:71 ../qml/components/ChatPageHeader.qml:18
 #: ../qml/ut_components/AppHeader.qml:78
 msgid "Back"
@@ -235,20 +235,48 @@ msgstr ""
 msgid "Unable to open the shared file"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:30
+#: ../qml/MessageReactionsPage.qml:34
 msgid "Failed to load reactions"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:166
+#: ../qml/MessageReactionsPage.qml:52
+msgid "Failed to send reaction"
+msgstr ""
+
+#: ../qml/MessageReactionsPage.qml:121
+msgid "Remove"
+msgstr ""
+
+#: ../qml/MessageReactionsPage.qml:123
+msgid "Deleting reaction…"
+msgstr ""
+
+#: ../qml/MessageReactionsPage.qml:123
+msgid "Reaction removed"
+msgstr ""
+
+#: ../qml/MessageReactionsPage.qml:209
 msgid "Loading reactions…"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:183
+#: ../qml/MessageReactionsPage.qml:226
 msgid "No reactions yet"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:193
-#: ../qml/components/ChatMessageList.qml:198
+#: ../qml/MessageReactionsPage.qml:258
+msgid "Quick reactions"
+msgstr ""
+
+#: ../qml/MessageReactionsPage.qml:272
+msgid "Reaction updated"
+msgstr ""
+
+#: ../qml/MessageReactionsPage.qml:272
+msgid "Sending reaction…"
+msgstr ""
+
+#: ../qml/MessageReactionsPage.qml:293
+#: ../qml/components/ChatMessageList.qml:204
 msgid "Reactions"
 msgstr ""
 
@@ -452,19 +480,19 @@ msgstr ""
 msgid "View-once message. Open WhatsApp on your primary device to view it."
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:175
+#: ../qml/components/ChatMessageList.qml:181
 msgid "Delete"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:186
+#: ../qml/components/ChatMessageList.qml:192
 msgid "Reply"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:192
+#: ../qml/components/ChatMessageList.qml:198
 msgid "Edit"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:204
+#: ../qml/components/ChatMessageList.qml:210
 msgid "Copy"
 msgstr ""
 

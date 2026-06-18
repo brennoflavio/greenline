@@ -112,6 +112,11 @@ class StickerCacheRecord:
 
 
 @dataclass
+class OwnJIDRecord:
+    value: str
+
+
+@dataclass
 class KVSchemaVersionRecord:
     value: int
 

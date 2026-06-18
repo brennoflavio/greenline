@@ -80,6 +80,13 @@ class SendMessageReply:
 
 
 @dataclass
+class SendReactionReply:
+    MessageID: str
+    Timestamp: int
+    OwnJID: str
+
+
+@dataclass
 class SyncAvatarReply:
     AvatarPath: str
 

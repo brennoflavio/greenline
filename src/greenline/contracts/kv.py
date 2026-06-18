@@ -19,6 +19,7 @@ from greenline.store.records import (
     MessageIndexRecord,
     MessageReactionRecord,
     NotificationsSuppressedRecord,
+    OwnJIDRecord,
     PendingOutboxRecord,
     StickerCacheRecord,
     StopDaemonOnExitRecord,
@@ -61,6 +62,7 @@ KV_CONTRACTS: tuple[KVContract[Any], ...] = (
     KVContract("draft:", DraftRecord, "scalar"),
     KVContract("lid_map:", LidMapRecord, "scalar"),
     KVContract("sticker_cache:", StickerCacheRecord, "scalar"),
+    KVContract("self.jid", OwnJIDRecord, "scalar", prefix=False),
 )
 
 

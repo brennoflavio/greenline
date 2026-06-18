@@ -135,6 +135,11 @@ class FakeDaemonRPC:
         MessageID="sent-message", Timestamp=1_700_000_000
     )
     send_message_exception: BaseException | None = None
+    send_reaction_calls: list[dict[str, Any]] = []
+    send_reaction_result: daemon_types.SendReactionReply = daemon_types.SendReactionReply(
+        MessageID="reaction-message", Timestamp=1_700_000_001, OwnJID="me@s.whatsapp.net"
+    )
+    send_reaction_exception: BaseException | None = None
     edit_message_calls: list[dict[str, Any]] = []
     delete_message_calls: list[dict[str, Any]] = []
     send_presence_calls: list[bool] = []
@@ -169,6 +174,11 @@ class FakeDaemonRPC:
         cls.send_message_calls = []
         cls.send_message_result = daemon_types.SendMessageReply(MessageID="sent-message", Timestamp=1_700_000_000)
         cls.send_message_exception = None
+        cls.send_reaction_calls = []
+        cls.send_reaction_result = daemon_types.SendReactionReply(
+            MessageID="reaction-message", Timestamp=1_700_000_001, OwnJID="me@s.whatsapp.net"
+        )
+        cls.send_reaction_exception = None
         cls.edit_message_calls = []
         cls.delete_message_calls = []
         cls.send_presence_calls = []
@@ -252,6 +262,25 @@ class FakeDaemonRPC:
         if self.__class__.send_message_exception is not None:
             raise self.__class__.send_message_exception
         return self.__class__.send_message_result
+
+    def send_reaction(
+        self,
+        chat_id: str,
+        message_id: str,
+        reaction: str,
+        sender_jid: str = "",
+    ) -> daemon_types.SendReactionReply:
+        self.__class__.send_reaction_calls.append(
+            {
+                "chat_id": chat_id,
+                "message_id": message_id,
+                "reaction": reaction,
+                "sender_jid": sender_jid,
+            }
+        )
+        if self.__class__.send_reaction_exception is not None:
+            raise self.__class__.send_reaction_exception
+        return self.__class__.send_reaction_result
 
     def edit_message(
         self,

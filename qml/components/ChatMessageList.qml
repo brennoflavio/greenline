@@ -88,6 +88,12 @@ Item {
         return !!message && !!message.is_outgoing && messageId !== "" && messageId.indexOf("pending-") !== 0 && messageId.indexOf("failed-") !== 0 && sendStatus !== "pending" && sendStatus !== "failed" && (message.type || "") !== "deleted";
     }
 
+    function canReactMessage(message) {
+        var messageId = message && message.id ? message.id : "";
+        var sendStatus = message && message.send_status ? message.send_status : "";
+        return !!message && messageId !== "" && messageId.indexOf("pending-") !== 0 && messageId.indexOf("failed-") !== 0 && sendStatus !== "pending" && sendStatus !== "failed" && (message.type || "") !== "deleted";
+    }
+
     function usesRichTextMessage(message) {
         return !!message && (!!message.reply_to_id || (root.isGroup && !message.is_outgoing && (message.sender_name || "") !== ""));
     }
@@ -196,7 +202,7 @@ Item {
                     Action {
                         iconName: "like"
                         text: i18n.tr("Reactions")
-                        enabled: !!modelData && !!modelData.has_reactions
+                        enabled: root.canReactMessage(modelData)
                         onTriggered: root.reactionsRequested(modelData)
                     },
                     Action {

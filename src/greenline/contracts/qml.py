@@ -267,8 +267,9 @@ def assert_contact_list_response(payload: Any) -> None:
 def assert_message_reaction_item(payload: Any, path: str = "MessageReactionItem") -> None:
     reaction = _assert_dict(payload, path)
     _assert_keys(reaction, MESSAGE_REACTION_ITEM_FIELDS, path)
-    for key in MESSAGE_REACTION_ITEM_FIELDS:
+    for key in ("jid", "name", "photo", "emoji"):
         _assert_str(reaction, key, path)
+    _assert_bool(reaction, "is_self", path)
 
 
 def assert_message_reactions_response(payload: Any) -> None:
@@ -538,6 +539,13 @@ class SendTextMessageRequest:
 
 
 @dataclass(frozen=True)
+class SendMessageReactionRequest:
+    chat_id: str
+    message_id: str
+    emoji: str
+
+
+@dataclass(frozen=True)
 class SendImageMessageRequest:
     chat_id: str
     file_path: str
@@ -679,6 +687,9 @@ API_CONTRACTS: dict[str, ApiContract] = {
     ),
     "send_location_message": ApiContract(
         "send_location_message", assert_success_response, "dict", request_type=SendLocationMessageRequest
+    ),
+    "send_message_reaction": ApiContract(
+        "send_message_reaction", assert_success_response, "dict", request_type=SendMessageReactionRequest
     ),
     "handle_application_exit": ApiContract(
         "handle_application_exit",
