@@ -234,7 +234,7 @@ Page {
             id: quickActions
 
             color: theme.palette.normal.background
-            border.color: theme.palette.normal.base
+            border.width: 0
             width: parent.width
             height: quickActionsColumn.implicitHeight + units.gu(2)
 
@@ -242,6 +242,18 @@ Page {
                 left: parent.left
                 right: parent.right
                 bottom: parent.bottom
+            }
+
+            Rectangle {
+                height: units.dp(1)
+                color: theme.palette.normal.base
+
+                anchors {
+                    top: parent.top
+                    left: parent.left
+                    right: parent.right
+                }
+
             }
 
             Column {

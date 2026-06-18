@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-18 05:41+0000\n"
+"POT-Creation-Date: 2026-06-18 17:01+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -189,7 +189,7 @@ msgid "Share"
 msgstr ""
 
 #: ../qml/ContactPreviewPage.qml:101 ../qml/DocumentPreviewPage.qml:101
-#: ../qml/ImagePreviewPage.qml:67 ../qml/MessageReactionsPage.qml:297
+#: ../qml/ImagePreviewPage.qml:67 ../qml/MessageReactionsPage.qml:313
 #: ../qml/VideoPreviewPage.qml:71 ../qml/components/ChatPageHeader.qml:18
 #: ../qml/ut_components/AppHeader.qml:78
 msgid "Back"
@@ -243,15 +243,15 @@ msgstr ""
 msgid "Failed to send reaction"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:121
+#: ../qml/MessageReactionsPage.qml:196
 msgid "Remove"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:123
+#: ../qml/MessageReactionsPage.qml:198
 msgid "Deleting reaction…"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:123
+#: ../qml/MessageReactionsPage.qml:198
 msgid "Reaction removed"
 msgstr ""
 
@@ -263,19 +263,19 @@ msgstr ""
 msgid "No reactions yet"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:258
+#: ../qml/MessageReactionsPage.qml:272
 msgid "Quick reactions"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:272
+#: ../qml/MessageReactionsPage.qml:287
 msgid "Reaction updated"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:272
+#: ../qml/MessageReactionsPage.qml:287
 msgid "Sending reaction…"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:293
+#: ../qml/MessageReactionsPage.qml:309
 #: ../qml/components/ChatMessageList.qml:204
 msgid "Reactions"
 msgstr ""
