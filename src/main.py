@@ -28,6 +28,7 @@ from greenline.api.chats import (
     get_contact_list,
     get_group_mention_candidates,
     set_chat_draft,
+    toggle_archive,
     toggle_mute,
 )
 from greenline.api.common import SuccessResponse
@@ -120,6 +121,7 @@ set_notifications_suppressed = qml_api("set_notifications_suppressed")(set_notif
 set_stop_daemon_on_exit = qml_api("set_stop_daemon_on_exit")(set_stop_daemon_on_exit)
 start_event_loop = qml_api("start_event_loop")(start_event_loop)
 subscribe_presence = qml_api("subscribe_presence")(subscribe_presence)
+toggle_archive = qml_api("toggle_archive")(toggle_archive)
 toggle_mute = qml_api("toggle_mute")(toggle_mute)
 uninstall_daemon = qml_api("uninstall_daemon")(uninstall_daemon)
 
@@ -135,6 +137,7 @@ __all__ = [
     "get_contact_list",
     "get_group_mention_candidates",
     "set_chat_draft",
+    "toggle_archive",
     "toggle_mute",
     "SuccessResponse",
     "ClearDataResponse",

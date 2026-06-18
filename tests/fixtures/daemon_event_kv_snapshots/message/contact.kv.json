@@ -1,6 +1,7 @@
 {
   "added": {
     "chat:fixture-group-1@g.us": {
+      "archived": false,
       "business_name": "",
       "date": "12:00",
       "full_name": "",
@@ -19,6 +20,7 @@
       "unread_count": 1
     },
     "chat:fixture-user-22@s.whatsapp.net": {
+      "archived": false,
       "business_name": "",
       "date": "",
       "full_name": "",

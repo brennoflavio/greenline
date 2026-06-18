@@ -1,6 +1,7 @@
 {
   "added": {
     "chat:fixture-user-41@s.whatsapp.net": {
+      "archived": false,
       "business_name": "",
       "date": "",
       "full_name": "Fixture Contact",

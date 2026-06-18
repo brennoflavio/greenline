@@ -12,6 +12,7 @@ from qml_contract_helpers import (
 
 import daemon_types
 import main
+from greenline.contracts.kv import GreenlineKV
 from greenline.contracts.validation import BoundaryValidationError
 from greenline.store.identity import canonicalize_contact_jid
 from ut_components.kv import KV
@@ -24,16 +25,24 @@ def _last_event(fake_pyotherside, name: str):
     raise AssertionError(f"missing event {name}")
 
 
-def test_get_chat_list_contract_includes_full_chat_and_draft() -> None:
-    chat = seed_chat(DEFAULT_CHAT_ID, muted=True, photo="file:///tmp/photo.jpg")
-    seed_draft(chat.id, "Draft text", [])
+def test_get_chat_list_contract_filters_active_and_archived_chats() -> None:
+    active_chat = seed_chat(DEFAULT_CHAT_ID, muted=True, photo="file:///tmp/photo.jpg")
+    archived_chat = seed_chat("archived@s.whatsapp.net", archived=True, muted=False)
+    seed_draft(active_chat.id, "Draft text", [])
 
-    result = main.get_chat_list()
+    active_result = main.get_chat_list()
+    archived_result = main.get_chat_list(True)
 
-    validate_api_response("get_chat_list", result)
-    assert result["chats"][0]["photo"] == "file:///tmp/photo.jpg"
-    assert result["chats"][0]["muted"] is True
-    assert result["chats"][0]["has_draft"] is True
+    validate_api_response("get_chat_list", active_result)
+    validate_api_response("get_chat_list", archived_result)
+    assert [chat["id"] for chat in active_result["chats"]] == [active_chat.id]
+    assert active_result["chats"][0]["photo"] == "file:///tmp/photo.jpg"
+    assert active_result["chats"][0]["muted"] is True
+    assert active_result["chats"][0]["archived"] is False
+    assert active_result["chats"][0]["has_draft"] is True
+    assert [chat["id"] for chat in archived_result["chats"]] == [archived_chat.id]
+    assert archived_result["chats"][0]["archived"] is True
+    assert archived_result["chats"][0]["has_draft"] is False
 
 
 def test_get_chat_list_contract_rejects_malformed_chat() -> None:
@@ -90,11 +99,12 @@ def test_canonicalize_contact_jid_preserves_empty_daemon_resolution(
 
 
 def test_get_chat_info_contract_success_missing_and_malformed() -> None:
-    seed_chat(DEFAULT_CHAT_ID, photo="file:///tmp/photo.jpg")
+    seed_chat(DEFAULT_CHAT_ID, photo="file:///tmp/photo.jpg", muted=True)
 
     success = main.get_chat_info(DEFAULT_CHAT_ID)
     validate_api_response("get_chat_info", success)
     assert success["photo"] == "file:///tmp/photo.jpg"
+    assert success["muted"] is True
 
     missing = main.get_chat_info("missing@s.whatsapp.net")
     validate_api_response("get_chat_info", missing)
@@ -186,3 +196,21 @@ def test_toggle_mute_contract_missing_chat() -> None:
 
     validate_api_response("toggle_mute", result)
     assert result == {"success": False, "message": "Chat not found"}
+
+
+def test_toggle_archive_contract_persists_and_emits_full_chat_update(fake_pyotherside_module) -> None:
+    chat = seed_chat(DEFAULT_CHAT_ID, archived=False, muted=True)
+
+    result = main.toggle_archive(chat.id)
+
+    validate_api_response("toggle_archive", result)
+    event_payload = _last_event(fake_pyotherside_module, "chat-list-update")
+    validate_event_payload("chat-list-update", event_payload)
+    assert event_payload[0]["archived"] is True
+    assert event_payload[0]["muted"] is True
+    with GreenlineKV() as kv:
+        stored_chat = kv.get_record(f"chat:{chat.id}")
+    assert stored_chat is not None
+    assert stored_chat.archived is True
+    assert main.get_chat_list()["chats"] == []
+    assert [entry["id"] for entry in main.get_chat_list(True)["chats"]] == [chat.id]

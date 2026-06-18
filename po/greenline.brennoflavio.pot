@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-18 17:01+0000\n"
+"POT-Creation-Date: 2026-06-18 21:11+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -43,24 +43,36 @@ msgstr ""
 msgid "Link Device"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:17
+#: ../qml/ChatListPage.qml:18
 msgid "Share to chat"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:34
+#: ../qml/ChatListPage.qml:35
 msgid "The shared file is no longer available"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:45 ../qml/Main.qml:98
+#: ../qml/ChatListPage.qml:46 ../qml/Main.qml:98
 msgid "Unsupported shared item"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:52
+#: ../qml/ChatListPage.qml:53
 msgid "Failed to share file"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:140
+#: ../qml/ChatListPage.qml:152
+msgid "No archived chats"
+msgstr ""
+
+#: ../qml/ChatListPage.qml:152
 msgid "No chats found"
+msgstr ""
+
+#: ../qml/ChatListPage.qml:172 ../qml/ChatListPage.qml:239
+msgid "Chats"
+msgstr ""
+
+#: ../qml/ChatListPage.qml:178 ../qml/ChatListPage.qml:239
+msgid "Archived"
 msgstr ""
 
 #: ../qml/ChatPage.qml:79
@@ -344,7 +356,7 @@ msgstr ""
 msgid "Silence all notifications from this chat"
 msgstr ""
 
-#: ../qml/ProfilePage.qml:149
+#: ../qml/ProfilePage.qml:142
 msgid "Profile"
 msgstr ""
 
@@ -460,12 +472,20 @@ msgstr ""
 msgid "Type a message..."
 msgstr ""
 
-#: ../qml/components/ChatListItem.qml:170
+#: ../qml/components/ChatListItem.qml:171
 msgid "Mute"
 msgstr ""
 
-#: ../qml/components/ChatListItem.qml:170
+#: ../qml/components/ChatListItem.qml:171
 msgid "Unmute"
+msgstr ""
+
+#: ../qml/components/ChatListItem.qml:176
+msgid "Archive"
+msgstr ""
+
+#: ../qml/components/ChatListItem.qml:176
+msgid "Unarchive"
 msgstr ""
 
 #: ../qml/components/ChatListSearchBar.qml:8

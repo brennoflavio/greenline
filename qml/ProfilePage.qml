@@ -123,16 +123,10 @@ Page {
         Component.onCompleted: {
             addImportPath(Qt.resolvedUrl('../src/'));
             importModule('main', function() {
-                python.call('main.get_chat_list', [], function(result) {
-                    if (!result.success)
-                        return ;
+                python.call('main.get_chat_info', [chatId], function(result) {
+                    if (result.success)
+                        muted = !!result.muted;
 
-                    for (var i = 0; i < result.chats.length; i++) {
-                        if (result.chats[i].id === chatId) {
-                            muted = !!result.chats[i].muted;
-                            break;
-                        }
-                    }
                 });
                 if (!isGroup)
                     python.call('main.get_phone_number', [chatId], function(result) {

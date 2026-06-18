@@ -203,7 +203,7 @@ def assert_base_chat(payload: Any, path: str = "ChatListItem") -> None:
         _assert_str(chat, key, path)
     for key in ("last_message_timestamp", "unread_count", "name_updated_at"):
         _assert_int(chat, key, path)
-    for key in ("is_group", "muted"):
+    for key in ("is_group", "muted", "archived"):
         _assert_bool(chat, key, path)
     _require(chat["read_receipt"] in READ_RECEIPTS, f"{path}.read_receipt has unknown value {chat['read_receipt']!r}")
     _assert_string_list(chat, "last_message_mentioned_jids", path)
@@ -287,12 +287,13 @@ def assert_chat_info_response(payload: Any) -> None:
     if response.get("success") is False:
         _assert_keys(response, {"success"}, "ChatInfoResponse")
         return
-    _assert_keys(response, {"success", "id", "name", "photo", "is_group", "unread_count"}, "ChatInfoResponse")
+    _assert_keys(response, {"success", "id", "name", "photo", "is_group", "unread_count", "muted"}, "ChatInfoResponse")
     _assert_bool(response, "success", "ChatInfoResponse")
     for key in ("id", "name", "photo"):
         _assert_str(response, key, "ChatInfoResponse")
     _assert_bool(response, "is_group", "ChatInfoResponse")
     _assert_int(response, "unread_count", "ChatInfoResponse")
+    _assert_bool(response, "muted", "ChatInfoResponse")
 
 
 def assert_chat_draft_response(payload: Any) -> None:
@@ -490,6 +491,11 @@ class SendPresenceRequest:
 
 
 @dataclass(frozen=True)
+class GetChatListRequest:
+    archived: bool = False
+
+
+@dataclass(frozen=True)
 class GetMessagesRequest:
     chat_id: str
     cursor: str = ""
@@ -640,7 +646,12 @@ API_CONTRACTS: dict[str, ApiContract] = {
     "get_cached_stickers": ApiContract("get_cached_stickers", assert_cached_stickers_response, "dict"),
     "get_chat_draft": ApiContract("get_chat_draft", assert_chat_draft_response, "dict", request_type=ChatIdRequest),
     "get_chat_info": ApiContract("get_chat_info", assert_chat_info_response, "dict", request_type=ChatIdRequest),
-    "get_chat_list": ApiContract("get_chat_list", assert_chat_list_response, "dict"),
+    "get_chat_list": ApiContract(
+        "get_chat_list",
+        assert_chat_list_response,
+        "dict",
+        request_type=GetChatListRequest,
+    ),
     "get_contact_list": ApiContract("get_contact_list", assert_contact_list_response, "dict"),
     "get_group_mention_candidates": ApiContract(
         "get_group_mention_candidates", assert_group_mention_candidates_response, "dict", request_type=ChatIdRequest
@@ -745,6 +756,7 @@ API_CONTRACTS: dict[str, ApiContract] = {
         request_type=ChatIdRequest,
         notes="Fire-and-forget presence subscription.",
     ),
+    "toggle_archive": ApiContract("toggle_archive", assert_success_response, "dict", request_type=ChatIdRequest),
     "toggle_mute": ApiContract("toggle_mute", assert_success_response, "dict", request_type=ChatIdRequest),
     "uninstall_daemon": ApiContract("uninstall_daemon", assert_success_response, "dict"),
 }

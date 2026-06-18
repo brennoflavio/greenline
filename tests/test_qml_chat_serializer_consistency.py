@@ -60,16 +60,18 @@ def test_chat_serializers_match_initial_load_except_draft_fields() -> None:
     assert initial_entry["has_draft"] is True
     assert expected["photo"] == "file:///tmp/alice.jpg"
     assert expected["muted"] is True
+    assert expected["archived"] is False
     assert expected["last_message"] == "Hello @Sender"
 
 
 def test_chat_bridge_payload_accepts_stored_dict_without_dropping_required_fields() -> None:
-    chat = seed_chat(DEFAULT_CHAT_ID, photo="file:///tmp/photo.jpg", muted=True)
+    chat = seed_chat(DEFAULT_CHAT_ID, photo="file:///tmp/photo.jpg", muted=True, archived=True)
 
     payload = qml_events.chat_list_update_payload([asdict(chat)])[0]
 
     assert_base_chat(payload)
     assert payload["photo"] == "file:///tmp/photo.jpg"
     assert payload["muted"] is True
+    assert payload["archived"] is True
     assert payload["full_name"] == chat.full_name
     assert payload["name_updated_at"] == chat.name_updated_at

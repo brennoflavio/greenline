@@ -2,6 +2,7 @@
   "chat_presence_updates": [],
   "chat_updates": {
     "fixture-chat-1@s.whatsapp.net": {
+      "archived": false,
       "business_name": "",
       "date": "11:59",
       "full_name": "",

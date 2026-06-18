@@ -38,6 +38,7 @@ class ChatListItem:
     last_message_mentioned_jids: List[str] = field(default_factory=list)
     last_message_type: str = ""
     muted: bool = False
+    archived: bool = False
     full_name: str = ""
     push_name: str = ""
     business_name: str = ""

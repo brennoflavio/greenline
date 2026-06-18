@@ -2,6 +2,7 @@
   "chat_presence_updates": [],
   "chat_updates": {
     "fixture-group-1@g.us": {
+      "archived": false,
       "business_name": "",
       "date": "12:00",
       "full_name": "",

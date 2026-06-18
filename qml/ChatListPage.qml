@@ -10,6 +10,7 @@ Page {
 
     property var chats: []
     property bool pythonReady: false
+    property bool showArchived: false
     property bool shareSelectionMode: false
     property bool shareSendInProgress: false
     property string shareFilePath: ""
@@ -58,10 +59,20 @@ Page {
     }
 
     function refreshChatList() {
-        python.call('main.get_chat_list', [], function(result) {
+        python.call('main.get_chat_list', [showArchived], function(result) {
             if (result.success)
                 chats = result.chats;
 
+        });
+    }
+
+    function switchListMode(targetArchived) {
+        if (shareSelectionMode || showArchived === targetArchived)
+            return ;
+
+        pageStack.clear();
+        pageStack.push(Qt.resolvedUrl("ChatListPage.qml"), {
+            "showArchived": targetArchived
         });
     }
 
@@ -87,7 +98,7 @@ Page {
             top: chatListPage.header.bottom
             left: parent.left
             right: parent.right
-            bottom: parent.bottom
+            bottom: bottomBar.visible ? bottomBar.top : parent.bottom
         }
 
         LoadingBar {
@@ -130,6 +141,7 @@ Page {
                         openChatPage(modelData);
                 }
                 onMuteRequested: python.call('main.toggle_mute', [chatId])
+                onArchiveRequested: python.call('main.toggle_archive', [chatId])
             }
 
         }
@@ -137,9 +149,34 @@ Page {
         Label {
             visible: chatListView.model.length === 0
             anchors.horizontalCenter: parent.horizontalCenter
-            text: i18n.tr("No chats found")
+            text: chatListPage.showArchived ? i18n.tr("No archived chats") : i18n.tr("No chats found")
             fontSize: "large"
             color: theme.palette.normal.backgroundSecondaryText
+        }
+
+    }
+
+    BottomBar {
+        id: bottomBar
+
+        visible: !chatListPage.shareSelectionMode
+
+        anchors {
+            left: parent.left
+            right: parent.right
+            bottom: parent.bottom
+        }
+
+        IconButton {
+            iconName: "contact-group"
+            text: i18n.tr("Chats")
+            onClicked: chatListPage.switchListMode(false)
+        }
+
+        IconButton {
+            iconName: "document-save"
+            text: i18n.tr("Archived")
+            onClicked: chatListPage.switchListMode(true)
         }
 
     }
@@ -199,7 +236,7 @@ Page {
     }
 
     header: AppHeader {
-        pageTitle: chatListPage.shareSelectionMode ? chatListPage.shareSelectionTitle : "Greenline"
+        pageTitle: chatListPage.shareSelectionMode ? chatListPage.shareSelectionTitle : (chatListPage.showArchived ? i18n.tr("Archived") : i18n.tr("Chats"))
         isRootPage: !chatListPage.shareSelectionMode
         appIconName: "call-start"
         showSettingsButton: !chatListPage.shareSelectionMode

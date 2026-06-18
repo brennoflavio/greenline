@@ -12,9 +12,10 @@ ListItem {
     property bool swipeActionsEnabled: true
 
     signal muteRequested(string chatId)
+    signal archiveRequested(string chatId)
 
     height: units.gu(8)
-    leadingActions: root.swipeActionsEnabled ? muteActions : null
+    leadingActions: root.swipeActionsEnabled ? chatActions : null
 
     RowLayout {
         spacing: units.gu(1.5)
@@ -162,13 +163,18 @@ ListItem {
     }
 
     ListItemActions {
-        id: muteActions
+        id: chatActions
 
         actions: [
             Action {
                 iconName: root.chat.muted ? "audio-volume-high" : "audio-volume-muted"
                 text: root.chat.muted ? i18n.tr("Unmute") : i18n.tr("Mute")
                 onTriggered: root.muteRequested(root.chat.id)
+            },
+            Action {
+                iconName: "document-save"
+                text: root.chat.archived ? i18n.tr("Unarchive") : i18n.tr("Archive")
+                onTriggered: root.archiveRequested(root.chat.id)
             }
         ]
     }

@@ -65,6 +65,7 @@ def test_object_records_round_trip_without_changing_storage_shape() -> None:
             "last_message_mentioned_jids": [],
             "last_message_type": "",
             "muted": False,
+            "archived": False,
             "full_name": "",
             "push_name": "",
             "business_name": "",

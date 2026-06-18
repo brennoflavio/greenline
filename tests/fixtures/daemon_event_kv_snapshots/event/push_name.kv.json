@@ -3,6 +3,7 @@
   "changed": {
     "chat:fixture-chat-44@s.whatsapp.net": {
       "after": {
+        "archived": false,
         "business_name": "",
         "date": "11:59",
         "full_name": "",
@@ -21,6 +22,7 @@
         "unread_count": 0
       },
       "before": {
+        "archived": false,
         "business_name": "",
         "date": "11:59",
         "full_name": "",

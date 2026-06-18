@@ -193,6 +193,7 @@ def seed_chat(
     name: str | None = None,
     photo: str = "",
     muted: bool = False,
+    archived: bool = False,
     read_receipt: ReadReceipt = ReadReceipt.NONE,
     unread_count: int = 0,
     timestamp_unix: int = 1,
@@ -210,6 +211,7 @@ def seed_chat(
         is_group=chat_id.endswith("@g.us"),
         last_message_type=str(MessageType.TEXT),
         muted=muted,
+        archived=archived,
         name_updated_at=timestamp_unix,
     )
     with KV() as kv:

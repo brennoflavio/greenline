@@ -5,7 +5,11 @@ from greenline import qml_events
 from greenline.api.common import SuccessResponse, ui_chat
 from greenline.contracts.daemon import daemon_client
 from greenline.contracts.kv import GreenlineKV
-from greenline.contracts.qml import ChatIdRequest, SetChatDraftRequest
+from greenline.contracts.qml import (
+    ChatIdRequest,
+    GetChatListRequest,
+    SetChatDraftRequest,
+)
 from greenline.contracts.validation import BoundaryValidationError
 from greenline.reporting import crash_reporter
 from greenline.store.identity import canonicalize_contact_jid
@@ -66,7 +70,7 @@ def get_contact_list() -> ContactListResponse:
 
 @crash_reporter
 @dataclass_to_dict
-def get_chat_list() -> ChatListResponse:
+def get_chat_list(request: GetChatListRequest) -> ChatListResponse:
     try:
         with GreenlineKV() as kv:
             entries = kv.get_partial_records("chat:")
@@ -75,6 +79,8 @@ def get_chat_list() -> ChatListResponse:
         chats = []
         for _, value in entries:
             chat = ui_chat(value)
+            if chat.archived != request.archived:
+                continue
             draft = drafts.get(chat.id, "")
             chats.append(ChatListEntry(**asdict(chat), draft=draft, has_draft=draft != ""))
         chats.sort(key=lambda chat: chat.last_message_timestamp, reverse=True)
@@ -98,6 +104,7 @@ def get_chat_info(request: ChatIdRequest) -> dict[str, object]:
         "photo": chat.photo,
         "is_group": chat.is_group,
         "unread_count": chat.unread_count,
+        "muted": chat.muted,
     }
 
 
@@ -151,6 +158,20 @@ def set_chat_draft(request: SetChatDraftRequest) -> SuccessResponse:
             kv.delete(f"draft:{request.chat_id}")
             kv.delete(f"draft_mentions:{request.chat_id}")
     qml_events.emit_chat_draft_update(request.chat_id, draft_text)
+    return SuccessResponse(success=True, message="")
+
+
+@crash_reporter
+@dataclass_to_dict
+def toggle_archive(request: ChatIdRequest) -> SuccessResponse:
+    with GreenlineKV() as kv:
+        chat = kv.get_record(f"chat:{request.chat_id}")
+        if chat is None:
+            return SuccessResponse(success=False, message="Chat not found")
+        chat.archived = not chat.archived
+        kv.put_record(f"chat:{request.chat_id}", chat)
+        qml_events.emit_chat_list_update([chat])
+
     return SuccessResponse(success=True, message="")
 
 
