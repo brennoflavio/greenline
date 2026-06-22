@@ -13,7 +13,11 @@ from greenline.store.identity import (
     remember_chat,
     update_chat_name,
 )
-from greenline.store.records import DaemonLastEventIDRecord
+from greenline.store.records import (
+    DaemonLastEventIDRecord,
+    GroupProfileMemberRecord,
+    GroupProfileRecord,
+)
 from greenline.ui import dataclass_to_ui_dict
 from models import ChatListItem, ReadReceipt
 from rpc import DaemonNotReadyError, DaemonTimeoutError, RateLimitError
@@ -251,6 +255,22 @@ class ChatListUpdateEvent(Event):
                 key = f"chat:{jid}"
                 photo = ("file://" + group.avatar_path) if group.avatar_path else ""
                 muted = self._is_muted(jid)
+                members = [
+                    GroupProfileMemberRecord(
+                        jid=canonicalize_contact_jid(participant.jid),
+                        display_name=participant.display_name,
+                    )
+                    for participant in group.participants
+                    if participant.jid
+                ]
+                profile_key = f"group_profile:{jid}"
+                profile = GroupProfileRecord(
+                    description=group.topic,
+                    member_count=group.participant_count or len(members),
+                    members=members,
+                )
+                if kv.get_record(profile_key) != profile:
+                    kv.put_record(profile_key, profile)
 
                 if key in existing:
                     chat = existing[key]

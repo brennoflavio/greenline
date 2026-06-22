@@ -310,6 +310,28 @@ def _with_empty_list(data: Any, key: str) -> Any:
     return data
 
 
+def _normalize_groups_reply(data: Any) -> Any:
+    data = _with_empty_list(data, "Groups")
+    if not isinstance(data, dict):
+        return data
+    groups = data.get("Groups")
+    if not isinstance(groups, list):
+        return data
+    normalized_groups = []
+    changed = False
+    for group in groups:
+        if isinstance(group, dict) and group.get("participants") is None:
+            group = dict(group)
+            group["participants"] = []
+            changed = True
+        normalized_groups.append(group)
+    if not changed:
+        return data
+    normalized = dict(data)
+    normalized["Groups"] = normalized_groups
+    return normalized
+
+
 def _decode_reply(data_class: type[T], data: Any, *, contract: str) -> T:
     with error_trace_context("daemon_rpc", contract=contract, direction="decode"):
         return decode_dataclass(
@@ -442,7 +464,7 @@ class GreenlineDaemon:
         )
 
     def get_groups(self) -> GetGroupsReply:
-        data = _with_empty_list(self._call("Service.GetGroups", EmptyRequest()), "Groups")
+        data = _normalize_groups_reply(self._call("Service.GetGroups", EmptyRequest()))
         return _decode_reply(GetGroupsReply, data, contract="Service.GetGroups")
 
     def get_group_participants(self, chat_jid: str) -> GetGroupParticipantsReply:

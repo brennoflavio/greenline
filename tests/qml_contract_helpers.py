@@ -8,6 +8,8 @@ from greenline.store.identity import remember_chat
 from greenline.store.records import (
     DraftMentionsRecord,
     DraftRecord,
+    GroupProfileMemberRecord,
+    GroupProfileRecord,
     stored_message_record,
 )
 from greenline.store.repository import message_storage_key, put_message_index
@@ -95,6 +97,35 @@ def seed_sender_identity(
         business_name="",
         name_updated_at=1_700_000_000,
     )
+
+
+def seed_group_profile(
+    chat_id: str = DEFAULT_GROUP_ID,
+    *,
+    description: str = "Group topic",
+    member_count: int = 2,
+    members: list[dict[str, str]] | None = None,
+) -> None:
+    if members is None:
+        members = [
+            {"jid": DEFAULT_SENDER_ID, "display_name": "Sender Name"},
+            {"jid": "999@s.whatsapp.net", "display_name": "Other Member"},
+        ]
+    with GreenlineKV() as kv:
+        kv.put_record(
+            f"group_profile:{chat_id}",
+            GroupProfileRecord(
+                description=description,
+                member_count=member_count,
+                members=[
+                    GroupProfileMemberRecord(
+                        jid=str(member.get("jid") or ""),
+                        display_name=str(member.get("display_name") or ""),
+                    )
+                    for member in members
+                ],
+            ),
+        )
 
 
 def seed_message(

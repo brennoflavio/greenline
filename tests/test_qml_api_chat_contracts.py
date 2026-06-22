@@ -4,10 +4,13 @@ import pytest
 from contracts.qml_registry import validate_api_response, validate_event_payload
 from qml_contract_helpers import (
     DEFAULT_CHAT_ID,
+    DEFAULT_GROUP_ID,
     DEFAULT_SENDER_ID,
     make_mention_span,
     seed_chat,
     seed_draft,
+    seed_group_profile,
+    seed_sender_identity,
 )
 
 import daemon_types
@@ -98,14 +101,43 @@ def test_canonicalize_contact_jid_preserves_empty_daemon_resolution(
     assert canonicalize_contact_jid("lid-user@lid", rpc=fake_daemon_rpc()) == ""
 
 
-def test_get_chat_info_contract_success_missing_and_malformed() -> None:
+def test_get_chat_info_contract_returns_direct_chat_defaults() -> None:
     seed_chat(DEFAULT_CHAT_ID, photo="file:///tmp/photo.jpg", muted=True)
 
     success = main.get_chat_info(DEFAULT_CHAT_ID)
     validate_api_response("get_chat_info", success)
     assert success["photo"] == "file:///tmp/photo.jpg"
     assert success["muted"] is True
+    assert success["description"] == ""
+    assert success["member_count"] == 0
+    assert success["members"] == []
 
+
+def test_get_chat_info_contract_returns_group_profile_members() -> None:
+    seed_chat(DEFAULT_GROUP_ID, name="Project Group", photo="file:///tmp/group.jpg", muted=False, is_group=True)
+    seed_sender_identity(DEFAULT_SENDER_ID, name="Alice", photo="file:///tmp/alice.jpg")
+    seed_sender_identity("999@s.whatsapp.net", name="Bob", photo="")
+    seed_group_profile(
+        DEFAULT_GROUP_ID,
+        description="Roadmap updates",
+        member_count=2,
+        members=[
+            {"jid": "999@s.whatsapp.net", "display_name": "Zed Raw"},
+            {"jid": DEFAULT_SENDER_ID, "display_name": "Alpha Raw"},
+        ],
+    )
+
+    success = main.get_chat_info(DEFAULT_GROUP_ID)
+    validate_api_response("get_chat_info", success)
+    assert success["description"] == "Roadmap updates"
+    assert success["member_count"] == 2
+    assert success["members"] == [
+        {"jid": DEFAULT_SENDER_ID, "name": "Alice", "photo": "file:///tmp/alice.jpg"},
+        {"jid": "999@s.whatsapp.net", "name": "Bob", "photo": ""},
+    ]
+
+
+def test_get_chat_info_contract_missing_and_malformed() -> None:
     missing = main.get_chat_info("missing@s.whatsapp.net")
     validate_api_response("get_chat_info", missing)
     assert missing == {"success": False}
@@ -114,6 +146,12 @@ def test_get_chat_info_contract_success_missing_and_malformed() -> None:
         kv.put("chat:broken", {"id": "broken"})
     with pytest.raises(Exception):
         main.get_chat_info("broken")
+
+    seed_chat(DEFAULT_GROUP_ID, is_group=True)
+    with KV() as kv:
+        kv.put(f"group_profile:{DEFAULT_GROUP_ID}", {"description": "oops", "member_count": "two", "members": []})
+    with pytest.raises(Exception):
+        main.get_chat_info(DEFAULT_GROUP_ID)
 
 
 def test_get_group_mention_candidates_contract_success_and_failure(

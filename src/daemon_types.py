@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List
 
 
@@ -33,19 +33,6 @@ class GetContactsReply:
 
 
 @dataclass
-class Group:
-    jid: str
-    name: str
-    topic: str
-    avatar_path: str
-
-
-@dataclass
-class GetGroupsReply:
-    Groups: List[Group]
-
-
-@dataclass
 class GroupParticipant:
     jid: str
     phone_number_jid: str
@@ -53,6 +40,21 @@ class GroupParticipant:
     display_name: str
     is_admin: bool
     is_super_admin: bool
+
+
+@dataclass
+class Group:
+    jid: str
+    name: str
+    topic: str
+    avatar_path: str
+    participant_count: int = 0
+    participants: List[GroupParticipant] = field(default_factory=list)
+
+
+@dataclass
+class GetGroupsReply:
+    Groups: List[Group]
 
 
 @dataclass

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-18 21:11+0000\n"
+"POT-Creation-Date: 2026-06-22 23:38+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -339,24 +339,36 @@ msgstr ""
 msgid "Login with Phone Number"
 msgstr ""
 
-#: ../qml/ProfilePage.qml:88
+#: ../qml/ProfilePage.qml:104
 msgid "Group"
 msgstr ""
 
-#: ../qml/ProfilePage.qml:102 ../qml/SettingsPage.qml:235
+#: ../qml/ProfilePage.qml:118 ../qml/SettingsPage.qml:235
 #: ../qml/ut_components/AppHeader.qml:94
 msgid "Settings"
 msgstr ""
 
-#: ../qml/ProfilePage.qml:105
+#: ../qml/ProfilePage.qml:121
 msgid "Mute notifications"
 msgstr ""
 
-#: ../qml/ProfilePage.qml:106
+#: ../qml/ProfilePage.qml:122
 msgid "Silence all notifications from this chat"
 msgstr ""
 
-#: ../qml/ProfilePage.qml:142
+#: ../qml/ProfilePage.qml:133
+msgid "Description"
+msgstr ""
+
+#: ../qml/ProfilePage.qml:152
+msgid "Members"
+msgstr ""
+
+#: ../qml/ProfilePage.qml:162
+msgid "%1 members"
+msgstr ""
+
+#: ../qml/ProfilePage.qml:282
 msgid "Profile"
 msgstr ""
 

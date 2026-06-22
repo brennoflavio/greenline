@@ -239,10 +239,12 @@ func (s *Service) GetContacts(args *struct{}, reply *GetContactsReply) error {
 // Group types
 
 type Group struct {
-	JID        string `json:"jid"`
-	Name       string `json:"name"`
-	Topic      string `json:"topic"`
-	AvatarPath string `json:"avatar_path"`
+	JID              string             `json:"jid"`
+	Name             string             `json:"name"`
+	Topic            string             `json:"topic"`
+	AvatarPath       string             `json:"avatar_path"`
+	ParticipantCount int                `json:"participant_count"`
+	Participants     []GroupParticipant `json:"participants"`
 }
 
 type GetGroupsReply struct {
@@ -274,11 +276,31 @@ func (s *Service) GetGroups(args *struct{}, reply *GetGroupsReply) error {
 		if name == "" {
 			name = jidStr
 		}
+		participants := make([]GroupParticipant, 0, len(info.Participants))
+		for _, participant := range info.Participants {
+			participants = append(participants, GroupParticipant{
+				JID:            s.client.ResolveJID(ctx, participant.JID).String(),
+				PhoneNumberJID: participant.PhoneNumber.String(),
+				LIDJID:         participant.LID.String(),
+				DisplayName:    participant.DisplayName,
+				IsAdmin:        participant.IsAdmin,
+				IsSuperAdmin:   participant.IsSuperAdmin,
+			})
+		}
+		sort.Slice(participants, func(i, j int) bool {
+			return participants[i].JID < participants[j].JID
+		})
+		participantCount := info.ParticipantCount
+		if participantCount <= 0 {
+			participantCount = len(participants)
+		}
 		groups = append(groups, Group{
-			JID:        jidStr,
-			Name:       name,
-			Topic:      info.Topic,
-			AvatarPath: avatarPath,
+			JID:              jidStr,
+			Name:             name,
+			Topic:            info.Topic,
+			AvatarPath:       avatarPath,
+			ParticipantCount: participantCount,
+			Participants:     participants,
 		})
 	}
 

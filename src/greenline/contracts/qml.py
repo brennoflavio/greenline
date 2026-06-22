@@ -282,18 +282,44 @@ def assert_message_reactions_response(payload: Any) -> None:
         assert_message_reaction_item(reaction, f"MessageReactionsResponse.reactions[{index}]")
 
 
+def assert_chat_info_member(payload: Any, path: str) -> None:
+    member = _assert_dict(payload, path)
+    _assert_keys(member, {"jid", "name", "photo"}, path)
+    for key in ("jid", "name", "photo"):
+        _assert_str(member, key, path)
+
+
 def assert_chat_info_response(payload: Any) -> None:
     response = _assert_dict(payload, "ChatInfoResponse")
     if response.get("success") is False:
         _assert_keys(response, {"success"}, "ChatInfoResponse")
         return
-    _assert_keys(response, {"success", "id", "name", "photo", "is_group", "unread_count", "muted"}, "ChatInfoResponse")
+    _assert_keys(
+        response,
+        {
+            "success",
+            "id",
+            "name",
+            "photo",
+            "is_group",
+            "unread_count",
+            "muted",
+            "description",
+            "member_count",
+            "members",
+        },
+        "ChatInfoResponse",
+    )
     _assert_bool(response, "success", "ChatInfoResponse")
-    for key in ("id", "name", "photo"):
+    for key in ("id", "name", "photo", "description"):
         _assert_str(response, key, "ChatInfoResponse")
     _assert_bool(response, "is_group", "ChatInfoResponse")
     _assert_int(response, "unread_count", "ChatInfoResponse")
     _assert_bool(response, "muted", "ChatInfoResponse")
+    _assert_int(response, "member_count", "ChatInfoResponse")
+    members = _assert_list(response, "members", "ChatInfoResponse")
+    for index, member in enumerate(members):
+        assert_chat_info_member(member, f"ChatInfoResponse.members[{index}]")
 
 
 def assert_chat_draft_response(payload: Any) -> None:

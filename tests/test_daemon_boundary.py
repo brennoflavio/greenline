@@ -11,6 +11,7 @@ import pytest
 from daemon_types import (
     Contact,
     GetChatSettingsReply,
+    Group,
     GroupParticipant,
     PairPhoneReply,
     SendMessageReply,
@@ -285,6 +286,56 @@ def test_daemon_boundary_normalizes_null_group_list() -> None:
     reply = daemon.get_groups()
 
     assert reply.Groups == []
+    assert transport.calls == [("Service.GetGroups", {})]
+
+
+def test_daemon_boundary_decodes_groups_with_nested_participants() -> None:
+    transport = FakeTransport(
+        {
+            "Service.GetGroups": {
+                "Groups": [
+                    {
+                        "jid": "group@g.us",
+                        "name": "Group",
+                        "topic": "Topic",
+                        "avatar_path": "/tmp/group.jpg",
+                        "participant_count": 1,
+                        "participants": [
+                            {
+                                "jid": "participant@s.whatsapp.net",
+                                "phone_number_jid": "participant@s.whatsapp.net",
+                                "lid_jid": "",
+                                "display_name": "Participant",
+                                "is_admin": True,
+                                "is_super_admin": False,
+                            }
+                        ],
+                    }
+                ]
+            }
+        }
+    )
+    daemon = GreenlineDaemon(transport=transport)  # type: ignore[arg-type]
+
+    assert daemon.get_groups().Groups == [
+        Group(
+            jid="group@g.us",
+            name="Group",
+            topic="Topic",
+            avatar_path="/tmp/group.jpg",
+            participant_count=1,
+            participants=[
+                GroupParticipant(
+                    jid="participant@s.whatsapp.net",
+                    phone_number_jid="participant@s.whatsapp.net",
+                    lid_jid="",
+                    display_name="Participant",
+                    is_admin=True,
+                    is_super_admin=False,
+                )
+            ],
+        )
+    ]
     assert transport.calls == [("Service.GetGroups", {})]
 
 

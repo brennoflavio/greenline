@@ -14,7 +14,7 @@ from greenline.contracts.validation import BoundaryValidationError
 from greenline.reporting import crash_reporter
 from greenline.store.identity import canonicalize_contact_jid
 from greenline.store.mentions import build_mention_candidate, validate_mention_spans
-from greenline.store.records import DraftMentionsRecord, DraftRecord
+from greenline.store.records import DraftMentionsRecord, DraftRecord, GroupProfileRecord
 from models import (
     ChatListEntry,
     ChatListResponse,
@@ -91,12 +91,34 @@ def get_chat_list(request: GetChatListRequest) -> ChatListResponse:
         return ChatListResponse(success=False, chats=[], message=str(error))
 
 
+def _chat_info_members(profile: GroupProfileRecord) -> list[dict[str, str]]:
+    members = []
+    for member in profile.members:
+        candidate = build_mention_candidate(member.jid, member.display_name)
+        jid = str(candidate.get("jid") or "")
+        if not jid:
+            continue
+        members.append(
+            {
+                "jid": jid,
+                "name": str(candidate.get("label") or jid),
+                "photo": str(candidate.get("photo") or ""),
+            }
+        )
+    members.sort(key=lambda member: (member["name"].lower(), member["jid"]))
+    return members
+
+
 @crash_reporter
 def get_chat_info(request: ChatIdRequest) -> dict[str, object]:
     with GreenlineKV() as kv:
         chat = kv.get_record(f"chat:{request.chat_id}")
+        profile = GroupProfileRecord()
+        if chat is not None and chat.is_group:
+            profile = kv.get_record(f"group_profile:{chat.id}", default=GroupProfileRecord())
     if chat is None:
         return {"success": False}
+    members = _chat_info_members(profile)
     return {
         "success": True,
         "id": chat.id,
@@ -105,6 +127,9 @@ def get_chat_info(request: ChatIdRequest) -> dict[str, object]:
         "is_group": chat.is_group,
         "unread_count": chat.unread_count,
         "muted": chat.muted,
+        "description": profile.description,
+        "member_count": profile.member_count or len(members),
+        "members": members,
     }
 
 

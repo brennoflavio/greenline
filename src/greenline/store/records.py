@@ -67,6 +67,19 @@ class DraftMentionsRecord:
 
 
 @dataclass
+class GroupProfileMemberRecord:
+    jid: str
+    display_name: str = ""
+
+
+@dataclass
+class GroupProfileRecord:
+    description: str = ""
+    member_count: int = 0
+    members: list[GroupProfileMemberRecord] = field(default_factory=list)
+
+
+@dataclass
 class MessageIndexRecord:
     value: str
 
