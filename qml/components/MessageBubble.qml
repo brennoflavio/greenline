@@ -12,6 +12,7 @@ Item {
     property bool edited: false
     property bool hasReactions: false
     property string timestamp: ""
+    property int timestampUnix: 0
     property string readReceipt: ""
     property string sendStatus: ""
     property string senderName: ""
@@ -25,6 +26,22 @@ Item {
     property color bubbleColor: isOutgoing ? "#dcf8c6" : "#d4e6f9"
 
     signal replyClicked(string messageId)
+
+    function formatDate(timestampUnix) {
+        if (!timestampUnix)
+            return "";
+
+        var date = new Date(timestampUnix * 1000);
+        var month = (date.getMonth() + 1).toString();
+        var day = date.getDate().toString();
+        if (month.length < 2)
+            month = "0" + month;
+
+        if (day.length < 2)
+            day = "0" + day;
+
+        return date.getFullYear() + "-" + month + "-" + day;
+    }
 
     width: parent.width
     height: wrapper.height + units.gu(0.5)
@@ -210,6 +227,14 @@ Item {
                 width: units.gu(1.2)
                 color: "#999999"
                 visible: bubble.hasReactions
+                anchors.verticalCenter: parent.verticalCenter
+            }
+
+            Label {
+                text: bubble.formatDate(bubble.timestampUnix)
+                fontSize: "xx-small"
+                color: "#999999"
+                visible: text !== ""
                 anchors.verticalCenter: parent.verticalCenter
             }
 

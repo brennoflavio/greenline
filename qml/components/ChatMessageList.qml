@@ -228,6 +228,7 @@ Item {
             buttonUrl: msg.button_url || ""
             isOutgoing: msg.is_outgoing || false
             timestamp: msg.timestamp || ""
+            timestampUnix: msg.timestamp_unix || 0
             edited: msg.edited || false
             hasReactions: msg.has_reactions || false
             readReceipt: msg.read_receipt || ""
@@ -248,6 +249,7 @@ Item {
             isOutgoing: msg.is_outgoing || false
             isGroup: root.isGroup
             timestamp: msg.timestamp || ""
+            timestampUnix: msg.timestamp_unix || 0
             edited: msg.edited || false
             hasReactions: msg.has_reactions || false
             readReceipt: msg.read_receipt || ""
@@ -277,6 +279,7 @@ Item {
             isOutgoing: msg.is_outgoing || false
             isGroup: root.isGroup
             timestamp: msg.timestamp || ""
+            timestampUnix: msg.timestamp_unix || 0
             edited: msg.edited || false
             hasReactions: msg.has_reactions || false
             readReceipt: msg.read_receipt || ""
@@ -306,6 +309,7 @@ Item {
             isOutgoing: msg.is_outgoing || false
             isGroup: root.isGroup
             timestamp: msg.timestamp || ""
+            timestampUnix: msg.timestamp_unix || 0
             edited: msg.edited || false
             hasReactions: msg.has_reactions || false
             readReceipt: msg.read_receipt || ""
@@ -332,6 +336,7 @@ Item {
             isOutgoing: msg.is_outgoing || false
             isGroup: root.isGroup
             timestamp: msg.timestamp || ""
+            timestampUnix: msg.timestamp_unix || 0
             edited: msg.edited || false
             hasReactions: msg.has_reactions || false
             readReceipt: msg.read_receipt || ""
@@ -360,6 +365,7 @@ Item {
             isOutgoing: msg.is_outgoing || false
             isGroup: root.isGroup
             timestamp: msg.timestamp || ""
+            timestampUnix: msg.timestamp_unix || 0
             edited: msg.edited || false
             hasReactions: msg.has_reactions || false
             readReceipt: msg.read_receipt || ""
@@ -386,6 +392,7 @@ Item {
             isOutgoing: msg.is_outgoing || false
             isGroup: root.isGroup
             timestamp: msg.timestamp || ""
+            timestampUnix: msg.timestamp_unix || 0
             edited: msg.edited || false
             hasReactions: msg.has_reactions || false
             readReceipt: msg.read_receipt || ""
@@ -411,6 +418,7 @@ Item {
             isOutgoing: msg.is_outgoing || false
             isGroup: root.isGroup
             timestamp: msg.timestamp || ""
+            timestampUnix: msg.timestamp_unix || 0
             edited: msg.edited || false
             hasReactions: msg.has_reactions || false
             readReceipt: msg.read_receipt || ""
@@ -439,6 +447,7 @@ Item {
             isOutgoing: msg.is_outgoing || false
             isGroup: root.isGroup
             timestamp: msg.timestamp || ""
+            timestampUnix: msg.timestamp_unix || 0
             edited: msg.edited || false
             hasReactions: msg.has_reactions || false
             readReceipt: msg.read_receipt || ""
@@ -464,6 +473,7 @@ Item {
             isOutgoing: msg.is_outgoing || false
             isGroup: root.isGroup
             timestamp: msg.timestamp || ""
+            timestampUnix: msg.timestamp_unix || 0
             edited: msg.edited || false
             hasReactions: msg.has_reactions || false
             readReceipt: msg.read_receipt || ""
