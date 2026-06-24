@@ -29,11 +29,12 @@ Page {
             width: stickerGrid.cellWidth
             height: stickerGrid.cellHeight
 
-            Image {
+            AnimatedImage {
                 anchors.fill: parent
                 anchors.margins: units.gu(0.5)
                 source: modelData
                 fillMode: Image.PreserveAspectFit
+                playing: visible
 
                 MouseArea {
                     anchors.fill: parent

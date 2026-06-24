@@ -16,10 +16,11 @@ MessageBubble {
         height: units.gu(16)
         color: "transparent"
 
-        Image {
+        AnimatedImage {
             anchors.fill: parent
             source: root.mediaPath || root.thumbnailSource || root.stickerSource
             fillMode: Image.PreserveAspectFit
+            playing: visible
             visible: source !== ""
         }
 
