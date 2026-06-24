@@ -120,7 +120,8 @@ MainView {
                 "chatName": result.name,
                 "chatPhoto": result.photo,
                 "isGroup": result.is_group || false,
-                "initialUnreadCount": result.unread_count || 0
+                "initialUnreadCount": result.unread_count || 0,
+                "initialFirstUnreadMessageId": result.first_unread_message_id || ""
             });
 
         });

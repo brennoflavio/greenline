@@ -23,7 +23,8 @@ Page {
             "chatName": chat.name,
             "chatPhoto": chat.photo,
             "isGroup": chat.is_group || false,
-            "initialUnreadCount": chat.unread_count || 0
+            "initialUnreadCount": chat.unread_count || 0,
+            "initialFirstUnreadMessageId": chat.first_unread_message_id || ""
         });
     }
 

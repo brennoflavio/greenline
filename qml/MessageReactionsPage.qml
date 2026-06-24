@@ -110,7 +110,8 @@ Page {
                             "chatName": modelData.name,
                             "chatPhoto": modelData.photo,
                             "isGroup": false,
-                            "initialUnreadCount": 0
+                            "initialUnreadCount": 0,
+                            "initialFirstUnreadMessageId": ""
                         });
                     }
 

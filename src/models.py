@@ -35,6 +35,7 @@ class ChatListItem:
     read_receipt: ReadReceipt
     unread_count: int
     is_group: bool
+    first_unread_message_id: str = ""
     last_message_mentioned_jids: List[str] = field(default_factory=list)
     last_message_type: str = ""
     muted: bool = False

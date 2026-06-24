@@ -62,6 +62,7 @@ def test_object_records_round_trip_without_changing_storage_shape() -> None:
             "read_receipt": "",
             "unread_count": 0,
             "is_group": False,
+            "first_unread_message_id": "",
             "last_message_mentioned_jids": [],
             "last_message_type": "",
             "muted": False,

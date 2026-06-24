@@ -6,6 +6,7 @@
         "archived": false,
         "business_name": "",
         "date": "11:59",
+        "first_unread_message_id": "",
         "full_name": "",
         "id": "fixture-chat-40@s.whatsapp.net",
         "is_group": false,
@@ -19,12 +20,13 @@
         "photo": "",
         "push_name": "",
         "read_receipt": "read",
-        "unread_count": 0
+        "unread_count": 2
       },
       "before": {
         "archived": false,
         "business_name": "",
         "date": "11:59",
+        "first_unread_message_id": "",
         "full_name": "",
         "id": "fixture-chat-40@s.whatsapp.net",
         "is_group": false,
@@ -127,10 +129,6 @@
         "timestamp_unix": 1735735199,
         "type": "text"
       }
-    },
-    "unread_total": {
-      "after": 0,
-      "before": 2
     }
   },
   "deleted": {}

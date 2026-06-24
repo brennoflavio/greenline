@@ -13,6 +13,7 @@ Item {
     })
     property bool isGroup: false
     property int unreadCount: 0
+    property string unreadDividerMessageId: ""
     property int editWindowSeconds: 20 * 60
     readonly property bool atBottom: messageList.atYEnd
 
@@ -159,19 +160,74 @@ Item {
         delegate: ListItem {
             id: messageDelegate
 
+            property var msg: modelData
+            property bool showUnreadDivider: root.unreadDividerMessageId !== "" && msg && msg.id === root.unreadDividerMessageId
+
             width: parent ? parent.width : 0
-            height: messageLoader.item ? messageLoader.item.height : 0
+            height: messageContent.height
             color: "transparent"
             highlightColor: "transparent"
             divider.visible: false
 
-            Loader {
-                id: messageLoader
-
-                property var msg: modelData
+            Column {
+                id: messageContent
 
                 width: parent.width
-                sourceComponent: root.messageComponentFor(msg)
+                spacing: units.gu(0.8)
+
+                Item {
+                    visible: messageDelegate.showUnreadDivider
+                    width: parent.width
+                    height: visible ? units.gu(3) : 0
+
+                    Rectangle {
+                        height: units.dp(1)
+                        color: theme.palette.normal.foregroundText
+
+                        anchors {
+                            left: parent.left
+                            right: unreadLabel.left
+                            leftMargin: units.gu(1.5)
+                            rightMargin: units.gu(1)
+                            verticalCenter: unreadLabel.verticalCenter
+                        }
+
+                    }
+
+                    Label {
+                        id: unreadLabel
+
+                        text: i18n.tr("Unread")
+                        color: theme.palette.normal.foregroundText
+                        fontSize: "small"
+                        anchors.centerIn: parent
+                    }
+
+                    Rectangle {
+                        height: units.dp(1)
+                        color: theme.palette.normal.foregroundText
+
+                        anchors {
+                            left: unreadLabel.right
+                            right: parent.right
+                            leftMargin: units.gu(1)
+                            rightMargin: units.gu(1.5)
+                            verticalCenter: unreadLabel.verticalCenter
+                        }
+
+                    }
+
+                }
+
+                Loader {
+                    id: messageLoader
+
+                    property var msg: modelData
+
+                    width: parent.width
+                    sourceComponent: root.messageComponentFor(msg)
+                }
+
             }
 
             leadingActions: ListItemActions {

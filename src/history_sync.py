@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -85,8 +85,16 @@ def handle_history_sync(event: Any) -> Dict[str, Dict[str, Any]]:
             if chat_jid.endswith(NEWSLETTER_SERVER):
                 continue
 
-            _process_messages(kv, conv, chat_jid, jid_map)
-            chat_dict = _process_conversation(kv, conv, chat_jid, jid_map)
+            unread_message_ids, first_unread_message_id, unread_count = _conversation_unread_state(conv)
+            _process_messages(kv, conv, chat_jid, jid_map, unread_message_ids)
+            chat_dict = _process_conversation(
+                kv,
+                conv,
+                chat_jid,
+                jid_map,
+                unread_count,
+                first_unread_message_id,
+            )
             if chat_dict is not None:
                 chat_updates[chat_jid] = chat_dict
 
@@ -351,6 +359,32 @@ def _find_latest_message(
     return latest
 
 
+def _conversation_unread_state(conv: HistorySyncConversation) -> tuple[set[str], str, int]:
+    incoming_messages: list[tuple[int, str]] = []
+
+    for msg_wrap in conv.messages or []:
+        inner = msg_wrap.message
+        msg_id = inner.key.ID
+        if not msg_id or inner.key.fromMe or inner.messageStubType:
+            continue
+
+        content = _history_message_content(inner)
+        if not content or _resolve_type_and_fallback_text(content)[0] is None:
+            continue
+
+        if not inner.messageTimestamp:
+            continue
+
+        incoming_messages.append((inner.messageTimestamp, msg_id))
+
+    incoming_messages.sort(key=lambda item: (item[0], item[1]))
+    unread_count = max(0, conv.unreadCount)
+    unread_slice_size = min(unread_count, len(incoming_messages))
+    unread_slice = incoming_messages[-unread_slice_size:] if unread_slice_size > 0 else []
+    first_unread_message_id = unread_slice[0][1] if unread_slice else ""
+    return {message_id for _, message_id in unread_slice}, first_unread_message_id, unread_count
+
+
 def _extract_context_info_from_dict(
     content: Dict[str, Any], jid_map: Dict[str, str]
 ) -> Tuple[str, str, str, bool, str, List[str]]:
@@ -388,18 +422,19 @@ def _process_messages(
     conv: HistorySyncConversation,
     chat_jid: str,
     jid_map: Dict[str, str],
+    unread_message_ids: set[str],
 ) -> None:
     messages = conv.messages or []
     if not messages:
         return
 
     existing_entries = kv.get_partial_records(f"message:{chat_jid}:")
-    existing_ids: Set[str] = {v.id for _, v in existing_entries}
+    existing_by_id: Dict[str, tuple[str, Any]] = {value.id: (key, value) for key, value in existing_entries}
 
     for msg_wrap in messages:
         inner = msg_wrap.message
         msg_id = inner.key.ID
-        if not msg_id or msg_id in existing_ids:
+        if not msg_id:
             continue
 
         if inner.messageStubType:
@@ -428,9 +463,16 @@ def _process_messages(
             text = fallback_text
 
         is_outgoing = inner.key.fromMe
-        read_receipt = ReadReceipt.NONE
+        read_receipt = ReadReceipt.NONE if msg_id in unread_message_ids else ReadReceipt.READ
         if is_outgoing:
             read_receipt = _STATUS_TO_RECEIPT.get(inner.status, ReadReceipt.SENT)
+
+        existing_entry = existing_by_id.get(msg_id)
+        if existing_entry is not None:
+            existing_key, existing_value = existing_entry
+            if existing_value.read_receipt != read_receipt:
+                kv.put_cached_record(existing_key, replace(existing_value, read_receipt=read_receipt))
+            continue
 
         sender_raw = str(inner.participant or "") if not is_outgoing else ""
         sender = canonicalize_contact_jid(sender_raw, jid_map=jid_map) if sender_raw else ""
@@ -501,6 +543,8 @@ def _process_conversation(
     conv: HistorySyncConversation,
     chat_jid: str,
     jid_map: Dict[str, str],
+    unread_count: int,
+    first_unread_message_id: str,
 ) -> Optional[Dict[str, Any]]:
     is_group = chat_jid.endswith(GROUP_JID_SUFFIX)
     latest_msg = _find_latest_message(conv)
@@ -528,6 +572,14 @@ def _process_conversation(
 
         if is_group and conv.name and conv.name != chat.name:
             chat.name = conv.name
+            changed = True
+
+        if chat.unread_count != unread_count:
+            chat.unread_count = unread_count
+            changed = True
+
+        if chat.first_unread_message_id != first_unread_message_id:
+            chat.first_unread_message_id = first_unread_message_id
             changed = True
 
         if not changed:
@@ -570,8 +622,9 @@ def _process_conversation(
         date=date,
         last_message_timestamp=last_ts,
         read_receipt=read_receipt,
-        unread_count=conv.unreadCount,
+        unread_count=unread_count,
         is_group=is_group,
+        first_unread_message_id=first_unread_message_id,
         last_message_mentioned_jids=preview_mentioned_jids,
         last_message_type=last_message_type,
     )

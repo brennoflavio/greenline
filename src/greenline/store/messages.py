@@ -484,6 +484,8 @@ def upsert_chat(msg: Message, info: MessageInfo, *, count_unread: bool = True) -
             else:
                 chat.read_receipt = ReadReceipt.NONE
                 if count_unread:
+                    if chat.unread_count == 0:
+                        chat.first_unread_message_id = msg.id
                     chat.unread_count += 1
                     increment_unread_total()
         if not is_group:
@@ -507,6 +509,7 @@ def upsert_chat(msg: Message, info: MessageInfo, *, count_unread: bool = True) -
             read_receipt=msg.read_receipt if msg.is_outgoing else ReadReceipt.NONE,
             unread_count=0 if msg.is_outgoing or not count_unread else 1,
             is_group=is_group,
+            first_unread_message_id="" if msg.is_outgoing or not count_unread else msg.id,
             last_message_mentioned_jids=preview_mentioned_jids,
             last_message_type=str(msg.type),
             push_name=direct_push_name if not is_group else "",

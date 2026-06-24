@@ -1,7 +1,7 @@
 import os
 import shutil
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 
 from constants import GROUP_JID_SUFFIX
@@ -326,12 +326,14 @@ def get_message_reactions(request: GetMessageReactionsRequest) -> MessageReactio
 @crash_reporter
 @dataclass_to_dict
 def mark_messages_as_read(request: ChatIdRequest) -> SuccessResponse:
+    unread_keys: list[str] = []
+    unread_by_sender: dict[str, list[str]] = {}
+
     with GreenlineKV() as kv:
-        entries = kv.get_partial_records(f"message:{request.chat_id}:")
-        unread_by_sender: dict[str, list[str]] = {}
-        for _key, value in entries:
+        for key, value in kv.get_partial_records(f"message:{request.chat_id}:"):
             if value.is_outgoing or value.read_receipt == ReadReceipt.READ:
                 continue
+            unread_keys.append(key)
             sender = value.sender_raw or value.sender
             unread_by_sender.setdefault(sender, []).append(value.id)
 
@@ -343,11 +345,18 @@ def mark_messages_as_read(request: ChatIdRequest) -> SuccessResponse:
             pass
 
     with GreenlineKV() as kv:
+        for key in unread_keys:
+            current = kv.get_record(key)
+            if current is None or current.is_outgoing or current.read_receipt == ReadReceipt.READ:
+                continue
+            kv.put_record(key, replace(current, read_receipt=ReadReceipt.READ))
+
         chat = kv.get_record(f"chat:{request.chat_id}")
         if chat is not None:
             prev_unread = chat.unread_count
-            if prev_unread > 0:
+            if prev_unread > 0 or chat.first_unread_message_id != "":
                 chat.unread_count = 0
+                chat.first_unread_message_id = ""
                 kv.put_record(f"chat:{request.chat_id}", chat)
                 qml_events.emit_chat_list_update([chat])
                 decrement_unread_total(prev_unread)

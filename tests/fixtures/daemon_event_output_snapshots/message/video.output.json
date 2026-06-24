@@ -5,6 +5,7 @@
       "archived": false,
       "business_name": "",
       "date": "12:00",
+      "first_unread_message_id": "fixture-message-005",
       "full_name": "",
       "id": "fixture-group-1@g.us",
       "is_group": true,

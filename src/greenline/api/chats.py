@@ -126,6 +126,7 @@ def get_chat_info(request: ChatIdRequest) -> dict[str, object]:
         "photo": chat.photo,
         "is_group": chat.is_group,
         "unread_count": chat.unread_count,
+        "first_unread_message_id": chat.first_unread_message_id,
         "muted": chat.muted,
         "description": profile.description,
         "member_count": profile.member_count or len(members),

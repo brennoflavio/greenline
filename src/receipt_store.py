@@ -37,20 +37,23 @@ def process_receipt(
     if new_status is None:
         return [], None
 
-    updated_messages = _update_messages(chat_id, message_ids, new_status)
-    updated_chat = _update_chat(chat_id, new_status, evt.IsFromMe)
+    updated_messages, targets_incoming_messages = _update_messages(chat_id, message_ids, new_status)
+    updated_chat = _update_chat(chat_id, new_status, evt.IsFromMe, targets_incoming_messages)
 
     return updated_messages, updated_chat
 
 
-def _update_messages(chat_id: str, message_ids: set[str], new_status: ReadReceipt) -> List[Dict[str, Any]]:
+def _update_messages(chat_id: str, message_ids: set[str], new_status: ReadReceipt) -> tuple[List[Dict[str, Any]], bool]:
     updated_messages: List[Dict[str, Any]] = []
+    targets_incoming_messages = False
 
     with GreenlineKV() as kv:
         for message_id in message_ids:
             key, record = get_message_entry_with_key(kv, chat_id, message_id)
             if key is None or record is None:
                 continue
+            if not record.is_outgoing:
+                targets_incoming_messages = True
             current = record.read_receipt
             if not _is_upgrade(current, new_status):
                 continue
@@ -58,10 +61,15 @@ def _update_messages(chat_id: str, message_ids: set[str], new_status: ReadReceip
             kv.put_record(key, updated_record)
             updated_messages.append(record_payload_without_none(message_from_record(updated_record)))
 
-    return updated_messages
+    return updated_messages, targets_incoming_messages
 
 
-def _update_chat(chat_id: str, new_status: ReadReceipt, is_from_me: bool) -> Optional[ChatListItem]:
+def _update_chat(
+    chat_id: str,
+    new_status: ReadReceipt,
+    is_from_me: bool,
+    targets_incoming_messages: bool,
+) -> Optional[ChatListItem]:
     chat_key = f"chat:{chat_id}"
     with GreenlineKV() as kv:
         chat = cast(ChatListItem | None, kv.get_record(chat_key))
@@ -76,11 +84,17 @@ def _update_chat(chat_id: str, new_status: ReadReceipt, is_from_me: bool) -> Opt
                 chat.read_receipt = new_status
                 changed = True
 
-        if new_status == ReadReceipt.READ and chat.unread_count > 0:
+        if (
+            new_status == ReadReceipt.READ
+            and targets_incoming_messages
+            and (chat.unread_count > 0 or chat.first_unread_message_id != "")
+        ):
             from unread_counter import decrement_unread_total
 
-            decrement_unread_total(chat.unread_count)
+            if chat.unread_count > 0:
+                decrement_unread_total(chat.unread_count)
             chat.unread_count = 0
+            chat.first_unread_message_id = ""
             changed = True
 
         if not changed:

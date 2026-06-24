@@ -318,7 +318,7 @@ def test_send_message_reaction_contract_returns_daemon_errors(
 
 
 def test_mark_messages_as_read_contract_and_chat_emit(fake_daemon_rpc, fake_pyotherside_module) -> None:
-    seed_chat(DEFAULT_CHAT_ID, unread_count=2)
+    seed_chat(DEFAULT_CHAT_ID, unread_count=2, first_unread_message_id="incoming-1")
     seed_message(
         DEFAULT_CHAT_ID,
         "incoming-1",
@@ -341,10 +341,20 @@ def test_mark_messages_as_read_contract_and_chat_emit(fake_daemon_rpc, fake_pyot
     _assert_all_contract_events(fake_pyotherside_module)
     chat_updates = _event_payloads(fake_pyotherside_module, "chat-list-update")
     assert chat_updates[-1][0]["unread_count"] == 0
+    assert chat_updates[-1][0]["first_unread_message_id"] == ""
+
+    with GreenlineKV() as kv:
+        first = kv.get_record(f"message:{DEFAULT_CHAT_ID}:1:incoming-1")
+        second = kv.get_record(f"message:{DEFAULT_CHAT_ID}:2:incoming-2")
+
+    assert first is not None
+    assert second is not None
+    assert first.read_receipt == ReadReceipt.READ
+    assert second.read_receipt == ReadReceipt.READ
 
 
 def test_mark_messages_as_read_ignores_daemon_failures(fake_daemon_rpc, fake_pyotherside_module, monkeypatch) -> None:
-    seed_chat(DEFAULT_CHAT_ID, unread_count=2)
+    seed_chat(DEFAULT_CHAT_ID, unread_count=2, first_unread_message_id="incoming-1")
     seed_message(
         DEFAULT_CHAT_ID,
         "incoming-1",
@@ -372,6 +382,7 @@ def test_mark_messages_as_read_ignores_daemon_failures(fake_daemon_rpc, fake_pyo
     _assert_all_contract_events(fake_pyotherside_module)
     chat_updates = _event_payloads(fake_pyotherside_module, "chat-list-update")
     assert chat_updates[-1][0]["unread_count"] == 0
+    assert chat_updates[-1][0]["first_unread_message_id"] == ""
     assert fake_daemon_rpc.clear_chat_notifications_calls[-1] == [DEFAULT_CHAT_ID]
     assert fake_daemon_rpc.set_notification_counter_calls[-1] == {"count": 0, "visible": False}
 
@@ -380,6 +391,7 @@ def test_mark_messages_as_read_ignores_daemon_failures(fake_daemon_rpc, fake_pyo
 
     assert chat is not None
     assert chat.unread_count == 0
+    assert chat.first_unread_message_id == ""
 
 
 def test_send_text_message_contract_and_pending_outbox_emits(fake_daemon_rpc, fake_pyotherside_module) -> None:

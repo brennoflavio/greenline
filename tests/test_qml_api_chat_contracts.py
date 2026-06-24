@@ -102,12 +102,18 @@ def test_canonicalize_contact_jid_preserves_empty_daemon_resolution(
 
 
 def test_get_chat_info_contract_returns_direct_chat_defaults() -> None:
-    seed_chat(DEFAULT_CHAT_ID, photo="file:///tmp/photo.jpg", muted=True)
+    seed_chat(
+        DEFAULT_CHAT_ID,
+        photo="file:///tmp/photo.jpg",
+        muted=True,
+        first_unread_message_id="incoming-1",
+    )
 
     success = main.get_chat_info(DEFAULT_CHAT_ID)
     validate_api_response("get_chat_info", success)
     assert success["photo"] == "file:///tmp/photo.jpg"
     assert success["muted"] is True
+    assert success["first_unread_message_id"] == "incoming-1"
     assert success["description"] == ""
     assert success["member_count"] == 0
     assert success["members"] == []

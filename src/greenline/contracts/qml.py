@@ -199,6 +199,7 @@ def assert_base_chat(payload: Any, path: str = "ChatListItem") -> None:
         "full_name",
         "push_name",
         "business_name",
+        "first_unread_message_id",
     ):
         _assert_str(chat, key, path)
     for key in ("last_message_timestamp", "unread_count", "name_updated_at"):
@@ -303,6 +304,7 @@ def assert_chat_info_response(payload: Any) -> None:
             "photo",
             "is_group",
             "unread_count",
+            "first_unread_message_id",
             "muted",
             "description",
             "member_count",
@@ -311,7 +313,7 @@ def assert_chat_info_response(payload: Any) -> None:
         "ChatInfoResponse",
     )
     _assert_bool(response, "success", "ChatInfoResponse")
-    for key in ("id", "name", "photo", "description"):
+    for key in ("id", "name", "photo", "description", "first_unread_message_id"):
         _assert_str(response, key, "ChatInfoResponse")
     _assert_bool(response, "is_group", "ChatInfoResponse")
     _assert_int(response, "unread_count", "ChatInfoResponse")

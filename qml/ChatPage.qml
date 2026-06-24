@@ -24,7 +24,10 @@ Page {
     property var downloadingIds: ({
     })
     property int initialUnreadCount: 0
+    property string initialFirstUnreadMessageId: ""
     property int unreadCount: 0
+    property string unreadDividerMessageId: initialFirstUnreadMessageId
+    property bool suppressNextBottomReachedClear: initialFirstUnreadMessageId !== ""
     property string chatStatus: ""
     property string presenceStatus: ""
     property var activeTypers: ({
@@ -135,6 +138,19 @@ Page {
         chatMessageList.scrollToMessage(messageId);
     }
 
+    function markChatAsRead(readCount, preserveDivider) {
+        var unreadToClear = Math.max(0, readCount || 0);
+        unreadCount = 0;
+        if (!preserveDivider)
+            unreadDividerMessageId = "";
+
+        if (unreadToClear > 0)
+            messagesReadMetric.increment(unreadToClear);
+
+        python.call('main.mark_messages_as_read', [chatId], function() {
+        });
+    }
+
     function triggerDownload(messageId, mediaType) {
         if (!Connectivity.online) {
             toast.show(i18n.tr("No internet connection. Connect and try again."));
@@ -175,9 +191,7 @@ Page {
                 var unreadOnOpen = initialUnreadCount;
                 if (unreadOnOpen > 0) {
                     initialUnreadCount = 0;
-                    messagesReadMetric.increment(unreadOnOpen);
-                    python.call('main.mark_messages_as_read', [chatId], function() {
-                    });
+                    markChatAsRead(unreadOnOpen, true);
                 }
             }
         });
@@ -289,14 +303,14 @@ Page {
                 else if (!isGroup)
                     mentionCandidates = [];
                 if (wasAtBottom) {
-                    if (result.unread_count > 0) {
-                        unreadCount = 0;
-                        messagesReadMetric.increment(result.unread_count);
-                        python.call('main.mark_messages_as_read', [chatId], function() {
-                        });
-                    }
+                    if (result.unread_count > 0)
+                        markChatAsRead(result.unread_count, false);
+
                 } else {
                     unreadCount = result.unread_count || 0;
+                    if (result.first_unread_message_id && unreadDividerMessageId === "")
+                        unreadDividerMessageId = result.first_unread_message_id;
+
                 }
             }
             finishRefresh();
@@ -721,14 +735,19 @@ Page {
         downloadingIds: chatPage.downloadingIds
         isGroup: chatPage.isGroup
         unreadCount: chatPage.unreadCount
+        unreadDividerMessageId: chatPage.unreadDividerMessageId
         editWindowSeconds: chatPage.editWindowSeconds
         onBottomReached: {
+            if (chatPage.suppressNextBottomReachedClear && chatPage.unreadCount === 0) {
+                chatPage.suppressNextBottomReachedClear = false;
+                return ;
+            }
+            chatPage.suppressNextBottomReachedClear = false;
             if (chatPage.unreadCount > 0) {
                 var unreadWhileAway = chatPage.unreadCount;
-                chatPage.unreadCount = 0;
-                messagesReadMetric.increment(unreadWhileAway);
-                python.call('main.mark_messages_as_read', [chatId], function() {
-                });
+                chatPage.markChatAsRead(unreadWhileAway, false);
+            } else if (chatPage.unreadDividerMessageId !== "") {
+                chatPage.unreadDividerMessageId = "";
             }
         }
         onOlderMessagesRequested: chatPage.loadOlderMessages()
@@ -817,7 +836,21 @@ Page {
             addImportPath(Qt.resolvedUrl('../src/'));
             importModule('main', function() {
                 pythonReady = true;
-                loadInitialMessages();
+                if (initialFirstUnreadMessageId !== "" && unreadDividerMessageId === "")
+                    unreadDividerMessageId = initialFirstUnreadMessageId;
+
+                suppressNextBottomReachedClear = unreadDividerMessageId !== "";
+                if (initialUnreadCount > 0 && initialFirstUnreadMessageId === "") {
+                    python.call('main.get_chat_info', [chatId], function(result) {
+                        if (result && result.success && result.first_unread_message_id) {
+                            initialFirstUnreadMessageId = result.first_unread_message_id;
+                            unreadDividerMessageId = result.first_unread_message_id;
+                        }
+                        loadInitialMessages();
+                    });
+                } else {
+                    loadInitialMessages();
+                }
                 loadDraft();
                 if (isGroup)
                     loadMentionCandidates();
@@ -828,6 +861,8 @@ Page {
                     var updated = messages.slice();
                     var wasAtBottom = chatMessageList.atBottom;
                     var visibleIncomingCount = 0;
+                    var shouldAnchorNewUnread = !wasAtBottom && chatPage.unreadCount === 0 && chatPage.unreadDividerMessageId === "";
+                    var oldestNewUnreadMessage = null;
                     for (var i = 0; i < incomingMessages.length; i++) {
                         var message = incomingMessages[i];
                         if (message.chat_id !== chatId)
@@ -850,19 +885,24 @@ Page {
                         if (!found) {
                             ChatHelpers.insertMessageSorted(updated, message);
                             if (!message.is_outgoing) {
-                                if (wasAtBottom)
+                                if (wasAtBottom) {
                                     visibleIncomingCount += 1;
-                                else
+                                } else {
+                                    if (shouldAnchorNewUnread && (oldestNewUnreadMessage === null || ChatHelpers.messageComesBefore(message, oldestNewUnreadMessage)))
+                                        oldestNewUnreadMessage = message;
+
                                     chatPage.unreadCount += 1;
+                                }
                             }
                         }
                     }
                     messages = updated;
-                    if (visibleIncomingCount > 0) {
-                        messagesReadMetric.increment(visibleIncomingCount);
-                        python.call('main.mark_messages_as_read', [chatId], function() {
-                        });
-                    }
+                    if (oldestNewUnreadMessage !== null)
+                        chatPage.unreadDividerMessageId = oldestNewUnreadMessage.id;
+
+                    if (visibleIncomingCount > 0)
+                        chatPage.markChatAsRead(visibleIncomingCount, false);
+
                 });
                 setHandler('presence-update', function(presenceList) {
                     for (var i = 0; i < presenceList.length; i++) {

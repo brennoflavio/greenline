@@ -27,7 +27,8 @@ Page {
             "chatName": member.name || member.jid,
             "chatPhoto": member.photo || "",
             "isGroup": false,
-            "initialUnreadCount": 0
+            "initialUnreadCount": 0,
+            "initialFirstUnreadMessageId": ""
         });
     }
 
