@@ -64,6 +64,14 @@ def _get_chat_data(chat_jid: str) -> Optional[Dict[str, Any]]:
     return cached_data
 
 
+def jid_display_name(jid: str) -> str:
+    user = str(jid or "")
+    for suffix in (WHATSAPP_JID_SUFFIX, GROUP_JID_SUFFIX):
+        if user.endswith(suffix):
+            return user[: -len(suffix)]
+    return user
+
+
 def preferred_contact_name(
     jid: str,
     *,
@@ -73,8 +81,8 @@ def preferred_contact_name(
     fallback: str = "",
 ) -> str:
     if jid and jid == get_own_jid():
-        return push_name or full_name or business_name or fallback or jid.replace(WHATSAPP_JID_SUFFIX, "")
-    return full_name or push_name or business_name or fallback or jid.replace(WHATSAPP_JID_SUFFIX, "")
+        return push_name or full_name or business_name or fallback or jid_display_name(jid)
+    return full_name or push_name or business_name or fallback or jid_display_name(jid)
 
 
 def update_chat_name(
@@ -109,6 +117,23 @@ def update_chat_name(
     return changed
 
 
+def resolve_chat_name(chat_jid: str, fallback: str = "") -> str:
+    data = _get_chat_data(chat_jid)
+    if data is not None:
+        name = str(data.get("name", "") or "").strip()
+        if name:
+            return name
+    fallback_name = str(fallback or "").strip()
+    if fallback_name:
+        return fallback_name
+    return jid_display_name(chat_jid)
+
+
+def is_jid_fallback_name(name: str, jid: str) -> bool:
+    stripped_name = str(name or "").strip()
+    return stripped_name == str(jid or "").strip() or stripped_name == jid_display_name(jid)
+
+
 def resolve_sender_name(sender_jid: str, push_name: str = "") -> str:
     data = _get_chat_data(sender_jid)
     if data is not None:
@@ -121,9 +146,7 @@ def resolve_sender_name(sender_jid: str, push_name: str = "") -> str:
         )
         if name and name != sender_jid:
             return name
-    if push_name:
-        return push_name
-    return sender_jid.replace(WHATSAPP_JID_SUFFIX, "")
+    return preferred_contact_name(sender_jid, push_name=push_name)
 
 
 def resolve_sender_photo(sender_jid: str) -> str:

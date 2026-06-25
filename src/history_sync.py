@@ -11,11 +11,16 @@ from constants import (
     GROUP_JID_SUFFIX,
     NEWSLETTER_SERVER,
     STATUS_BROADCAST_JID,
-    WHATSAPP_JID_SUFFIX,
 )
 from greenline.contracts.daemon import daemon_client
 from greenline.contracts.kv import GreenlineKV
-from greenline.store.identity import canonicalize_contact_jid, remember_chat
+from greenline.store.identity import (
+    canonicalize_contact_jid,
+    is_jid_fallback_name,
+    jid_display_name,
+    preferred_contact_name,
+    remember_chat,
+)
 from greenline.store.media import (
     _contact_preview,
     combine_contact_vcards,
@@ -610,9 +615,10 @@ def _process_conversation(
     elif last_ts:
         date = datetime.fromtimestamp(last_ts).strftime("%H:%M")
 
-    name = conv.name if conv.name else chat_jid
-    if not is_group and not conv.name:
-        name = chat_jid.replace(WHATSAPP_JID_SUFFIX, "")
+    if is_group:
+        name = conv.name or jid_display_name(chat_jid)
+    else:
+        name = preferred_contact_name(chat_jid, fallback=conv.name)
 
     chat = ChatListItem(
         id=chat_jid,
@@ -649,7 +655,7 @@ def _process_pushnames(
         if existing is None:
             chat = ChatListItem(
                 id=jid,
-                name=pn.pushname,
+                name=preferred_contact_name(jid, push_name=pn.pushname),
                 photo="",
                 last_message="",
                 date="",
@@ -663,9 +669,16 @@ def _process_pushnames(
             chat = existing
             if chat.push_name:
                 continue
+            previous_name = chat.name
             chat.push_name = pn.pushname
-            if chat.name == jid or chat.name == jid.replace(WHATSAPP_JID_SUFFIX, ""):
-                chat.name = pn.pushname
+            if is_jid_fallback_name(previous_name, jid):
+                chat.name = preferred_contact_name(
+                    jid,
+                    full_name=chat.full_name,
+                    push_name=chat.push_name,
+                    business_name=chat.business_name,
+                    fallback=previous_name,
+                )
         kv.put_cached_record(chat_key, chat)
         remember_chat(chat)
         chat_updates[jid] = _enum_to_str(asdict(chat))  # type: ignore[no-untyped-call]

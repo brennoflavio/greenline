@@ -13,6 +13,7 @@ from greenline.contracts.validation import BoundaryValidationError
 from greenline.reporting import error_trace_context
 from greenline.store.identity import (
     canonicalize_contact_jid,
+    preferred_contact_name,
     remember_chat,
     update_chat_name,
     upsert_identity_chat,
@@ -249,7 +250,7 @@ def _handle_contact(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None
         else:
             chat = ChatListItem(
                 id=jid,
-                name=name,
+                name=preferred_contact_name(jid, full_name=name),
                 photo="",
                 last_message="",
                 date="",

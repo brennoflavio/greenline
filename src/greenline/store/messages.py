@@ -6,6 +6,8 @@ from constants import GROUP_JID_SUFFIX
 from greenline.contracts.kv import GreenlineKV
 from greenline.store.identity import (
     canonicalize_contact_jid,
+    jid_display_name,
+    preferred_contact_name,
     remember_chat,
     update_chat_name,
     upsert_identity_chat,
@@ -496,9 +498,13 @@ def upsert_chat(msg: Message, info: MessageInfo, *, count_unread: bool = True) -
                 business_name=direct_business_name,
             )
     else:
-        display_name = msg.chat_id
+        display_name = jid_display_name(msg.chat_id)
         if not is_group:
-            display_name = direct_push_name or direct_business_name or msg.chat_id
+            display_name = preferred_contact_name(
+                msg.chat_id,
+                push_name=direct_push_name,
+                business_name=direct_business_name,
+            )
         chat = ChatListItem(
             id=msg.chat_id,
             name=display_name,

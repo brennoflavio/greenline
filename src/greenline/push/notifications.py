@@ -10,7 +10,11 @@ from constants import GROUP_JID_SUFFIX
 from greenline.contracts.daemon import DaemonClientProtocol, daemon_client
 from greenline.contracts.kv import GreenlineKV
 from greenline.contracts.validation import BoundaryValidationError
-from greenline.store.identity import resolve_sender_name
+from greenline.store.identity import (
+    jid_display_name,
+    resolve_chat_name,
+    resolve_sender_name,
+)
 from greenline.store.media import (
     contact_array_display_name,
     resolve_media_message_content,
@@ -18,7 +22,6 @@ from greenline.store.media import (
 )
 from greenline.store.mentions import render_mention_text, template_mention_text
 from greenline.store.records import NotificationsSuppressedRecord
-from models import ChatListItem
 from unread_counter import get_unread_total
 from ut_components.notification import EmblemCounter, Notification
 from whatsmeow_types import CallOfferEvent, MessageEvent, UndecryptableMessageEvent
@@ -196,29 +199,13 @@ def _message_summary_and_body(
     body: str,
     chat_name: str = "",
 ) -> tuple[str, str]:
-    sender_name = resolve_sender_name(sender_jid, push_name) if sender_jid else _fallback_name(chat_jid)
+    sender_name = resolve_sender_name(sender_jid, push_name) if sender_jid else jid_display_name(chat_jid)
     if chat_jid.endswith(GROUP_JID_SUFFIX):
-        summary = chat_name or _chat_name(chat_jid)
+        summary = resolve_chat_name(chat_jid, chat_name)
         if sender_name:
             body = f"{sender_name}: {body}"
         return summary, body
     return sender_name, body
-
-
-def _chat_name(chat_jid: str) -> str:
-    with GreenlineKV() as kv:
-        chat = cast(ChatListItem | None, kv.get_record(f"chat:{chat_jid}"))
-    if chat is not None and chat.name.strip():
-        return chat.name.strip()
-    return _fallback_name(chat_jid)
-
-
-def _fallback_name(jid: str) -> str:
-    user = str(jid or "")
-    for suffix in ("@s.whatsapp.net", GROUP_JID_SUFFIX):
-        if user.endswith(suffix):
-            return user[: -len(suffix)]
-    return user
 
 
 def _extract_message_body(event: Dict[str, Any]) -> str:
