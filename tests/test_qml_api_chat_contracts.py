@@ -119,6 +119,104 @@ def test_get_chat_info_contract_returns_direct_chat_defaults() -> None:
     assert success["members"] == []
 
 
+def test_start_chat_by_phone_contract_returns_existing_chat_metadata() -> None:
+    chat_id = "5511999999999@s.whatsapp.net"
+    seed_chat(
+        chat_id,
+        name="Alice",
+        photo="file:///tmp/alice.jpg",
+        muted=True,
+        archived=False,
+        unread_count=3,
+        first_unread_message_id="incoming-1",
+    )
+
+    result = main.start_chat_by_phone("5511999999999")
+
+    validate_api_response("start_chat_by_phone", result)
+    assert result["success"] is True
+    assert result["chat"]["id"] == chat_id
+    assert result["chat"]["name"] == "Alice"
+    assert result["chat"]["photo"] == "file:///tmp/alice.jpg"
+    assert result["chat"]["muted"] is True
+    assert result["chat"]["unread_count"] == 3
+    assert result["chat"]["first_unread_message_id"] == "incoming-1"
+
+
+def test_start_chat_by_phone_contract_returns_fallback_chat_payload() -> None:
+    result = main.start_chat_by_phone("5511888888888")
+
+    validate_api_response("start_chat_by_phone", result)
+    assert result == {
+        "success": True,
+        "chat": {
+            "id": "5511888888888@s.whatsapp.net",
+            "name": "5511888888888",
+            "photo": "",
+            "last_message": "",
+            "date": "",
+            "last_message_timestamp": 0,
+            "read_receipt": "",
+            "unread_count": 0,
+            "is_group": False,
+            "first_unread_message_id": "",
+            "last_message_mentioned_jids": [],
+            "last_message_type": "",
+            "muted": False,
+            "archived": False,
+            "full_name": "",
+            "push_name": "",
+            "business_name": "",
+            "name_updated_at": 0,
+        },
+        "message": "",
+    }
+    with GreenlineKV() as kv:
+        assert kv.get_record("chat:5511888888888@s.whatsapp.net") is None
+
+
+def test_start_chat_by_phone_contract_rejects_invalid_phone_number() -> None:
+    result = main.start_chat_by_phone("0551199999999")
+
+    validate_api_response("start_chat_by_phone", result)
+    assert result == {
+        "success": False,
+        "chat": None,
+        "message": "Enter digits only, no leading zero (e.g. 5511999999999)",
+    }
+
+
+def test_start_chat_by_phone_contract_handles_empty_resolution(fake_daemon_rpc) -> None:
+    fake_daemon_rpc.ensure_jid_map["5511777777777@s.whatsapp.net"] = ""
+
+    result = main.start_chat_by_phone("5511777777777")
+
+    validate_api_response("start_chat_by_phone", result)
+    assert result == {
+        "success": False,
+        "chat": None,
+        "message": "Failed to resolve phone number",
+    }
+
+
+def test_start_chat_by_phone_contract_handles_ensure_jid_failure(
+    fake_daemon_rpc, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def fail_ensure_jid(self, jid: str):
+        raise RuntimeError("jid unavailable")
+
+    monkeypatch.setattr(fake_daemon_rpc, "ensure_jid", fail_ensure_jid)
+
+    result = main.start_chat_by_phone("5511666666666")
+
+    validate_api_response("start_chat_by_phone", result)
+    assert result == {
+        "success": False,
+        "chat": None,
+        "message": "jid unavailable",
+    }
+
+
 def test_get_chat_info_contract_returns_group_profile_members() -> None:
     seed_chat(DEFAULT_GROUP_ID, name="Project Group", photo="file:///tmp/group.jpg", muted=False, is_group=True)
     seed_sender_identity(DEFAULT_SENDER_ID, name="Alice", photo="file:///tmp/alice.jpg")

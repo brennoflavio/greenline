@@ -324,6 +324,19 @@ def assert_chat_info_response(payload: Any) -> None:
         assert_chat_info_member(member, f"ChatInfoResponse.members[{index}]")
 
 
+def assert_start_chat_by_phone_response(payload: Any) -> None:
+    response = _assert_dict(payload, "StartChatByPhoneResponse")
+    _assert_keys(response, {"success", "chat", "message"}, "StartChatByPhoneResponse")
+    _assert_bool(response, "success", "StartChatByPhoneResponse")
+    _assert_str(response, "message", "StartChatByPhoneResponse")
+    if response["success"]:
+        _require(isinstance(response["chat"], dict), "StartChatByPhoneResponse.chat must be object on success")
+        assert_base_chat(response["chat"], "StartChatByPhoneResponse.chat")
+        _require(response["chat"].get("is_group") is False, "StartChatByPhoneResponse.chat.is_group must be false")
+        return
+    _require(response["chat"] is None, "StartChatByPhoneResponse.chat must be null on failure")
+
+
 def assert_chat_draft_response(payload: Any) -> None:
     response = _assert_dict(payload, "ChatDraftResponse")
     _assert_keys(response, {"success", "text", "mention_spans"}, "ChatDraftResponse")
@@ -544,6 +557,11 @@ class SetChatDraftRequest:
 
 
 @dataclass(frozen=True)
+class StartChatByPhoneRequest:
+    phone_number: str
+
+
+@dataclass(frozen=True)
 class DeleteMessageRequest:
     chat_id: str
     message_id: str
@@ -753,6 +771,12 @@ API_CONTRACTS: dict[str, ApiContract] = {
         "send_video_message", assert_success_response, "dict", request_type=SendVideoMessageRequest
     ),
     "set_chat_draft": ApiContract("set_chat_draft", assert_success_response, "dict", request_type=SetChatDraftRequest),
+    "start_chat_by_phone": ApiContract(
+        "start_chat_by_phone",
+        assert_start_chat_by_phone_response,
+        "dict",
+        request_type=StartChatByPhoneRequest,
+    ),
     "set_notifications_suppressed": ApiContract(
         "set_notifications_suppressed",
         assert_success_response,

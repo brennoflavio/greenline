@@ -1,5 +1,7 @@
+import re
 from dataclasses import asdict, dataclass, field
 
+from constants import WHATSAPP_JID_SUFFIX
 from daemon_types import Contact as DaemonContact
 from greenline import qml_events
 from greenline.api.common import SuccessResponse, ui_chat
@@ -9,6 +11,7 @@ from greenline.contracts.qml import (
     ChatIdRequest,
     GetChatListRequest,
     SetChatDraftRequest,
+    StartChatByPhoneRequest,
 )
 from greenline.contracts.validation import BoundaryValidationError
 from greenline.reporting import crash_reporter
@@ -17,10 +20,12 @@ from greenline.store.mentions import build_mention_candidate, validate_mention_s
 from greenline.store.records import DraftMentionsRecord, DraftRecord, GroupProfileRecord
 from models import (
     ChatListEntry,
+    ChatListItem,
     ChatListResponse,
     ContactItem,
     ContactListResponse,
     MentionSpan,
+    ReadReceipt,
 )
 from ut_components.utils import dataclass_to_dict
 
@@ -37,6 +42,18 @@ class GroupMentionCandidatesResponse:
     success: bool
     candidates: list[dict[str, object]] = field(default_factory=list)
     message: str = ""
+
+
+@dataclass
+class StartChatByPhoneResponse:
+    success: bool
+    chat: ChatListItem | None = None
+    message: str = ""
+
+
+_PHONE_NUMBER_REGEX = re.compile(r"^[1-9][0-9]{6,14}$")
+_PHONE_NUMBER_ERROR = "Enter digits only, no leading zero (e.g. 5511999999999)"
+_RESOLVE_CHAT_ERROR = "Failed to resolve phone number"
 
 
 def _build_contact_item(contact: DaemonContact) -> ContactItem:
@@ -89,6 +106,55 @@ def get_chat_list(request: GetChatListRequest) -> ChatListResponse:
         raise
     except Exception as error:
         return ChatListResponse(success=False, chats=[], message=str(error))
+
+
+def _normalize_phone_number(phone_number: str) -> str:
+    normalized = str(phone_number or "").strip()
+    if not _PHONE_NUMBER_REGEX.fullmatch(normalized):
+        return ""
+    return normalized
+
+
+def _fallback_direct_chat(chat_id: str, phone_number: str) -> ChatListItem:
+    return ChatListItem(
+        id=chat_id,
+        name=phone_number,
+        photo="",
+        last_message="",
+        date="",
+        last_message_timestamp=0,
+        read_receipt=ReadReceipt.NONE,
+        unread_count=0,
+        is_group=False,
+    )
+
+
+@crash_reporter
+@dataclass_to_dict
+def start_chat_by_phone(request: StartChatByPhoneRequest) -> StartChatByPhoneResponse:
+    try:
+        phone_number = _normalize_phone_number(request.phone_number)
+        if not phone_number:
+            return StartChatByPhoneResponse(success=False, message=_PHONE_NUMBER_ERROR)
+
+        rpc = daemon_client()
+        resolved_jid = canonicalize_contact_jid(rpc.ensure_jid(f"{phone_number}{WHATSAPP_JID_SUFFIX}").JID, rpc=rpc)
+        if not resolved_jid:
+            return StartChatByPhoneResponse(success=False, message=_RESOLVE_CHAT_ERROR)
+
+        with GreenlineKV() as kv:
+            existing_chat = kv.get_record(f"chat:{resolved_jid}")
+
+        if existing_chat is not None:
+            return StartChatByPhoneResponse(success=True, chat=existing_chat, message="")
+
+        return StartChatByPhoneResponse(
+            success=True, chat=_fallback_direct_chat(resolved_jid, phone_number), message=""
+        )
+    except BoundaryValidationError:
+        raise
+    except Exception as error:
+        return StartChatByPhoneResponse(success=False, message=str(error))
 
 
 def _chat_info_members(profile: GroupProfileRecord) -> list[dict[str, str]]:

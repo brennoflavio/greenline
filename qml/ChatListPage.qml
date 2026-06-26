@@ -1,4 +1,5 @@
 import Lomiri.Components 1.3
+import Lomiri.Components.Popups 1.3
 import QtQuick 2.7
 import "components"
 import io.thp.pyotherside 1.4
@@ -56,6 +57,20 @@ Page {
             }
             pageStack.pop();
             openChatPage(chat);
+        });
+    }
+
+    function startChatFromPhone(dialog, phoneNumber) {
+        python.call('main.start_chat_by_phone', [phoneNumber], function(result) {
+            if (result && result.success && result.chat) {
+                PopupUtils.close(dialog);
+                openChatPage(result.chat);
+                return ;
+            }
+            if (dialog)
+                dialog.opening = false;
+
+            toast.show(result && result.message ? result.message : i18n.tr("Failed to start chat"));
         });
     }
 
@@ -175,6 +190,13 @@ Page {
         }
 
         IconButton {
+            iconName: "add"
+            text: i18n.tr("New")
+            enabled: chatListPage.pythonReady
+            onClicked: PopupUtils.open(newChatDialog, chatListPage)
+        }
+
+        IconButton {
             iconName: "document-save"
             text: i18n.tr("Archived")
             onClicked: chatListPage.switchListMode(true)
@@ -193,6 +215,17 @@ Page {
 
     Toast {
         id: toast
+    }
+
+    Component {
+        id: newChatDialog
+
+        NewChatDialog {
+            id: dialog
+
+            onChatRequested: chatListPage.startChatFromPhone(dialog, phoneNumber)
+        }
+
     }
 
     Python {

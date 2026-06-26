@@ -10,6 +10,7 @@ from greenline.contracts.qml import (
     ReplyContextRequest,
     SendMessageReactionRequest,
     SendTextMessageRequest,
+    StartChatByPhoneRequest,
     decode_qml_request,
     qml_api,
     validate_qml_event,
@@ -29,6 +30,29 @@ def _assert_contract_log(
         record.boundary == boundary and record.contract == contract and record.direction == direction
         for record in caplog.records
     )
+
+
+def _start_chat_payload() -> dict[str, object]:
+    return {
+        "id": "5511999999999@s.whatsapp.net",
+        "name": "5511999999999",
+        "photo": "",
+        "last_message": "",
+        "date": "",
+        "last_message_timestamp": 0,
+        "read_receipt": "",
+        "unread_count": 0,
+        "is_group": False,
+        "first_unread_message_id": "",
+        "last_message_mentioned_jids": [],
+        "last_message_type": "",
+        "muted": False,
+        "archived": False,
+        "full_name": "",
+        "push_name": "",
+        "business_name": "",
+        "name_updated_at": 0,
+    }
 
 
 def test_validate_qml_event_logs_and_raises_on_invalid_payload(caplog: pytest.LogCaptureFixture) -> None:
@@ -142,6 +166,31 @@ def test_decode_qml_request_returns_get_message_reactions_dataclass() -> None:
     request = decode_qml_request("get_message_reactions", ("chat@s.whatsapp.net", "message-1"), {})
 
     assert request == GetMessageReactionsRequest(chat_id="chat@s.whatsapp.net", message_id="message-1")
+
+
+def test_decode_qml_request_returns_start_chat_by_phone_dataclass() -> None:
+    request = decode_qml_request("start_chat_by_phone", ("5511999999999",), {})
+
+    assert request == StartChatByPhoneRequest(phone_number="5511999999999")
+
+
+def test_validate_qml_response_accepts_start_chat_by_phone_payloads() -> None:
+    validate_qml_response(
+        "start_chat_by_phone",
+        {"success": True, "chat": _start_chat_payload(), "message": ""},
+    )
+    validate_qml_response(
+        "start_chat_by_phone",
+        {"success": False, "chat": None, "message": "Failed to resolve phone number"},
+    )
+
+
+def test_validate_qml_response_rejects_invalid_start_chat_by_phone_payload() -> None:
+    with pytest.raises(BoundaryValidationError):
+        validate_qml_response(
+            "start_chat_by_phone",
+            {"success": True, "chat": None, "message": ""},
+        )
 
 
 def test_decode_qml_request_returns_send_message_reaction_dataclass() -> None:

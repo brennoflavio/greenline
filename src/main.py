@@ -22,12 +22,14 @@ setup(APP_NAME, CRASH_REPORT_URL)
 from greenline.api.chats import (
     ChatDraftResponse,
     GroupMentionCandidatesResponse,
+    StartChatByPhoneResponse,
     get_chat_draft,
     get_chat_info,
     get_chat_list,
     get_contact_list,
     get_group_mention_candidates,
     set_chat_draft,
+    start_chat_by_phone,
     toggle_archive,
     toggle_mute,
 )
@@ -116,6 +118,7 @@ send_sticker_message = qml_api("send_sticker_message")(send_sticker_message)
 send_text_message = qml_api("send_text_message")(send_text_message)
 send_video_message = qml_api("send_video_message")(send_video_message)
 set_chat_draft = qml_api("set_chat_draft")(set_chat_draft)
+start_chat_by_phone = qml_api("start_chat_by_phone")(start_chat_by_phone)
 set_error_reporting = qml_api("set_error_reporting")(set_error_reporting)
 set_notifications_suppressed = qml_api("set_notifications_suppressed")(set_notifications_suppressed)
 set_stop_daemon_on_exit = qml_api("set_stop_daemon_on_exit")(set_stop_daemon_on_exit)
@@ -131,6 +134,7 @@ __all__ = [
     "setup",
     "ChatDraftResponse",
     "GroupMentionCandidatesResponse",
+    "StartChatByPhoneResponse",
     "get_chat_draft",
     "get_chat_info",
     "get_chat_list",
@@ -183,4 +187,5 @@ __all__ = [
     "send_sticker_message",
     "send_text_message",
     "send_video_message",
+    "start_chat_by_phone",
 ]
