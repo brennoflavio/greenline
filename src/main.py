@@ -30,6 +30,7 @@ from greenline.api.chats import (
     get_group_mention_candidates,
     set_chat_draft,
     start_chat_by_phone,
+    start_chat_from_contact,
     toggle_archive,
     toggle_mute,
 )
@@ -119,6 +120,7 @@ send_text_message = qml_api("send_text_message")(send_text_message)
 send_video_message = qml_api("send_video_message")(send_video_message)
 set_chat_draft = qml_api("set_chat_draft")(set_chat_draft)
 start_chat_by_phone = qml_api("start_chat_by_phone")(start_chat_by_phone)
+start_chat_from_contact = qml_api("start_chat_from_contact")(start_chat_from_contact)
 set_error_reporting = qml_api("set_error_reporting")(set_error_reporting)
 set_notifications_suppressed = qml_api("set_notifications_suppressed")(set_notifications_suppressed)
 set_stop_daemon_on_exit = qml_api("set_stop_daemon_on_exit")(set_stop_daemon_on_exit)
@@ -188,4 +190,5 @@ __all__ = [
     "send_text_message",
     "send_video_message",
     "start_chat_by_phone",
+    "start_chat_from_contact",
 ]

@@ -562,6 +562,11 @@ class StartChatByPhoneRequest:
 
 
 @dataclass(frozen=True)
+class StartChatFromContactRequest:
+    file_path: str
+
+
+@dataclass(frozen=True)
 class DeleteMessageRequest:
     chat_id: str
     message_id: str
@@ -776,6 +781,12 @@ API_CONTRACTS: dict[str, ApiContract] = {
         assert_start_chat_by_phone_response,
         "dict",
         request_type=StartChatByPhoneRequest,
+    ),
+    "start_chat_from_contact": ApiContract(
+        "start_chat_from_contact",
+        assert_start_chat_by_phone_response,
+        "dict",
+        request_type=StartChatFromContactRequest,
     ),
     "set_notifications_suppressed": ApiContract(
         "set_notifications_suppressed",

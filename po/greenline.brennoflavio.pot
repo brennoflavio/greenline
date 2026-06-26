@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-26 03:24+0000\n"
+"POT-Creation-Date: 2026-06-26 04:46+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -43,44 +43,52 @@ msgstr ""
 msgid "Link Device"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:19
+#: ../qml/ChatListPage.qml:20
 msgid "Share to chat"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:37
+#: ../qml/ChatListPage.qml:38
 msgid "The shared file is no longer available"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:48 ../qml/Main.qml:98
+#: ../qml/ChatListPage.qml:49 ../qml/Main.qml:98
 msgid "Unsupported shared item"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:55
+#: ../qml/ChatListPage.qml:56
 msgid "Failed to share file"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:73
+#: ../qml/ChatListPage.qml:74
 msgid "Failed to start chat"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:168
+#: ../qml/ChatListPage.qml:84
+msgid "Failed to import contact"
+msgstr ""
+
+#: ../qml/ChatListPage.qml:183
 msgid "No archived chats"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:168
+#: ../qml/ChatListPage.qml:183
 msgid "No chats found"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:188 ../qml/ChatListPage.qml:273
+#: ../qml/ChatListPage.qml:203 ../qml/ChatListPage.qml:300
 msgid "Chats"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:194
+#: ../qml/ChatListPage.qml:209
 msgid "New"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:201 ../qml/ChatListPage.qml:273
+#: ../qml/ChatListPage.qml:216 ../qml/ChatListPage.qml:300
 msgid "Archived"
+msgstr ""
+
+#: ../qml/ChatListPage.qml:251 ../qml/components/NewChatDialog.qml:52
+msgid "Import Contact"
 msgstr ""
 
 #: ../qml/ChatPage.qml:82
@@ -329,7 +337,7 @@ msgstr ""
 #: ../qml/components/ChatAttachmentDialog.qml:74
 #: ../qml/components/EditMessageDialog.qml:26
 #: ../qml/components/LocationFetchDialog.qml:91
-#: ../qml/components/NewChatDialog.qml:34
+#: ../qml/components/NewChatDialog.qml:35
 #: ../qml/components/VoiceMessageRecorderDialog.qml:85
 msgid "Cancel"
 msgstr ""
@@ -592,16 +600,16 @@ msgstr ""
 msgid "edited"
 msgstr ""
 
-#: ../qml/components/NewChatDialog.qml:14
+#: ../qml/components/NewChatDialog.qml:15
 msgid "New Chat"
 msgstr ""
 
-#: ../qml/components/NewChatDialog.qml:15
+#: ../qml/components/NewChatDialog.qml:16
 msgid ""
 "Enter a phone number with country code, digits only (e.g. 5511999999999)."
 msgstr ""
 
-#: ../qml/components/NewChatDialog.qml:40
+#: ../qml/components/NewChatDialog.qml:41
 msgid "OK"
 msgstr ""
 

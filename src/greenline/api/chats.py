@@ -12,6 +12,7 @@ from greenline.contracts.qml import (
     GetChatListRequest,
     SetChatDraftRequest,
     StartChatByPhoneRequest,
+    StartChatFromContactRequest,
 )
 from greenline.contracts.validation import BoundaryValidationError
 from greenline.reporting import crash_reporter
@@ -53,6 +54,7 @@ class StartChatByPhoneResponse:
 
 _PHONE_NUMBER_REGEX = re.compile(r"^[1-9][0-9]{6,14}$")
 _PHONE_NUMBER_ERROR = "Enter digits only, no leading zero (e.g. 5511999999999)"
+_CONTACT_PHONE_ERROR = "Contact does not contain a valid phone number"
 _RESOLVE_CHAT_ERROR = "Failed to resolve phone number"
 
 
@@ -115,6 +117,31 @@ def _normalize_phone_number(phone_number: str) -> str:
     return normalized
 
 
+def _normalize_imported_phone_number(phone_number: str) -> str:
+    return re.sub(r"\D", "", str(phone_number or ""))
+
+
+def _unfold_vcard_lines(vcard: str) -> list[str]:
+    unfolded_lines: list[str] = []
+    for raw_line in vcard.replace("\r\n", "\n").replace("\r", "\n").split("\n"):
+        if (raw_line.startswith(" ") or raw_line.startswith("\t")) and unfolded_lines:
+            unfolded_lines[-1] += raw_line[1:]
+        else:
+            unfolded_lines.append(raw_line)
+    return unfolded_lines
+
+
+def _extract_phone_number_from_vcard(vcard: str) -> str:
+    for line in _unfold_vcard_lines(vcard):
+        key, separator, value = line.partition(":")
+        property_name = key.split(";", 1)[0].rsplit(".", 1)[-1].upper()
+        if separator and property_name == "TEL":
+            phone_number = _normalize_phone_number(_normalize_imported_phone_number(value))
+            if phone_number:
+                return phone_number
+    return ""
+
+
 def _fallback_direct_chat(chat_id: str, phone_number: str) -> ChatListItem:
     return ChatListItem(
         id=chat_id,
@@ -129,28 +156,49 @@ def _fallback_direct_chat(chat_id: str, phone_number: str) -> ChatListItem:
     )
 
 
+def _start_chat_response(phone_number: str) -> StartChatByPhoneResponse:
+    normalized_phone_number = _normalize_phone_number(phone_number)
+    if not normalized_phone_number:
+        return StartChatByPhoneResponse(success=False, message=_PHONE_NUMBER_ERROR)
+
+    rpc = daemon_client()
+    resolved_jid = canonicalize_contact_jid(
+        rpc.ensure_jid(f"{normalized_phone_number}{WHATSAPP_JID_SUFFIX}").JID, rpc=rpc
+    )
+    if not resolved_jid:
+        return StartChatByPhoneResponse(success=False, message=_RESOLVE_CHAT_ERROR)
+
+    with GreenlineKV() as kv:
+        existing_chat = kv.get_record(f"chat:{resolved_jid}")
+
+    if existing_chat is not None:
+        return StartChatByPhoneResponse(success=True, chat=existing_chat, message="")
+
+    return StartChatByPhoneResponse(
+        success=True, chat=_fallback_direct_chat(resolved_jid, normalized_phone_number), message=""
+    )
+
+
 @crash_reporter
 @dataclass_to_dict
 def start_chat_by_phone(request: StartChatByPhoneRequest) -> StartChatByPhoneResponse:
     try:
-        phone_number = _normalize_phone_number(request.phone_number)
+        return _start_chat_response(request.phone_number)
+    except BoundaryValidationError:
+        raise
+    except Exception as error:
+        return StartChatByPhoneResponse(success=False, message=str(error))
+
+
+@crash_reporter
+@dataclass_to_dict
+def start_chat_from_contact(request: StartChatFromContactRequest) -> StartChatByPhoneResponse:
+    try:
+        with open(request.file_path, encoding="utf-8-sig") as file_handle:
+            phone_number = _extract_phone_number_from_vcard(file_handle.read())
         if not phone_number:
-            return StartChatByPhoneResponse(success=False, message=_PHONE_NUMBER_ERROR)
-
-        rpc = daemon_client()
-        resolved_jid = canonicalize_contact_jid(rpc.ensure_jid(f"{phone_number}{WHATSAPP_JID_SUFFIX}").JID, rpc=rpc)
-        if not resolved_jid:
-            return StartChatByPhoneResponse(success=False, message=_RESOLVE_CHAT_ERROR)
-
-        with GreenlineKV() as kv:
-            existing_chat = kv.get_record(f"chat:{resolved_jid}")
-
-        if existing_chat is not None:
-            return StartChatByPhoneResponse(success=True, chat=existing_chat, message="")
-
-        return StartChatByPhoneResponse(
-            success=True, chat=_fallback_direct_chat(resolved_jid, phone_number), message=""
-        )
+            return StartChatByPhoneResponse(success=False, message=_CONTACT_PHONE_ERROR)
+        return _start_chat_response(phone_number)
     except BoundaryValidationError:
         raise
     except Exception as error:

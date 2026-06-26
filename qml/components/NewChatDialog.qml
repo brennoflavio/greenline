@@ -10,6 +10,7 @@ Dialog {
     property bool phoneValid: /^[1-9][0-9]{6,14}$/.test(phoneInput.text)
 
     signal chatRequested(string phoneNumber)
+    signal importRequested()
 
     title: i18n.tr("New Chat")
     text: i18n.tr("Enter a phone number with country code, digits only (e.g. 5511999999999).")
@@ -44,6 +45,15 @@ Dialog {
             Qt.inputMethod.commit();
             root.opening = true;
             root.chatRequested(phoneInput.text);
+        }
+    }
+
+    Button {
+        text: i18n.tr("Import Contact")
+        enabled: !root.opening
+        onClicked: {
+            PopupUtils.close(root);
+            root.importRequested();
         }
     }
 

@@ -11,6 +11,7 @@ from greenline.contracts.qml import (
     SendMessageReactionRequest,
     SendTextMessageRequest,
     StartChatByPhoneRequest,
+    StartChatFromContactRequest,
     decode_qml_request,
     qml_api,
     validate_qml_event,
@@ -174,6 +175,12 @@ def test_decode_qml_request_returns_start_chat_by_phone_dataclass() -> None:
     assert request == StartChatByPhoneRequest(phone_number="5511999999999")
 
 
+def test_decode_qml_request_returns_start_chat_from_contact_dataclass() -> None:
+    request = decode_qml_request("start_chat_from_contact", ("/tmp/contact.vcf",), {})
+
+    assert request == StartChatFromContactRequest(file_path="/tmp/contact.vcf")
+
+
 def test_validate_qml_response_accepts_start_chat_by_phone_payloads() -> None:
     validate_qml_response(
         "start_chat_by_phone",
@@ -183,12 +190,21 @@ def test_validate_qml_response_accepts_start_chat_by_phone_payloads() -> None:
         "start_chat_by_phone",
         {"success": False, "chat": None, "message": "Failed to resolve phone number"},
     )
+    validate_qml_response(
+        "start_chat_from_contact",
+        {"success": True, "chat": _start_chat_payload(), "message": ""},
+    )
 
 
 def test_validate_qml_response_rejects_invalid_start_chat_by_phone_payload() -> None:
     with pytest.raises(BoundaryValidationError):
         validate_qml_response(
             "start_chat_by_phone",
+            {"success": True, "chat": None, "message": ""},
+        )
+    with pytest.raises(BoundaryValidationError):
+        validate_qml_response(
+            "start_chat_from_contact",
             {"success": True, "chat": None, "message": ""},
         )
 

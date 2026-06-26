@@ -1,5 +1,6 @@
 import Lomiri.Components 1.3
 import Lomiri.Components.Popups 1.3
+import Lomiri.Content 1.3
 import QtQuick 2.7
 import "components"
 import io.thp.pyotherside 1.4
@@ -72,6 +73,20 @@ Page {
 
             toast.show(result && result.message ? result.message : i18n.tr("Failed to start chat"));
         });
+    }
+
+    function startChatFromContact(filePath) {
+        python.call('main.start_chat_from_contact', [filePath], function(result) {
+            if (result && result.success && result.chat) {
+                openChatPage(result.chat);
+                return ;
+            }
+            toast.show(result && result.message ? result.message : i18n.tr("Failed to import contact"));
+        });
+    }
+
+    function openContactImportPicker() {
+        pageStack.push(contactPickerPage);
     }
 
     function refreshChatList() {
@@ -224,6 +239,18 @@ Page {
             id: dialog
 
             onChatRequested: chatListPage.startChatFromPhone(dialog, phoneNumber)
+            onImportRequested: chatListPage.openContactImportPicker()
+        }
+
+    }
+
+    Component {
+        id: contactPickerPage
+
+        ChatAttachmentPickerPage {
+            pickerTitle: i18n.tr("Import Contact")
+            pickerContentType: ContentType.Contacts
+            onFileSelected: chatListPage.startChatFromContact(filePath)
         }
 
     }

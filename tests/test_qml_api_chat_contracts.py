@@ -28,6 +28,12 @@ def _last_event(fake_pyotherside, name: str):
     raise AssertionError(f"missing event {name}")
 
 
+def _write_vcard(tmp_path, content: str) -> str:
+    path = tmp_path / "contact.vcf"
+    path.write_text(content, encoding="utf-8")
+    return str(path)
+
+
 def test_get_chat_list_contract_filters_active_and_archived_chats() -> None:
     active_chat = seed_chat(DEFAULT_CHAT_ID, muted=True, photo="file:///tmp/photo.jpg")
     archived_chat = seed_chat("archived@s.whatsapp.net", archived=True, muted=False)
@@ -214,6 +220,100 @@ def test_start_chat_by_phone_contract_handles_ensure_jid_failure(
         "success": False,
         "chat": None,
         "message": "jid unavailable",
+    }
+
+
+def test_start_chat_from_contact_contract_uses_vcard_phone_number(tmp_path) -> None:
+    vcard_path = _write_vcard(
+        tmp_path,
+        "BEGIN:VCARD\nFN:Alice\nTEL;TYPE=CELL:+55 11 99999-9999\nEND:VCARD\n",
+    )
+
+    result = main.start_chat_from_contact(vcard_path)
+
+    validate_api_response("start_chat_from_contact", result)
+    assert result == {
+        "success": True,
+        "chat": {
+            "id": "5511999999999@s.whatsapp.net",
+            "name": "5511999999999",
+            "photo": "",
+            "last_message": "",
+            "date": "",
+            "last_message_timestamp": 0,
+            "read_receipt": "",
+            "unread_count": 0,
+            "is_group": False,
+            "first_unread_message_id": "",
+            "last_message_mentioned_jids": [],
+            "last_message_type": "",
+            "muted": False,
+            "archived": False,
+            "full_name": "",
+            "push_name": "",
+            "business_name": "",
+            "name_updated_at": 0,
+        },
+        "message": "",
+    }
+    with GreenlineKV() as kv:
+        assert kv.get_record("chat:5511999999999@s.whatsapp.net") is None
+
+
+def test_start_chat_from_contact_contract_accepts_grouped_tel_property(tmp_path) -> None:
+    vcard_path = _write_vcard(
+        tmp_path,
+        "BEGIN:VCARD\nFN:Grouped\nitem1.TEL;TYPE=CELL:tel:+55 11 97777-7777\nEND:VCARD\n",
+    )
+
+    result = main.start_chat_from_contact(vcard_path)
+
+    validate_api_response("start_chat_from_contact", result)
+    assert result["success"] is True
+    assert result["chat"]["id"] == "5511977777777@s.whatsapp.net"
+
+
+def test_start_chat_from_contact_contract_reuses_existing_chat(tmp_path) -> None:
+    chat_id = "5511888888888@s.whatsapp.net"
+    seed_chat(chat_id, name="Bob", photo="file:///tmp/bob.jpg", muted=True)
+    vcard_path = _write_vcard(
+        tmp_path,
+        "BEGIN:VCARD\nFN:Bob\nTEL;TYPE=CELL:(+55) 11 88888-8888\nEND:VCARD\n",
+    )
+
+    result = main.start_chat_from_contact(vcard_path)
+
+    validate_api_response("start_chat_from_contact", result)
+    assert result["success"] is True
+    assert result["chat"]["id"] == chat_id
+    assert result["chat"]["name"] == "Bob"
+    assert result["chat"]["photo"] == "file:///tmp/bob.jpg"
+    assert result["chat"]["muted"] is True
+
+
+def test_start_chat_from_contact_contract_rejects_missing_phone(tmp_path) -> None:
+    vcard_path = _write_vcard(tmp_path, "BEGIN:VCARD\nFN:No Phone\nEND:VCARD\n")
+
+    result = main.start_chat_from_contact(vcard_path)
+
+    validate_api_response("start_chat_from_contact", result)
+    assert result == {
+        "success": False,
+        "chat": None,
+        "message": "Contact does not contain a valid phone number",
+    }
+
+
+def test_start_chat_from_contact_contract_rejects_invalid_normalized_phone(tmp_path) -> None:
+    vcard_path = _write_vcard(tmp_path, "BEGIN:VCARD\nFN:Short\nTEL:+00 12\nEND:VCARD\n")
+
+    result = main.start_chat_from_contact(vcard_path)
+
+    validate_api_response("start_chat_from_contact", result)
+    assert result == {
+        "success": False,
+        "chat": None,
+        "message": "Contact does not contain a valid phone number",
     }
 
 
