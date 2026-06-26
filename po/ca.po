@@ -8,330 +8,338 @@ msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-06-26 04:46+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Automatically generated\n"
-"Language-Team: none\n"
+"PO-Revision-Date: 2026-06-26 19:33+0000\n"
+"Last-Translator: Walter Garcia-Fontes <walter.garcia@upf.edu>\n"
+"Language-Team: Catalan <https://hosted.weblate.org/projects/ubports/"
+"greenline/ca/>\n"
 "Language: ca\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 2026.7.dev0\n"
 
 #: ../qml/AuthorizationPage.qml:37
 msgid "Scan QR Code"
-msgstr ""
+msgstr "Escaneja el codi QR"
 
 #: ../qml/AuthorizationPage.qml:45
 msgid ""
 "Open WhatsApp on your phone, go to Settings → Linked Devices → Link a "
 "Device, then scan the code below."
 msgstr ""
+"Obriu WhatsApp al telèfon, aneu a Configuració . Dispositius enllaçats . "
+"Enllaça un dispositiu i després escanegeu el codi a continuació."
 
 #: ../qml/AuthorizationPage.qml:85
 msgid "Loading QR Code..."
-msgstr ""
+msgstr "S'està carregant el codi QR..."
 
 #: ../qml/AuthorizationPage.qml:97
 msgid "The code refreshes automatically. Keep this screen open while scanning."
 msgstr ""
+"El codi s'actualitza automàticament. Mantingueu aquesta pantalla oberta "
+"mentre escanegeu."
 
 #: ../qml/AuthorizationPage.qml:106
 msgid "Login with phone number"
-msgstr ""
+msgstr "Inicia la sessió amb el número de telèfon"
 
 #: ../qml/AuthorizationPage.qml:143
 msgid "Link Device"
-msgstr ""
+msgstr "Dispositiu d'enllaç"
 
 #: ../qml/ChatListPage.qml:20
 msgid "Share to chat"
-msgstr ""
+msgstr "Comparteix al xat"
 
 #: ../qml/ChatListPage.qml:38
 msgid "The shared file is no longer available"
-msgstr ""
+msgstr "El fitxer compartit ja no està disponible"
 
 #: ../qml/ChatListPage.qml:49 ../qml/Main.qml:98
 msgid "Unsupported shared item"
-msgstr ""
+msgstr "L'element compartit no és compatible"
 
 #: ../qml/ChatListPage.qml:56
 msgid "Failed to share file"
-msgstr ""
+msgstr "No s'ha pogut compartir el fitxer"
 
 #: ../qml/ChatListPage.qml:74
 msgid "Failed to start chat"
-msgstr ""
+msgstr "No s'ha pogut iniciar el xat"
 
 #: ../qml/ChatListPage.qml:84
 msgid "Failed to import contact"
-msgstr ""
+msgstr "No s'ha pogut importar el contacte"
 
 #: ../qml/ChatListPage.qml:183
 msgid "No archived chats"
-msgstr ""
+msgstr "No hi ha xats arxivats"
 
 #: ../qml/ChatListPage.qml:183
 msgid "No chats found"
-msgstr ""
+msgstr "No s'ha trobat cap xat"
 
 #: ../qml/ChatListPage.qml:203 ../qml/ChatListPage.qml:300
 msgid "Chats"
-msgstr ""
+msgstr "Xats"
 
 #: ../qml/ChatListPage.qml:209
 msgid "New"
-msgstr ""
+msgstr "Nou"
 
 #: ../qml/ChatListPage.qml:216 ../qml/ChatListPage.qml:300
 msgid "Archived"
-msgstr ""
+msgstr "Arxivat"
 
 #: ../qml/ChatListPage.qml:251 ../qml/components/NewChatDialog.qml:52
 msgid "Import Contact"
-msgstr ""
+msgstr "Importa un contacte"
 
 #: ../qml/ChatPage.qml:82
 msgid "You"
-msgstr ""
+msgstr "Vos"
 
 #: ../qml/ChatPage.qml:114
 msgid "Message updated"
-msgstr ""
+msgstr "Missatge actualitzat"
 
 #: ../qml/ChatPage.qml:120
 msgid "Failed to edit message"
-msgstr ""
+msgstr "No s'ha pogut editar el missatge"
 
 #: ../qml/ChatPage.qml:130
 msgid "Message deleted"
-msgstr ""
+msgstr "S'ha suprimit el missatge"
 
 #: ../qml/ChatPage.qml:133
 msgid "Failed to delete message"
-msgstr ""
+msgstr "No s'ha pogut suprimir el missatge"
 
 #: ../qml/ChatPage.qml:156
 msgid "No internet connection. Connect and try again."
-msgstr ""
+msgstr "No hi ha connexió a Internet. Connecteu-vos i torneu-ho a provar."
 
 #: ../qml/ChatPage.qml:169 ../qml/ChatPage.qml:987
 msgid "Failed to download media"
-msgstr ""
+msgstr "No s'ha pogut baixar el suport"
 
 #: ../qml/ChatPage.qml:340
 msgid "Failed to load older messages"
-msgstr ""
+msgstr "No s'han pogut carregar els missatges antics"
 
 #: ../qml/ChatPage.qml:430
 msgid "Failed to send audio"
-msgstr ""
+msgstr "No s'ha pogut enviar l'àudio"
 
 #: ../qml/ChatPage.qml:537 ../qml/DocumentPreviewPage.qml:42
 #: ../qml/DocumentPreviewPage.qml:97
 #: ../qml/components/ChatAttachmentDialog.qml:42
 #: ../qml/components/DocumentMessage.qml:61
 msgid "Document"
-msgstr ""
+msgstr "Document"
 
 #: ../qml/ChatPage.qml:549
 msgid "Failed to send document"
-msgstr ""
+msgstr "No s'ha pogut enviar el document"
 
 #: ../qml/ChatPage.qml:590
 msgid "Failed to send contact"
-msgstr ""
+msgstr "No s'ha pogut enviar el contacte"
 
 #: ../qml/ChatPage.qml:632
 msgid "Failed to send location"
-msgstr ""
+msgstr "No s'ha pogut enviar la ubicació"
 
 #: ../qml/ChatPage.qml:716
 msgid "WhatsApp messages read today"
-msgstr ""
+msgstr "Missatges de WhatsApp llegits avui"
 
 #: ../qml/ChatPage.qml:717
 msgid "No WhatsApp messages read today"
-msgstr ""
+msgstr "No hi ha missatges de WhatsApp llegits avui"
 
 #: ../qml/ChatPage.qml:725
 msgid "WhatsApp messages sent today"
-msgstr ""
+msgstr "Missatges de WhatsApp enviats avui"
 
 #: ../qml/ChatPage.qml:726
 msgid "No WhatsApp messages sent today"
-msgstr ""
+msgstr "No s'han enviat missatges de WhatsApp avui"
 
 #: ../qml/ChatPage.qml:754
 msgid "Scroll up to load older messages first"
-msgstr ""
+msgstr "Desplaça amunt per a carregar primer els missatges antics"
 
 #: ../qml/ChatPage.qml:761
 msgid "Copied to clipboard"
-msgstr ""
+msgstr "S'ha copiat al porta-retalls"
 
 #: ../qml/ChatPage.qml:940
 msgid "recording audio..."
-msgstr ""
+msgstr "s'està gravant l'àudio..."
 
 #: ../qml/ChatPage.qml:940
 msgid "typing..."
-msgstr ""
+msgstr "s'està escrivint..."
 
 #: ../qml/ChatPage.qml:1041
 msgid "Send Photo"
-msgstr ""
+msgstr "Envia una foto"
 
 #: ../qml/ChatPage.qml:1052
 msgid "Send Video"
-msgstr ""
+msgstr "Envia un vídeo"
 
 #: ../qml/ChatPage.qml:1063
 msgid "Send Document"
-msgstr ""
+msgstr "Envia el document"
 
 #: ../qml/ChatPage.qml:1074
 msgid "Send Contact"
-msgstr ""
+msgstr "Envia el contacte"
 
 #: ../qml/ContactPreviewPage.qml:42 ../qml/ContactPreviewPage.qml:97
 #: ../qml/components/ChatAttachmentDialog.qml:58
 #: ../qml/components/ContactMessage.qml:47
 msgid "Contact"
-msgstr ""
+msgstr "Contacte"
 
 #: ../qml/ContactPreviewPage.qml:50
 msgid "Ready to export"
-msgstr ""
+msgstr "A punt per exportar"
 
 #: ../qml/ContactPreviewPage.qml:70 ../qml/DocumentPreviewPage.qml:70
 #: ../qml/ImagePreviewPage.qml:36 ../qml/VideoPreviewPage.qml:38
 #: ../qml/components/EditMessageDialog.qml:32
 msgid "Save"
-msgstr ""
+msgstr "Desa"
 
 #: ../qml/ContactPreviewPage.qml:82 ../qml/DocumentPreviewPage.qml:82
 #: ../qml/ImagePreviewPage.qml:48 ../qml/VideoPreviewPage.qml:51
 #: ../qml/components/ContentTransferPage.qml:11
 msgid "Share"
-msgstr ""
+msgstr "Comparteix"
 
 #: ../qml/ContactPreviewPage.qml:101 ../qml/DocumentPreviewPage.qml:101
 #: ../qml/ImagePreviewPage.qml:67 ../qml/MessageReactionsPage.qml:314
 #: ../qml/VideoPreviewPage.qml:71 ../qml/components/ChatPageHeader.qml:18
 #: ../qml/ut_components/AppHeader.qml:78
 msgid "Back"
-msgstr ""
+msgstr "Enrere"
 
 #: ../qml/DaemonSetupPage.qml:46
 msgid "The background service is installed but not running."
-msgstr ""
+msgstr "El servei de rerefons està instal·lat però no s'està executant."
 
 #: ../qml/DaemonSetupPage.qml:46
 msgid "The background service needs to be installed to sync your messages."
-msgstr ""
+msgstr "Cal instal·lar el servei de rerefons per sincronitzar els missatges."
 
 #: ../qml/DaemonSetupPage.qml:65
 msgid "Install & Start"
-msgstr ""
+msgstr "Inici de la instal·lació"
 
 #: ../qml/DaemonSetupPage.qml:65
 msgid "Start Service"
-msgstr ""
+msgstr "Inicia el servei"
 
 #: ../qml/DaemonSetupPage.qml:121
 msgid "Setup"
-msgstr ""
+msgstr "Configuració"
 
 #: ../qml/DocumentPreviewPage.qml:50
 msgid "Downloaded"
-msgstr ""
+msgstr "Baixats"
 
 #: ../qml/ImagePreviewPage.qml:63
 msgid "Image"
-msgstr ""
+msgstr "Imatge"
 
 #: ../qml/Main.qml:84
 msgid "No shared file was received"
-msgstr ""
+msgstr "No s'ha rebut cap fitxer compartit"
 
 #: ../qml/Main.qml:90
 msgid "Only the first shared item will be used"
-msgstr ""
+msgstr "Només s'utilitzarà el primer element compartit"
 
 #: ../qml/Main.qml:93
 msgid "Unable to open the shared file"
-msgstr ""
+msgstr "No s'ha pogut obrir el fitxer compartit"
 
 #: ../qml/MessageReactionsPage.qml:34
 msgid "Failed to load reactions"
-msgstr ""
+msgstr "Ha fallat en carregar les reaccions"
 
 #: ../qml/MessageReactionsPage.qml:52
 msgid "Failed to send reaction"
-msgstr ""
+msgstr "No s'ha pogut enviar la reacció"
 
 #: ../qml/MessageReactionsPage.qml:197
 msgid "Remove"
-msgstr ""
+msgstr "Elimina"
 
 #: ../qml/MessageReactionsPage.qml:199
 msgid "Deleting reaction…"
-msgstr ""
+msgstr "S'està suprimint la reacció…"
 
 #: ../qml/MessageReactionsPage.qml:199
 msgid "Reaction removed"
-msgstr ""
+msgstr "Reacció eliminada"
 
 #: ../qml/MessageReactionsPage.qml:210
 msgid "Loading reactions…"
-msgstr ""
+msgstr "S'estan carregant reaccions…"
 
 #: ../qml/MessageReactionsPage.qml:227
 msgid "No reactions yet"
-msgstr ""
+msgstr "Encara no hi ha reaccions"
 
 #: ../qml/MessageReactionsPage.qml:273
 msgid "Quick reactions"
-msgstr ""
+msgstr "Reaccions ràpides"
 
 #: ../qml/MessageReactionsPage.qml:288
 msgid "Reaction updated"
-msgstr ""
+msgstr "S'ha actualitzat la reacció"
 
 #: ../qml/MessageReactionsPage.qml:288
 msgid "Sending reaction…"
-msgstr ""
+msgstr "S'està enviant la reacció…"
 
 #: ../qml/MessageReactionsPage.qml:310
 #: ../qml/components/ChatMessageList.qml:260
 msgid "Reactions"
-msgstr ""
+msgstr "Reaccions"
 
 #: ../qml/PhonePairingPage.qml:48
 msgid ""
 "Enter your phone number with country code, digits only (e.g. 5511999999999)."
 msgstr ""
+"Introduïu el vostre número de telèfon amb el codi de país, només dígits (p. "
+"ex. 34999999999)."
 
 #: ../qml/PhonePairingPage.qml:59
 msgid "Phone Number"
-msgstr ""
+msgstr "Número de telèfon"
 
 #: ../qml/PhonePairingPage.qml:62 ../qml/components/NewChatDialog.qml:9
 msgid "Enter digits only, no leading zero (e.g. 5511999999999)"
-msgstr ""
+msgstr "Introduïu només dígits, sense zero inicial (p. ex. 34999999999)"
 
 #: ../qml/PhonePairingPage.qml:78
 msgid "Get Pairing Code"
-msgstr ""
+msgstr "Obté el codi d'aparellament"
 
 #: ../qml/PhonePairingPage.qml:89
 msgid "Failed to get pairing code"
-msgstr ""
+msgstr "No s'ha pogut obtenir el codi d'aparellament"
 
 #: ../qml/PhonePairingPage.qml:112
 msgid "Requesting pairing code..."
-msgstr ""
+msgstr "S'està sol·licitant un codi d'aparellament..."
 
 #: ../qml/PhonePairingPage.qml:120 ../qml/SettingsPage.qml:210
 #: ../qml/components/ChatAttachmentDialog.qml:74
@@ -340,117 +348,124 @@ msgstr ""
 #: ../qml/components/NewChatDialog.qml:35
 #: ../qml/components/VoiceMessageRecorderDialog.qml:85
 msgid "Cancel"
-msgstr ""
+msgstr "Cancel·la"
 
 #: ../qml/PhonePairingPage.qml:138
 msgid ""
 "Open WhatsApp on your phone, go to Settings → Linked Devices → Link with "
 "phone number, then enter the code below."
 msgstr ""
+"Obriu WhatsApp al telèfon, aneu a Configuració . Dispositius enllaçats . "
+"Enllaçeu amb el número de telèfon i, a continuació, introduïu el codi que hi "
+"ha a continuació."
 
 #: ../qml/PhonePairingPage.qml:162
 msgid "Waiting for confirmation..."
-msgstr ""
+msgstr "S'està esperant confirmació..."
 
 #: ../qml/PhonePairingPage.qml:196
 msgid "Login with Phone Number"
-msgstr ""
+msgstr "Inicia la sessió amb el número de telèfon"
 
 #: ../qml/ProfilePage.qml:105
 msgid "Group"
-msgstr ""
+msgstr "Grup"
 
 #: ../qml/ProfilePage.qml:119 ../qml/SettingsPage.qml:235
 #: ../qml/ut_components/AppHeader.qml:94
 msgid "Settings"
-msgstr ""
+msgstr "Configuració"
 
 #: ../qml/ProfilePage.qml:122
 msgid "Mute notifications"
-msgstr ""
+msgstr "Silencia les notificacions"
 
 #: ../qml/ProfilePage.qml:123
 msgid "Silence all notifications from this chat"
-msgstr ""
+msgstr "Silencia totes les notificacions d'aquest xat"
 
 #: ../qml/ProfilePage.qml:134
 msgid "Description"
-msgstr ""
+msgstr "Descripció"
 
 #: ../qml/ProfilePage.qml:155
 msgid "Members"
-msgstr ""
+msgstr "Membres"
 
 #: ../qml/ProfilePage.qml:159
 msgid "%1 members"
-msgstr ""
+msgstr "%1 membres"
 
 #: ../qml/ProfilePage.qml:286
 msgid "Profile"
-msgstr ""
+msgstr "Perfil"
 
 #: ../qml/SettingsPage.qml:41
 msgid "Notifications"
-msgstr ""
+msgstr "Notificacions"
 
 #: ../qml/SettingsPage.qml:46
 msgid "Enable Notifications"
-msgstr ""
+msgstr "Habilita les notificacions"
 
 #: ../qml/SettingsPage.qml:47
 msgid "Show notifications for new messages and calls"
-msgstr ""
+msgstr "Mostra notificacions per a missatges i trucades noves"
 
 #: ../qml/SettingsPage.qml:61
 msgid "Diagnostics"
-msgstr ""
+msgstr "Diagnòstic"
 
 #: ../qml/SettingsPage.qml:66
 msgid "Error Reporting"
-msgstr ""
+msgstr "Informes d'errors"
 
 #: ../qml/SettingsPage.qml:67
 msgid "Report app errors to help diagnose issues"
-msgstr ""
+msgstr "Informa dels errors de l'aplicació per ajudar a diagnosticar problemes"
 
 #: ../qml/SettingsPage.qml:81
 msgid "Daemon"
-msgstr ""
+msgstr "Dimoni"
 
 #: ../qml/SettingsPage.qml:86
 msgid "Stop Daemon on Exit"
-msgstr ""
+msgstr "Atura el dimoni en sortir"
 
 #: ../qml/SettingsPage.qml:87
 msgid "Stop the daemon when the app closes and disable boot autostart"
 msgstr ""
+"Atura el dimoni quan es tanqui l'aplicació i inhabilita l'arrencada "
+"automàtica"
 
 #: ../qml/SettingsPage.qml:101
 msgid "About"
-msgstr ""
+msgstr "Quant a"
 
 #: ../qml/SettingsPage.qml:120
 msgid "Build Version"
-msgstr ""
+msgstr "Versió de la compilació"
 
 #: ../qml/SettingsPage.qml:127 ../qml/SettingsPage.qml:189
 msgid "Unknown"
-msgstr ""
+msgstr "Desconegut"
 
 #: ../qml/SettingsPage.qml:141
 msgid "Data"
-msgstr ""
+msgstr "Dades"
 
 #: ../qml/SettingsPage.qml:155
 msgid ""
 "Uninstall the daemon, log out from WhatsApp, and delete all local data "
 "including messages, settings and cache."
 msgstr ""
+"Desinstal·la el dimoni, surt de WhatsApp i suprimeix totes les dades locals, "
+"inclosos els missatges, la configuració i la memòria cau."
 
 #: ../qml/SettingsPage.qml:170 ../qml/SettingsPage.qml:206
 #: ../qml/SettingsPage.qml:215
 msgid "Reset App"
-msgstr ""
+msgstr "Reinicia l'aplicació"
 
 #: ../qml/SettingsPage.qml:207
 msgid ""
@@ -458,255 +473,264 @@ msgid ""
 "data. You will need to reinstall the daemon and scan the QR code again to "
 "reconnect."
 msgstr ""
+"Això desinstal·larà el dimoni, sortirà de WhatsApp i suprimirà totes les "
+"dades locals. Haureu de tornar a instal·lar el dimoni i tornar a escanejar "
+"el codi QR per tornar a connectar."
 
 #: ../qml/SettingsPage.qml:231
 msgid "Resetting app..."
-msgstr ""
+msgstr "S'està reiniciant l'aplicació..."
 
 #: ../qml/StickerPickerPage.qml:55
 msgid ""
 "No stickers yet.\n"
 "Receive stickers in chats to use them here."
 msgstr ""
+"Encara no hi ha adhesius.\n"
+"Rebeu adhesius en els xats per utilitzar-los aquí."
 
 #: ../qml/StickerPickerPage.qml:84
 msgid "Send Sticker"
-msgstr ""
+msgstr "Envia l'adhesiu"
 
 #: ../qml/VideoPreviewPage.qml:67 ../qml/components/ChatAttachmentDialog.qml:26
 msgid "Video"
-msgstr ""
+msgstr "Vídeo"
 
 #: ../qml/components/ChatAttachmentDialog.qml:15
 msgid "Send Attachment"
-msgstr ""
+msgstr "Envia un adjunt"
 
 #: ../qml/components/ChatAttachmentDialog.qml:18
 msgid "Photo"
-msgstr ""
+msgstr "Foto"
 
 #: ../qml/components/ChatAttachmentDialog.qml:34
 msgid "Audio"
-msgstr ""
+msgstr "Àudio"
 
 #: ../qml/components/ChatAttachmentDialog.qml:50
 msgid "Sticker"
-msgstr ""
+msgstr "Adhesiu"
 
 #: ../qml/components/ChatAttachmentDialog.qml:66
 msgid "Location"
-msgstr ""
+msgstr "Ubicació"
 
 #: ../qml/components/ChatComposer.qml:179
 msgid "Type a message..."
-msgstr ""
+msgstr "Escriviu un missatge..."
 
 #: ../qml/components/ChatListItem.qml:171
 msgid "Mute"
-msgstr ""
+msgstr "Silencia"
 
 #: ../qml/components/ChatListItem.qml:171
 msgid "Unmute"
-msgstr ""
+msgstr "No silenciïs"
 
 #: ../qml/components/ChatListItem.qml:176
 msgid "Archive"
-msgstr ""
+msgstr "Arxiva"
 
 #: ../qml/components/ChatListItem.qml:176
 msgid "Unarchive"
-msgstr ""
+msgstr "Desarxiva"
 
 #: ../qml/components/ChatListSearchBar.qml:8
 msgid "Search chats..."
-msgstr ""
+msgstr "Cerca els xats..."
 
 #: ../qml/components/ChatMessageList.qml:66
 msgid "Deleted message"
-msgstr ""
+msgstr "Missatge eliminat"
 
 #: ../qml/components/ChatMessageList.qml:69
 msgid "View-once message. Open WhatsApp on your primary device to view it."
 msgstr ""
+"Visualitza un missatge. Obre WhatsApp al teu dispositiu principal per "
+"veure'l."
 
 #: ../qml/components/ChatMessageList.qml:200
 msgid "Unread"
-msgstr ""
+msgstr "Sense llegir"
 
 #: ../qml/components/ChatMessageList.qml:237
 msgid "Delete"
-msgstr ""
+msgstr "Suprimeix"
 
 #: ../qml/components/ChatMessageList.qml:248
 msgid "Reply"
-msgstr ""
+msgstr "Respon"
 
 #: ../qml/components/ChatMessageList.qml:254
 msgid "Edit"
-msgstr ""
+msgstr "Edita"
 
 #: ../qml/components/ChatMessageList.qml:266
 msgid "Copy"
-msgstr ""
+msgstr "Copia"
 
 #: ../qml/components/ContactMessage.qml:55
 #: ../qml/components/DocumentMessage.qml:69
 #: ../qml/components/LocationMessage.qml:57
 msgid "Tap to open"
-msgstr ""
+msgstr "Toca per obrir"
 
 #: ../qml/components/ContactMessage.qml:55
 #: ../qml/components/LocationMessage.qml:57
 msgid "Unavailable"
-msgstr ""
+msgstr "No disponible"
 
 #: ../qml/components/ContentTransferPage.qml:11
 msgid "Save to"
-msgstr ""
+msgstr "Desa a"
 
 #: ../qml/components/DocumentMessage.qml:69
 msgid "Downloading..."
-msgstr ""
+msgstr "S'està baixant..."
 
 #: ../qml/components/DocumentMessage.qml:69
 msgid "Tap to download"
-msgstr ""
+msgstr "Toca per baixar"
 
 #: ../qml/components/EditMessageDialog.qml:14
 msgid "Edit Message"
-msgstr ""
+msgstr "Edita el missatge"
 
 #: ../qml/components/LocationFetchDialog.qml:53
 msgid "Location services are unavailable"
-msgstr ""
+msgstr "Els serveis d'ubicació no estan disponibles"
 
 #: ../qml/components/LocationFetchDialog.qml:60
 msgid "Share Current Location"
-msgstr ""
+msgstr "Comparteix la ubicació actual"
 
 #: ../qml/components/LocationFetchDialog.qml:61
 msgid "Fetching your current location…"
-msgstr ""
+msgstr "S'està recuperant la vostra ubicació actual…"
 
 #: ../qml/components/LocationFetchDialog.qml:77
 msgid "Unable to get current location"
-msgstr ""
+msgstr "No s'ha pogut obtenir la ubicació actual"
 
 #: ../qml/components/LocationFetchDialog.qml:87
 msgid "Location request timed out"
-msgstr ""
+msgstr "La sol·licitud d'ubicació ha excedit el temps"
 
 #: ../qml/components/MessageBubble.qml:217
 msgid "edited"
-msgstr ""
+msgstr "editat"
 
 #: ../qml/components/NewChatDialog.qml:15
 msgid "New Chat"
-msgstr ""
+msgstr "Xat nou"
 
 #: ../qml/components/NewChatDialog.qml:16
 msgid ""
 "Enter a phone number with country code, digits only (e.g. 5511999999999)."
 msgstr ""
+"Introduïu un número de telèfon amb codi de país, només dígits (p. ex. "
+"5511999999999)."
 
 #: ../qml/components/NewChatDialog.qml:41
 msgid "OK"
-msgstr ""
+msgstr "D'acord"
 
 #: ../qml/components/RichTextMessage.qml:129
 msgid "Show less"
-msgstr ""
+msgstr "Mostra menys"
 
 #: ../qml/components/RichTextMessage.qml:129
 msgid "Show more"
-msgstr ""
+msgstr "Mostra'n més"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:31
 msgid "Record Voice Message"
-msgstr ""
+msgstr "Enregistra un missatge de veu"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:48
 msgid "Recording ready to send"
-msgstr ""
+msgstr "Enregistrament preparat per enviar"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:48
 msgid "Recording…"
-msgstr ""
+msgstr "S'està enregistrant…"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:48
 msgid "Tap record to capture a voice message"
-msgstr ""
+msgstr "Toca el registre per capturar un missatge de veu"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:53
 msgid "Duration: %1"
-msgstr ""
+msgstr "Durada: %1"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:57
 msgid "Status: %1"
-msgstr ""
+msgstr "Estat: %1"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:57
 msgid "ready"
-msgstr ""
+msgstr "llest"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:63
 msgid "Error: %1"
-msgstr ""
+msgstr "Error: %1"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:69
 msgid "Record"
-msgstr ""
+msgstr "Enregistra"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:69
 msgid "Record Again"
-msgstr ""
+msgstr "Torna a enregistrar"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:69
 msgid "Stop"
-msgstr ""
+msgstr "Atura"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:92
 msgid "Send"
-msgstr ""
+msgstr "Envia"
 
 #: ../qml/ut_components/ActionableList.qml:107
 #: ../qml/ut_components/CardList.qml:84
 msgid "Search"
-msgstr ""
+msgstr "Cerca"
 
 #: ../qml/ut_components/ActionableList.qml:109
 #: ../qml/ut_components/CardList.qml:82
 msgid "No items"
-msgstr ""
+msgstr "Sense elements"
 
 #: ../qml/ut_components/Form.qml:81
 msgid "Submit"
-msgstr ""
+msgstr "Envia"
 
 #: ../qml/ut_components/ImageViewer.qml:388
 msgid "Failed to load image"
-msgstr ""
+msgstr "No s'ha pogut carregar la imatge"
 
 #: ../qml/ut_components/ImageViewer.qml:483
 msgid "No image to display"
-msgstr ""
+msgstr "No hi ha cap imatge a mostrar"
 
 #: ../qml/ut_components/InputField.qml:91
 msgid "Invalid input"
-msgstr ""
+msgstr "Entrada no vàlida"
 
 #: ../qml/ut_components/InputField.qml:166
 msgid "This field is required"
-msgstr ""
+msgstr "Aquest camp és obligatori"
 
 #: ../qml/ut_components/VideoViewer.qml:438
 msgid "Failed to load video"
-msgstr ""
+msgstr "No s'ha pogut carregar el vídeo"
 
 #: ../qml/ut_components/VideoViewer.qml:640
 msgid "No video to display"
-msgstr ""
+msgstr "No hi ha cap vídeo a mostrar"
 
 #: greenline.desktop.in.h:1
 msgid "Greenline"
-msgstr ""
+msgstr "Greenline"
