@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-06-26 04:46+0000\n"
-"PO-Revision-Date: 2026-06-26 07:45+0000\n"
+"PO-Revision-Date: 2026-06-28 10:01+0000\n"
 "Last-Translator: Heimen Stoffels <vistausss@fastmail.com>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/ubports/greenline/"
 "nl/>\n"
@@ -66,16 +66,12 @@ msgid "Failed to share file"
 msgstr "Het bestand kan niet worden gedeeld"
 
 #: ../qml/ChatListPage.qml:74
-#, fuzzy
-#| msgid "Failed to send contact"
 msgid "Failed to start chat"
-msgstr "De contactpersoon kan niet worden verstuurd"
+msgstr "Er kan geen gesprek worden gestart"
 
 #: ../qml/ChatListPage.qml:84
-#, fuzzy
-#| msgid "Failed to send contact"
 msgid "Failed to import contact"
-msgstr "De contactpersoon kan niet worden verstuurd"
+msgstr "De contactpersoon kan niet worden geïmporteerd"
 
 #: ../qml/ChatListPage.qml:183
 msgid "No archived chats"
@@ -91,17 +87,15 @@ msgstr "Gesprekken"
 
 #: ../qml/ChatListPage.qml:209
 msgid "New"
-msgstr ""
+msgstr "Nieuw"
 
 #: ../qml/ChatListPage.qml:216 ../qml/ChatListPage.qml:300
 msgid "Archived"
 msgstr "Gearchiveerd"
 
 #: ../qml/ChatListPage.qml:251 ../qml/components/NewChatDialog.qml:52
-#, fuzzy
-#| msgid "Contact"
 msgid "Import Contact"
-msgstr "Contactpersoon"
+msgstr "Contactpersoon importeren"
 
 #: ../qml/ChatPage.qml:82
 msgid "You"
@@ -627,24 +621,18 @@ msgid "edited"
 msgstr "bewerkt"
 
 #: ../qml/components/NewChatDialog.qml:15
-#, fuzzy
-#| msgid "Chats"
 msgid "New Chat"
-msgstr "Gesprekken"
+msgstr "Nieuw gesprek"
 
 #: ../qml/components/NewChatDialog.qml:16
-#, fuzzy
-#| msgid ""
-#| "Enter your phone number with country code, digits only (e.g. "
-#| "5511999999999)."
 msgid ""
 "Enter a phone number with country code, digits only (e.g. 5511999999999)."
 msgstr ""
-"Voer je telefoonnummer in, voorzien van je landcode (bijv. 316925999999)."
+"Voer een telefoonnummer in, voorzien van je landcode (bijv. 316925999999)."
 
 #: ../qml/components/NewChatDialog.qml:41
 msgid "OK"
-msgstr ""
+msgstr "Oké"
 
 #: ../qml/components/RichTextMessage.qml:129
 msgid "Show less"
