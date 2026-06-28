@@ -8,330 +8,340 @@ msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-06-26 04:46+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Automatically generated\n"
-"Language-Team: none\n"
+"PO-Revision-Date: 2026-06-29 17:01+0000\n"
+"Last-Translator: Perrete <dimasatr@proton.me>\n"
+"Language-Team: Spanish <https://hosted.weblate.org/projects/ubports/"
+"greenline/es/>\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 2026.7.dev0\n"
 
 #: ../qml/AuthorizationPage.qml:37
 msgid "Scan QR Code"
-msgstr ""
+msgstr "Escanea un código QR"
 
 #: ../qml/AuthorizationPage.qml:45
 msgid ""
 "Open WhatsApp on your phone, go to Settings → Linked Devices → Link a "
 "Device, then scan the code below."
 msgstr ""
+"Abre WhatsApp en tu teléfono, ve a Ajustes → Dispositivos vinculados → "
+"Vincular un dispositivo, después escanea el código de abajo."
 
 #: ../qml/AuthorizationPage.qml:85
 msgid "Loading QR Code..."
-msgstr ""
+msgstr "Cargando código QR..."
 
 #: ../qml/AuthorizationPage.qml:97
 msgid "The code refreshes automatically. Keep this screen open while scanning."
 msgstr ""
+"El código se actualiza automáticamente. Mantén esta pantalla abierta "
+"mientras se escanea."
 
 #: ../qml/AuthorizationPage.qml:106
 msgid "Login with phone number"
-msgstr ""
+msgstr "Iniciar sesión con un número de teléfono"
 
 #: ../qml/AuthorizationPage.qml:143
 msgid "Link Device"
-msgstr ""
+msgstr "Vincular Dispositivo"
 
 #: ../qml/ChatListPage.qml:20
 msgid "Share to chat"
-msgstr ""
+msgstr "Compartir en el chat"
 
 #: ../qml/ChatListPage.qml:38
 msgid "The shared file is no longer available"
-msgstr ""
+msgstr "El archivo compartido ya no está disponible"
 
 #: ../qml/ChatListPage.qml:49 ../qml/Main.qml:98
 msgid "Unsupported shared item"
-msgstr ""
+msgstr "Tipo de objeto no soportado"
 
 #: ../qml/ChatListPage.qml:56
 msgid "Failed to share file"
-msgstr ""
+msgstr "Fallo al compartir el archivo"
 
 #: ../qml/ChatListPage.qml:74
 msgid "Failed to start chat"
-msgstr ""
+msgstr "Fallo al iniciar la conversación"
 
 #: ../qml/ChatListPage.qml:84
 msgid "Failed to import contact"
-msgstr ""
+msgstr "Fallo al importar el contacto"
 
 #: ../qml/ChatListPage.qml:183
 msgid "No archived chats"
-msgstr ""
+msgstr "No hay conversaciones archivadas"
 
 #: ../qml/ChatListPage.qml:183
 msgid "No chats found"
-msgstr ""
+msgstr "No se han encontrado conversaciones"
 
 #: ../qml/ChatListPage.qml:203 ../qml/ChatListPage.qml:300
 msgid "Chats"
-msgstr ""
+msgstr "Conversaciones"
 
 #: ../qml/ChatListPage.qml:209
 msgid "New"
-msgstr ""
+msgstr "Nuevo"
 
 #: ../qml/ChatListPage.qml:216 ../qml/ChatListPage.qml:300
 msgid "Archived"
-msgstr ""
+msgstr "Archivados"
 
 #: ../qml/ChatListPage.qml:251 ../qml/components/NewChatDialog.qml:52
 msgid "Import Contact"
-msgstr ""
+msgstr "Importar Contacto"
 
 #: ../qml/ChatPage.qml:82
 msgid "You"
-msgstr ""
+msgstr "Tú"
 
 #: ../qml/ChatPage.qml:114
 msgid "Message updated"
-msgstr ""
+msgstr "Mensaje actualizado"
 
 #: ../qml/ChatPage.qml:120
 msgid "Failed to edit message"
-msgstr ""
+msgstr "Fallo al editar el mensaje"
 
 #: ../qml/ChatPage.qml:130
 msgid "Message deleted"
-msgstr ""
+msgstr "El mensaje ha sido eliminado"
 
 #: ../qml/ChatPage.qml:133
 msgid "Failed to delete message"
-msgstr ""
+msgstr "Fallo al eliminar el mensaje"
 
 #: ../qml/ChatPage.qml:156
 msgid "No internet connection. Connect and try again."
-msgstr ""
+msgstr "No hay conexión a internet. Conéctate e inténtalo de nuevo."
 
 #: ../qml/ChatPage.qml:169 ../qml/ChatPage.qml:987
 msgid "Failed to download media"
-msgstr ""
+msgstr "Fallo al descargar el contenido multimedia"
 
 #: ../qml/ChatPage.qml:340
 msgid "Failed to load older messages"
-msgstr ""
+msgstr "Fallo al cargar mensajes antiguos"
 
 #: ../qml/ChatPage.qml:430
 msgid "Failed to send audio"
-msgstr ""
+msgstr "Fallo al enviar el audio"
 
 #: ../qml/ChatPage.qml:537 ../qml/DocumentPreviewPage.qml:42
 #: ../qml/DocumentPreviewPage.qml:97
 #: ../qml/components/ChatAttachmentDialog.qml:42
 #: ../qml/components/DocumentMessage.qml:61
 msgid "Document"
-msgstr ""
+msgstr "Documento"
 
 #: ../qml/ChatPage.qml:549
 msgid "Failed to send document"
-msgstr ""
+msgstr "Fallo al enviar el documento"
 
 #: ../qml/ChatPage.qml:590
 msgid "Failed to send contact"
-msgstr ""
+msgstr "Fallo al enviar el contacto"
 
 #: ../qml/ChatPage.qml:632
 msgid "Failed to send location"
-msgstr ""
+msgstr "Fallo al enviar la ubicación"
 
 #: ../qml/ChatPage.qml:716
 msgid "WhatsApp messages read today"
-msgstr ""
+msgstr "Mensajes de WhatsApp leídos hoy"
 
 #: ../qml/ChatPage.qml:717
 msgid "No WhatsApp messages read today"
-msgstr ""
+msgstr "No hay mensajes de WhatsApp leídos hoy"
 
 #: ../qml/ChatPage.qml:725
 msgid "WhatsApp messages sent today"
-msgstr ""
+msgstr "Mensajes de WhatsApp enviados hoy"
 
 #: ../qml/ChatPage.qml:726
 msgid "No WhatsApp messages sent today"
-msgstr ""
+msgstr "No hay mensajes de Whatsapp enviados hoy"
 
 #: ../qml/ChatPage.qml:754
 msgid "Scroll up to load older messages first"
-msgstr ""
+msgstr "Sube para cargar mensajes más antiguos primero"
 
 #: ../qml/ChatPage.qml:761
 msgid "Copied to clipboard"
-msgstr ""
+msgstr "Copiado al portapapeles"
 
 #: ../qml/ChatPage.qml:940
 msgid "recording audio..."
-msgstr ""
+msgstr "grabando audio..."
 
 #: ../qml/ChatPage.qml:940
 msgid "typing..."
-msgstr ""
+msgstr "escribiendo..."
 
 #: ../qml/ChatPage.qml:1041
 msgid "Send Photo"
-msgstr ""
+msgstr "Enviar Foto"
 
 #: ../qml/ChatPage.qml:1052
 msgid "Send Video"
-msgstr ""
+msgstr "Enviar Video"
 
 #: ../qml/ChatPage.qml:1063
 msgid "Send Document"
-msgstr ""
+msgstr "Enviar Documento"
 
 #: ../qml/ChatPage.qml:1074
 msgid "Send Contact"
-msgstr ""
+msgstr "Enviar Contacto"
 
 #: ../qml/ContactPreviewPage.qml:42 ../qml/ContactPreviewPage.qml:97
 #: ../qml/components/ChatAttachmentDialog.qml:58
 #: ../qml/components/ContactMessage.qml:47
 msgid "Contact"
-msgstr ""
+msgstr "Contacto"
 
 #: ../qml/ContactPreviewPage.qml:50
 msgid "Ready to export"
-msgstr ""
+msgstr "Listo para exportar"
 
 #: ../qml/ContactPreviewPage.qml:70 ../qml/DocumentPreviewPage.qml:70
 #: ../qml/ImagePreviewPage.qml:36 ../qml/VideoPreviewPage.qml:38
 #: ../qml/components/EditMessageDialog.qml:32
 msgid "Save"
-msgstr ""
+msgstr "Guardar"
 
 #: ../qml/ContactPreviewPage.qml:82 ../qml/DocumentPreviewPage.qml:82
 #: ../qml/ImagePreviewPage.qml:48 ../qml/VideoPreviewPage.qml:51
 #: ../qml/components/ContentTransferPage.qml:11
 msgid "Share"
-msgstr ""
+msgstr "Compartir"
 
 #: ../qml/ContactPreviewPage.qml:101 ../qml/DocumentPreviewPage.qml:101
 #: ../qml/ImagePreviewPage.qml:67 ../qml/MessageReactionsPage.qml:314
 #: ../qml/VideoPreviewPage.qml:71 ../qml/components/ChatPageHeader.qml:18
 #: ../qml/ut_components/AppHeader.qml:78
 msgid "Back"
-msgstr ""
+msgstr "Atrás"
 
 #: ../qml/DaemonSetupPage.qml:46
 msgid "The background service is installed but not running."
-msgstr ""
+msgstr "El servicio en segundo plano está instalado, pero no en ejecución."
 
 #: ../qml/DaemonSetupPage.qml:46
 msgid "The background service needs to be installed to sync your messages."
 msgstr ""
+"El servicio en segundo plano debe estar instalado para sincronizar tus "
+"mensajes."
 
 #: ../qml/DaemonSetupPage.qml:65
 msgid "Install & Start"
-msgstr ""
+msgstr "Instalar y reiniciar"
 
 #: ../qml/DaemonSetupPage.qml:65
 msgid "Start Service"
-msgstr ""
+msgstr "Iniciar Servicio"
 
 #: ../qml/DaemonSetupPage.qml:121
 msgid "Setup"
-msgstr ""
+msgstr "Inicio"
 
 #: ../qml/DocumentPreviewPage.qml:50
 msgid "Downloaded"
-msgstr ""
+msgstr "Descargado"
 
 #: ../qml/ImagePreviewPage.qml:63
 msgid "Image"
-msgstr ""
+msgstr "Imagen"
 
 #: ../qml/Main.qml:84
 msgid "No shared file was received"
-msgstr ""
+msgstr "No se ha recibido ningún archivo compartido"
 
 #: ../qml/Main.qml:90
 msgid "Only the first shared item will be used"
-msgstr ""
+msgstr "Solo el primer objeto compartido será usado"
 
 #: ../qml/Main.qml:93
 msgid "Unable to open the shared file"
-msgstr ""
+msgstr "No es posible abrir el archivo compartido"
 
 #: ../qml/MessageReactionsPage.qml:34
 msgid "Failed to load reactions"
-msgstr ""
+msgstr "Fallo al cargar las reacciones"
 
 #: ../qml/MessageReactionsPage.qml:52
 msgid "Failed to send reaction"
-msgstr ""
+msgstr "Fallo al enviar la reacción"
 
 #: ../qml/MessageReactionsPage.qml:197
 msgid "Remove"
-msgstr ""
+msgstr "Quitar"
 
 #: ../qml/MessageReactionsPage.qml:199
 msgid "Deleting reaction…"
-msgstr ""
+msgstr "Eliminando reacción…"
 
 #: ../qml/MessageReactionsPage.qml:199
 msgid "Reaction removed"
-msgstr ""
+msgstr "Reacción eliminada"
 
 #: ../qml/MessageReactionsPage.qml:210
 msgid "Loading reactions…"
-msgstr ""
+msgstr "Cargando reacciones…"
 
 #: ../qml/MessageReactionsPage.qml:227
 msgid "No reactions yet"
-msgstr ""
+msgstr "Aún no hay reacciones"
 
 #: ../qml/MessageReactionsPage.qml:273
 msgid "Quick reactions"
-msgstr ""
+msgstr "Reacciones Rápidas"
 
 #: ../qml/MessageReactionsPage.qml:288
 msgid "Reaction updated"
-msgstr ""
+msgstr "Reacción actualizada"
 
 #: ../qml/MessageReactionsPage.qml:288
 msgid "Sending reaction…"
-msgstr ""
+msgstr "Enviando reacción…"
 
 #: ../qml/MessageReactionsPage.qml:310
 #: ../qml/components/ChatMessageList.qml:260
 msgid "Reactions"
-msgstr ""
+msgstr "Reacciones"
 
 #: ../qml/PhonePairingPage.qml:48
 msgid ""
 "Enter your phone number with country code, digits only (e.g. 5511999999999)."
 msgstr ""
+"Introduce tu número de teléfono con el código de tu país, solo números (Ej.: "
+"5511999999999)."
 
 #: ../qml/PhonePairingPage.qml:59
 msgid "Phone Number"
-msgstr ""
+msgstr "Número de Teléfono"
 
 #: ../qml/PhonePairingPage.qml:62 ../qml/components/NewChatDialog.qml:9
 msgid "Enter digits only, no leading zero (e.g. 5511999999999)"
-msgstr ""
+msgstr "Introduce solo números, sin cero inicial (Ej.: 5511999999999)"
 
 #: ../qml/PhonePairingPage.qml:78
 msgid "Get Pairing Code"
-msgstr ""
+msgstr "Obtener código de vinculación"
 
 #: ../qml/PhonePairingPage.qml:89
 msgid "Failed to get pairing code"
-msgstr ""
+msgstr "Fallo al obtener el código de vinculación"
 
 #: ../qml/PhonePairingPage.qml:112
 msgid "Requesting pairing code..."
-msgstr ""
+msgstr "Solicitando código de vinculación..."
 
 #: ../qml/PhonePairingPage.qml:120 ../qml/SettingsPage.qml:210
 #: ../qml/components/ChatAttachmentDialog.qml:74
@@ -340,117 +350,123 @@ msgstr ""
 #: ../qml/components/NewChatDialog.qml:35
 #: ../qml/components/VoiceMessageRecorderDialog.qml:85
 msgid "Cancel"
-msgstr ""
+msgstr "Cancelar"
 
 #: ../qml/PhonePairingPage.qml:138
 msgid ""
 "Open WhatsApp on your phone, go to Settings → Linked Devices → Link with "
 "phone number, then enter the code below."
 msgstr ""
+"Abre WhatsApp en tu teléfono, ve a Ajustes → Dispositivos vinculados → "
+"Vincular con el número de teléfono, después introduce el código de abajo."
 
 #: ../qml/PhonePairingPage.qml:162
 msgid "Waiting for confirmation..."
-msgstr ""
+msgstr "Esperando confirmación..."
 
 #: ../qml/PhonePairingPage.qml:196
 msgid "Login with Phone Number"
-msgstr ""
+msgstr "Iniciar sesión con Número de Teléfono"
 
 #: ../qml/ProfilePage.qml:105
 msgid "Group"
-msgstr ""
+msgstr "Grupo"
 
 #: ../qml/ProfilePage.qml:119 ../qml/SettingsPage.qml:235
 #: ../qml/ut_components/AppHeader.qml:94
 msgid "Settings"
-msgstr ""
+msgstr "Ajustes"
 
 #: ../qml/ProfilePage.qml:122
 msgid "Mute notifications"
-msgstr ""
+msgstr "Silenciar notificaciones"
 
 #: ../qml/ProfilePage.qml:123
 msgid "Silence all notifications from this chat"
-msgstr ""
+msgstr "Silenciar todas las notificaciones de este chat"
 
 #: ../qml/ProfilePage.qml:134
 msgid "Description"
-msgstr ""
+msgstr "Descripción"
 
 #: ../qml/ProfilePage.qml:155
 msgid "Members"
-msgstr ""
+msgstr "Miembros"
 
 #: ../qml/ProfilePage.qml:159
 msgid "%1 members"
-msgstr ""
+msgstr "%1 miembros"
 
 #: ../qml/ProfilePage.qml:286
 msgid "Profile"
-msgstr ""
+msgstr "Perfil"
 
 #: ../qml/SettingsPage.qml:41
 msgid "Notifications"
-msgstr ""
+msgstr "Notificaciones"
 
 #: ../qml/SettingsPage.qml:46
 msgid "Enable Notifications"
-msgstr ""
+msgstr "Activar Notificaciones"
 
 #: ../qml/SettingsPage.qml:47
 msgid "Show notifications for new messages and calls"
-msgstr ""
+msgstr "Mostrar notificaciones de nuevos mensajes y llamadas"
 
 #: ../qml/SettingsPage.qml:61
 msgid "Diagnostics"
-msgstr ""
+msgstr "Diagnósticos"
 
 #: ../qml/SettingsPage.qml:66
 msgid "Error Reporting"
-msgstr ""
+msgstr "Reportar Errores"
 
 #: ../qml/SettingsPage.qml:67
 msgid "Report app errors to help diagnose issues"
-msgstr ""
+msgstr "Reportar errores de la aplicación para ayudar a diagnosticar problemas"
 
 #: ../qml/SettingsPage.qml:81
 msgid "Daemon"
-msgstr ""
+msgstr "Servicio en segundo plano"
 
 #: ../qml/SettingsPage.qml:86
 msgid "Stop Daemon on Exit"
-msgstr ""
+msgstr "Detener el servicio en segundo plano al salir"
 
 #: ../qml/SettingsPage.qml:87
 msgid "Stop the daemon when the app closes and disable boot autostart"
 msgstr ""
+"Detener el servicio en segundo plano al cerrar la aplicación y deshabilitar "
+"su inicio automático"
 
 #: ../qml/SettingsPage.qml:101
 msgid "About"
-msgstr ""
+msgstr "Acerca de"
 
 #: ../qml/SettingsPage.qml:120
 msgid "Build Version"
-msgstr ""
+msgstr "Versión de la Build"
 
 #: ../qml/SettingsPage.qml:127 ../qml/SettingsPage.qml:189
 msgid "Unknown"
-msgstr ""
+msgstr "Desconocido"
 
 #: ../qml/SettingsPage.qml:141
 msgid "Data"
-msgstr ""
+msgstr "Datos"
 
 #: ../qml/SettingsPage.qml:155
 msgid ""
 "Uninstall the daemon, log out from WhatsApp, and delete all local data "
 "including messages, settings and cache."
 msgstr ""
+"Desinstala el servicio en segundo plano, cierra la sesión de WhatsApp, "
+"elimina todos los datos locales, incluyendo mensajes, ajustes y caché."
 
 #: ../qml/SettingsPage.qml:170 ../qml/SettingsPage.qml:206
 #: ../qml/SettingsPage.qml:215
 msgid "Reset App"
-msgstr ""
+msgstr "Reiniciar Aplicación"
 
 #: ../qml/SettingsPage.qml:207
 msgid ""
@@ -458,255 +474,264 @@ msgid ""
 "data. You will need to reinstall the daemon and scan the QR code again to "
 "reconnect."
 msgstr ""
+"Esto desinstalará el servicio en segundo plano, cerrará la sesión de "
+"WhatsApp y eliminará los datos locales. Necesitarás reinstalarlo para "
+"escanear el código QR de nuevo para reconectarte."
 
 #: ../qml/SettingsPage.qml:231
 msgid "Resetting app..."
-msgstr ""
+msgstr "Reiniciando aplicación..."
 
 #: ../qml/StickerPickerPage.qml:55
 msgid ""
 "No stickers yet.\n"
 "Receive stickers in chats to use them here."
 msgstr ""
+"Aún no hay stickers.\n"
+"Recibe stickers en conversaciones para usarlas aquí."
 
 #: ../qml/StickerPickerPage.qml:84
 msgid "Send Sticker"
-msgstr ""
+msgstr "Enviar Sticker"
 
 #: ../qml/VideoPreviewPage.qml:67 ../qml/components/ChatAttachmentDialog.qml:26
 msgid "Video"
-msgstr ""
+msgstr "Video"
 
 #: ../qml/components/ChatAttachmentDialog.qml:15
 msgid "Send Attachment"
-msgstr ""
+msgstr "Enviar Archivo Adjunto"
 
 #: ../qml/components/ChatAttachmentDialog.qml:18
 msgid "Photo"
-msgstr ""
+msgstr "Foto"
 
 #: ../qml/components/ChatAttachmentDialog.qml:34
 msgid "Audio"
-msgstr ""
+msgstr "Audio"
 
 #: ../qml/components/ChatAttachmentDialog.qml:50
 msgid "Sticker"
-msgstr ""
+msgstr "Sticker"
 
 #: ../qml/components/ChatAttachmentDialog.qml:66
 msgid "Location"
-msgstr ""
+msgstr "Ubicación"
 
 #: ../qml/components/ChatComposer.qml:179
 msgid "Type a message..."
-msgstr ""
+msgstr "Escribe un mensaje..."
 
 #: ../qml/components/ChatListItem.qml:171
 msgid "Mute"
-msgstr ""
+msgstr "Silenciar"
 
 #: ../qml/components/ChatListItem.qml:171
 msgid "Unmute"
-msgstr ""
+msgstr "Desilenciar"
 
 #: ../qml/components/ChatListItem.qml:176
 msgid "Archive"
-msgstr ""
+msgstr "Archivar"
 
 #: ../qml/components/ChatListItem.qml:176
 msgid "Unarchive"
-msgstr ""
+msgstr "Desarchivar"
 
 #: ../qml/components/ChatListSearchBar.qml:8
 msgid "Search chats..."
-msgstr ""
+msgstr "Buscar conversaciones..."
 
 #: ../qml/components/ChatMessageList.qml:66
 msgid "Deleted message"
-msgstr ""
+msgstr "Mensaje eliminado"
 
 #: ../qml/components/ChatMessageList.qml:69
 msgid "View-once message. Open WhatsApp on your primary device to view it."
 msgstr ""
+"Mensaje de visualización única. Abre WhatsApp en tu dispositivo principal "
+"para verlo."
 
 #: ../qml/components/ChatMessageList.qml:200
 msgid "Unread"
-msgstr ""
+msgstr "No leído"
 
 #: ../qml/components/ChatMessageList.qml:237
 msgid "Delete"
-msgstr ""
+msgstr "Eliminar"
 
 #: ../qml/components/ChatMessageList.qml:248
 msgid "Reply"
-msgstr ""
+msgstr "Responder"
 
 #: ../qml/components/ChatMessageList.qml:254
 msgid "Edit"
-msgstr ""
+msgstr "Editar"
 
 #: ../qml/components/ChatMessageList.qml:266
 msgid "Copy"
-msgstr ""
+msgstr "Copiar"
 
 #: ../qml/components/ContactMessage.qml:55
 #: ../qml/components/DocumentMessage.qml:69
 #: ../qml/components/LocationMessage.qml:57
 msgid "Tap to open"
-msgstr ""
+msgstr "Toca para abrir"
 
 #: ../qml/components/ContactMessage.qml:55
 #: ../qml/components/LocationMessage.qml:57
 msgid "Unavailable"
-msgstr ""
+msgstr "No disponible"
 
 #: ../qml/components/ContentTransferPage.qml:11
 msgid "Save to"
-msgstr ""
+msgstr "Guardar en"
 
 #: ../qml/components/DocumentMessage.qml:69
 msgid "Downloading..."
-msgstr ""
+msgstr "Descargando..."
 
 #: ../qml/components/DocumentMessage.qml:69
 msgid "Tap to download"
-msgstr ""
+msgstr "Toca para descargar"
 
 #: ../qml/components/EditMessageDialog.qml:14
 msgid "Edit Message"
-msgstr ""
+msgstr "Editar Mensaje"
 
 #: ../qml/components/LocationFetchDialog.qml:53
 msgid "Location services are unavailable"
-msgstr ""
+msgstr "Servicios de ubicación no disponibles"
 
 #: ../qml/components/LocationFetchDialog.qml:60
 msgid "Share Current Location"
-msgstr ""
+msgstr "Compartir ubicación actual"
 
 #: ../qml/components/LocationFetchDialog.qml:61
 msgid "Fetching your current location…"
-msgstr ""
+msgstr "Obteniendo su ubicación actual…"
 
 #: ../qml/components/LocationFetchDialog.qml:77
 msgid "Unable to get current location"
-msgstr ""
+msgstr "No fue posible obtener su ubicación actual"
 
 #: ../qml/components/LocationFetchDialog.qml:87
 msgid "Location request timed out"
-msgstr ""
+msgstr "Se ha agotado el tiempo de espera de la petición de ubicación"
 
 #: ../qml/components/MessageBubble.qml:217
 msgid "edited"
-msgstr ""
+msgstr "editado"
 
 #: ../qml/components/NewChatDialog.qml:15
 msgid "New Chat"
-msgstr ""
+msgstr "Nueva Conversación"
 
 #: ../qml/components/NewChatDialog.qml:16
 msgid ""
 "Enter a phone number with country code, digits only (e.g. 5511999999999)."
 msgstr ""
+"Introduce un número de teléfono con el código del país, solo números (Ej.: "
+"5511999999999)."
 
 #: ../qml/components/NewChatDialog.qml:41
 msgid "OK"
-msgstr ""
+msgstr "OK"
 
 #: ../qml/components/RichTextMessage.qml:129
 msgid "Show less"
-msgstr ""
+msgstr "Mostrar menos"
 
 #: ../qml/components/RichTextMessage.qml:129
 msgid "Show more"
-msgstr ""
+msgstr "Mostrar más"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:31
 msgid "Record Voice Message"
-msgstr ""
+msgstr "Grabar Mensaje de Voz"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:48
 msgid "Recording ready to send"
-msgstr ""
+msgstr "Grabación lista para enviar"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:48
 msgid "Recording…"
-msgstr ""
+msgstr "Grabando…"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:48
 msgid "Tap record to capture a voice message"
-msgstr ""
+msgstr "Toca grabar para captar un mensaje de voz"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:53
 msgid "Duration: %1"
-msgstr ""
+msgstr "Duración: %1"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:57
 msgid "Status: %1"
-msgstr ""
+msgstr "Estado: %1"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:57
 msgid "ready"
-msgstr ""
+msgstr "listo"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:63
 msgid "Error: %1"
-msgstr ""
+msgstr "Error: %1"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:69
 msgid "Record"
-msgstr ""
+msgstr "Grabar"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:69
 msgid "Record Again"
-msgstr ""
+msgstr "Grabar de Nuevo"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:69
 msgid "Stop"
-msgstr ""
+msgstr "Detener"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:92
 msgid "Send"
-msgstr ""
+msgstr "Enviar"
 
 #: ../qml/ut_components/ActionableList.qml:107
 #: ../qml/ut_components/CardList.qml:84
 msgid "Search"
-msgstr ""
+msgstr "Buscar"
 
 #: ../qml/ut_components/ActionableList.qml:109
 #: ../qml/ut_components/CardList.qml:82
 msgid "No items"
-msgstr ""
+msgstr "No hay objetos"
 
 #: ../qml/ut_components/Form.qml:81
 msgid "Submit"
-msgstr ""
+msgstr "Enviar"
 
 #: ../qml/ut_components/ImageViewer.qml:388
 msgid "Failed to load image"
-msgstr ""
+msgstr "Fallo al cargar la imagen"
 
 #: ../qml/ut_components/ImageViewer.qml:483
 msgid "No image to display"
-msgstr ""
+msgstr "No hay imagen que mostrar"
 
 #: ../qml/ut_components/InputField.qml:91
 msgid "Invalid input"
-msgstr ""
+msgstr "Entrada inválida"
 
 #: ../qml/ut_components/InputField.qml:166
 msgid "This field is required"
-msgstr ""
+msgstr "Este campo es obligatorio"
 
 #: ../qml/ut_components/VideoViewer.qml:438
 msgid "Failed to load video"
-msgstr ""
+msgstr "Fallo al cargar el video"
 
 #: ../qml/ut_components/VideoViewer.qml:640
 msgid "No video to display"
-msgstr ""
+msgstr "No hay video que mostrar"
 
 #: greenline.desktop.in.h:1
 msgid "Greenline"
-msgstr ""
+msgstr "Greenline"
