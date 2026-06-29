@@ -1,5 +1,4 @@
 import Lomiri.Components 1.3
-import QtGraphicalEffects 1.0
 import QtQuick 2.7
 
 Item {
@@ -46,52 +45,23 @@ Item {
     width: parent.width
     height: wrapper.height + units.gu(0.5)
 
-    Rectangle {
+    GenericPhoto {
         id: avatar
 
         width: units.gu(3.5)
         height: units.gu(3.5)
-        radius: width / 2
-        color: theme.palette.normal.base
         visible: bubble.showSender
+        photoPath: bubble.senderPhoto || ""
+        fallbackIconName: "contact"
+        fallbackIconWidth: units.gu(2)
+        fallbackIconHeight: units.gu(2)
+        avatarColor: theme.palette.normal.base
+        fallbackIconColor: theme.palette.normal.backgroundSecondaryText
 
         anchors {
             left: parent.left
             bottom: wrapper.bottom
             leftMargin: units.gu(1)
-        }
-
-        Image {
-            id: avatarImg
-
-            anchors.fill: parent
-            source: bubble.senderPhoto || ""
-            fillMode: Image.PreserveAspectCrop
-            visible: false
-        }
-
-        Rectangle {
-            id: avatarMask
-
-            anchors.fill: parent
-            radius: width / 2
-            visible: false
-        }
-
-        OpacityMask {
-            anchors.fill: parent
-            source: avatarImg
-            maskSource: avatarMask
-            visible: !!bubble.senderPhoto
-        }
-
-        Icon {
-            anchors.centerIn: parent
-            name: "contact"
-            width: units.gu(2)
-            height: units.gu(2)
-            color: theme.palette.normal.backgroundSecondaryText
-            visible: !bubble.senderPhoto
         }
 
     }

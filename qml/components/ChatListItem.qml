@@ -1,6 +1,5 @@
 import "../lib/ChatHelpers.js" as ChatHelpers
 import Lomiri.Components 1.3
-import QtGraphicalEffects 1.0
 import QtQuick 2.7
 import QtQuick.Layouts 1.3
 
@@ -28,46 +27,16 @@ ListItem {
             bottomMargin: units.gu(1)
         }
 
-        Rectangle {
+        GenericPhoto {
             width: units.gu(6)
             height: units.gu(6)
-            radius: width / 2
-            color: theme.palette.normal.base
+            photoPath: root.chat.photo || ""
+            fallbackIconName: "contact"
+            fallbackIconWidth: units.gu(3)
+            fallbackIconHeight: units.gu(3)
+            avatarColor: theme.palette.normal.base
+            fallbackIconColor: theme.palette.normal.backgroundSecondaryText
             Layout.alignment: Qt.AlignVCenter
-
-            Image {
-                id: avatarImage
-
-                anchors.fill: parent
-                source: root.chat.photo || ""
-                fillMode: Image.PreserveAspectCrop
-                visible: false
-            }
-
-            Rectangle {
-                id: avatarMask
-
-                anchors.fill: parent
-                radius: width / 2
-                visible: false
-            }
-
-            OpacityMask {
-                anchors.fill: parent
-                source: avatarImage
-                maskSource: avatarMask
-                visible: !!root.chat.photo
-            }
-
-            Icon {
-                anchors.centerIn: parent
-                name: "contact"
-                width: units.gu(3)
-                height: units.gu(3)
-                color: theme.palette.normal.backgroundSecondaryText
-                visible: !root.chat.photo
-            }
-
         }
 
         Column {

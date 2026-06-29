@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-29 21:47+0000\n"
+"POT-Creation-Date: 2026-06-29 23:07+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -67,31 +67,31 @@ msgstr ""
 msgid "Failed to import contact"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:257
+#: ../qml/ChatListPage.qml:258
 msgid "No archived chats"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:257
+#: ../qml/ChatListPage.qml:258
 msgid "No chats found"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:277 ../qml/ChatListPage.qml:370
+#: ../qml/ChatListPage.qml:278 ../qml/ChatListPage.qml:371
 msgid "Chats"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:283
+#: ../qml/ChatListPage.qml:284
 msgid "New"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:290 ../qml/ChatListPage.qml:370
+#: ../qml/ChatListPage.qml:291 ../qml/ChatListPage.qml:371
 msgid "Archived"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:325 ../qml/components/NewChatDialog.qml:52
+#: ../qml/ChatListPage.qml:326 ../qml/components/NewChatDialog.qml:52
 msgid "Import Contact"
 msgstr ""
 
-#: ../qml/ChatPage.qml:233 ../qml/components/ChatMessageList.qml:276
+#: ../qml/ChatPage.qml:233 ../qml/components/ChatMessageList.qml:337
 msgid "You"
 msgstr ""
 
@@ -217,8 +217,8 @@ msgid "Share"
 msgstr ""
 
 #: ../qml/ContactPreviewPage.qml:101 ../qml/DocumentPreviewPage.qml:101
-#: ../qml/ImagePreviewPage.qml:67 ../qml/MessageReactionsPage.qml:314
-#: ../qml/VideoPreviewPage.qml:71 ../qml/components/ChatPageHeader.qml:18
+#: ../qml/ImagePreviewPage.qml:67 ../qml/MessageReactionsPage.qml:284
+#: ../qml/VideoPreviewPage.qml:71 ../qml/components/ChatPageHeader.qml:17
 #: ../qml/ut_components/AppHeader.qml:78
 msgid "Back"
 msgstr ""
@@ -271,40 +271,40 @@ msgstr ""
 msgid "Failed to send reaction"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:197
+#: ../qml/MessageReactionsPage.qml:167
 msgid "Remove"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:199
+#: ../qml/MessageReactionsPage.qml:169
 msgid "Deleting reaction…"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:199
+#: ../qml/MessageReactionsPage.qml:169
 msgid "Reaction removed"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:210
+#: ../qml/MessageReactionsPage.qml:180
 msgid "Loading reactions…"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:227
+#: ../qml/MessageReactionsPage.qml:197
 msgid "No reactions yet"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:273
+#: ../qml/MessageReactionsPage.qml:243
 msgid "Quick reactions"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:288
+#: ../qml/MessageReactionsPage.qml:258
 msgid "Reaction updated"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:288
+#: ../qml/MessageReactionsPage.qml:258
 msgid "Sending reaction…"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:310
-#: ../qml/components/ChatMessageList.qml:462
+#: ../qml/MessageReactionsPage.qml:280
+#: ../qml/components/ChatMessageList.qml:537
 msgid "Reactions"
 msgstr ""
 
@@ -356,36 +356,36 @@ msgstr ""
 msgid "Login with Phone Number"
 msgstr ""
 
-#: ../qml/ProfilePage.qml:105
+#: ../qml/ProfilePage.qml:75
 msgid "Group"
 msgstr ""
 
-#: ../qml/ProfilePage.qml:119 ../qml/SettingsPage.qml:256
+#: ../qml/ProfilePage.qml:89 ../qml/SettingsPage.qml:256
 #: ../qml/ut_components/AppHeader.qml:94
 msgid "Settings"
 msgstr ""
 
-#: ../qml/ProfilePage.qml:122
+#: ../qml/ProfilePage.qml:92
 msgid "Mute notifications"
 msgstr ""
 
-#: ../qml/ProfilePage.qml:123
+#: ../qml/ProfilePage.qml:93
 msgid "Silence all notifications from this chat"
 msgstr ""
 
-#: ../qml/ProfilePage.qml:134
+#: ../qml/ProfilePage.qml:104
 msgid "Description"
 msgstr ""
 
-#: ../qml/ProfilePage.qml:155
+#: ../qml/ProfilePage.qml:125
 msgid "Members"
 msgstr ""
 
-#: ../qml/ProfilePage.qml:159
+#: ../qml/ProfilePage.qml:129
 msgid "%1 members"
 msgstr ""
 
-#: ../qml/ProfilePage.qml:286
+#: ../qml/ProfilePage.qml:226
 msgid "Profile"
 msgstr ""
 
@@ -506,19 +506,19 @@ msgstr ""
 msgid "Type a message..."
 msgstr ""
 
-#: ../qml/components/ChatListItem.qml:171
+#: ../qml/components/ChatListItem.qml:140
 msgid "Mute"
 msgstr ""
 
-#: ../qml/components/ChatListItem.qml:171
+#: ../qml/components/ChatListItem.qml:140
 msgid "Unmute"
 msgstr ""
 
-#: ../qml/components/ChatListItem.qml:176
+#: ../qml/components/ChatListItem.qml:145
 msgid "Archive"
 msgstr ""
 
-#: ../qml/components/ChatListItem.qml:176
+#: ../qml/components/ChatListItem.qml:145
 msgid "Unarchive"
 msgstr ""
 
@@ -526,31 +526,31 @@ msgstr ""
 msgid "Search chats..."
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:207
+#: ../qml/components/ChatMessageList.qml:268
 msgid "Deleted message"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:210
+#: ../qml/components/ChatMessageList.qml:271
 msgid "View-once message. Open WhatsApp on your primary device to view it."
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:402
+#: ../qml/components/ChatMessageList.qml:464
 msgid "Unread"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:439
+#: ../qml/components/ChatMessageList.qml:514
 msgid "Delete"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:450
+#: ../qml/components/ChatMessageList.qml:525
 msgid "Reply"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:456
+#: ../qml/components/ChatMessageList.qml:531
 msgid "Edit"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:468
+#: ../qml/components/ChatMessageList.qml:543
 msgid "Copy"
 msgstr ""
 
@@ -601,7 +601,7 @@ msgstr ""
 msgid "Location request timed out"
 msgstr ""
 
-#: ../qml/components/MessageBubble.qml:217
+#: ../qml/components/MessageBubble.qml:186
 msgid "edited"
 msgstr ""
 
@@ -618,11 +618,11 @@ msgstr ""
 msgid "OK"
 msgstr ""
 
-#: ../qml/components/RichTextMessage.qml:129
+#: ../qml/components/RichTextMessage.qml:130
 msgid "Show less"
 msgstr ""
 
-#: ../qml/components/RichTextMessage.qml:129
+#: ../qml/components/RichTextMessage.qml:130
 msgid "Show more"
 msgstr ""
 

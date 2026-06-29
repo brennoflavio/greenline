@@ -17,6 +17,7 @@ MessageBubble {
     readonly property bool shouldCollapse: fullHeightMeasure.implicitHeight > collapsedHeightMeasure.implicitHeight + units.gu(0.1)
     readonly property bool usesFormattedText: formattedText !== ""
     readonly property string displayText: usesFormattedText ? formattedText : text
+    readonly property string plainDisplayText: usesFormattedText ? formattedText.replace(/<br\s*\/?>/gi, "\n").replace(/<\/p>/gi, "\n").replace(/<\/div>/gi, "\n").replace(/<\/li>/gi, "\n").replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">") : text
 
     copyableText: {
         var parts = [];
@@ -34,8 +35,8 @@ MessageBubble {
         id: textMeasure
 
         visible: false
-        text: root.displayText
-        textFormat: root.usesFormattedText ? Text.RichText : Text.PlainText
+        text: root.plainDisplayText
+        textFormat: Text.PlainText
         fontSize: "small"
     }
 
@@ -70,8 +71,8 @@ MessageBubble {
         id: fullHeightMeasure
 
         visible: false
-        text: root.displayText
-        textFormat: root.usesFormattedText ? Text.RichText : Text.PlainText
+        text: root.plainDisplayText
+        textFormat: Text.PlainText
         fontSize: "small"
         wrapMode: Text.Wrap
         width: parent.width
@@ -81,8 +82,8 @@ MessageBubble {
         id: collapsedHeightMeasure
 
         visible: false
-        text: root.displayText
-        textFormat: root.usesFormattedText ? Text.RichText : Text.PlainText
+        text: root.plainDisplayText
+        textFormat: Text.PlainText
         fontSize: "small"
         wrapMode: Text.Wrap
         width: parent.width

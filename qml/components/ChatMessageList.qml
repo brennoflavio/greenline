@@ -14,6 +14,10 @@ Item {
     property var downloadingIds: ({
     })
     property bool isGroup: false
+    property var messageIndexesById: ({
+    })
+    property var messageIndexesByTempId: ({
+    })
     property int unreadCount: 0
     property string unreadDividerMessageId: ""
     property int editWindowSeconds: 20 * 60
@@ -36,29 +40,74 @@ Item {
         return messageModel.get(index).message;
     }
 
-    function findModelIndexById(messageId) {
-        for (var i = 0; i < messageModel.count; i++) {
-            var modelMessage = messageAt(i);
-            if (modelMessage && modelMessage.id === messageId)
-                return i;
-
-        }
-        return -1;
+    function clearMessageIndexes() {
+        messageIndexesById = ({
+        });
+        messageIndexesByTempId = ({
+        });
     }
 
-    function findModelIndexByIdOrTempId(messageId, tempId) {
-        for (var i = 0; i < messageModel.count; i++) {
+    function setMessageIndex(message, index) {
+        if (!message)
+            return ;
+
+        if (message.id)
+            messageIndexesById[message.id] = index;
+
+        if (message.temp_id)
+            messageIndexesByTempId[message.temp_id] = index;
+
+    }
+
+    function removeMessageIndex(message) {
+        if (!message)
+            return ;
+
+        if (message.id)
+            delete messageIndexesById[message.id];
+
+        if (message.temp_id)
+            delete messageIndexesByTempId[message.temp_id];
+
+    }
+
+    function refreshMessageIndexes(startIndex) {
+        for (var i = startIndex; i < messageModel.count; i++) {
             var modelMessage = messageAt(i);
             if (!modelMessage)
                 continue;
 
-            var modelId = modelMessage.id || "";
-            var modelTempId = modelMessage.temp_id || "";
-            if (messageId !== "" && (modelId === messageId || modelTempId === messageId))
-                return i;
+            if (modelMessage.id)
+                messageIndexesById[modelMessage.id] = i;
 
-            if (tempId !== "" && (modelId === tempId || modelTempId === tempId))
-                return i;
+            if (modelMessage.temp_id)
+                messageIndexesByTempId[modelMessage.temp_id] = i;
+
+        }
+    }
+
+    function findModelIndexById(messageId) {
+        if (!messageId)
+            return -1;
+
+        return messageIndexesById.hasOwnProperty(messageId) ? messageIndexesById[messageId] : -1;
+    }
+
+    function findModelIndexByIdOrTempId(messageId, tempId) {
+        if (messageId !== "") {
+            if (messageIndexesById.hasOwnProperty(messageId))
+                return messageIndexesById[messageId];
+
+            if (messageIndexesByTempId.hasOwnProperty(messageId))
+                return messageIndexesByTempId[messageId];
+
+        }
+        if (tempId !== "") {
+            if (messageIndexesById.hasOwnProperty(tempId))
+                return messageIndexesById[tempId];
+
+            if (messageIndexesByTempId.hasOwnProperty(tempId))
+                return messageIndexesByTempId[tempId];
 
         }
         return -1;
@@ -80,6 +129,7 @@ Item {
         messageModel.insert(insertIndex, {
             "message": message
         });
+        refreshMessageIndexes(insertIndex);
         if (wasAtBottom && insertIndex === 0)
             scrollToBottomTimer.restart();
 
@@ -90,9 +140,14 @@ Item {
         if (index < 0 || index >= messageModel.count)
             return false;
 
+        var previousMessage = messageAt(index);
+        if (previousMessage)
+            removeMessageIndex(previousMessage);
+
         messageModel.set(index, {
             "message": message
         });
+        setMessageIndex(message, index);
         return true;
     }
 
@@ -120,11 +175,13 @@ Item {
 
     function resetMessages(oldestFirstMessages) {
         messageModel.clear();
+        clearMessageIndexes();
         var nextMessages = oldestFirstMessages || [];
         for (var i = nextMessages.length - 1; i >= 0; i--) {
             messageModel.append({
                 "message": nextMessages[i]
             });
+            setMessageIndex(nextMessages[i], nextMessages.length - 1 - i);
         }
     }
 
@@ -139,9 +196,12 @@ Item {
 
         var wasAtBottom = messageList.atYEnd;
         var replaceIndex = findModelIndexByIdOrTempId(message.id || "", message.temp_id || "");
-        if (replaceIndex !== -1)
+        if (replaceIndex !== -1) {
+            var previousMessage = messageAt(replaceIndex);
+            removeMessageIndex(previousMessage);
             messageModel.remove(replaceIndex);
-
+            refreshMessageIndexes(replaceIndex);
+        }
         var insertIndex = insertDisplayMessage(message);
         if (wasAtBottom)
             scrollToBottomTimer.restart();
@@ -180,10 +240,12 @@ Item {
         if (anchorMessageId)
             prepareOlderMessages(anchorMessageId);
 
+        var appendStartIndex = messageModel.count;
         for (var i = nextMessages.length - 1; i >= 0; i--) {
             messageModel.append({
                 "message": nextMessages[i]
             });
+            setMessageIndex(nextMessages[i], appendStartIndex + (nextMessages.length - 1 - i));
         }
         scheduleRestoreOlderMessages();
     }
@@ -283,7 +345,7 @@ Item {
     }
 
     function usesRichTextMessage(message) {
-        return !!message && (!!message.reply_to_id || (root.isGroup && !message.is_outgoing && root.resolvedSenderName(message) !== ""));
+        return !!message && (!!message.reply_to_id || (root.isGroup && !message.is_outgoing));
     }
 
     function messageComponentFor(message) {
@@ -345,6 +407,7 @@ Item {
 
         anchors.fill: parent
         clip: true
+        cacheBuffer: units.gu(100)
         verticalLayoutDirection: ListView.BottomToTop
         spacing: units.gu(0.5)
         model: messageModel
@@ -426,8 +489,22 @@ Item {
 
                     property var msg: messageDelegate.msg
 
+                    function syncSourceComponent() {
+                        var nextComponent = root.messageComponentFor(msg);
+                        if (sourceComponent !== nextComponent)
+                            sourceComponent = nextComponent;
+
+                    }
+
                     width: parent.width
-                    sourceComponent: root.messageComponentFor(msg)
+                    Component.onCompleted: syncSourceComponent()
+                    onMsgChanged: syncSourceComponent()
+
+                    Connections {
+                        target: root
+                        onIsGroupChanged: messageLoader.syncSourceComponent()
+                    }
+
                 }
 
             }

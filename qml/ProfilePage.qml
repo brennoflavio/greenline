@@ -1,7 +1,7 @@
 import Lomiri.Components 1.3
-import QtGraphicalEffects 1.0
 import QtQuick 2.7
 import QtQuick.Layouts 1.3
+import "components"
 import io.thp.pyotherside 1.4
 import "ut_components"
 
@@ -50,46 +50,16 @@ Page {
             spacing: units.gu(2)
             topPadding: units.gu(3)
 
-            Rectangle {
+            GenericPhoto {
                 width: units.gu(16)
                 height: units.gu(16)
-                radius: width / 2
-                color: theme.palette.normal.base
+                photoPath: chatPhoto || ""
+                fallbackIconName: isGroup ? "contact-group" : "contact"
+                fallbackIconWidth: units.gu(8)
+                fallbackIconHeight: units.gu(8)
+                avatarColor: theme.palette.normal.base
+                fallbackIconColor: theme.palette.normal.backgroundSecondaryText
                 anchors.horizontalCenter: parent.horizontalCenter
-
-                Image {
-                    id: profileAvatar
-
-                    anchors.fill: parent
-                    source: chatPhoto || ""
-                    fillMode: Image.PreserveAspectCrop
-                    visible: false
-                }
-
-                Rectangle {
-                    id: profileAvatarMask
-
-                    anchors.fill: parent
-                    radius: width / 2
-                    visible: false
-                }
-
-                OpacityMask {
-                    anchors.fill: parent
-                    source: profileAvatar
-                    maskSource: profileAvatarMask
-                    visible: !!chatPhoto
-                }
-
-                Icon {
-                    anchors.centerIn: parent
-                    name: isGroup ? "contact-group" : "contact"
-                    width: units.gu(8)
-                    height: units.gu(8)
-                    color: theme.palette.normal.backgroundSecondaryText
-                    visible: !chatPhoto
-                }
-
             }
 
             Label {
@@ -191,46 +161,16 @@ Page {
                                     bottomMargin: units.gu(1)
                                 }
 
-                                Rectangle {
+                                GenericPhoto {
                                     width: units.gu(4.5)
                                     height: units.gu(4.5)
-                                    radius: width / 2
-                                    color: theme.palette.normal.base
+                                    photoPath: modelData.photo || ""
+                                    fallbackIconName: "contact"
+                                    fallbackIconWidth: units.gu(2.2)
+                                    fallbackIconHeight: units.gu(2.2)
+                                    avatarColor: theme.palette.normal.base
+                                    fallbackIconColor: theme.palette.normal.backgroundSecondaryText
                                     Layout.alignment: Qt.AlignVCenter
-
-                                    Image {
-                                        id: memberAvatar
-
-                                        anchors.fill: parent
-                                        source: modelData.photo || ""
-                                        fillMode: Image.PreserveAspectCrop
-                                        visible: false
-                                    }
-
-                                    Rectangle {
-                                        id: memberAvatarMask
-
-                                        anchors.fill: parent
-                                        radius: width / 2
-                                        visible: false
-                                    }
-
-                                    OpacityMask {
-                                        anchors.fill: parent
-                                        source: memberAvatar
-                                        maskSource: memberAvatarMask
-                                        visible: !!modelData.photo
-                                    }
-
-                                    Icon {
-                                        anchors.centerIn: parent
-                                        name: "contact"
-                                        width: units.gu(2.2)
-                                        height: units.gu(2.2)
-                                        color: theme.palette.normal.backgroundSecondaryText
-                                        visible: !modelData.photo
-                                    }
-
                                 }
 
                                 Label {

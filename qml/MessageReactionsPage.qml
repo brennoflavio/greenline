@@ -1,6 +1,6 @@
 import Lomiri.Components 1.3
-import QtGraphicalEffects 1.0
 import QtQuick 2.7
+import "components"
 import io.thp.pyotherside 1.4
 import "lib"
 
@@ -124,46 +124,16 @@ Page {
                             rightMargin: units.gu(2)
                         }
 
-                        Rectangle {
+                        GenericPhoto {
                             width: units.gu(4.5)
                             height: units.gu(4.5)
-                            radius: width / 2
-                            color: theme.palette.normal.base
+                            photoPath: modelData.photo || ""
+                            fallbackIconName: "contact"
+                            fallbackIconWidth: units.gu(2.2)
+                            fallbackIconHeight: units.gu(2.2)
+                            avatarColor: theme.palette.normal.base
+                            fallbackIconColor: theme.palette.normal.backgroundSecondaryText
                             anchors.verticalCenter: parent.verticalCenter
-
-                            Image {
-                                id: avatarImage
-
-                                anchors.fill: parent
-                                source: modelData.photo || ""
-                                fillMode: Image.PreserveAspectCrop
-                                visible: false
-                            }
-
-                            Rectangle {
-                                id: avatarMask
-
-                                anchors.fill: parent
-                                radius: width / 2
-                                visible: false
-                            }
-
-                            OpacityMask {
-                                anchors.fill: parent
-                                source: avatarImage
-                                maskSource: avatarMask
-                                visible: !!modelData.photo
-                            }
-
-                            Icon {
-                                anchors.centerIn: parent
-                                name: "contact"
-                                width: units.gu(2.2)
-                                height: units.gu(2.2)
-                                color: theme.palette.normal.backgroundSecondaryText
-                                visible: !modelData.photo
-                            }
-
                         }
 
                         Column {
