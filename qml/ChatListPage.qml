@@ -158,11 +158,10 @@ Page {
         };
         for (var i = 0; i < newChats.length; i++) chatIndexes[newChats[i].id] = i
         var changed = false;
-        var shouldSort = false;
         for (var j = 0; j < messages.length; j++) {
             var message = messages[j];
-            var chatIndex = chatIndexes[message.chat_id];
-            if (chatIndex === undefined)
+            var chatIndex = chatIndexes.hasOwnProperty(message.chat_id) ? chatIndexes[message.chat_id] : -1;
+            if (chatIndex === -1)
                 continue;
 
             var chat = newChats[chatIndex];
@@ -177,25 +176,27 @@ Page {
             if (chat.last_message === nextLastMessage && chat.last_message_type === nextLastMessageType && chat.date === nextDate && chat.last_message_timestamp === nextTimestamp && chat.read_receipt === nextReadReceipt)
                 continue;
 
-            if (chat.last_message_timestamp !== nextTimestamp)
-                shouldSort = true;
-
-            chat.last_message = nextLastMessage;
-            chat.last_message_type = nextLastMessageType;
-            chat.date = nextDate;
-            chat.last_message_timestamp = nextTimestamp;
-            chat.read_receipt = nextReadReceipt;
+            var updatedChat = Object.assign({
+            }, chat, {
+                "last_message": nextLastMessage,
+                "last_message_type": nextLastMessageType,
+                "date": nextDate,
+                "last_message_timestamp": nextTimestamp,
+                "read_receipt": nextReadReceipt
+            });
+            if (chat.last_message_timestamp !== nextTimestamp) {
+                newChats.splice(chatIndex, 1);
+                var replacementIndex = ChatHelpers.insertChatSorted(newChats, updatedChat);
+                var reindexStart = Math.min(chatIndex, replacementIndex);
+                for (var k = reindexStart; k < newChats.length; k++) chatIndexes[newChats[k].id] = k
+            } else {
+                newChats[chatIndex] = updatedChat;
+            }
             changed = true;
         }
-        if (!changed)
-            return ;
+        if (changed)
+            updateChats(newChats, true);
 
-        if (shouldSort)
-            newChats.sort(function(a, b) {
-            return b.last_message_timestamp - a.last_message_timestamp;
-        });
-
-        updateChats(newChats, true);
     }
 
     Column {

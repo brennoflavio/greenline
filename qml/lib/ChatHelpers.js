@@ -164,28 +164,55 @@ function fieldValuesEqual(left, right) {
     return false;
 }
 
+function chatComesBefore(left, right) {
+    var leftTimestamp = left && left.last_message_timestamp ? left.last_message_timestamp : 0;
+    var rightTimestamp = right && right.last_message_timestamp ? right.last_message_timestamp : 0;
+    if (leftTimestamp !== rightTimestamp)
+        return leftTimestamp > rightTimestamp;
+
+    var leftId = left && left.id ? left.id : "";
+    var rightId = right && right.id ? right.id : "";
+    return leftId < rightId;
+}
+
+function insertChatSorted(chatList, chat) {
+    for (var i = 0; i < chatList.length; i++) {
+        if (chatComesBefore(chat, chatList[i])) {
+            chatList.splice(i, 0, chat);
+            return i;
+        }
+    }
+    chatList.push(chat);
+    return chatList.length - 1;
+}
+
+function cloneChatListEntry(chat, existingChat) {
+    var clonedChat = {};
+    for (var field in chat)
+        clonedChat[field] = chat[field];
+
+    clonedChat.draft = existingChat ? (existingChat.draft || "") : "";
+    clonedChat.has_draft = existingChat ? !!existingChat.has_draft : false;
+    return clonedChat;
+}
+
+function refreshChatIndexes(chatList, chatIndexes, startIndex) {
+    for (var i = startIndex; i < chatList.length; i++) chatIndexes[chatList[i].id] = i
+}
+
 function applyChatListUpdates(chats, updatedChats, showArchived) {
     var newChats = chats.slice();
+    var chatIndexes = {
+    };
+    for (var i = 0; i < newChats.length; i++) chatIndexes[newChats[i].id] = i
     var changed = false;
-    for (var i = 0; i < updatedChats.length; i++) {
-        var updatedChat = updatedChats[i];
-        var foundIndex = -1;
-        for (var j = 0; j < newChats.length; j++) {
-            if (newChats[j].id === updatedChat.id) {
-                foundIndex = j;
-                break;
-            }
-        }
-
+    for (var j = 0; j < updatedChats.length; j++) {
+        var updatedChat = updatedChats[j];
+        var foundIndex = chatIndexes.hasOwnProperty(updatedChat.id) ? chatIndexes[updatedChat.id] : -1;
         if (foundIndex === -1) {
             if (!!updatedChat.archived === showArchived) {
-                var insertedChat = {};
-                for (var insertedField in updatedChat)
-                    insertedChat[insertedField] = updatedChat[insertedField];
-
-                insertedChat.draft = "";
-                insertedChat.has_draft = false;
-                newChats.push(insertedChat);
+                var insertedIndex = insertChatSorted(newChats, cloneChatListEntry(updatedChat));
+                refreshChatIndexes(newChats, chatIndexes, insertedIndex);
                 changed = true;
             }
             continue;
@@ -193,36 +220,32 @@ function applyChatListUpdates(chats, updatedChats, showArchived) {
 
         if (!!updatedChat.archived !== showArchived) {
             newChats.splice(foundIndex, 1);
+            delete chatIndexes[updatedChat.id];
+            refreshChatIndexes(newChats, chatIndexes, foundIndex);
             changed = true;
             continue;
         }
 
         var existingChat = newChats[foundIndex];
-        var replacementChat = {};
-        for (var field in updatedChat)
-            replacementChat[field] = updatedChat[field];
-
-        replacementChat.draft = existingChat.draft || "";
-        replacementChat.has_draft = !!existingChat.has_draft;
-
+        var replacementChat = cloneChatListEntry(updatedChat, existingChat);
         var chatChanged = false;
-        for (field in replacementChat) {
+        for (var field in replacementChat) {
             if (!fieldValuesEqual(existingChat[field], replacementChat[field])) {
                 chatChanged = true;
                 break;
             }
         }
+        if (!chatChanged)
+            continue;
 
-        if (chatChanged) {
+        if (existingChat.last_message_timestamp !== replacementChat.last_message_timestamp) {
+            newChats.splice(foundIndex, 1);
+            var replacementIndex = insertChatSorted(newChats, replacementChat);
+            refreshChatIndexes(newChats, chatIndexes, Math.min(foundIndex, replacementIndex));
+        } else {
             newChats[foundIndex] = replacementChat;
-            changed = true;
         }
-    }
-
-    if (changed) {
-        newChats.sort(function(a, b) {
-            return b.last_message_timestamp - a.last_message_timestamp;
-        });
+        changed = true;
     }
 
     return {
