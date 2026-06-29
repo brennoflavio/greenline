@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-26 04:46+0000\n"
+"POT-Creation-Date: 2026-06-29 13:49+0000\n"
 "PO-Revision-Date: 2026-06-26 19:33+0000\n"
 "Last-Translator: Walter Garcia-Fontes <walter.garcia@upf.edu>\n"
 "Language-Team: Catalan <https://hosted.weblate.org/projects/ubports/"
@@ -73,130 +73,130 @@ msgstr "No s'ha pogut iniciar el xat"
 msgid "Failed to import contact"
 msgstr "No s'ha pogut importar el contacte"
 
-#: ../qml/ChatListPage.qml:183
+#: ../qml/ChatListPage.qml:257
 msgid "No archived chats"
 msgstr "No hi ha xats arxivats"
 
-#: ../qml/ChatListPage.qml:183
+#: ../qml/ChatListPage.qml:257
 msgid "No chats found"
 msgstr "No s'ha trobat cap xat"
 
-#: ../qml/ChatListPage.qml:203 ../qml/ChatListPage.qml:300
+#: ../qml/ChatListPage.qml:277 ../qml/ChatListPage.qml:370
 msgid "Chats"
 msgstr "Xats"
 
-#: ../qml/ChatListPage.qml:209
+#: ../qml/ChatListPage.qml:283
 msgid "New"
 msgstr "Nou"
 
-#: ../qml/ChatListPage.qml:216 ../qml/ChatListPage.qml:300
+#: ../qml/ChatListPage.qml:290 ../qml/ChatListPage.qml:370
 msgid "Archived"
 msgstr "Arxivat"
 
-#: ../qml/ChatListPage.qml:251 ../qml/components/NewChatDialog.qml:52
+#: ../qml/ChatListPage.qml:325 ../qml/components/NewChatDialog.qml:52
 msgid "Import Contact"
 msgstr "Importa un contacte"
 
-#: ../qml/ChatPage.qml:82
+#: ../qml/ChatPage.qml:84
 msgid "You"
 msgstr "Vos"
 
-#: ../qml/ChatPage.qml:114
+#: ../qml/ChatPage.qml:116
 msgid "Message updated"
 msgstr "Missatge actualitzat"
 
-#: ../qml/ChatPage.qml:120
+#: ../qml/ChatPage.qml:122
 msgid "Failed to edit message"
 msgstr "No s'ha pogut editar el missatge"
 
-#: ../qml/ChatPage.qml:130
+#: ../qml/ChatPage.qml:132
 msgid "Message deleted"
 msgstr "S'ha suprimit el missatge"
 
-#: ../qml/ChatPage.qml:133
+#: ../qml/ChatPage.qml:135
 msgid "Failed to delete message"
 msgstr "No s'ha pogut suprimir el missatge"
 
-#: ../qml/ChatPage.qml:156
+#: ../qml/ChatPage.qml:158
 msgid "No internet connection. Connect and try again."
 msgstr "No hi ha connexió a Internet. Connecteu-vos i torneu-ho a provar."
 
-#: ../qml/ChatPage.qml:169 ../qml/ChatPage.qml:987
+#: ../qml/ChatPage.qml:171 ../qml/ChatPage.qml:1106
 msgid "Failed to download media"
 msgstr "No s'ha pogut baixar el suport"
 
-#: ../qml/ChatPage.qml:340
+#: ../qml/ChatPage.qml:465
 msgid "Failed to load older messages"
 msgstr "No s'han pogut carregar els missatges antics"
 
-#: ../qml/ChatPage.qml:430
+#: ../qml/ChatPage.qml:555
 msgid "Failed to send audio"
 msgstr "No s'ha pogut enviar l'àudio"
 
-#: ../qml/ChatPage.qml:537 ../qml/DocumentPreviewPage.qml:42
+#: ../qml/ChatPage.qml:662 ../qml/DocumentPreviewPage.qml:42
 #: ../qml/DocumentPreviewPage.qml:97
 #: ../qml/components/ChatAttachmentDialog.qml:42
 #: ../qml/components/DocumentMessage.qml:61
 msgid "Document"
 msgstr "Document"
 
-#: ../qml/ChatPage.qml:549
+#: ../qml/ChatPage.qml:674
 msgid "Failed to send document"
 msgstr "No s'ha pogut enviar el document"
 
-#: ../qml/ChatPage.qml:590
+#: ../qml/ChatPage.qml:715
 msgid "Failed to send contact"
 msgstr "No s'ha pogut enviar el contacte"
 
-#: ../qml/ChatPage.qml:632
+#: ../qml/ChatPage.qml:757
 msgid "Failed to send location"
 msgstr "No s'ha pogut enviar la ubicació"
 
-#: ../qml/ChatPage.qml:716
+#: ../qml/ChatPage.qml:841
 msgid "WhatsApp messages read today"
 msgstr "Missatges de WhatsApp llegits avui"
 
-#: ../qml/ChatPage.qml:717
+#: ../qml/ChatPage.qml:842
 msgid "No WhatsApp messages read today"
 msgstr "No hi ha missatges de WhatsApp llegits avui"
 
-#: ../qml/ChatPage.qml:725
+#: ../qml/ChatPage.qml:850
 msgid "WhatsApp messages sent today"
 msgstr "Missatges de WhatsApp enviats avui"
 
-#: ../qml/ChatPage.qml:726
+#: ../qml/ChatPage.qml:851
 msgid "No WhatsApp messages sent today"
 msgstr "No s'han enviat missatges de WhatsApp avui"
 
-#: ../qml/ChatPage.qml:754
+#: ../qml/ChatPage.qml:879
 msgid "Scroll up to load older messages first"
 msgstr "Desplaça amunt per a carregar primer els missatges antics"
 
-#: ../qml/ChatPage.qml:761
+#: ../qml/ChatPage.qml:886
 msgid "Copied to clipboard"
 msgstr "S'ha copiat al porta-retalls"
 
-#: ../qml/ChatPage.qml:940
+#: ../qml/ChatPage.qml:1065
 msgid "recording audio..."
 msgstr "s'està gravant l'àudio..."
 
-#: ../qml/ChatPage.qml:940
+#: ../qml/ChatPage.qml:1065
 msgid "typing..."
 msgstr "s'està escrivint..."
 
-#: ../qml/ChatPage.qml:1041
+#: ../qml/ChatPage.qml:1160
 msgid "Send Photo"
 msgstr "Envia una foto"
 
-#: ../qml/ChatPage.qml:1052
+#: ../qml/ChatPage.qml:1171
 msgid "Send Video"
 msgstr "Envia un vídeo"
 
-#: ../qml/ChatPage.qml:1063
+#: ../qml/ChatPage.qml:1182
 msgid "Send Document"
 msgstr "Envia el document"
 
-#: ../qml/ChatPage.qml:1074
+#: ../qml/ChatPage.qml:1193
 msgid "Send Contact"
 msgstr "Envia el contacte"
 
@@ -341,7 +341,7 @@ msgstr "No s'ha pogut obtenir el codi d'aparellament"
 msgid "Requesting pairing code..."
 msgstr "S'està sol·licitant un codi d'aparellament..."
 
-#: ../qml/PhonePairingPage.qml:120 ../qml/SettingsPage.qml:210
+#: ../qml/PhonePairingPage.qml:120 ../qml/SettingsPage.qml:231
 #: ../qml/components/ChatAttachmentDialog.qml:74
 #: ../qml/components/EditMessageDialog.qml:26
 #: ../qml/components/LocationFetchDialog.qml:91
@@ -371,7 +371,7 @@ msgstr "Inicia la sessió amb el número de telèfon"
 msgid "Group"
 msgstr "Grup"
 
-#: ../qml/ProfilePage.qml:119 ../qml/SettingsPage.qml:235
+#: ../qml/ProfilePage.qml:119 ../qml/SettingsPage.qml:256
 #: ../qml/ut_components/AppHeader.qml:94
 msgid "Settings"
 msgstr "Configuració"
@@ -443,18 +443,25 @@ msgid "About"
 msgstr "Quant a"
 
 #: ../qml/SettingsPage.qml:120
-msgid "Build Version"
+#, fuzzy
+#| msgid "Build Version"
+msgid "Release Version"
 msgstr "Versió de la compilació"
 
-#: ../qml/SettingsPage.qml:127 ../qml/SettingsPage.qml:189
+#: ../qml/SettingsPage.qml:127 ../qml/SettingsPage.qml:147
+#: ../qml/SettingsPage.qml:209 ../qml/SettingsPage.qml:210
 msgid "Unknown"
 msgstr "Desconegut"
 
-#: ../qml/SettingsPage.qml:141
+#: ../qml/SettingsPage.qml:140
+msgid "Build Commit"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:161
 msgid "Data"
 msgstr "Dades"
 
-#: ../qml/SettingsPage.qml:155
+#: ../qml/SettingsPage.qml:175
 msgid ""
 "Uninstall the daemon, log out from WhatsApp, and delete all local data "
 "including messages, settings and cache."
@@ -462,12 +469,12 @@ msgstr ""
 "Desinstal·la el dimoni, surt de WhatsApp i suprimeix totes les dades locals, "
 "inclosos els missatges, la configuració i la memòria cau."
 
-#: ../qml/SettingsPage.qml:170 ../qml/SettingsPage.qml:206
-#: ../qml/SettingsPage.qml:215
+#: ../qml/SettingsPage.qml:190 ../qml/SettingsPage.qml:227
+#: ../qml/SettingsPage.qml:236
 msgid "Reset App"
 msgstr "Reinicia l'aplicació"
 
-#: ../qml/SettingsPage.qml:207
+#: ../qml/SettingsPage.qml:228
 msgid ""
 "This will uninstall the daemon, log out from WhatsApp, and delete all local "
 "data. You will need to reinstall the daemon and scan the QR code again to "
@@ -477,7 +484,7 @@ msgstr ""
 "dades locals. Haureu de tornar a instal·lar el dimoni i tornar a escanejar "
 "el codi QR per tornar a connectar."
 
-#: ../qml/SettingsPage.qml:231
+#: ../qml/SettingsPage.qml:252
 msgid "Resetting app..."
 msgstr "S'està reiniciant l'aplicació..."
 

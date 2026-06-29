@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-26 04:46+0000\n"
+"POT-Creation-Date: 2026-06-29 13:49+0000\n"
 "PO-Revision-Date: 2026-06-28 10:01+0000\n"
 "Last-Translator: Heimen Stoffels <vistausss@fastmail.com>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/ubports/greenline/"
@@ -73,130 +73,130 @@ msgstr "Er kan geen gesprek worden gestart"
 msgid "Failed to import contact"
 msgstr "De contactpersoon kan niet worden geïmporteerd"
 
-#: ../qml/ChatListPage.qml:183
+#: ../qml/ChatListPage.qml:257
 msgid "No archived chats"
 msgstr "Er zijn geen gearchiveerde gesprekken"
 
-#: ../qml/ChatListPage.qml:183
+#: ../qml/ChatListPage.qml:257
 msgid "No chats found"
 msgstr "Er zijn geen gesprekken"
 
-#: ../qml/ChatListPage.qml:203 ../qml/ChatListPage.qml:300
+#: ../qml/ChatListPage.qml:277 ../qml/ChatListPage.qml:370
 msgid "Chats"
 msgstr "Gesprekken"
 
-#: ../qml/ChatListPage.qml:209
+#: ../qml/ChatListPage.qml:283
 msgid "New"
 msgstr "Nieuw"
 
-#: ../qml/ChatListPage.qml:216 ../qml/ChatListPage.qml:300
+#: ../qml/ChatListPage.qml:290 ../qml/ChatListPage.qml:370
 msgid "Archived"
 msgstr "Gearchiveerd"
 
-#: ../qml/ChatListPage.qml:251 ../qml/components/NewChatDialog.qml:52
+#: ../qml/ChatListPage.qml:325 ../qml/components/NewChatDialog.qml:52
 msgid "Import Contact"
 msgstr "Contactpersoon importeren"
 
-#: ../qml/ChatPage.qml:82
+#: ../qml/ChatPage.qml:84
 msgid "You"
 msgstr "Mij"
 
-#: ../qml/ChatPage.qml:114
+#: ../qml/ChatPage.qml:116
 msgid "Message updated"
 msgstr "Het bericht is bewerkt"
 
-#: ../qml/ChatPage.qml:120
+#: ../qml/ChatPage.qml:122
 msgid "Failed to edit message"
 msgstr "Het bericht kan niet worden bewerkt"
 
-#: ../qml/ChatPage.qml:130
+#: ../qml/ChatPage.qml:132
 msgid "Message deleted"
 msgstr "Het bericht is verwijderd"
 
-#: ../qml/ChatPage.qml:133
+#: ../qml/ChatPage.qml:135
 msgid "Failed to delete message"
 msgstr "Het bericht kan niet worden verwijderd"
 
-#: ../qml/ChatPage.qml:156
+#: ../qml/ChatPage.qml:158
 msgid "No internet connection. Connect and try again."
 msgstr "Er is geen internetverbinding. Maak verbinding en probeer het opnieuw."
 
-#: ../qml/ChatPage.qml:169 ../qml/ChatPage.qml:987
+#: ../qml/ChatPage.qml:171 ../qml/ChatPage.qml:1106
 msgid "Failed to download media"
 msgstr "De media kan niet worden opgehaald"
 
-#: ../qml/ChatPage.qml:340
+#: ../qml/ChatPage.qml:465
 msgid "Failed to load older messages"
 msgstr "De oudere berichten kunnen niet worden geladen"
 
-#: ../qml/ChatPage.qml:430
+#: ../qml/ChatPage.qml:555
 msgid "Failed to send audio"
 msgstr "De audio kan niet worden verstuurd"
 
-#: ../qml/ChatPage.qml:537 ../qml/DocumentPreviewPage.qml:42
+#: ../qml/ChatPage.qml:662 ../qml/DocumentPreviewPage.qml:42
 #: ../qml/DocumentPreviewPage.qml:97
 #: ../qml/components/ChatAttachmentDialog.qml:42
 #: ../qml/components/DocumentMessage.qml:61
 msgid "Document"
 msgstr "Document"
 
-#: ../qml/ChatPage.qml:549
+#: ../qml/ChatPage.qml:674
 msgid "Failed to send document"
 msgstr "Het document kan niet worden verstuurd"
 
-#: ../qml/ChatPage.qml:590
+#: ../qml/ChatPage.qml:715
 msgid "Failed to send contact"
 msgstr "De contactpersoon kan niet worden verstuurd"
 
-#: ../qml/ChatPage.qml:632
+#: ../qml/ChatPage.qml:757
 msgid "Failed to send location"
 msgstr "De locatie kan niet worden verstuurd"
 
-#: ../qml/ChatPage.qml:716
+#: ../qml/ChatPage.qml:841
 msgid "WhatsApp messages read today"
 msgstr "Aantal vandaag gelezen whatsappjes"
 
-#: ../qml/ChatPage.qml:717
+#: ../qml/ChatPage.qml:842
 msgid "No WhatsApp messages read today"
 msgstr "Je hebt vandaag geen whatsappjes gelezen"
 
-#: ../qml/ChatPage.qml:725
+#: ../qml/ChatPage.qml:850
 msgid "WhatsApp messages sent today"
 msgstr "Aantal vandaag verstuurde whatsappjes"
 
-#: ../qml/ChatPage.qml:726
+#: ../qml/ChatPage.qml:851
 msgid "No WhatsApp messages sent today"
 msgstr "Je hebt vandaag geen whatsappjes verstuurd"
 
-#: ../qml/ChatPage.qml:754
+#: ../qml/ChatPage.qml:879
 msgid "Scroll up to load older messages first"
 msgstr "Scrol omhoog om oudere berichten te laden"
 
-#: ../qml/ChatPage.qml:761
+#: ../qml/ChatPage.qml:886
 msgid "Copied to clipboard"
 msgstr "Gekopieerd naar het klembord"
 
-#: ../qml/ChatPage.qml:940
+#: ../qml/ChatPage.qml:1065
 msgid "recording audio..."
 msgstr "is audio aan het opnemen…"
 
-#: ../qml/ChatPage.qml:940
+#: ../qml/ChatPage.qml:1065
 msgid "typing..."
 msgstr "is aan het typen…"
 
-#: ../qml/ChatPage.qml:1041
+#: ../qml/ChatPage.qml:1160
 msgid "Send Photo"
 msgstr "Foto versturen"
 
-#: ../qml/ChatPage.qml:1052
+#: ../qml/ChatPage.qml:1171
 msgid "Send Video"
 msgstr "Video versturen"
 
-#: ../qml/ChatPage.qml:1063
+#: ../qml/ChatPage.qml:1182
 msgid "Send Document"
 msgstr "Document versturen"
 
-#: ../qml/ChatPage.qml:1074
+#: ../qml/ChatPage.qml:1193
 msgid "Send Contact"
 msgstr "Contactpersoon versturen"
 
@@ -340,7 +340,7 @@ msgstr "De koppelcode kan niet worden opgevraagd"
 msgid "Requesting pairing code..."
 msgstr "Bezig met opvragen van koppelcode…"
 
-#: ../qml/PhonePairingPage.qml:120 ../qml/SettingsPage.qml:210
+#: ../qml/PhonePairingPage.qml:120 ../qml/SettingsPage.qml:231
 #: ../qml/components/ChatAttachmentDialog.qml:74
 #: ../qml/components/EditMessageDialog.qml:26
 #: ../qml/components/LocationFetchDialog.qml:91
@@ -369,7 +369,7 @@ msgstr "Inloggen met telefoonnummer"
 msgid "Group"
 msgstr "Groep"
 
-#: ../qml/ProfilePage.qml:119 ../qml/SettingsPage.qml:235
+#: ../qml/ProfilePage.qml:119 ../qml/SettingsPage.qml:256
 #: ../qml/ut_components/AppHeader.qml:94
 msgid "Settings"
 msgstr "Instellingen"
@@ -441,18 +441,25 @@ msgid "About"
 msgstr "Over"
 
 #: ../qml/SettingsPage.qml:120
-msgid "Build Version"
+#, fuzzy
+#| msgid "Build Version"
+msgid "Release Version"
 msgstr "Versie"
 
-#: ../qml/SettingsPage.qml:127 ../qml/SettingsPage.qml:189
+#: ../qml/SettingsPage.qml:127 ../qml/SettingsPage.qml:147
+#: ../qml/SettingsPage.qml:209 ../qml/SettingsPage.qml:210
 msgid "Unknown"
 msgstr "Onbekend"
 
-#: ../qml/SettingsPage.qml:141
+#: ../qml/SettingsPage.qml:140
+msgid "Build Commit"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:161
 msgid "Data"
 msgstr "Gegevens"
 
-#: ../qml/SettingsPage.qml:155
+#: ../qml/SettingsPage.qml:175
 msgid ""
 "Uninstall the daemon, log out from WhatsApp, and delete all local data "
 "including messages, settings and cache."
@@ -460,12 +467,12 @@ msgstr ""
 "Verwijder de achtergronddienst, log uit op WhatsApp en verwijder alle lokale "
 "gegevens, zoals berichten, instellingen en de cache."
 
-#: ../qml/SettingsPage.qml:170 ../qml/SettingsPage.qml:206
-#: ../qml/SettingsPage.qml:215
+#: ../qml/SettingsPage.qml:190 ../qml/SettingsPage.qml:227
+#: ../qml/SettingsPage.qml:236
 msgid "Reset App"
 msgstr "App leegmaken"
 
-#: ../qml/SettingsPage.qml:207
+#: ../qml/SettingsPage.qml:228
 msgid ""
 "This will uninstall the daemon, log out from WhatsApp, and delete all local "
 "data. You will need to reinstall the daemon and scan the QR code again to "
@@ -475,7 +482,7 @@ msgstr ""
 "WhatsApp en worden alle lokale gegevens verwijderd. Herinstalleer de dienst "
 "en scan de QR-code om opnieuw te koppelen."
 
-#: ../qml/SettingsPage.qml:231
+#: ../qml/SettingsPage.qml:252
 msgid "Resetting app..."
 msgstr "Bezig met leegmaken…"
 

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-26 04:46+0000\n"
+"POT-Creation-Date: 2026-06-29 13:49+0000\n"
 "PO-Revision-Date: 2026-06-29 17:01+0000\n"
 "Last-Translator: Perrete <dimasatr@proton.me>\n"
 "Language-Team: Spanish <https://hosted.weblate.org/projects/ubports/"
@@ -73,130 +73,130 @@ msgstr "Fallo al iniciar la conversación"
 msgid "Failed to import contact"
 msgstr "Fallo al importar el contacto"
 
-#: ../qml/ChatListPage.qml:183
+#: ../qml/ChatListPage.qml:257
 msgid "No archived chats"
 msgstr "No hay conversaciones archivadas"
 
-#: ../qml/ChatListPage.qml:183
+#: ../qml/ChatListPage.qml:257
 msgid "No chats found"
 msgstr "No se han encontrado conversaciones"
 
-#: ../qml/ChatListPage.qml:203 ../qml/ChatListPage.qml:300
+#: ../qml/ChatListPage.qml:277 ../qml/ChatListPage.qml:370
 msgid "Chats"
 msgstr "Conversaciones"
 
-#: ../qml/ChatListPage.qml:209
+#: ../qml/ChatListPage.qml:283
 msgid "New"
 msgstr "Nuevo"
 
-#: ../qml/ChatListPage.qml:216 ../qml/ChatListPage.qml:300
+#: ../qml/ChatListPage.qml:290 ../qml/ChatListPage.qml:370
 msgid "Archived"
 msgstr "Archivados"
 
-#: ../qml/ChatListPage.qml:251 ../qml/components/NewChatDialog.qml:52
+#: ../qml/ChatListPage.qml:325 ../qml/components/NewChatDialog.qml:52
 msgid "Import Contact"
 msgstr "Importar Contacto"
 
-#: ../qml/ChatPage.qml:82
+#: ../qml/ChatPage.qml:84
 msgid "You"
 msgstr "Tú"
 
-#: ../qml/ChatPage.qml:114
+#: ../qml/ChatPage.qml:116
 msgid "Message updated"
 msgstr "Mensaje actualizado"
 
-#: ../qml/ChatPage.qml:120
+#: ../qml/ChatPage.qml:122
 msgid "Failed to edit message"
 msgstr "Fallo al editar el mensaje"
 
-#: ../qml/ChatPage.qml:130
+#: ../qml/ChatPage.qml:132
 msgid "Message deleted"
 msgstr "El mensaje ha sido eliminado"
 
-#: ../qml/ChatPage.qml:133
+#: ../qml/ChatPage.qml:135
 msgid "Failed to delete message"
 msgstr "Fallo al eliminar el mensaje"
 
-#: ../qml/ChatPage.qml:156
+#: ../qml/ChatPage.qml:158
 msgid "No internet connection. Connect and try again."
 msgstr "No hay conexión a internet. Conéctate e inténtalo de nuevo."
 
-#: ../qml/ChatPage.qml:169 ../qml/ChatPage.qml:987
+#: ../qml/ChatPage.qml:171 ../qml/ChatPage.qml:1106
 msgid "Failed to download media"
 msgstr "Fallo al descargar el contenido multimedia"
 
-#: ../qml/ChatPage.qml:340
+#: ../qml/ChatPage.qml:465
 msgid "Failed to load older messages"
 msgstr "Fallo al cargar mensajes antiguos"
 
-#: ../qml/ChatPage.qml:430
+#: ../qml/ChatPage.qml:555
 msgid "Failed to send audio"
 msgstr "Fallo al enviar el audio"
 
-#: ../qml/ChatPage.qml:537 ../qml/DocumentPreviewPage.qml:42
+#: ../qml/ChatPage.qml:662 ../qml/DocumentPreviewPage.qml:42
 #: ../qml/DocumentPreviewPage.qml:97
 #: ../qml/components/ChatAttachmentDialog.qml:42
 #: ../qml/components/DocumentMessage.qml:61
 msgid "Document"
 msgstr "Documento"
 
-#: ../qml/ChatPage.qml:549
+#: ../qml/ChatPage.qml:674
 msgid "Failed to send document"
 msgstr "Fallo al enviar el documento"
 
-#: ../qml/ChatPage.qml:590
+#: ../qml/ChatPage.qml:715
 msgid "Failed to send contact"
 msgstr "Fallo al enviar el contacto"
 
-#: ../qml/ChatPage.qml:632
+#: ../qml/ChatPage.qml:757
 msgid "Failed to send location"
 msgstr "Fallo al enviar la ubicación"
 
-#: ../qml/ChatPage.qml:716
+#: ../qml/ChatPage.qml:841
 msgid "WhatsApp messages read today"
 msgstr "Mensajes de WhatsApp leídos hoy"
 
-#: ../qml/ChatPage.qml:717
+#: ../qml/ChatPage.qml:842
 msgid "No WhatsApp messages read today"
 msgstr "No hay mensajes de WhatsApp leídos hoy"
 
-#: ../qml/ChatPage.qml:725
+#: ../qml/ChatPage.qml:850
 msgid "WhatsApp messages sent today"
 msgstr "Mensajes de WhatsApp enviados hoy"
 
-#: ../qml/ChatPage.qml:726
+#: ../qml/ChatPage.qml:851
 msgid "No WhatsApp messages sent today"
 msgstr "No hay mensajes de Whatsapp enviados hoy"
 
-#: ../qml/ChatPage.qml:754
+#: ../qml/ChatPage.qml:879
 msgid "Scroll up to load older messages first"
 msgstr "Sube para cargar mensajes más antiguos primero"
 
-#: ../qml/ChatPage.qml:761
+#: ../qml/ChatPage.qml:886
 msgid "Copied to clipboard"
 msgstr "Copiado al portapapeles"
 
-#: ../qml/ChatPage.qml:940
+#: ../qml/ChatPage.qml:1065
 msgid "recording audio..."
 msgstr "grabando audio..."
 
-#: ../qml/ChatPage.qml:940
+#: ../qml/ChatPage.qml:1065
 msgid "typing..."
 msgstr "escribiendo..."
 
-#: ../qml/ChatPage.qml:1041
+#: ../qml/ChatPage.qml:1160
 msgid "Send Photo"
 msgstr "Enviar Foto"
 
-#: ../qml/ChatPage.qml:1052
+#: ../qml/ChatPage.qml:1171
 msgid "Send Video"
 msgstr "Enviar Video"
 
-#: ../qml/ChatPage.qml:1063
+#: ../qml/ChatPage.qml:1182
 msgid "Send Document"
 msgstr "Enviar Documento"
 
-#: ../qml/ChatPage.qml:1074
+#: ../qml/ChatPage.qml:1193
 msgid "Send Contact"
 msgstr "Enviar Contacto"
 
@@ -343,7 +343,7 @@ msgstr "Fallo al obtener el código de vinculación"
 msgid "Requesting pairing code..."
 msgstr "Solicitando código de vinculación..."
 
-#: ../qml/PhonePairingPage.qml:120 ../qml/SettingsPage.qml:210
+#: ../qml/PhonePairingPage.qml:120 ../qml/SettingsPage.qml:231
 #: ../qml/components/ChatAttachmentDialog.qml:74
 #: ../qml/components/EditMessageDialog.qml:26
 #: ../qml/components/LocationFetchDialog.qml:91
@@ -372,7 +372,7 @@ msgstr "Iniciar sesión con Número de Teléfono"
 msgid "Group"
 msgstr "Grupo"
 
-#: ../qml/ProfilePage.qml:119 ../qml/SettingsPage.qml:235
+#: ../qml/ProfilePage.qml:119 ../qml/SettingsPage.qml:256
 #: ../qml/ut_components/AppHeader.qml:94
 msgid "Settings"
 msgstr "Ajustes"
@@ -444,18 +444,25 @@ msgid "About"
 msgstr "Acerca de"
 
 #: ../qml/SettingsPage.qml:120
-msgid "Build Version"
+#, fuzzy
+#| msgid "Build Version"
+msgid "Release Version"
 msgstr "Versión de la Build"
 
-#: ../qml/SettingsPage.qml:127 ../qml/SettingsPage.qml:189
+#: ../qml/SettingsPage.qml:127 ../qml/SettingsPage.qml:147
+#: ../qml/SettingsPage.qml:209 ../qml/SettingsPage.qml:210
 msgid "Unknown"
 msgstr "Desconocido"
 
-#: ../qml/SettingsPage.qml:141
+#: ../qml/SettingsPage.qml:140
+msgid "Build Commit"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:161
 msgid "Data"
 msgstr "Datos"
 
-#: ../qml/SettingsPage.qml:155
+#: ../qml/SettingsPage.qml:175
 msgid ""
 "Uninstall the daemon, log out from WhatsApp, and delete all local data "
 "including messages, settings and cache."
@@ -463,12 +470,12 @@ msgstr ""
 "Desinstala el servicio en segundo plano, cierra la sesión de WhatsApp, "
 "elimina todos los datos locales, incluyendo mensajes, ajustes y caché."
 
-#: ../qml/SettingsPage.qml:170 ../qml/SettingsPage.qml:206
-#: ../qml/SettingsPage.qml:215
+#: ../qml/SettingsPage.qml:190 ../qml/SettingsPage.qml:227
+#: ../qml/SettingsPage.qml:236
 msgid "Reset App"
 msgstr "Reiniciar Aplicación"
 
-#: ../qml/SettingsPage.qml:207
+#: ../qml/SettingsPage.qml:228
 msgid ""
 "This will uninstall the daemon, log out from WhatsApp, and delete all local "
 "data. You will need to reinstall the daemon and scan the QR code again to "
@@ -478,7 +485,7 @@ msgstr ""
 "WhatsApp y eliminará los datos locales. Necesitarás reinstalarlo para "
 "escanear el código QR de nuevo para reconectarte."
 
-#: ../qml/SettingsPage.qml:231
+#: ../qml/SettingsPage.qml:252
 msgid "Resetting app..."
 msgstr "Reiniciando aplicación..."
 
