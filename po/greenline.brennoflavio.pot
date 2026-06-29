@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-26 04:46+0000\n"
+"POT-Creation-Date: 2026-06-29 04:36+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -67,27 +67,27 @@ msgstr ""
 msgid "Failed to import contact"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:183
+#: ../qml/ChatListPage.qml:259
 msgid "No archived chats"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:183
+#: ../qml/ChatListPage.qml:259
 msgid "No chats found"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:203 ../qml/ChatListPage.qml:300
+#: ../qml/ChatListPage.qml:279 ../qml/ChatListPage.qml:373
 msgid "Chats"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:209
+#: ../qml/ChatListPage.qml:285
 msgid "New"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:216 ../qml/ChatListPage.qml:300
+#: ../qml/ChatListPage.qml:292 ../qml/ChatListPage.qml:373
 msgid "Archived"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:251 ../qml/components/NewChatDialog.qml:52
+#: ../qml/ChatListPage.qml:327 ../qml/components/NewChatDialog.qml:52
 msgid "Import Contact"
 msgstr ""
 

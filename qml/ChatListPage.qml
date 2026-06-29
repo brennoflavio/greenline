@@ -92,7 +92,7 @@ Page {
     function refreshChatList() {
         python.call('main.get_chat_list', [showArchived], function(result) {
             if (result.success)
-                chats = result.chats;
+                updateChats(result.chats, false);
 
         });
     }
@@ -117,11 +117,85 @@ Page {
         refreshChatList();
     }
 
+    function updateChats(nextChats, preserveScrollPosition) {
+        var previousContentY = preserveScrollPosition ? chatListView.contentY : 0;
+        chats = nextChats;
+        if (!preserveScrollPosition)
+            return ;
+
+        Qt.callLater(function() {
+            var maxContentY = Math.max(0, chatListView.contentHeight - chatListView.height);
+            chatListView.contentY = Math.min(previousContentY, maxContentY);
+        });
+    }
+
     function applyDraftUpdates(updatedDrafts) {
         var result = ChatHelpers.applyDraftUpdates(chats, updatedDrafts);
         if (result.changed)
-            chats = result.chats;
+            updateChats(result.chats, true);
 
+    }
+
+    function loadChatDraft(chatId) {
+        python.call('main.get_chat_draft', [chatId], function(result) {
+            if (!result || !result.success || !result.text)
+                return ;
+
+            applyDraftUpdates([{
+                "id": chatId,
+                "draft": result.text,
+                "has_draft": true
+            }]);
+        });
+    }
+
+    function applyMessageUpserts(messages) {
+        if (messages.length === 0 || chats.length === 0)
+            return ;
+
+        var newChats = chats.slice();
+        var chatIndexes = {
+        };
+        for (var i = 0; i < newChats.length; i++) chatIndexes[newChats[i].id] = i
+        var changed = false;
+        var shouldSort = false;
+        for (var j = 0; j < messages.length; j++) {
+            var message = messages[j];
+            var chatIndex = chatIndexes[message.chat_id];
+            if (chatIndex === undefined)
+                continue;
+
+            var chat = newChats[chatIndex];
+            if (message.timestamp_unix < chat.last_message_timestamp)
+                continue;
+
+            var nextLastMessage = ChatHelpers.messagePreview(message, i18n);
+            var nextLastMessageType = message.type || "";
+            var nextDate = message.timestamp;
+            var nextTimestamp = message.timestamp_unix;
+            var nextReadReceipt = message.is_outgoing ? message.read_receipt : "";
+            if (chat.last_message === nextLastMessage && chat.last_message_type === nextLastMessageType && chat.date === nextDate && chat.last_message_timestamp === nextTimestamp && chat.read_receipt === nextReadReceipt)
+                continue;
+
+            if (chat.last_message_timestamp !== nextTimestamp)
+                shouldSort = true;
+
+            chat.last_message = nextLastMessage;
+            chat.last_message_type = nextLastMessageType;
+            chat.date = nextDate;
+            chat.last_message_timestamp = nextTimestamp;
+            chat.read_receipt = nextReadReceipt;
+            changed = true;
+        }
+        if (!changed)
+            return ;
+
+        if (shouldSort)
+            newChats.sort(function(a, b) {
+            return b.last_message_timestamp - a.last_message_timestamp;
+        });
+
+        updateChats(newChats, true);
     }
 
     Column {
@@ -266,27 +340,23 @@ Page {
                     loadingBar.isLoading = syncing;
                 });
                 setHandler('message-upsert', function(messages) {
-                    var newChats = chats.slice();
-                    for (var i = 0; i < messages.length; i++) {
-                        var message = messages[i];
-                        for (var j = 0; j < newChats.length; j++) {
-                            var chat = newChats[j];
-                            if (chat.id === message.chat_id && message.timestamp_unix >= chat.last_message_timestamp) {
-                                chat.last_message = ChatHelpers.messagePreview(message, i18n);
-                                chat.last_message_type = message.type || "";
-                                chat.date = message.timestamp;
-                                chat.last_message_timestamp = message.timestamp_unix;
-                                chat.read_receipt = message.is_outgoing ? message.read_receipt : "";
-                            }
-                        }
-                    }
-                    newChats.sort(function(a, b) {
-                        return b.last_message_timestamp - a.last_message_timestamp;
-                    });
-                    chats = newChats;
+                    applyMessageUpserts(messages);
                 });
                 setHandler('chat-list-update', function(updatedChats) {
-                    refreshChatList();
+                    var knownChatIds = {
+                    };
+                    for (var i = 0; i < chats.length; i++) knownChatIds[chats[i].id] = true
+                    var result = ChatHelpers.applyChatListUpdates(chats, updatedChats, showArchived);
+                    if (result.changed)
+                        updateChats(result.chats, true);
+
+                    for (var j = 0; j < updatedChats.length; j++) {
+                        var updatedChat = updatedChats[j];
+                        if (!knownChatIds[updatedChat.id] && !!updatedChat.archived === showArchived) {
+                            knownChatIds[updatedChat.id] = true;
+                            loadChatDraft(updatedChat.id);
+                        }
+                    }
                 });
                 setHandler('chat-draft-update', function(updatedDrafts) {
                     applyDraftUpdates(updatedDrafts);

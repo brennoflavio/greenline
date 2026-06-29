@@ -154,6 +154,83 @@ function mergeRefreshedMessages(currentMessages, refreshedMessages) {
     return mergedMessages;
 }
 
+function fieldValuesEqual(left, right) {
+    if (left === right)
+        return true;
+
+    if (typeof left === "object" || typeof right === "object")
+        return JSON.stringify(left || null) === JSON.stringify(right || null);
+
+    return false;
+}
+
+function applyChatListUpdates(chats, updatedChats, showArchived) {
+    var newChats = chats.slice();
+    var changed = false;
+    for (var i = 0; i < updatedChats.length; i++) {
+        var updatedChat = updatedChats[i];
+        var foundIndex = -1;
+        for (var j = 0; j < newChats.length; j++) {
+            if (newChats[j].id === updatedChat.id) {
+                foundIndex = j;
+                break;
+            }
+        }
+
+        if (foundIndex === -1) {
+            if (!!updatedChat.archived === showArchived) {
+                var insertedChat = {};
+                for (var insertedField in updatedChat)
+                    insertedChat[insertedField] = updatedChat[insertedField];
+
+                insertedChat.draft = "";
+                insertedChat.has_draft = false;
+                newChats.push(insertedChat);
+                changed = true;
+            }
+            continue;
+        }
+
+        if (!!updatedChat.archived !== showArchived) {
+            newChats.splice(foundIndex, 1);
+            changed = true;
+            continue;
+        }
+
+        var existingChat = newChats[foundIndex];
+        var replacementChat = {};
+        for (var field in updatedChat)
+            replacementChat[field] = updatedChat[field];
+
+        replacementChat.draft = existingChat.draft || "";
+        replacementChat.has_draft = !!existingChat.has_draft;
+
+        var chatChanged = false;
+        for (field in replacementChat) {
+            if (!fieldValuesEqual(existingChat[field], replacementChat[field])) {
+                chatChanged = true;
+                break;
+            }
+        }
+
+        if (chatChanged) {
+            newChats[foundIndex] = replacementChat;
+            changed = true;
+        }
+    }
+
+    if (changed) {
+        newChats.sort(function(a, b) {
+            return b.last_message_timestamp - a.last_message_timestamp;
+        });
+    }
+
+    return {
+        "changed": changed,
+        "chats": newChats
+    };
+}
+
 function applyDraftUpdates(chats, updatedDrafts) {
     var newChats = chats.slice();
     var changed = false;
@@ -161,9 +238,13 @@ function applyDraftUpdates(chats, updatedDrafts) {
         var updatedDraft = updatedDrafts[i];
         for (var j = 0; j < newChats.length; j++) {
             if (newChats[j].id === updatedDraft.id) {
-                newChats[j].draft = updatedDraft.draft || "";
-                newChats[j].has_draft = !!updatedDraft.has_draft;
-                changed = true;
+                var nextDraft = updatedDraft.draft || "";
+                var nextHasDraft = !!updatedDraft.has_draft;
+                if (newChats[j].draft !== nextDraft || newChats[j].has_draft !== nextHasDraft) {
+                    newChats[j].draft = nextDraft;
+                    newChats[j].has_draft = nextHasDraft;
+                    changed = true;
+                }
                 break;
             }
         }
