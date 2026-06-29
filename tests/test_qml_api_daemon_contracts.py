@@ -170,6 +170,7 @@ def test_install_and_uninstall_daemon_contracts(fake_daemon_service) -> None:
 
 
 def test_settings_contracts(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(api_daemon, "get_release_build_version", lambda: "1.0.0~rc1")
     monkeypatch.setattr(api_daemon, "get_expected_daemon_version", lambda: "deadbeef")
 
     initial = main.get_settings()
@@ -179,6 +180,7 @@ def test_settings_contracts(monkeypatch: pytest.MonkeyPatch) -> None:
         "notifications_suppressed": False,
         "stop_daemon_on_exit": False,
         "error_reporting": True,
+        "release_version": "1.0.0~rc1",
         "build_version": "deadbeef",
     }
 
@@ -197,6 +199,7 @@ def test_settings_contracts(monkeypatch: pytest.MonkeyPatch) -> None:
         "notifications_suppressed": True,
         "stop_daemon_on_exit": False,
         "error_reporting": False,
+        "release_version": "1.0.0~rc1",
         "build_version": "deadbeef",
     }
 

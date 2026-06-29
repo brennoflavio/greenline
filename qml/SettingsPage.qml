@@ -117,7 +117,27 @@ Page {
                         }
 
                         Label {
-                            text: i18n.tr("Build Version")
+                            text: i18n.tr("Release Version")
+                            color: theme.palette.normal.backgroundText
+                        }
+
+                        Label {
+                            id: releaseVersionLabel
+
+                            text: i18n.tr("Unknown")
+                            fontSize: "small"
+                            color: theme.palette.normal.backgroundSecondaryText
+                            wrapMode: Text.WrapAnywhere
+                            width: parent.width
+                        }
+
+                        Item {
+                            width: 1
+                            height: units.gu(1)
+                        }
+
+                        Label {
+                            text: i18n.tr("Build Commit")
                             color: theme.palette.normal.backgroundText
                         }
 
@@ -186,6 +206,7 @@ Page {
             addImportPath(Qt.resolvedUrl('../src/'));
             importModule('main', function() {
                 call('main.get_settings', [], function(result) {
+                    releaseVersionLabel.text = result.release_version || i18n.tr("Unknown");
                     buildVersionLabel.text = result.build_version || i18n.tr("Unknown");
                     if (result.success) {
                         notificationsToggle.checked = !result.notifications_suppressed;

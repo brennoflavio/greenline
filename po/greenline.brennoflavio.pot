@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-29 04:36+0000\n"
+"POT-Creation-Date: 2026-06-29 06:07+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -67,27 +67,27 @@ msgstr ""
 msgid "Failed to import contact"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:259
+#: ../qml/ChatListPage.qml:257
 msgid "No archived chats"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:259
+#: ../qml/ChatListPage.qml:257
 msgid "No chats found"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:279 ../qml/ChatListPage.qml:373
+#: ../qml/ChatListPage.qml:277 ../qml/ChatListPage.qml:370
 msgid "Chats"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:285
+#: ../qml/ChatListPage.qml:283
 msgid "New"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:292 ../qml/ChatListPage.qml:373
+#: ../qml/ChatListPage.qml:290 ../qml/ChatListPage.qml:370
 msgid "Archived"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:327 ../qml/components/NewChatDialog.qml:52
+#: ../qml/ChatListPage.qml:325 ../qml/components/NewChatDialog.qml:52
 msgid "Import Contact"
 msgstr ""
 
@@ -333,7 +333,7 @@ msgstr ""
 msgid "Requesting pairing code..."
 msgstr ""
 
-#: ../qml/PhonePairingPage.qml:120 ../qml/SettingsPage.qml:210
+#: ../qml/PhonePairingPage.qml:120 ../qml/SettingsPage.qml:231
 #: ../qml/components/ChatAttachmentDialog.qml:74
 #: ../qml/components/EditMessageDialog.qml:26
 #: ../qml/components/LocationFetchDialog.qml:91
@@ -360,7 +360,7 @@ msgstr ""
 msgid "Group"
 msgstr ""
 
-#: ../qml/ProfilePage.qml:119 ../qml/SettingsPage.qml:235
+#: ../qml/ProfilePage.qml:119 ../qml/SettingsPage.qml:256
 #: ../qml/ut_components/AppHeader.qml:94
 msgid "Settings"
 msgstr ""
@@ -430,36 +430,41 @@ msgid "About"
 msgstr ""
 
 #: ../qml/SettingsPage.qml:120
-msgid "Build Version"
+msgid "Release Version"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:127 ../qml/SettingsPage.qml:189
+#: ../qml/SettingsPage.qml:127 ../qml/SettingsPage.qml:147
+#: ../qml/SettingsPage.qml:209 ../qml/SettingsPage.qml:210
 msgid "Unknown"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:141
+#: ../qml/SettingsPage.qml:140
+msgid "Build Commit"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:161
 msgid "Data"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:155
+#: ../qml/SettingsPage.qml:175
 msgid ""
 "Uninstall the daemon, log out from WhatsApp, and delete all local data "
 "including messages, settings and cache."
 msgstr ""
 
-#: ../qml/SettingsPage.qml:170 ../qml/SettingsPage.qml:206
-#: ../qml/SettingsPage.qml:215
+#: ../qml/SettingsPage.qml:190 ../qml/SettingsPage.qml:227
+#: ../qml/SettingsPage.qml:236
 msgid "Reset App"
 msgstr ""
 
-#: ../qml/SettingsPage.qml:207
+#: ../qml/SettingsPage.qml:228
 msgid ""
 "This will uninstall the daemon, log out from WhatsApp, and delete all local "
 "data. You will need to reinstall the daemon and scan the QR code again to "
 "reconnect."
 msgstr ""
 
-#: ../qml/SettingsPage.qml:231
+#: ../qml/SettingsPage.qml:252
 msgid "Resetting app..."
 msgstr ""
 

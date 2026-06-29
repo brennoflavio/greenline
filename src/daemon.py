@@ -103,6 +103,16 @@ def get_expected_daemon_version() -> str | None:
     return build_version or None
 
 
+def get_release_build_version() -> str | None:
+    version_path = os.path.join(get_app_data_path(), "src", "build-version.txt")
+    try:
+        with open(version_path) as f:
+            build_version = f.read().strip()
+    except FileNotFoundError:
+        return None
+    return build_version or None
+
+
 def ensure_daemon_version() -> bool:
     if not is_daemon_installed():
         return False

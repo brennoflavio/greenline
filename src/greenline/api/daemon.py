@@ -7,6 +7,7 @@ from typing import Any, Callable
 from daemon import (
     ensure_daemon_version,
     get_expected_daemon_version,
+    get_release_build_version,
     install_background_service_files,
     is_daemon_active,
     is_daemon_installed,
@@ -99,6 +100,7 @@ class SettingsResponse:
     notifications_suppressed: bool
     stop_daemon_on_exit: bool
     error_reporting: bool
+    release_version: str
     build_version: str
 
 
@@ -238,6 +240,7 @@ def get_settings() -> SettingsResponse:
             notifications_suppressed=suppressed,
             stop_daemon_on_exit=stop_on_exit,
             error_reporting=get_error_reporting(),
+            release_version=get_release_build_version() or "",
             build_version=get_expected_daemon_version() or "",
         )
     except BoundaryValidationError:
@@ -248,6 +251,7 @@ def get_settings() -> SettingsResponse:
             notifications_suppressed=False,
             stop_daemon_on_exit=False,
             error_reporting=True,
+            release_version="",
             build_version="",
         )
 

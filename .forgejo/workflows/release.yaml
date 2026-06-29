@@ -2,9 +2,11 @@ name: Release Greenline
 enable-email-notifications: true
 
 on:
-  push:
-    branches:
-      - master
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Required format vX.Y.Z or vX.Y.Z-rcN (for example v1.0.0 or v1.0.0-rc1)
+        required: true
 
 permissions:
   contents: write
@@ -39,7 +41,26 @@ jobs:
       - name: Checkout code
         uses: https://code.forgejo.org/actions/checkout@v4
         with:
+          fetch-depth: 0
           persist-credentials: false
+
+      - name: Resolve release metadata
+        id: release
+        run: |
+          set -eu
+          tag='${{ github.event.inputs.tag }}'
+          version="${tag#v}"
+          version="${version/-rc/~rc}"
+
+          case "$tag" in
+            *-rc*) prerelease=true ;;
+            *) prerelease=false ;;
+          esac
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Install uv
         run: |
@@ -59,7 +80,8 @@ jobs:
 
       - name: Build
         env:
-          GITHUB_SHA: ${{ github.sha }}
+          GREENLINE_BUILD_VERSION: ${{ steps.release.outputs.version }}
+          GITHUB_SHA: ${{ steps.release.outputs.sha }}
         run: clickable build --arch arm64
 
       - name: Stage release assets
@@ -68,17 +90,38 @@ jobs:
           mkdir -p dist/release
           cp build/aarch64-linux-gnu/app/*.click dist/release/
 
-      - name: Create alpha release
+      - name: Create release tag
+        env:
+          FORGEJO_SERVER: ${{ github.server_url }}
+          FORGEJO_REPOSITORY: ${{ github.repository }}
+          FORGEJO_TOKEN: ${{ forge.token }}
+        run: |
+          set -eu
+          tag='${{ steps.release.outputs.tag }}'
+          sha='${{ steps.release.outputs.sha }}'
+
+          if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
+            echo "Tag '$tag' already exists on origin" >&2
+            exit 1
+          fi
+
+          git config user.name 'forgejo-actions'
+          git config user.email 'contato@brennoflavio.com.br'
+          git remote set-url origin "https://oauth2:${FORGEJO_TOKEN}@${FORGEJO_SERVER#https://}/${FORGEJO_REPOSITORY}.git"
+          git tag -a "$tag" -m "Release $tag" "$sha"
+          git push origin "refs/tags/$tag"
+
+      - name: Create release
         uses: https://code.forgejo.org/actions/forgejo-release@v2.12.1
         with:
           direction: upload
           token: ${{ forge.token }}
-          tag: alpha-${{ github.sha }}
-          title: Alpha Build ${{ github.sha }}
-          prerelease: true
+          tag: ${{ steps.release.outputs.tag }}
+          title: Greenline ${{ steps.release.outputs.tag }}
+          prerelease: ${{ steps.release.outputs.prerelease }}
           override: true
           release-dir: dist/release
 
 concurrency:
-  group: release-greenline-master
+  group: release-greenline
   cancel-in-progress: false

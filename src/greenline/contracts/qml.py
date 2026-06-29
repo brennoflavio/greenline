@@ -402,13 +402,21 @@ def assert_settings_response(payload: Any) -> None:
     response = _assert_dict(payload, "SettingsResponse")
     _assert_keys(
         response,
-        {"success", "notifications_suppressed", "stop_daemon_on_exit", "error_reporting", "build_version"},
+        {
+            "success",
+            "notifications_suppressed",
+            "stop_daemon_on_exit",
+            "error_reporting",
+            "release_version",
+            "build_version",
+        },
         "SettingsResponse",
     )
     _assert_bool(response, "success", "SettingsResponse")
     _assert_bool(response, "notifications_suppressed", "SettingsResponse")
     _assert_bool(response, "stop_daemon_on_exit", "SettingsResponse")
     _assert_bool(response, "error_reporting", "SettingsResponse")
+    _assert_str(response, "release_version", "SettingsResponse")
     _assert_str(response, "build_version", "SettingsResponse")
 
 
