@@ -32,6 +32,8 @@ Page {
     property string presenceStatus: ""
     property var activeTypers: ({
     })
+    property var senderMetadataByJid: ({
+    })
     property string replyToMessageId: ""
     property string replyToSender: ""
     property string replyToText: ""
@@ -76,12 +78,169 @@ Page {
         return replyContext;
     }
 
+    function senderMetadataForJid(jid) {
+        if (!jid || !senderMetadataByJid.hasOwnProperty(jid))
+            return null;
+
+        return senderMetadataByJid[jid];
+    }
+
+    function applySenderMetadataEntries(entries, options) {
+        var nextEntries = entries || [];
+        if (nextEntries.length === 0)
+            return false;
+
+        var updateOptions = options || {
+        };
+        var fillMissingOnly = !!updateOptions.fillMissingOnly;
+        var allowEmptyName = !!updateOptions.allowEmptyName;
+        var allowEmptyPhoto = !!updateOptions.allowEmptyPhoto;
+        var updatedMetadataByJid = Object.assign({
+        }, senderMetadataByJid);
+        var changed = false;
+        for (var i = 0; i < nextEntries.length; i++) {
+            var entry = nextEntries[i];
+            if (!entry || !entry.jid)
+                continue;
+
+            var currentMetadata = updatedMetadataByJid[entry.jid] || {
+            };
+            var nextMetadata = Object.assign({
+            }, currentMetadata);
+            if (typeof entry.name !== "undefined" && (entry.name !== "" || allowEmptyName) && (!fillMissingOnly || !nextMetadata.name) && nextMetadata.name !== entry.name) {
+                nextMetadata.name = entry.name;
+                changed = true;
+            }
+            if (typeof entry.photo !== "undefined" && (entry.photo !== "" || allowEmptyPhoto) && (!fillMissingOnly || !nextMetadata.photo) && nextMetadata.photo !== entry.photo) {
+                nextMetadata.photo = entry.photo;
+                changed = true;
+            }
+            updatedMetadataByJid[entry.jid] = nextMetadata;
+        }
+        if (!changed)
+            return false;
+
+        senderMetadataByJid = updatedMetadataByJid;
+        return true;
+    }
+
+    function seedSenderMetadataFromMessage(message) {
+        if (!message)
+            return false;
+
+        var entries = [];
+        if (message.sender)
+            entries.push({
+            "jid": message.sender,
+            "name": message.sender_name || "",
+            "photo": message.sender_photo || ""
+        });
+
+        if (!message.reply_to_from_me && message.reply_to_sender_id)
+            entries.push({
+            "jid": message.reply_to_sender_id,
+            "name": message.reply_to_sender || ""
+        });
+
+        return applySenderMetadataEntries(entries, {
+            "fillMissingOnly": true
+        });
+    }
+
+    function seedSenderMetadataFromMessages(messageList) {
+        var nextMessages = messageList || [];
+        var entries = [];
+        for (var i = 0; i < nextMessages.length; i++) {
+            var message = nextMessages[i];
+            if (!message)
+                continue;
+
+            if (message.sender)
+                entries.push({
+                "jid": message.sender,
+                "name": message.sender_name || "",
+                "photo": message.sender_photo || ""
+            });
+
+            if (!message.reply_to_from_me && message.reply_to_sender_id)
+                entries.push({
+                "jid": message.reply_to_sender_id,
+                "name": message.reply_to_sender || ""
+            });
+
+        }
+        return applySenderMetadataEntries(entries, {
+            "fillMissingOnly": true
+        });
+    }
+
+    function applySenderMetadataChatUpdates(updatedChats) {
+        var nextChats = updatedChats || [];
+        var entries = [];
+        for (var i = 0; i < nextChats.length; i++) {
+            var chat = nextChats[i];
+            if (!chat || !chat.id)
+                continue;
+
+            entries.push({
+                "jid": chat.id,
+                "name": chat.name || "",
+                "photo": typeof chat.photo !== "undefined" ? (chat.photo || "") : undefined
+            });
+        }
+        return applySenderMetadataEntries(entries, {
+            "allowEmptyPhoto": true
+        });
+    }
+
+    function applySenderMetadataPhotoUpdates(photoList) {
+        var nextPhotos = photoList || [];
+        var entries = [];
+        for (var i = 0; i < nextPhotos.length; i++) {
+            var entry = nextPhotos[i];
+            if (!entry || !entry.jid)
+                continue;
+
+            entries.push({
+                "jid": entry.jid,
+                "photo": entry.photo || ""
+            });
+        }
+        return applySenderMetadataEntries(entries, {
+            "allowEmptyPhoto": true
+        });
+    }
+
+    function resolveSenderDisplayName(jid, fallbackName) {
+        var metadata = senderMetadataForJid(jid);
+        if (metadata && metadata.name)
+            return metadata.name;
+
+        if (fallbackName)
+            return fallbackName;
+
+        if (jid === chatId && chatName)
+            return chatName;
+
+        return jid || "";
+    }
+
+    function resolveMessageSenderDisplayName(message) {
+        if (!message)
+            return "";
+
+        if (message.is_outgoing)
+            return i18n.tr("You");
+
+        return resolveSenderDisplayName(message.sender || chatId, message.sender_name || "");
+    }
+
     function startReply(message) {
         if (!ChatHelpers.canReplyToMessage(message))
             return ;
 
         replyToMessageId = message.id;
-        replyToSender = message.is_outgoing ? i18n.tr("You") : (message.sender_name || chatName || message.sender || "");
+        replyToSender = resolveMessageSenderDisplayName(message);
         replyToText = ChatHelpers.messagePreview(message, i18n, {
             "link_preview": "🔗 Link"
         });
@@ -304,6 +463,7 @@ Page {
 
     function resetChatMessages(nextMessages) {
         setChatMessages(nextMessages);
+        seedSenderMetadataFromMessages(messages);
         if (chatMessageList)
             chatMessageList.resetMessages(messages);
 
@@ -324,6 +484,7 @@ Page {
         var updatedMessages = messages.slice();
         replaceMessageSorted(updatedMessages, message);
         setChatMessages(updatedMessages);
+        seedSenderMetadataFromMessage(message);
         if (chatMessageList)
             chatMessageList.replaceMessageByIdOrTempId(message);
 
@@ -350,6 +511,7 @@ Page {
 
         }
         setChatMessages(updatedMessages);
+        seedSenderMetadataFromMessages(nextMessages);
         if (chatMessageList)
             chatMessageList.upsertMessages(nextMessages);
 
@@ -358,6 +520,7 @@ Page {
     function appendOlderChatMessages(olderMessages, anchorMessageId) {
         var nextOlderMessages = olderMessages || [];
         setChatMessages(nextOlderMessages.concat(messages));
+        seedSenderMetadataFromMessages(nextOlderMessages);
         if (chatMessageList)
             chatMessageList.appendOlderMessages(nextOlderMessages, anchorMessageId || "");
 
@@ -543,52 +706,6 @@ Page {
 
             });
         });
-    }
-
-    function patchMessagesFromChatUpdates(updatedChats) {
-        if (!updatedChats || updatedChats.length === 0 || messages.length === 0)
-            return ;
-
-        var updatesById = ({
-        });
-        for (var i = 0; i < updatedChats.length; i++) {
-            var updatedChat = updatedChats[i];
-            if (updatedChat && updatedChat.id)
-                updatesById[updatedChat.id] = updatedChat;
-
-        }
-        var patches = [];
-        for (var j = 0; j < messages.length; j++) {
-            var message = messages[j];
-            var patch = ({
-            });
-            var senderUpdate = updatesById[message.sender];
-            if (senderUpdate) {
-                var nextSenderName = senderUpdate.name || "";
-                var nextSenderPhoto = senderUpdate.photo || "";
-                if ((message.sender_name || "") !== nextSenderName)
-                    patch.sender_name = nextSenderName;
-
-                if ((message.sender_photo || "") !== nextSenderPhoto)
-                    patch.sender_photo = nextSenderPhoto;
-
-            }
-            var replySenderUpdate = updatesById[message.reply_to_sender_id];
-            if (replySenderUpdate) {
-                var nextReplySender = replySenderUpdate.name || "";
-                if ((message.reply_to_sender || "") !== nextReplySender)
-                    patch.reply_to_sender = nextReplySender;
-
-            }
-            if (Object.keys(patch).length > 0)
-                patches.push({
-                "messageId": message.id || "",
-                "tempId": message.temp_id || "",
-                "patch": patch
-            });
-
-        }
-        patchChatMessages(patches);
     }
 
     function loadOlderMessages() {
@@ -972,6 +1089,7 @@ Page {
         hasOlderMessages: chatPage.hasOlderMessages
         loadingOlderMessages: chatPage.loadingOlderMessages
         downloadingIds: chatPage.downloadingIds
+        senderMetadataByJid: chatPage.senderMetadataByJid
         isGroup: chatPage.isGroup
         unreadCount: chatPage.unreadCount
         unreadDividerMessageId: chatPage.unreadDividerMessageId
@@ -1034,14 +1152,14 @@ Page {
         mentionCandidates: chatPage.mentionCandidates
         onTextChanged: {
             chatPage.pendingDraftText = chatComposer.text || "";
-            if (!chatPage.draftLoaded)
+            if (!chatPage.draftLoaded && chatPage.pendingDraftText !== "")
                 chatPage.draftTouchedBeforeLoad = true;
 
             draftSaveTimer.restart();
         }
         onMentionSpansChanged: {
             chatPage.pendingDraftMentionSpans = ChatHelpers.cloneMentionSpans(chatComposer.mentionSpans || []);
-            if (!chatPage.draftLoaded)
+            if (!chatPage.draftLoaded && chatPage.pendingDraftMentionSpans.length > 0)
                 chatPage.draftTouchedBeforeLoad = true;
 
             draftSaveTimer.restart();
@@ -1178,42 +1296,16 @@ Page {
                     }
                 });
                 setHandler('sender-photo-update', function(photoList) {
-                    var photosByJid = ({
-                    });
-                    for (var i = 0; i < photoList.length; i++) {
-                        var entry = photoList[i];
-                        if (entry && entry.jid)
-                            photosByJid[entry.jid] = entry.photo || "";
-
-                    }
-                    var patches = [];
-                    for (var j = 0; j < messages.length; j++) {
-                        var message = messages[j];
-                        if (!photosByJid.hasOwnProperty(message.sender))
-                            continue;
-
-                        var nextPhoto = photosByJid[message.sender];
-                        if ((message.sender_photo || "") === nextPhoto)
-                            continue;
-
-                        patches.push({
-                            "messageId": message.id || "",
-                            "tempId": message.temp_id || "",
-                            "patch": {
-                                "sender_photo": nextPhoto
-                            }
-                        });
-                    }
-                    patchChatMessages(patches);
+                    applySenderMetadataPhotoUpdates(photoList);
                 });
                 setHandler('chat-list-update', function(updatedChats) {
+                    applySenderMetadataChatUpdates(updatedChats);
                     for (var i = 0; i < updatedChats.length; i++) {
                         if (updatedChats[i].id === chatId) {
                             applyChatMetadata(updatedChats[i], chatMessageList.atBottom, false);
                             break;
                         }
                     }
-                    patchMessagesFromChatUpdates(updatedChats);
                 });
             });
         }

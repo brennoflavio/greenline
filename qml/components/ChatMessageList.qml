@@ -6,6 +6,8 @@ Item {
     id: root
 
     property var messages: []
+    property var senderMetadataByJid: ({
+    })
     property bool hasOlderMessages: false
     property bool loadingOlderMessages: false
     property string pendingRestoreMessageId: ""
@@ -234,8 +236,54 @@ Item {
         return !!message && messageId !== "" && messageId.indexOf("pending-") !== 0 && messageId.indexOf("failed-") !== 0 && sendStatus !== "pending" && sendStatus !== "failed" && (message.type || "") !== "deleted";
     }
 
+    function senderMetadataForJid(jid) {
+        if (!jid || !senderMetadataByJid.hasOwnProperty(jid))
+            return null;
+
+        return senderMetadataByJid[jid];
+    }
+
+    function resolvedSenderName(message) {
+        if (!message || message.is_outgoing)
+            return "";
+
+        var metadata = senderMetadataForJid(message.sender || "");
+        if (metadata && metadata.name)
+            return metadata.name;
+
+        if (message.sender_name)
+            return message.sender_name;
+
+        return message.sender || "";
+    }
+
+    function resolvedSenderPhoto(message) {
+        if (!message)
+            return "";
+
+        var metadata = senderMetadataForJid(message.sender || "");
+        if (metadata && metadata.hasOwnProperty("photo"))
+            return metadata.photo || "";
+
+        return message.sender_photo || "";
+    }
+
+    function resolvedReplyToSender(message) {
+        if (!message)
+            return "";
+
+        if (message.reply_to_from_me)
+            return i18n.tr("You");
+
+        var metadata = senderMetadataForJid(message.reply_to_sender_id || "");
+        if (metadata && metadata.name)
+            return metadata.name;
+
+        return message.reply_to_sender || "";
+    }
+
     function usesRichTextMessage(message) {
-        return !!message && (!!message.reply_to_id || (root.isGroup && !message.is_outgoing && (message.sender_name || "") !== ""));
+        return !!message && (!!message.reply_to_id || (root.isGroup && !message.is_outgoing && root.resolvedSenderName(message) !== ""));
     }
 
     function messageComponentFor(message) {
@@ -464,10 +512,10 @@ Item {
             hasReactions: msg.has_reactions || false
             readReceipt: msg.read_receipt || ""
             sendStatus: msg.send_status || ""
-            senderName: msg.sender_name || ""
-            senderPhoto: msg.sender_photo || ""
+            senderName: root.resolvedSenderName(msg)
+            senderPhoto: root.resolvedSenderPhoto(msg)
             replyToId: msg.reply_to_id || ""
-            replyToSender: msg.reply_to_sender || ""
+            replyToSender: root.resolvedReplyToSender(msg)
             replyToText: msg.reply_to_text || ""
             formattedReplyToText: msg.formatted_reply_to_text || ""
             onReplyClicked: root.scrollToMessage(messageId)
@@ -494,10 +542,10 @@ Item {
             hasReactions: msg.has_reactions || false
             readReceipt: msg.read_receipt || ""
             sendStatus: msg.send_status || ""
-            senderName: msg.sender_name || ""
-            senderPhoto: msg.sender_photo || ""
+            senderName: root.resolvedSenderName(msg)
+            senderPhoto: root.resolvedSenderPhoto(msg)
             replyToId: msg.reply_to_id || ""
-            replyToSender: msg.reply_to_sender || ""
+            replyToSender: root.resolvedReplyToSender(msg)
             replyToText: msg.reply_to_text || ""
             formattedReplyToText: msg.formatted_reply_to_text || ""
             onReplyClicked: root.scrollToMessage(messageId)
@@ -524,10 +572,10 @@ Item {
             hasReactions: msg.has_reactions || false
             readReceipt: msg.read_receipt || ""
             sendStatus: msg.send_status || ""
-            senderName: msg.sender_name || ""
-            senderPhoto: msg.sender_photo || ""
+            senderName: root.resolvedSenderName(msg)
+            senderPhoto: root.resolvedSenderPhoto(msg)
             replyToId: msg.reply_to_id || ""
-            replyToSender: msg.reply_to_sender || ""
+            replyToSender: root.resolvedReplyToSender(msg)
             replyToText: msg.reply_to_text || ""
             formattedReplyToText: msg.formatted_reply_to_text || ""
             onReplyClicked: root.scrollToMessage(messageId)
@@ -551,10 +599,10 @@ Item {
             hasReactions: msg.has_reactions || false
             readReceipt: msg.read_receipt || ""
             sendStatus: msg.send_status || ""
-            senderName: msg.sender_name || ""
-            senderPhoto: msg.sender_photo || ""
+            senderName: root.resolvedSenderName(msg)
+            senderPhoto: root.resolvedSenderPhoto(msg)
             replyToId: msg.reply_to_id || ""
-            replyToSender: msg.reply_to_sender || ""
+            replyToSender: root.resolvedReplyToSender(msg)
             replyToText: msg.reply_to_text || ""
             formattedReplyToText: msg.formatted_reply_to_text || ""
             onReplyClicked: root.scrollToMessage(messageId)
@@ -580,10 +628,10 @@ Item {
             hasReactions: msg.has_reactions || false
             readReceipt: msg.read_receipt || ""
             sendStatus: msg.send_status || ""
-            senderName: msg.sender_name || ""
-            senderPhoto: msg.sender_photo || ""
+            senderName: root.resolvedSenderName(msg)
+            senderPhoto: root.resolvedSenderPhoto(msg)
             replyToId: msg.reply_to_id || ""
-            replyToSender: msg.reply_to_sender || ""
+            replyToSender: root.resolvedReplyToSender(msg)
             replyToText: msg.reply_to_text || ""
             formattedReplyToText: msg.formatted_reply_to_text || ""
             onReplyClicked: root.scrollToMessage(messageId)
@@ -607,10 +655,10 @@ Item {
             hasReactions: msg.has_reactions || false
             readReceipt: msg.read_receipt || ""
             sendStatus: msg.send_status || ""
-            senderName: msg.sender_name || ""
-            senderPhoto: msg.sender_photo || ""
+            senderName: root.resolvedSenderName(msg)
+            senderPhoto: root.resolvedSenderPhoto(msg)
             replyToId: msg.reply_to_id || ""
-            replyToSender: msg.reply_to_sender || ""
+            replyToSender: root.resolvedReplyToSender(msg)
             replyToText: msg.reply_to_text || ""
             formattedReplyToText: msg.formatted_reply_to_text || ""
             onReplyClicked: root.scrollToMessage(messageId)
@@ -633,10 +681,10 @@ Item {
             hasReactions: msg.has_reactions || false
             readReceipt: msg.read_receipt || ""
             sendStatus: msg.send_status || ""
-            senderName: msg.sender_name || ""
-            senderPhoto: msg.sender_photo || ""
+            senderName: root.resolvedSenderName(msg)
+            senderPhoto: root.resolvedSenderPhoto(msg)
             replyToId: msg.reply_to_id || ""
-            replyToSender: msg.reply_to_sender || ""
+            replyToSender: root.resolvedReplyToSender(msg)
             replyToText: msg.reply_to_text || ""
             formattedReplyToText: msg.formatted_reply_to_text || ""
             onReplyClicked: root.scrollToMessage(messageId)
@@ -662,10 +710,10 @@ Item {
             hasReactions: msg.has_reactions || false
             readReceipt: msg.read_receipt || ""
             sendStatus: msg.send_status || ""
-            senderName: msg.sender_name || ""
-            senderPhoto: msg.sender_photo || ""
+            senderName: root.resolvedSenderName(msg)
+            senderPhoto: root.resolvedSenderPhoto(msg)
             replyToId: msg.reply_to_id || ""
-            replyToSender: msg.reply_to_sender || ""
+            replyToSender: root.resolvedReplyToSender(msg)
             replyToText: msg.reply_to_text || ""
             formattedReplyToText: msg.formatted_reply_to_text || ""
             onReplyClicked: root.scrollToMessage(messageId)
@@ -688,10 +736,10 @@ Item {
             hasReactions: msg.has_reactions || false
             readReceipt: msg.read_receipt || ""
             sendStatus: msg.send_status || ""
-            senderName: msg.sender_name || ""
-            senderPhoto: msg.sender_photo || ""
+            senderName: root.resolvedSenderName(msg)
+            senderPhoto: root.resolvedSenderPhoto(msg)
             replyToId: msg.reply_to_id || ""
-            replyToSender: msg.reply_to_sender || ""
+            replyToSender: root.resolvedReplyToSender(msg)
             replyToText: msg.reply_to_text || ""
             formattedReplyToText: msg.formatted_reply_to_text || ""
             onReplyClicked: root.scrollToMessage(messageId)
