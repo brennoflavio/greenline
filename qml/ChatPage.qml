@@ -38,8 +38,10 @@ Page {
     property string replyToParticipant: ""
     property int editWindowSeconds: 20 * 60
     property bool pythonReady: false
-    property bool refreshInProgress: false
-    property bool refreshQueued: false
+    property bool metadataRefreshInProgress: false
+    property bool metadataRefreshQueued: false
+    property bool messageRecoveryInProgress: false
+    property bool messageRecoveryQueued: false
     property bool draftLoaded: false
     property bool draftTouchedBeforeLoad: false
     property bool draftSaveInFlight: false
@@ -269,52 +271,103 @@ Page {
         saveDraft(chatComposer.text || "", chatComposer.mentionSpans || []);
     }
 
-    function refreshPageState(reason) {
-        function finishRefresh() {
-            pendingCallbacks -= 1;
-            if (pendingCallbacks === 0) {
-                var queued = refreshQueued;
-                refreshInProgress = false;
-                if (queued)
-                    refreshPageState("queued-after-" + reason);
+    function hasLoadedMessage(messageId) {
+        if (!messageId)
+            return false;
 
-            }
+        for (var i = 0; i < messages.length; i++) {
+            if (messages[i].id === messageId || messages[i].temp_id === messageId)
+                return true;
+
+        }
+        return false;
+    }
+
+    function applyChatMetadata(chat, wasAtBottom, allowReadMarking) {
+        if (!chat)
+            return ;
+
+        if (typeof allowReadMarking === "undefined")
+            allowReadMarking = true;
+
+        chatName = chat.name || chatName;
+        if (typeof chat.photo !== "undefined")
+            chatPhoto = chat.photo || "";
+
+        isGroup = !!chat.is_group;
+        if (isGroup && mentionCandidates.length === 0)
+            loadMentionCandidates();
+        else if (!isGroup)
+            mentionCandidates = [];
+        if (wasAtBottom) {
+            if (allowReadMarking && (chat.unread_count || 0) > 0)
+                markChatAsRead(chat.unread_count, false);
+
+            return ;
+        }
+        unreadCount = chat.unread_count || 0;
+        if (chat.first_unread_message_id && unreadDividerMessageId === "")
+            unreadDividerMessageId = chat.first_unread_message_id;
+
+    }
+
+    function refreshChatMetadata(reason, allowReadMarking, onSuccess) {
+        function finishRefresh() {
+            var queued = metadataRefreshQueued;
+            metadataRefreshInProgress = false;
+            metadataRefreshQueued = false;
+            if (queued)
+                refreshChatMetadata("queued-after-" + reason, allowReadMarking, onSuccess);
+
         }
 
         reason = reason || "unknown";
         if (!pythonReady)
             return ;
 
-        if (refreshInProgress) {
-            refreshQueued = true;
+        if (typeof allowReadMarking === "function") {
+            onSuccess = allowReadMarking;
+            allowReadMarking = true;
+        }
+        if (typeof allowReadMarking === "undefined")
+            allowReadMarking = true;
+
+        if (metadataRefreshInProgress) {
+            metadataRefreshQueued = true;
             return ;
         }
-        refreshInProgress = true;
-        refreshQueued = false;
-        var pendingCallbacks = 2;
-        var wasAtBottom = chatMessageList.atBottom;
+        metadataRefreshInProgress = true;
         python.call('main.get_chat_info', [chatId], function(result) {
             if (result && result.success) {
-                chatName = result.name || chatName;
-                chatPhoto = result.photo || "";
-                isGroup = !!result.is_group;
-                if (isGroup && mentionCandidates.length === 0)
-                    loadMentionCandidates();
-                else if (!isGroup)
-                    mentionCandidates = [];
-                if (wasAtBottom) {
-                    if (result.unread_count > 0)
-                        markChatAsRead(result.unread_count, false);
+                applyChatMetadata(result, chatMessageList.atBottom, allowReadMarking);
+                if (onSuccess)
+                    onSuccess(result, chatMessageList.atBottom);
 
-                } else {
-                    unreadCount = result.unread_count || 0;
-                    if (result.first_unread_message_id && unreadDividerMessageId === "")
-                        unreadDividerMessageId = result.first_unread_message_id;
-
-                }
             }
             finishRefresh();
         });
+    }
+
+    function recoverMessages(reason, onSuccess) {
+        function finishRecovery() {
+            var queued = messageRecoveryQueued;
+            messageRecoveryInProgress = false;
+            messageRecoveryQueued = false;
+            if (queued)
+                recoverMessages("queued-after-" + reason, onSuccess);
+
+        }
+
+        reason = reason || "unknown";
+        if (!pythonReady)
+            return ;
+
+        if (messageRecoveryInProgress) {
+            messageRecoveryQueued = true;
+            return ;
+        }
+        messageRecoveryInProgress = true;
+        var wasAtBottom = chatMessageList.atBottom;
         python.call('main.get_messages', [chatId, "", messagePageSize], function(result) {
             if (result && result.success) {
                 nextMessagesCursor = result.next_cursor || "";
@@ -323,9 +376,82 @@ Page {
                 if (wasAtBottom)
                     chatMessageList.scrollToBottom();
 
+                if (onSuccess)
+                    onSuccess(result);
+
             }
-            finishRefresh();
+            finishRecovery();
         });
+    }
+
+    function refreshAppActiveState() {
+        refreshChatMetadata("app-active", false, function(result, wasAtBottom) {
+            if (!result || !result.success)
+                return ;
+
+            if (messages.length === 0) {
+                recoverMessages("app-active:missing-messages", function(recoveryResult) {
+                    if (recoveryResult && recoveryResult.success && wasAtBottom && (result.unread_count || 0) > 0)
+                        refreshChatMetadata("app-active:post-recovery");
+
+                });
+                return ;
+            }
+            if (!wasAtBottom || (result.unread_count || 0) <= 0)
+                return ;
+
+            if (result.first_unread_message_id && hasLoadedMessage(result.first_unread_message_id)) {
+                markChatAsRead(result.unread_count, false);
+                return ;
+            }
+            recoverMessages("app-active:unread-recovery", function(recoveryResult) {
+                if (recoveryResult && recoveryResult.success && chatMessageList.atBottom)
+                    refreshChatMetadata("app-active:post-recovery");
+
+            });
+        });
+    }
+
+    function patchMessagesFromChatUpdates(updatedChats) {
+        if (!updatedChats || updatedChats.length === 0 || messages.length === 0)
+            return ;
+
+        var updatesById = ({
+        });
+        for (var i = 0; i < updatedChats.length; i++) {
+            var updatedChat = updatedChats[i];
+            if (updatedChat && updatedChat.id)
+                updatesById[updatedChat.id] = updatedChat;
+
+        }
+        var changed = false;
+        var updatedMessages = messages.slice();
+        for (var j = 0; j < updatedMessages.length; j++) {
+            var message = updatedMessages[j];
+            var nextMessage = message;
+            var senderUpdate = updatesById[message.sender];
+            if (senderUpdate && ((message.sender_name || "") !== (senderUpdate.name || "") || (message.sender_photo || "") !== (senderUpdate.photo || "")))
+                nextMessage = Object.assign({
+            }, nextMessage, {
+                "sender_name": senderUpdate.name || "",
+                "sender_photo": senderUpdate.photo || ""
+            });
+
+            var replySenderUpdate = updatesById[message.reply_to_sender_id];
+            if (replySenderUpdate && (nextMessage.reply_to_sender || "") !== (replySenderUpdate.name || ""))
+                nextMessage = Object.assign({
+            }, nextMessage, {
+                "reply_to_sender": replySenderUpdate.name || ""
+            });
+
+            if (nextMessage !== message) {
+                updatedMessages[j] = nextMessage;
+                changed = true;
+            }
+        }
+        if (changed)
+            messages = updatedMessages;
+
     }
 
     function loadOlderMessages() {
@@ -823,7 +949,7 @@ Page {
         target: Qt.application
         onStateChanged: {
             if (Qt.application.state === Qt.ApplicationActive)
-                refreshPageState("app-active");
+                refreshAppActiveState();
             else
                 flushDraft();
         }
@@ -966,17 +1092,11 @@ Page {
                 setHandler('chat-list-update', function(updatedChats) {
                     for (var i = 0; i < updatedChats.length; i++) {
                         if (updatedChats[i].id === chatId) {
-                            refreshPageState("chat-list-update:self");
-                            return ;
-                        }
-                        for (var j = 0; j < messages.length; j++) {
-                            var message = messages[j];
-                            if (message.sender === updatedChats[i].id || message.reply_to_sender_id === updatedChats[i].id) {
-                                refreshPageState("chat-list-update:sender-match");
-                                return ;
-                            }
+                            applyChatMetadata(updatedChats[i], chatMessageList.atBottom, false);
+                            break;
                         }
                     }
+                    patchMessagesFromChatUpdates(updatedChats);
                 });
             });
         }
