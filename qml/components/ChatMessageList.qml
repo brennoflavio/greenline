@@ -1,3 +1,4 @@
+import "../lib/ChatHelpers.js" as ChatHelpers
 import Lomiri.Components 1.3
 import QtQuick 2.7
 
@@ -5,7 +6,6 @@ Item {
     id: root
 
     property var messages: []
-    property var preparedMessages: []
     property bool hasOlderMessages: false
     property bool loadingOlderMessages: false
     property string pendingRestoreMessageId: ""
@@ -27,6 +27,73 @@ Item {
     signal olderMessagesRequested()
     signal messageNotLoaded(string messageId)
 
+    function messageAt(index) {
+        if (index < 0 || index >= messageModel.count)
+            return null;
+
+        return messageModel.get(index).message;
+    }
+
+    function findModelIndexById(messageId) {
+        for (var i = 0; i < messageModel.count; i++) {
+            var modelMessage = messageAt(i);
+            if (modelMessage && modelMessage.id === messageId)
+                return i;
+
+        }
+        return -1;
+    }
+
+    function findModelIndexByIdOrTempId(messageId, tempId) {
+        for (var i = 0; i < messageModel.count; i++) {
+            var modelMessage = messageAt(i);
+            if (!modelMessage)
+                continue;
+
+            var modelId = modelMessage.id || "";
+            var modelTempId = modelMessage.temp_id || "";
+            if (messageId !== "" && (modelId === messageId || modelTempId === messageId))
+                return i;
+
+            if (tempId !== "" && (modelId === tempId || modelTempId === tempId))
+                return i;
+
+        }
+        return -1;
+    }
+
+    function findDisplayInsertIndex(message) {
+        for (var i = 0; i < messageModel.count; i++) {
+            var existingMessage = messageAt(i);
+            if (ChatHelpers.messageComesBefore(existingMessage, message))
+                return i;
+
+        }
+        return messageModel.count;
+    }
+
+    function insertDisplayMessage(message) {
+        var wasAtBottom = messageList.atYEnd;
+        var insertIndex = findDisplayInsertIndex(message);
+        messageModel.insert(insertIndex, {
+            "message": message
+        });
+        if (wasAtBottom && insertIndex === 0)
+            scrollToBottomTimer.restart();
+
+        return insertIndex;
+    }
+
+    function setMessageAt(index, message) {
+        if (index < 0 || index >= messageModel.count)
+            return false;
+
+        messageModel.set(index, {
+            "message": message
+        });
+        return true;
+    }
+
     function prepareOlderMessages(messageId) {
         pendingRestoreMessageId = messageId;
     }
@@ -35,23 +102,95 @@ Item {
         if (pendingRestoreMessageId === "")
             return ;
 
-        var model = messageList.model;
-        for (var i = 0; i < model.length; i++) {
-            if (model[i].id === pendingRestoreMessageId) {
-                messageList.positionViewAtIndex(i, ListView.End);
-                break;
-            }
-        }
+        var restoreIndex = findModelIndexById(pendingRestoreMessageId);
+        if (restoreIndex !== -1)
+            messageList.positionViewAtIndex(restoreIndex, ListView.End);
+
         pendingRestoreMessageId = "";
     }
 
+    function scheduleRestoreOlderMessages() {
+        if (pendingRestoreMessageId === "")
+            return ;
+
+        restoreOlderMessagesTimer.restart();
+    }
+
+    function resetMessages(oldestFirstMessages) {
+        messageModel.clear();
+        var nextMessages = oldestFirstMessages || [];
+        for (var i = nextMessages.length - 1; i >= 0; i--) {
+            messageModel.append({
+                "message": nextMessages[i]
+            });
+        }
+    }
+
+    function appendPendingMessage(message) {
+        insertDisplayMessage(message);
+        scrollToBottomTimer.restart();
+    }
+
+    function replaceMessageByIdOrTempId(message) {
+        if (!message)
+            return -1;
+
+        var wasAtBottom = messageList.atYEnd;
+        var replaceIndex = findModelIndexByIdOrTempId(message.id || "", message.temp_id || "");
+        if (replaceIndex !== -1)
+            messageModel.remove(replaceIndex);
+
+        var insertIndex = insertDisplayMessage(message);
+        if (wasAtBottom)
+            scrollToBottomTimer.restart();
+
+        return insertIndex;
+    }
+
+    function patchMessageAtIndex(index, patch) {
+        var currentMessage = messageAt(index);
+        if (!currentMessage)
+            return false;
+
+        return setMessageAt(index, Object.assign({
+        }, currentMessage, patch));
+    }
+
+    function patchMessageByIdOrTempId(messageId, tempId, patch) {
+        var patchIndex = findModelIndexByIdOrTempId(messageId || "", tempId || "");
+        if (patchIndex === -1)
+            return false;
+
+        return patchMessageAtIndex(patchIndex, patch);
+    }
+
+    function upsertMessages(messagesToUpsert) {
+        var nextMessages = messagesToUpsert || [];
+        for (var i = 0; i < nextMessages.length; i++) {
+            if (nextMessages[i])
+                replaceMessageByIdOrTempId(nextMessages[i]);
+
+        }
+    }
+
+    function appendOlderMessages(olderMessages, anchorMessageId) {
+        var nextMessages = olderMessages || [];
+        if (anchorMessageId)
+            prepareOlderMessages(anchorMessageId);
+
+        for (var i = nextMessages.length - 1; i >= 0; i--) {
+            messageModel.append({
+                "message": nextMessages[i]
+            });
+        }
+        scheduleRestoreOlderMessages();
+    }
+
     function scrollToMessage(messageId) {
-        var model = messageList.model;
-        for (var i = 0; i < model.length; i++) {
-            if (model[i].id === messageId) {
-                messageList.positionViewAtIndex(i, ListView.Center);
-                return ;
-            }
+        var scrollIndex = findModelIndexById(messageId);
+        if (scrollIndex !== -1) {
+            messageList.positionViewAtIndex(scrollIndex, ListView.Center);
+            return ;
         }
         messageNotLoaded(messageId);
     }
@@ -131,10 +270,26 @@ Item {
         return root.usesRichTextMessage(message) ? richTextComponent : textComponent;
     }
 
-    onMessagesChanged: {
-        var nextPrepared = messages.slice();
-        nextPrepared.reverse();
-        preparedMessages = nextPrepared;
+    onMessagesChanged: root.resetMessages(messages)
+
+    Timer {
+        id: restoreOlderMessagesTimer
+
+        interval: 0
+        repeat: false
+        onTriggered: root.restoreOlderMessages()
+    }
+
+    Timer {
+        id: scrollToBottomTimer
+
+        interval: 0
+        repeat: false
+        onTriggered: root.scrollToBottom()
+    }
+
+    ListModel {
+        id: messageModel
     }
 
     ListView {
@@ -144,8 +299,7 @@ Item {
         clip: true
         verticalLayoutDirection: ListView.BottomToTop
         spacing: units.gu(0.5)
-        model: root.preparedMessages
-        onCountChanged: root.restoreOlderMessages()
+        model: messageModel
         onMovementEnded: {
             if (atYBeginning && root.hasOlderMessages && !root.loadingOlderMessages)
                 root.olderMessagesRequested();
@@ -160,7 +314,7 @@ Item {
         delegate: ListItem {
             id: messageDelegate
 
-            property var msg: modelData
+            property var msg: message
             property bool showUnreadDivider: root.unreadDividerMessageId !== "" && msg && msg.id === root.unreadDividerMessageId
 
             width: parent ? parent.width : 0
@@ -222,7 +376,7 @@ Item {
                 Loader {
                     id: messageLoader
 
-                    property var msg: modelData
+                    property var msg: messageDelegate.msg
 
                     width: parent.width
                     sourceComponent: root.messageComponentFor(msg)
@@ -235,8 +389,8 @@ Item {
                     Action {
                         iconName: "delete"
                         text: i18n.tr("Delete")
-                        enabled: root.canDeleteMessage(modelData)
-                        onTriggered: root.deleteRequested(modelData)
+                        enabled: root.canDeleteMessage(messageDelegate.msg)
+                        onTriggered: root.deleteRequested(messageDelegate.msg)
                     }
                 ]
             }
@@ -246,20 +400,20 @@ Item {
                     Action {
                         iconName: "mail-reply"
                         text: i18n.tr("Reply")
-                        enabled: !!modelData && !!modelData.id && modelData.id.indexOf("pending-") !== 0
-                        onTriggered: root.replyRequested(modelData)
+                        enabled: !!messageDelegate.msg && !!messageDelegate.msg.id && messageDelegate.msg.id.indexOf("pending-") !== 0
+                        onTriggered: root.replyRequested(messageDelegate.msg)
                     },
                     Action {
                         iconName: "edit"
                         text: i18n.tr("Edit")
-                        enabled: root.canEditMessage(modelData)
-                        onTriggered: root.editRequested(modelData)
+                        enabled: root.canEditMessage(messageDelegate.msg)
+                        onTriggered: root.editRequested(messageDelegate.msg)
                     },
                     Action {
                         iconName: "like"
                         text: i18n.tr("Reactions")
-                        enabled: root.canReactMessage(modelData)
-                        onTriggered: root.reactionsRequested(modelData)
+                        enabled: root.canReactMessage(messageDelegate.msg)
+                        onTriggered: root.reactionsRequested(messageDelegate.msg)
                     },
                     Action {
                         iconName: "edit-copy"

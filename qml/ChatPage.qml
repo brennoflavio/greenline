@@ -189,7 +189,7 @@ Page {
             if (result && result.success) {
                 nextMessagesCursor = result.next_cursor || "";
                 hasOlderMessages = !!result.has_more;
-                messages = result.messages;
+                resetChatMessages(result.messages || []);
                 var unreadOnOpen = initialUnreadCount;
                 if (unreadOnOpen > 0) {
                     initialUnreadCount = 0;
@@ -283,6 +283,139 @@ Page {
         return false;
     }
 
+    function findMessageIndexByIdOrTempId(messageList, messageId, tempId) {
+        for (var i = 0; i < messageList.length; i++) {
+            var currentMessage = messageList[i];
+            var currentId = currentMessage.id || "";
+            var currentTempId = currentMessage.temp_id || "";
+            if (messageId !== "" && (currentId === messageId || currentTempId === messageId))
+                return i;
+
+            if (tempId !== "" && (currentId === tempId || currentTempId === tempId))
+                return i;
+
+        }
+        return -1;
+    }
+
+    function setChatMessages(nextMessages) {
+        messages = nextMessages || [];
+    }
+
+    function resetChatMessages(nextMessages) {
+        setChatMessages(nextMessages);
+        if (chatMessageList)
+            chatMessageList.resetMessages(messages);
+
+    }
+
+    function replaceMessageSorted(messageList, message) {
+        var replaceIndex = findMessageIndexByIdOrTempId(messageList, message && message.id ? message.id : "", message && message.temp_id ? message.temp_id : "");
+        if (replaceIndex !== -1)
+            messageList.splice(replaceIndex, 1);
+
+        ChatHelpers.insertMessageSorted(messageList, message);
+    }
+
+    function replaceChatMessageByIdOrTempId(message) {
+        if (!message)
+            return ;
+
+        var updatedMessages = messages.slice();
+        replaceMessageSorted(updatedMessages, message);
+        setChatMessages(updatedMessages);
+        if (chatMessageList)
+            chatMessageList.replaceMessageByIdOrTempId(message);
+
+    }
+
+    function appendPendingChatMessage(message) {
+        if (!message)
+            return ;
+
+        var updatedMessages = messages.slice();
+        ChatHelpers.insertMessageSorted(updatedMessages, message);
+        setChatMessages(updatedMessages);
+        if (chatMessageList)
+            chatMessageList.appendPendingMessage(message);
+
+    }
+
+    function upsertChatMessages(incomingMessages) {
+        var nextMessages = incomingMessages || [];
+        var updatedMessages = messages.slice();
+        for (var i = 0; i < nextMessages.length; i++) {
+            if (nextMessages[i])
+                replaceMessageSorted(updatedMessages, nextMessages[i]);
+
+        }
+        setChatMessages(updatedMessages);
+        if (chatMessageList)
+            chatMessageList.upsertMessages(nextMessages);
+
+    }
+
+    function appendOlderChatMessages(olderMessages, anchorMessageId) {
+        var nextOlderMessages = olderMessages || [];
+        setChatMessages(nextOlderMessages.concat(messages));
+        if (chatMessageList)
+            chatMessageList.appendOlderMessages(nextOlderMessages, anchorMessageId || "");
+
+    }
+
+    function patchChatMessages(patches) {
+        var nextPatches = patches || [];
+        if (nextPatches.length === 0)
+            return false;
+
+        var updatedMessages = messages.slice();
+        var appliedPatches = [];
+        for (var i = 0; i < nextPatches.length; i++) {
+            var nextPatch = nextPatches[i];
+            var patchIndex = findMessageIndexByIdOrTempId(updatedMessages, nextPatch.messageId || "", nextPatch.tempId || "");
+            if (patchIndex === -1)
+                continue;
+
+            var currentMessage = updatedMessages[patchIndex];
+            var patch = nextPatch.patch || {
+            };
+            var changed = false;
+            for (var field in patch) {
+                if (!ChatHelpers.fieldValuesEqual(currentMessage[field], patch[field])) {
+                    changed = true;
+                    break;
+                }
+            }
+            if (!changed)
+                continue;
+
+            updatedMessages[patchIndex] = Object.assign({
+            }, currentMessage, patch);
+            appliedPatches.push({
+                "messageId": nextPatch.messageId || "",
+                "tempId": nextPatch.tempId || "",
+                "patch": patch
+            });
+        }
+        if (appliedPatches.length === 0)
+            return false;
+
+        setChatMessages(updatedMessages);
+        if (chatMessageList) {
+            for (var j = 0; j < appliedPatches.length; j++) chatMessageList.patchMessageByIdOrTempId(appliedPatches[j].messageId, appliedPatches[j].tempId, appliedPatches[j].patch)
+        }
+        return true;
+    }
+
+    function patchChatMessageByIdOrTempId(messageId, tempId, patch) {
+        return patchChatMessages([{
+            "messageId": messageId || "",
+            "tempId": tempId || "",
+            "patch": patch || {
+            }
+        }]);
+    }
+
     function applyChatMetadata(chat, wasAtBottom, allowReadMarking) {
         if (!chat)
             return ;
@@ -372,7 +505,7 @@ Page {
             if (result && result.success) {
                 nextMessagesCursor = result.next_cursor || "";
                 hasOlderMessages = !!result.has_more;
-                messages = ChatHelpers.mergeRefreshedMessages(messages, result.messages || []);
+                resetChatMessages(ChatHelpers.mergeRefreshedMessages(messages, result.messages || []));
                 if (wasAtBottom)
                     chatMessageList.scrollToBottom();
 
@@ -424,34 +557,38 @@ Page {
                 updatesById[updatedChat.id] = updatedChat;
 
         }
-        var changed = false;
-        var updatedMessages = messages.slice();
-        for (var j = 0; j < updatedMessages.length; j++) {
-            var message = updatedMessages[j];
-            var nextMessage = message;
+        var patches = [];
+        for (var j = 0; j < messages.length; j++) {
+            var message = messages[j];
+            var patch = ({
+            });
             var senderUpdate = updatesById[message.sender];
-            if (senderUpdate && ((message.sender_name || "") !== (senderUpdate.name || "") || (message.sender_photo || "") !== (senderUpdate.photo || "")))
-                nextMessage = Object.assign({
-            }, nextMessage, {
-                "sender_name": senderUpdate.name || "",
-                "sender_photo": senderUpdate.photo || ""
-            });
+            if (senderUpdate) {
+                var nextSenderName = senderUpdate.name || "";
+                var nextSenderPhoto = senderUpdate.photo || "";
+                if ((message.sender_name || "") !== nextSenderName)
+                    patch.sender_name = nextSenderName;
 
-            var replySenderUpdate = updatesById[message.reply_to_sender_id];
-            if (replySenderUpdate && (nextMessage.reply_to_sender || "") !== (replySenderUpdate.name || ""))
-                nextMessage = Object.assign({
-            }, nextMessage, {
-                "reply_to_sender": replySenderUpdate.name || ""
-            });
+                if ((message.sender_photo || "") !== nextSenderPhoto)
+                    patch.sender_photo = nextSenderPhoto;
 
-            if (nextMessage !== message) {
-                updatedMessages[j] = nextMessage;
-                changed = true;
             }
-        }
-        if (changed)
-            messages = updatedMessages;
+            var replySenderUpdate = updatesById[message.reply_to_sender_id];
+            if (replySenderUpdate) {
+                var nextReplySender = replySenderUpdate.name || "";
+                if ((message.reply_to_sender || "") !== nextReplySender)
+                    patch.reply_to_sender = nextReplySender;
 
+            }
+            if (Object.keys(patch).length > 0)
+                patches.push({
+                "messageId": message.id || "",
+                "tempId": message.temp_id || "",
+                "patch": patch
+            });
+
+        }
+        patchChatMessages(patches);
     }
 
     function loadOlderMessages() {
@@ -471,10 +608,7 @@ Page {
             if (!result.messages || result.messages.length === 0)
                 return ;
 
-            if (anchorMessageId !== "")
-                chatMessageList.prepareOlderMessages(anchorMessageId);
-
-            messages = result.messages.concat(messages);
+            appendOlderChatMessages(result.messages || [], anchorMessageId);
         });
     }
 
@@ -508,9 +642,7 @@ Page {
             "reply_to_sender": replyContext ? replyContext.sender : "",
             "reply_to_text": replyContext ? replyContext.text : ""
         };
-        var newMessages = messages.slice();
-        newMessages.push(pendingMsg);
-        messages = newMessages;
+        appendPendingChatMessage(pendingMsg);
         messagesSendAttemptsMetric.increment(1);
         python.call('main.send_video_message', [chatId, filePath, "", tempId, replyContext], function() {
         });
@@ -547,9 +679,7 @@ Page {
             "reply_to_sender": replyContext ? replyContext.sender : "",
             "reply_to_text": replyContext ? replyContext.text : ""
         };
-        var newMessages = messages.slice();
-        newMessages.push(pendingMsg);
-        messages = newMessages;
+        appendPendingChatMessage(pendingMsg);
         messagesSendAttemptsMetric.increment(1);
         python.call('main.send_audio_message', [chatId, filePath, totalSeconds, tempId, replyContext], function(result) {
             if (result && !result.success)
@@ -588,9 +718,7 @@ Page {
             "reply_to_sender": replyContext ? replyContext.sender : "",
             "reply_to_text": replyContext ? replyContext.text : ""
         };
-        var newMessages = messages.slice();
-        newMessages.push(pendingMsg);
-        messages = newMessages;
+        appendPendingChatMessage(pendingMsg);
         messagesSendAttemptsMetric.increment(1);
         var cleanPath = filePath.toString().replace("file://", "");
         python.call('main.send_sticker_message', [chatId, cleanPath, tempId, replyContext], function() {
@@ -627,9 +755,7 @@ Page {
             "reply_to_sender": replyContext ? replyContext.sender : "",
             "reply_to_text": replyContext ? replyContext.text : ""
         };
-        var newMessages = messages.slice();
-        newMessages.push(pendingMsg);
-        messages = newMessages;
+        appendPendingChatMessage(pendingMsg);
         messagesSendAttemptsMetric.increment(1);
         python.call('main.send_image_message', [chatId, filePath, "", tempId, replyContext], function() {
         });
@@ -666,9 +792,7 @@ Page {
             "reply_to_sender": replyContext ? replyContext.sender : "",
             "reply_to_text": replyContext ? replyContext.text : ""
         };
-        var newMessages = messages.slice();
-        newMessages.push(pendingMsg);
-        messages = newMessages;
+        appendPendingChatMessage(pendingMsg);
         messagesSendAttemptsMetric.increment(1);
         python.call('main.send_document_message', [chatId, filePath, "", tempId, replyContext], function(result) {
             if (result && !result.success)
@@ -707,9 +831,7 @@ Page {
             "reply_to_sender": replyContext ? replyContext.sender : "",
             "reply_to_text": replyContext ? replyContext.text : ""
         };
-        var newMessages = messages.slice();
-        newMessages.push(pendingMsg);
-        messages = newMessages;
+        appendPendingChatMessage(pendingMsg);
         messagesSendAttemptsMetric.increment(1);
         python.call('main.send_contact_message', [chatId, filePath, tempId, replyContext], function(result) {
             if (result && !result.success)
@@ -749,9 +871,7 @@ Page {
             "reply_to_sender": replyContext ? replyContext.sender : "",
             "reply_to_text": replyContext ? replyContext.text : ""
         };
-        var newMessages = messages.slice();
-        newMessages.push(pendingMsg);
-        messages = newMessages;
+        appendPendingChatMessage(pendingMsg);
         messagesSendAttemptsMetric.increment(1);
         python.call('main.send_location_message', [chatId, latitude, longitude, tempId, replyContext], function(result) {
             if (result && !result.success)
@@ -796,9 +916,7 @@ Page {
                 "reply_to_sender": replyContext ? replyContext.sender : "",
                 "reply_to_text": replyContext ? replyContext.text : ""
             };
-            var newMessages = messages.slice();
-            newMessages.push(pendingMsg);
-            messages = newMessages;
+            appendPendingChatMessage(pendingMsg);
             messagesSendAttemptsMetric.increment(1);
             chatComposer.setTextAndMentions("", []);
             draftSaveTimer.stop();
@@ -808,11 +926,6 @@ Page {
         }
     }
 
-    onMessagesChanged: {
-        if (chatMessageList)
-            chatMessageList.messages = messages;
-
-    }
     Component.onDestruction: flushDraft()
 
     Timer {
@@ -985,6 +1098,7 @@ Page {
                 });
                 setHandler('message-upsert', function(incomingMessages) {
                     var updated = messages.slice();
+                    var messagesToUpsert = [];
                     var wasAtBottom = chatMessageList.atBottom;
                     var visibleIncomingCount = 0;
                     var shouldAnchorNewUnread = !wasAtBottom && chatPage.unreadCount === 0 && chatPage.unreadDividerMessageId === "";
@@ -999,30 +1113,23 @@ Page {
                             "link_preview": "🔗 Link"
                         });
 
-                        var found = false;
-                        for (var j = 0; j < updated.length; j++) {
-                            if (updated[j].id === message.id || (message.temp_id && updated[j].id === message.temp_id)) {
-                                updated.splice(j, 1);
-                                ChatHelpers.insertMessageSorted(updated, message);
-                                found = true;
-                                break;
-                            }
-                        }
-                        if (!found) {
-                            ChatHelpers.insertMessageSorted(updated, message);
-                            if (!message.is_outgoing) {
-                                if (wasAtBottom) {
-                                    visibleIncomingCount += 1;
-                                } else {
-                                    if (shouldAnchorNewUnread && (oldestNewUnreadMessage === null || ChatHelpers.messageComesBefore(message, oldestNewUnreadMessage)))
-                                        oldestNewUnreadMessage = message;
+                        var found = findMessageIndexByIdOrTempId(updated, message.id || "", message.temp_id || "") !== -1;
+                        replaceMessageSorted(updated, message);
+                        messagesToUpsert.push(message);
+                        if (!found && !message.is_outgoing) {
+                            if (wasAtBottom) {
+                                visibleIncomingCount += 1;
+                            } else {
+                                if (shouldAnchorNewUnread && (oldestNewUnreadMessage === null || ChatHelpers.messageComesBefore(message, oldestNewUnreadMessage)))
+                                    oldestNewUnreadMessage = message;
 
-                                    chatPage.unreadCount += 1;
-                                }
+                                chatPage.unreadCount += 1;
                             }
                         }
                     }
-                    messages = updated;
+                    if (messagesToUpsert.length > 0)
+                        upsertChatMessages(messagesToUpsert);
+
                     if (oldestNewUnreadMessage !== null)
                         chatPage.unreadDividerMessageId = oldestNewUnreadMessage.id;
 
@@ -1071,23 +1178,33 @@ Page {
                     }
                 });
                 setHandler('sender-photo-update', function(photoList) {
-                    var changed = false;
-                    var updated = messages.slice();
+                    var photosByJid = ({
+                    });
                     for (var i = 0; i < photoList.length; i++) {
                         var entry = photoList[i];
-                        for (var j = 0; j < updated.length; j++) {
-                            if (updated[j].sender === entry.jid) {
-                                updated[j] = Object.assign({
-                                }, updated[j], {
-                                    "sender_photo": entry.photo
-                                });
-                                changed = true;
-                            }
-                        }
-                    }
-                    if (changed)
-                        messages = updated;
+                        if (entry && entry.jid)
+                            photosByJid[entry.jid] = entry.photo || "";
 
+                    }
+                    var patches = [];
+                    for (var j = 0; j < messages.length; j++) {
+                        var message = messages[j];
+                        if (!photosByJid.hasOwnProperty(message.sender))
+                            continue;
+
+                        var nextPhoto = photosByJid[message.sender];
+                        if ((message.sender_photo || "") === nextPhoto)
+                            continue;
+
+                        patches.push({
+                            "messageId": message.id || "",
+                            "tempId": message.temp_id || "",
+                            "patch": {
+                                "sender_photo": nextPhoto
+                            }
+                        });
+                    }
+                    patchChatMessages(patches);
                 });
                 setHandler('chat-list-update', function(updatedChats) {
                     for (var i = 0; i < updatedChats.length; i++) {
