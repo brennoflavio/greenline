@@ -10,7 +10,7 @@ from daemon_event_helpers import (
     normalize_snapshot_value,
     seed_prerequisite_kv,
 )
-from qml_contract_helpers import seed_chat, seed_message
+from qml_contract_helpers import DEFAULT_SENDER_ID, seed_chat, seed_message
 
 import daemon_types
 from greenline.contracts.kv import GreenlineKV
@@ -123,6 +123,99 @@ def test_daemon_event_handler_emits_batched_qml_payloads(fake_daemon_rpc) -> Non
     ]
     with GreenlineKV() as kv:
         assert kv.get_record(LAST_EVENT_ID_KEY) == DaemonLastEventIDRecord(1097)
+
+
+def test_picture_event_does_not_clear_existing_photo_on_transient_sync_failure(fake_daemon_rpc) -> None:
+    from greenline.events.handlers import dispatch_event
+
+    chat = seed_chat(DEFAULT_SENDER_ID, photo="file:///tmp/existing.jpg", muted=False)
+    fake_daemon_rpc.sync_avatar_paths[DEFAULT_SENDER_ID] = ""
+
+    event = daemon_types.StoredEvent(
+        id=9000,
+        event_type="Picture",
+        payload=json.dumps(
+            {
+                "JID": DEFAULT_SENDER_ID,
+                "Author": "",
+                "Timestamp": "2026-01-01T00:00:00Z",
+                "Remove": False,
+                "PictureID": "new-picture",
+            }
+        ),
+        created_at=0,
+    )
+
+    chat_updates = {}
+    photo_updates = []
+    dispatch_event(event, chat_updates, [], [], photo_updates, [], [])
+
+    assert chat_updates == {}
+    assert photo_updates == []
+    with GreenlineKV() as kv:
+        assert kv.get_record(f"chat:{chat.id}").photo == "file:///tmp/existing.jpg"
+
+
+def test_chat_list_update_event_does_not_clear_existing_photo_on_empty_avatar_path(fake_daemon_rpc) -> None:
+    from greenline.events.chat_sync import ChatListUpdateEvent
+
+    chat = seed_chat(
+        DEFAULT_SENDER_ID,
+        name="Full Name",
+        photo="file:///tmp/existing.jpg",
+        muted=False,
+        full_name="Full Name",
+        push_name="Push Name",
+        business_name="Business Name",
+    )
+    fake_daemon_rpc.contacts = [
+        daemon_types.Contact(
+            jid=DEFAULT_SENDER_ID,
+            display_name="Full Name",
+            first_name="Full",
+            full_name="Full Name",
+            push_name="Push Name",
+            business_name="Business Name",
+            avatar_path="",
+        )
+    ]
+
+    ChatListUpdateEvent().trigger(None)
+
+    assert _payloads_for("chat-list-update") == []
+    assert _payloads_for("sender-photo-update") == []
+    with GreenlineKV() as kv:
+        assert kv.get_record(f"chat:{chat.id}").photo == "file:///tmp/existing.jpg"
+
+
+def test_picture_remove_event_still_clears_existing_photo(fake_daemon_rpc) -> None:
+    from greenline.events.handlers import dispatch_event
+
+    chat = seed_chat(DEFAULT_SENDER_ID, photo="file:///tmp/existing.jpg", muted=False)
+
+    event = daemon_types.StoredEvent(
+        id=9001,
+        event_type="Picture",
+        payload=json.dumps(
+            {
+                "JID": DEFAULT_SENDER_ID,
+                "Author": "",
+                "Timestamp": "2026-01-01T00:00:00Z",
+                "Remove": True,
+                "PictureID": "",
+            }
+        ),
+        created_at=0,
+    )
+
+    chat_updates = {}
+    photo_updates = []
+    dispatch_event(event, chat_updates, [], [], photo_updates, [], [])
+
+    assert photo_updates == [{"jid": DEFAULT_SENDER_ID, "photo": ""}]
+    assert chat_updates[chat.id]["photo"] == ""
+    with GreenlineKV() as kv:
+        assert kv.get_record(f"chat:{chat.id}").photo == ""
 
 
 def test_reaction_event_uses_info_chat_to_update_direct_chat_message(fake_daemon_rpc) -> None:

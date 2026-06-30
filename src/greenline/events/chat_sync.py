@@ -213,10 +213,11 @@ class ChatListUpdateEvent(Event):
                         push_name=contact.push_name,
                         business_name=contact.business_name,
                     )
-                    if chat.photo != photo:
-                        chat.photo = photo
-                        changed = True
-                        photo_updates.append({"jid": jid, "photo": photo})
+                    if photo:
+                        if chat.photo != photo:
+                            chat.photo = photo
+                            changed = True
+                            photo_updates.append({"jid": jid, "photo": photo})
                     if chat.muted != muted:
                         chat.muted = muted
                         changed = True
@@ -286,10 +287,11 @@ class ChatListUpdateEvent(Event):
                         chat.name = group.name
                         chat.name_updated_at = now
                         changed = True
-                    if chat.photo != photo:
-                        chat.photo = photo
-                        changed = True
-                        photo_updates.append({"jid": jid, "photo": photo})
+                    if photo:
+                        if chat.photo != photo:
+                            chat.photo = photo
+                            changed = True
+                            photo_updates.append({"jid": jid, "photo": photo})
                     if chat.muted != muted:
                         chat.muted = muted
                         changed = True

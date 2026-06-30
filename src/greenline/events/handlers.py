@@ -364,8 +364,12 @@ def _handle_picture(
     if not jid:
         return
 
-    avatar_path = daemon_client().sync_avatar(jid).AvatarPath
-    photo = "file://" + avatar_path if avatar_path else ""
+    photo = ""
+    if not evt.Remove:
+        avatar_path = daemon_client().sync_avatar(jid).AvatarPath
+        photo = "file://" + avatar_path if avatar_path else ""
+        if not photo:
+            return
 
     with GreenlineKV() as kv:
         key = f"chat:{jid}"
