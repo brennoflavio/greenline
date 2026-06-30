@@ -78,6 +78,7 @@ def _assert_empty_output(fixture, output: dict) -> None:
         "chat_updates": {},
         "message_updates": [],
         "message_upserts": [],
+        "reaction_updates": [],
         "photo_updates": [],
         "presence_updates": [],
     }, fixture.relative_path
@@ -90,6 +91,7 @@ def _assert_manifest_output_intent(fixture, output: dict) -> None:
         assert output["chat_updates"], f"{fixture.relative_path} should emit chat_updates"
     elif source_family == "reaction":
         assert output["message_upserts"], f"{fixture.relative_path} should emit message_upserts"
+        assert output["reaction_updates"], f"{fixture.relative_path} should emit reaction_updates"
         assert output["chat_updates"] == {}, f"{fixture.relative_path} should not emit chat_updates"
         assert output["message_updates"] == [], f"{fixture.relative_path} should not emit message_updates"
         assert output["photo_updates"] == [], f"{fixture.relative_path} should not emit photo_updates"

@@ -22,6 +22,7 @@ EMPTY_OUTPUT = {
     "chat_updates": {},
     "message_updates": [],
     "message_upserts": [],
+    "reaction_updates": [],
     "photo_updates": [],
     "presence_updates": [],
 }
@@ -31,6 +32,7 @@ def _dispatch_stored_event(event: daemon_types.StoredEvent) -> DispatchResult:
     chat_updates = {}
     message_upserts = []
     message_updates = []
+    reaction_updates = []
     photo_updates = []
     presence_updates = []
     chat_presence_updates = []
@@ -42,11 +44,13 @@ def _dispatch_stored_event(event: daemon_types.StoredEvent) -> DispatchResult:
         photo_updates,
         presence_updates,
         chat_presence_updates,
+        reaction_updates=reaction_updates,
     )
     return DispatchResult(
         chat_updates=chat_updates,
         message_upserts=message_upserts,
         message_updates=message_updates,
+        reaction_updates=reaction_updates,
         photo_updates=photo_updates,
         presence_updates=presence_updates,
         chat_presence_updates=chat_presence_updates,

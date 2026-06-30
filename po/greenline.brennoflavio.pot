@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-29 23:07+0000\n"
+"POT-Creation-Date: 2026-06-30 01:21+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -91,7 +91,7 @@ msgstr ""
 msgid "Import Contact"
 msgstr ""
 
-#: ../qml/ChatPage.qml:233 ../qml/components/ChatMessageList.qml:337
+#: ../qml/ChatPage.qml:233 ../qml/components/ChatMessageList.qml:338
 msgid "You"
 msgstr ""
 
@@ -217,7 +217,7 @@ msgid "Share"
 msgstr ""
 
 #: ../qml/ContactPreviewPage.qml:101 ../qml/DocumentPreviewPage.qml:101
-#: ../qml/ImagePreviewPage.qml:67 ../qml/MessageReactionsPage.qml:284
+#: ../qml/ImagePreviewPage.qml:67 ../qml/MessageReactionsPage.qml:369
 #: ../qml/VideoPreviewPage.qml:71 ../qml/components/ChatPageHeader.qml:17
 #: ../qml/ut_components/AppHeader.qml:78
 msgid "Back"
@@ -263,48 +263,48 @@ msgstr ""
 msgid "Unable to open the shared file"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:34
+#: ../qml/MessageReactionsPage.qml:113
 msgid "Failed to load reactions"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:52
+#: ../qml/MessageReactionsPage.qml:130
 msgid "Failed to send reaction"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:167
+#: ../qml/MessageReactionsPage.qml:252
 msgid "Remove"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:169
+#: ../qml/MessageReactionsPage.qml:254
 msgid "Deleting reaction…"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:169
+#: ../qml/MessageReactionsPage.qml:254
 msgid "Reaction removed"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:180
+#: ../qml/MessageReactionsPage.qml:265
 msgid "Loading reactions…"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:197
+#: ../qml/MessageReactionsPage.qml:282
 msgid "No reactions yet"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:243
+#: ../qml/MessageReactionsPage.qml:328
 msgid "Quick reactions"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:258
+#: ../qml/MessageReactionsPage.qml:343
 msgid "Reaction updated"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:258
+#: ../qml/MessageReactionsPage.qml:343
 msgid "Sending reaction…"
 msgstr ""
 
-#: ../qml/MessageReactionsPage.qml:280
-#: ../qml/components/ChatMessageList.qml:537
+#: ../qml/MessageReactionsPage.qml:365
+#: ../qml/components/ChatMessageList.qml:539
 msgid "Reactions"
 msgstr ""
 
@@ -356,36 +356,36 @@ msgstr ""
 msgid "Login with Phone Number"
 msgstr ""
 
-#: ../qml/ProfilePage.qml:75
+#: ../qml/ProfilePage.qml:81
 msgid "Group"
 msgstr ""
 
-#: ../qml/ProfilePage.qml:89 ../qml/SettingsPage.qml:256
+#: ../qml/ProfilePage.qml:95 ../qml/SettingsPage.qml:256
 #: ../qml/ut_components/AppHeader.qml:94
 msgid "Settings"
 msgstr ""
 
-#: ../qml/ProfilePage.qml:92
+#: ../qml/ProfilePage.qml:98
 msgid "Mute notifications"
 msgstr ""
 
-#: ../qml/ProfilePage.qml:93
+#: ../qml/ProfilePage.qml:99
 msgid "Silence all notifications from this chat"
 msgstr ""
 
-#: ../qml/ProfilePage.qml:104
+#: ../qml/ProfilePage.qml:110
 msgid "Description"
 msgstr ""
 
-#: ../qml/ProfilePage.qml:125
+#: ../qml/ProfilePage.qml:131
 msgid "Members"
 msgstr ""
 
-#: ../qml/ProfilePage.qml:129
+#: ../qml/ProfilePage.qml:135
 msgid "%1 members"
 msgstr ""
 
-#: ../qml/ProfilePage.qml:226
+#: ../qml/ProfilePage.qml:229
 msgid "Profile"
 msgstr ""
 
@@ -468,13 +468,13 @@ msgstr ""
 msgid "Resetting app..."
 msgstr ""
 
-#: ../qml/StickerPickerPage.qml:55
+#: ../qml/StickerPickerPage.qml:60
 msgid ""
 "No stickers yet.\n"
 "Receive stickers in chats to use them here."
 msgstr ""
 
-#: ../qml/StickerPickerPage.qml:84
+#: ../qml/StickerPickerPage.qml:89
 msgid "Send Sticker"
 msgstr ""
 
@@ -526,31 +526,31 @@ msgstr ""
 msgid "Search chats..."
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:268
+#: ../qml/components/ChatMessageList.qml:269
 msgid "Deleted message"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:271
+#: ../qml/components/ChatMessageList.qml:272
 msgid "View-once message. Open WhatsApp on your primary device to view it."
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:464
+#: ../qml/components/ChatMessageList.qml:465
 msgid "Unread"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:514
+#: ../qml/components/ChatMessageList.qml:516
 msgid "Delete"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:525
+#: ../qml/components/ChatMessageList.qml:527
 msgid "Reply"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:531
+#: ../qml/components/ChatMessageList.qml:533
 msgid "Edit"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:543
+#: ../qml/components/ChatMessageList.qml:545
 msgid "Copy"
 msgstr ""
 
@@ -601,7 +601,7 @@ msgstr ""
 msgid "Location request timed out"
 msgstr ""
 
-#: ../qml/components/MessageBubble.qml:186
+#: ../qml/components/MessageBubble.qml:187
 msgid "edited"
 msgstr ""
 

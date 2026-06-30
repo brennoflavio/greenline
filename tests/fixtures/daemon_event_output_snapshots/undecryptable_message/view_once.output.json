@@ -63,5 +63,6 @@
     }
   ],
   "photo_updates": [],
-  "presence_updates": []
+  "presence_updates": [],
+  "reaction_updates": []
 }

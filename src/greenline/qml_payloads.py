@@ -6,7 +6,7 @@ from typing import Any, Mapping, Sequence
 from greenline.store.mentions import render_chat_mentions
 from greenline.store.repository import to_ui_message
 from greenline.ui import dataclass_to_ui_dict, inflate_dataclass
-from models import ChatListItem, Message
+from models import ChatListItem, Message, MessageReactionUpdate
 
 
 def ui_message(message: Message) -> dict[str, Any]:
@@ -55,6 +55,14 @@ def chat_presence_update(
 
 def session_status(logged_in: bool, qr_image_path: str) -> dict[str, Any]:
     return {"logged_in": logged_in, "qr_image_path": qr_image_path}
+
+
+def ui_message_reaction_update(update: MessageReactionUpdate) -> dict[str, Any]:
+    return dataclass_to_ui_dict(update)
+
+
+def stored_message_reaction_update(payload: Mapping[str, Any]) -> dict[str, Any]:
+    return ui_message_reaction_update(inflate_dataclass(MessageReactionUpdate, payload))
 
 
 def dataclass_payload(value: Any) -> dict[str, Any]:

@@ -5,7 +5,7 @@ from typing import Any, Iterable, Mapping
 
 from greenline import qml_payloads
 from greenline.contracts.qml import validate_qml_event
-from models import ChatListItem, Message
+from models import ChatListItem, Message, MessageReactionUpdate
 
 
 def _send(event_name: str, payload: Any) -> None:
@@ -44,12 +44,28 @@ def chat_list_update_payload(chats: Iterable[ChatListItem | Mapping[str, Any]]) 
     return payloads
 
 
+def message_reaction_update_payload(
+    updates: Iterable[MessageReactionUpdate | Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    payloads: list[dict[str, Any]] = []
+    for update in updates:
+        if type(update) is MessageReactionUpdate:
+            payloads.append(qml_payloads.ui_message_reaction_update(update))
+        else:
+            payloads.append(qml_payloads.stored_message_reaction_update(_mapping_payload(update)))
+    return payloads
+
+
 def emit_message_upsert(messages: Iterable[Message | Mapping[str, Any]]) -> None:
     _send("message-upsert", message_upsert_payload(messages))
 
 
 def emit_chat_list_update(chats: Iterable[ChatListItem | Mapping[str, Any]]) -> None:
     _send("chat-list-update", chat_list_update_payload(chats))
+
+
+def emit_message_reaction_update(updates: Iterable[MessageReactionUpdate | Mapping[str, Any]]) -> None:
+    _send("message-reaction-update", message_reaction_update_payload(updates))
 
 
 def emit_sender_photo_update(updates: Iterable[Mapping[str, Any]]) -> None:

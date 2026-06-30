@@ -12,5 +12,6 @@
   "message_updates": [],
   "message_upserts": [],
   "photo_updates": [],
-  "presence_updates": []
+  "presence_updates": [],
+  "reaction_updates": []
 }

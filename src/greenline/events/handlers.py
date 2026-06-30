@@ -13,8 +13,11 @@ from greenline.contracts.validation import BoundaryValidationError
 from greenline.reporting import error_trace_context
 from greenline.store.identity import (
     canonicalize_contact_jid,
+    get_own_jid,
     preferred_contact_name,
     remember_chat,
+    resolve_sender_name,
+    resolve_sender_photo,
     update_chat_name,
     upsert_identity_chat,
 )
@@ -34,7 +37,13 @@ from greenline.store.records import (
 )
 from greenline.ui import dataclass_to_ui_dict, enum_to_str
 from history_sync import handle_history_sync
-from models import ChatListItem, Message, MessageType, ReadReceipt
+from models import (
+    ChatListItem,
+    Message,
+    MessageReactionUpdate,
+    MessageType,
+    ReadReceipt,
+)
 from receipt_store import process_receipt
 from rpc import DaemonNotReadyError, DaemonTimeoutError
 from unread_counter import reconcile_unread_total
@@ -120,7 +129,11 @@ def _auto_download_sticker(msg: Message) -> str:
     return media_path
 
 
-def _handle_reaction_message(evt: MessageEvent, message_upserts: list[dict[str, Any]]) -> None:
+def _handle_reaction_message(
+    evt: MessageEvent,
+    message_upserts: list[dict[str, Any]],
+    reaction_updates: list[dict[str, Any]],
+) -> None:
     reaction = evt.Message.reactionMessage
     reaction_key = reaction.key if reaction is not None else None
     target_message_id = str(reaction_key.ID or "") if reaction_key is not None else ""
@@ -158,11 +171,27 @@ def _handle_reaction_message(evt: MessageEvent, message_upserts: list[dict[str, 
     if updated_message is not None:
         message_upserts.append(dataclass_to_ui_dict(updated_message))
 
+    reaction_updates.append(
+        qml_payloads.ui_message_reaction_update(
+            MessageReactionUpdate(
+                chat_id=target_chat_id,
+                message_id=target_message_id,
+                jid=sender_jid,
+                name=resolve_sender_name(sender_jid, push_name=evt.Info.PushName),
+                photo=resolve_sender_photo(sender_jid),
+                emoji=emoji,
+                is_self=sender_jid == get_own_jid(),
+                removed=emoji == "",
+            )
+        )
+    )
+
 
 def _handle_message(
     event: Any,
     chat_updates: dict[str, dict[str, Any]],
     message_upserts: list[dict[str, Any]],
+    reaction_updates: list[dict[str, Any]],
 ) -> None:
     raw = json.loads(event.payload or "{}")
     evt = from_dict(data_class=MessageEvent, data=raw)
@@ -176,7 +205,7 @@ def _handle_message(
     elif evt.Info.Sender:
         evt.Info.Sender = canonicalize_contact_jid(daemon_client().ensure_jid(evt.Info.Sender).JID)
     if evt.Info.Type == "reaction":
-        _handle_reaction_message(evt, message_upserts)
+        _handle_reaction_message(evt, message_upserts, reaction_updates)
         return
     stored = store_message(evt, raw=raw)
     if stored is None:
@@ -456,6 +485,7 @@ def dispatch_event(
     photo_updates: list[dict[str, str]],
     presence_updates: list[dict[str, Any]],
     chat_presence_updates: list[dict[str, Any]],
+    reaction_updates: list[dict[str, Any]] | None = None,
 ) -> None:
     with error_trace_context("event", event_type=getattr(event, "event_type", ""), event_id=getattr(event, "id", None)):
         try:
@@ -467,6 +497,7 @@ def dispatch_event(
                 photo_updates,
                 presence_updates,
                 chat_presence_updates,
+                reaction_updates=reaction_updates,
             )
         except (ConnectionRefusedError, DaemonNotReadyError, DaemonTimeoutError, BoundaryValidationError):
             raise
@@ -482,9 +513,12 @@ def _dispatch_event_inner(
     photo_updates: list[dict[str, str]],
     presence_updates: list[dict[str, Any]],
     chat_presence_updates: list[dict[str, Any]],
+    *,
+    reaction_updates: list[dict[str, Any]] | None = None,
 ) -> None:
+    reaction_bucket = reaction_updates if reaction_updates is not None else []
     if event.event_type == "Message":
-        _handle_message(event, chat_updates, message_upserts)
+        _handle_message(event, chat_updates, message_upserts, reaction_bucket)
     elif event.event_type == "Receipt":
         _handle_receipt(event, chat_updates, message_updates)
     elif event.event_type == "UndecryptableMessage":

@@ -18,6 +18,85 @@ Page {
     property int toastDurationMs: 2000
     readonly property bool canSendReaction: pythonReady && !sendingReaction && chatId !== "" && messageId !== ""
 
+    function compareReactionStrings(left, right) {
+        var leftValue = left || "";
+        var rightValue = right || "";
+        if (leftValue < rightValue)
+            return -1;
+
+        if (leftValue > rightValue)
+            return 1;
+
+        return 0;
+    }
+
+    function sortReactions(items) {
+        items.sort(function(left, right) {
+            var nameComparison = compareReactionStrings(left.name, right.name);
+            if (nameComparison !== 0)
+                return nameComparison;
+
+            var jidComparison = compareReactionStrings(left.jid, right.jid);
+            if (jidComparison !== 0)
+                return jidComparison;
+
+            return compareReactionStrings(left.emoji, right.emoji);
+        });
+        return items;
+    }
+
+    function upsertReaction(update) {
+        if (!update || !update.jid)
+            return ;
+
+        var nextReactions = reactions.slice(0);
+        var updatedReaction = {
+            "jid": update.jid || "",
+            "name": update.name || "",
+            "photo": update.photo || "",
+            "emoji": update.emoji || "",
+            "is_self": !!update.is_self
+        };
+        var existingIndex = -1;
+        for (var i = 0; i < nextReactions.length; i++) {
+            if (nextReactions[i] && nextReactions[i].jid === updatedReaction.jid) {
+                existingIndex = i;
+                break;
+            }
+        }
+        if (existingIndex === -1)
+            nextReactions.push(updatedReaction);
+        else
+            nextReactions[existingIndex] = updatedReaction;
+        reactions = sortReactions(nextReactions);
+        errorMessage = "";
+    }
+
+    function removeReaction(jid) {
+        if (!jid)
+            return ;
+
+        var nextReactions = [];
+        for (var i = 0; i < reactions.length; i++) {
+            var reaction = reactions[i];
+            if (reaction && reaction.jid !== jid)
+                nextReactions.push(reaction);
+
+        }
+        reactions = nextReactions;
+        errorMessage = "";
+    }
+
+    function applyReactionUpdate(update) {
+        if (!update || update.chat_id !== chatId || update.message_id !== messageId)
+            return ;
+
+        if (update.removed)
+            removeReaction(update.jid);
+        else
+            upsertReaction(update);
+    }
+
     function loadReactions() {
         if (!pythonReady || chatId === "" || messageId === "")
             return ;
@@ -27,7 +106,7 @@ Page {
         python.call('main.get_message_reactions', [chatId, messageId], function(result) {
             loading = false;
             if (result && result.success) {
-                reactions = result.reactions || [];
+                reactions = sortReactions(result.reactions || []);
                 return ;
             }
             reactions = [];
@@ -46,7 +125,6 @@ Page {
             sendingReaction = false;
             if (result && result.success) {
                 toast.show(successMessage);
-                loadReactions();
                 return ;
             }
             toast.show(result && result.message ? result.message : i18n.tr("Failed to send reaction"));
@@ -60,13 +138,20 @@ Page {
             addImportPath(Qt.resolvedUrl('../src/'));
             importModule('main', function() {
                 pythonReady = true;
+                setHandler('message-reaction-update', function(updates) {
+                    for (var i = 0; i < updates.length; i++) applyReactionUpdate(updates[i])
+                });
                 setHandler('message-upsert', function(messages) {
                     for (var i = 0; i < messages.length; i++) {
                         var message = messages[i];
-                        if (message && message.chat_id === chatId && message.id === messageId) {
+                        if (!message || message.chat_id !== chatId || message.id !== messageId)
+                            continue;
+
+                        if (!message.has_reactions && reactions.length > 0)
+                            reactions = [];
+                        else if (message.has_reactions && reactions.length === 0 && !loading)
                             loadReactions();
-                            break;
-                        }
+                        break;
                     }
                 });
                 loadReactions();

@@ -15,6 +15,7 @@ Page {
         visible: stickers.length > 0
         cellWidth: parent.width / 4
         cellHeight: cellWidth
+        cacheBuffer: cellHeight * 4
         model: stickers
 
         anchors {
@@ -26,24 +27,28 @@ Page {
         }
 
         delegate: Item {
+            id: stickerCell
+
+            readonly property real preloadMargin: stickerGrid.cellHeight * 2
+            readonly property bool stickerActive: (y + height) >= (stickerGrid.contentY - preloadMargin) && y <= (stickerGrid.contentY + stickerGrid.height + preloadMargin)
+
             width: stickerGrid.cellWidth
             height: stickerGrid.cellHeight
 
             AnimatedImage {
                 anchors.fill: parent
                 anchors.margins: units.gu(0.5)
-                source: modelData
+                source: stickerCell.stickerActive ? modelData : ""
                 fillMode: Image.PreserveAspectFit
-                playing: visible
+                playing: stickerCell.stickerActive
+            }
 
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: {
-                        pageStack.pop();
-                        stickerPickerPage.stickerSelected(modelData);
-                    }
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    pageStack.pop();
+                    stickerPickerPage.stickerSelected(modelData);
                 }
-
             }
 
         }

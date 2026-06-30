@@ -42,5 +42,17 @@
     }
   ],
   "photo_updates": [],
-  "presence_updates": []
+  "presence_updates": [],
+  "reaction_updates": [
+    {
+      "chat_id": "fixture-group-1@g.us",
+      "emoji": "Fixture text.",
+      "is_self": false,
+      "jid": "fixture-user-12@s.whatsapp.net",
+      "message_id": "fixture-message-027",
+      "name": "Fixture text.",
+      "photo": "",
+      "removed": false
+    }
+  ]
 }

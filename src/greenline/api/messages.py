@@ -66,6 +66,7 @@ from models import (
     Message,
     MessageReactionItem,
     MessageReactionsResponse,
+    MessageReactionUpdate,
     MessagesResponse,
     MessageType,
     ReadReceipt,
@@ -525,6 +526,21 @@ def send_message_reaction(request: SendMessageReactionRequest) -> SuccessRespons
 
     if updated_message is not None:
         qml_events.emit_message_upsert([updated_message])
+
+    qml_events.emit_message_reaction_update(
+        [
+            MessageReactionUpdate(
+                chat_id=request.chat_id,
+                message_id=request.message_id,
+                jid=own_jid,
+                name=resolve_sender_name(own_jid),
+                photo=resolve_sender_photo(own_jid),
+                emoji=request.emoji,
+                is_self=True,
+                removed=request.emoji == "",
+            )
+        ]
+    )
 
     return SuccessResponse(success=True, message="")
 

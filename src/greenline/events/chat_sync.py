@@ -37,6 +37,7 @@ def process_events_once(batch_limit: int = 50) -> None:
         chat_updates: dict[str, dict[str, Any]] = {}
         message_upserts: list[dict[str, Any]] = []
         message_updates: list[dict[str, Any]] = []
+        reaction_updates: list[dict[str, Any]] = []
         photo_updates: list[dict[str, str]] = []
         presence_updates: list[dict[str, Any]] = []
         chat_presence_updates: list[dict[str, Any]] = []
@@ -49,6 +50,7 @@ def process_events_once(batch_limit: int = 50) -> None:
                 photo_updates,
                 presence_updates,
                 chat_presence_updates,
+                reaction_updates=reaction_updates,
             )
             if event.id > max_id:
                 max_id = event.id
@@ -92,6 +94,7 @@ class DaemonEventHandler(Event):
                 chat_updates: dict[str, dict[str, Any]] = {}
                 message_upserts: list[dict[str, Any]] = []
                 message_updates: list[dict[str, Any]] = []
+                reaction_updates: list[dict[str, Any]] = []
                 photo_updates: list[dict[str, str]] = []
                 presence_updates: list[dict[str, Any]] = []
                 chat_presence_updates: list[dict[str, Any]] = []
@@ -104,6 +107,7 @@ class DaemonEventHandler(Event):
                         photo_updates,
                         presence_updates,
                         chat_presence_updates,
+                        reaction_updates=reaction_updates,
                     )
                     if event.id > max_id:
                         max_id = event.id
@@ -111,6 +115,9 @@ class DaemonEventHandler(Event):
                 all_message_upserts = message_upserts + message_updates
                 if all_message_upserts:
                     qml_events.emit_message_upsert(all_message_upserts)
+
+                if reaction_updates:
+                    qml_events.emit_message_reaction_update(reaction_updates)
 
                 if chat_updates:
                     qml_events.emit_chat_list_update(chat_updates.values())

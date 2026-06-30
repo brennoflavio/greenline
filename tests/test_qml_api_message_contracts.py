@@ -189,8 +189,19 @@ def test_send_message_reaction_contract_adds_reaction_and_emits_update(
     assert reactions["reactions"][0]["is_self"] is True
     _assert_all_contract_events(fake_pyotherside_module)
     message_updates = _event_payloads(fake_pyotherside_module, "message-upsert")
+    reaction_updates = _event_payloads(fake_pyotherside_module, "message-reaction-update")
     assert message_updates[-1][0]["id"] == "incoming-1"
     assert message_updates[-1][0]["has_reactions"] is True
+    assert reaction_updates[-1][0] == {
+        "chat_id": DEFAULT_CHAT_ID,
+        "message_id": "incoming-1",
+        "jid": fake_daemon_rpc.send_reaction_result.OwnJID,
+        "name": "me",
+        "photo": "",
+        "emoji": "👍",
+        "is_self": True,
+        "removed": False,
+    }
 
 
 def test_send_message_reaction_contract_falls_back_to_chat_id_for_direct_history_messages(
@@ -254,8 +265,19 @@ def test_send_message_reaction_contract_removes_reaction_and_handles_outgoing_ta
     assert stored_message.has_reactions is False
     _assert_all_contract_events(fake_pyotherside_module)
     message_updates = _event_payloads(fake_pyotherside_module, "message-upsert")
+    reaction_updates = _event_payloads(fake_pyotherside_module, "message-reaction-update")
     assert message_updates[-1][0]["id"] == "outgoing-1"
     assert message_updates[-1][0]["has_reactions"] is False
+    assert reaction_updates[-1][0] == {
+        "chat_id": DEFAULT_CHAT_ID,
+        "message_id": "outgoing-1",
+        "jid": fake_daemon_rpc.send_reaction_result.OwnJID,
+        "name": "me",
+        "photo": "",
+        "emoji": "",
+        "is_self": True,
+        "removed": True,
+    }
 
 
 @pytest.mark.parametrize(

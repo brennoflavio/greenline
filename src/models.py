@@ -135,6 +135,18 @@ class MessageReactionItem:
 
 
 @dataclass
+class MessageReactionUpdate:
+    chat_id: str
+    message_id: str
+    jid: str
+    name: str
+    photo: str
+    emoji: str
+    is_self: bool
+    removed: bool
+
+
+@dataclass
 class MessageReactionsResponse:
     success: bool
     reactions: List[MessageReactionItem]

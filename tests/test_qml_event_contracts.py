@@ -68,6 +68,20 @@ def test_daemon_event_handler_contracts_for_sync_message_chat_photo_presence(
         assert _payloads(fake_pyotherside_module, event_name), event_name
 
 
+def test_message_reaction_update_event_contract(fake_daemon_rpc, fake_pyotherside_module) -> None:
+    from greenline.events.chat_sync import DaemonEventHandler
+
+    reaction_fixture = FIXTURE_BY_PATH["message/reaction_ignored.json"]
+    seed_prerequisite_kv(reaction_fixture)
+    fake_daemon_rpc.queue_events([reaction_fixture.stored_event()], [])
+
+    DaemonEventHandler()._do_trigger()
+
+    _validate_captured(fake_pyotherside_module)
+    assert _payloads(fake_pyotherside_module, "message-reaction-update")
+    assert _payloads(fake_pyotherside_module, "message-upsert")
+
+
 def test_chat_draft_update_event_contract(fake_pyotherside_module) -> None:
     main.set_chat_draft(DEFAULT_CHAT_ID, "Draft", [])
 
@@ -123,6 +137,7 @@ def test_all_registered_events_have_contract_tests() -> None:
         "session-status",
         "sync-status",
         "message-upsert",
+        "message-reaction-update",
         "chat-list-update",
         "sender-photo-update",
         "presence-update",

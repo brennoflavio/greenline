@@ -32,9 +32,11 @@ Page {
         });
     }
 
-    Flickable {
-        contentHeight: content.height + units.gu(4)
+    ListView {
+        id: profileList
+
         clip: true
+        model: isGroup ? members : []
 
         anchors {
             top: profilePage.header.bottom
@@ -43,146 +45,101 @@ Page {
             bottom: parent.bottom
         }
 
-        Column {
-            id: content
+        header: Item {
+            width: profileList.width
+            height: headerContent.height + units.gu(4)
 
-            width: parent.width
-            spacing: units.gu(2)
-            topPadding: units.gu(3)
+            Column {
+                id: headerContent
 
-            GenericPhoto {
-                width: units.gu(16)
-                height: units.gu(16)
-                photoPath: chatPhoto || ""
-                fallbackIconName: isGroup ? "contact-group" : "contact"
-                fallbackIconWidth: units.gu(8)
-                fallbackIconHeight: units.gu(8)
-                avatarColor: theme.palette.normal.base
-                fallbackIconColor: theme.palette.normal.backgroundSecondaryText
-                anchors.horizontalCenter: parent.horizontalCenter
-            }
-
-            Label {
-                text: chatName
-                fontSize: "x-large"
-                font.bold: true
-                horizontalAlignment: Text.AlignHCenter
                 width: parent.width
-                wrapMode: Text.WordWrap
-            }
+                spacing: units.gu(2)
+                topPadding: units.gu(3)
 
-            Label {
-                text: isGroup ? i18n.tr("Group") : phoneNumber
-                fontSize: "medium"
-                color: theme.palette.normal.backgroundSecondaryText
-                horizontalAlignment: Text.AlignHCenter
-                width: parent.width
-                visible: isGroup || phoneNumber !== ""
-            }
-
-            Item {
-                width: parent.width
-                height: units.gu(2)
-            }
-
-            ConfigurationGroup {
-                title: i18n.tr("Settings")
-
-                ToggleOption {
-                    title: i18n.tr("Mute notifications")
-                    subtitle: i18n.tr("Silence all notifications from this chat")
-                    checked: muted
-                    onToggled: {
-                        muted = checked;
-                        python.call('main.toggle_mute', [chatId]);
-                    }
+                GenericPhoto {
+                    width: units.gu(16)
+                    height: units.gu(16)
+                    photoPath: chatPhoto || ""
+                    fallbackIconName: isGroup ? "contact-group" : "contact"
+                    fallbackIconWidth: units.gu(8)
+                    fallbackIconHeight: units.gu(8)
+                    avatarColor: theme.palette.normal.base
+                    fallbackIconColor: theme.palette.normal.backgroundSecondaryText
+                    anchors.horizontalCenter: parent.horizontalCenter
                 }
-
-            }
-
-            ConfigurationGroup {
-                title: i18n.tr("Description")
-                visible: isGroup && groupDescription !== ""
 
                 Label {
-                    wrapMode: Text.WordWrap
-                    horizontalAlignment: Text.AlignJustify
-                    text: groupDescription
-                    color: theme.palette.normal.foregroundText
-
-                    anchors {
-                        left: parent.left
-                        right: parent.right
-                        leftMargin: units.gu(2)
-                        rightMargin: units.gu(2)
-                    }
-
-                }
-
-            }
-
-            ConfigurationGroup {
-                title: i18n.tr("Members")
-                visible: isGroup && (memberCount > 0 || members.length > 0)
-
-                Label {
-                    text: i18n.tr("%1 members").arg(memberCount)
-                    color: theme.palette.normal.backgroundSecondaryText
-
-                    anchors {
-                        left: parent.left
-                        right: parent.right
-                        leftMargin: units.gu(2)
-                        rightMargin: units.gu(2)
-                    }
-
-                }
-
-                Column {
+                    text: chatName
+                    fontSize: "x-large"
+                    font.bold: true
+                    horizontalAlignment: Text.AlignHCenter
                     width: parent.width
+                    wrapMode: Text.WordWrap
+                }
 
-                    Repeater {
-                        model: members
+                Label {
+                    text: isGroup ? i18n.tr("Group") : phoneNumber
+                    fontSize: "medium"
+                    color: theme.palette.normal.backgroundSecondaryText
+                    horizontalAlignment: Text.AlignHCenter
+                    width: parent.width
+                    visible: isGroup || phoneNumber !== ""
+                }
 
-                        delegate: ListItem {
-                            width: parent ? parent.width : content.width
-                            height: units.gu(7)
-                            divider.visible: true
-                            onClicked: profilePage.openMemberChat(modelData)
+                Item {
+                    width: parent.width
+                    height: units.gu(2)
+                }
 
-                            RowLayout {
-                                spacing: units.gu(1.5)
+                ConfigurationGroup {
+                    title: i18n.tr("Settings")
 
-                                anchors {
-                                    fill: parent
-                                    leftMargin: units.gu(2)
-                                    rightMargin: units.gu(2)
-                                    topMargin: units.gu(1)
-                                    bottomMargin: units.gu(1)
-                                }
+                    ToggleOption {
+                        title: i18n.tr("Mute notifications")
+                        subtitle: i18n.tr("Silence all notifications from this chat")
+                        checked: muted
+                        onToggled: {
+                            muted = checked;
+                            python.call('main.toggle_mute', [chatId]);
+                        }
+                    }
 
-                                GenericPhoto {
-                                    width: units.gu(4.5)
-                                    height: units.gu(4.5)
-                                    photoPath: modelData.photo || ""
-                                    fallbackIconName: "contact"
-                                    fallbackIconWidth: units.gu(2.2)
-                                    fallbackIconHeight: units.gu(2.2)
-                                    avatarColor: theme.palette.normal.base
-                                    fallbackIconColor: theme.palette.normal.backgroundSecondaryText
-                                    Layout.alignment: Qt.AlignVCenter
-                                }
+                }
 
-                                Label {
-                                    Layout.fillWidth: true
-                                    Layout.alignment: Qt.AlignVCenter
-                                    text: modelData.name || modelData.jid || ""
-                                    fontSize: "medium"
-                                    elide: Text.ElideRight
-                                }
+                ConfigurationGroup {
+                    title: i18n.tr("Description")
+                    visible: isGroup && groupDescription !== ""
 
-                            }
+                    Label {
+                        wrapMode: Text.WordWrap
+                        horizontalAlignment: Text.AlignJustify
+                        text: groupDescription
+                        color: theme.palette.normal.foregroundText
 
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                            leftMargin: units.gu(2)
+                            rightMargin: units.gu(2)
+                        }
+
+                    }
+
+                }
+
+                ConfigurationGroup {
+                    title: i18n.tr("Members")
+                    visible: isGroup && (memberCount > 0 || members.length > 0)
+
+                    Label {
+                        text: i18n.tr("%1 members").arg(memberCount)
+                        color: theme.palette.normal.backgroundSecondaryText
+
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                            leftMargin: units.gu(2)
+                            rightMargin: units.gu(2)
                         }
 
                     }
@@ -191,6 +148,52 @@ Page {
 
             }
 
+        }
+
+        delegate: ListItem {
+            width: profileList.width
+            height: units.gu(7)
+            divider.visible: true
+            onClicked: profilePage.openMemberChat(modelData)
+
+            RowLayout {
+                spacing: units.gu(1.5)
+
+                anchors {
+                    fill: parent
+                    leftMargin: units.gu(2)
+                    rightMargin: units.gu(2)
+                    topMargin: units.gu(1)
+                    bottomMargin: units.gu(1)
+                }
+
+                GenericPhoto {
+                    width: units.gu(4.5)
+                    height: units.gu(4.5)
+                    photoPath: modelData.photo || ""
+                    fallbackIconName: "contact"
+                    fallbackIconWidth: units.gu(2.2)
+                    fallbackIconHeight: units.gu(2.2)
+                    avatarColor: theme.palette.normal.base
+                    fallbackIconColor: theme.palette.normal.backgroundSecondaryText
+                    Layout.alignment: Qt.AlignVCenter
+                }
+
+                Label {
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignVCenter
+                    text: modelData.name || modelData.jid || ""
+                    fontSize: "medium"
+                    elide: Text.ElideRight
+                }
+
+            }
+
+        }
+
+        footer: Item {
+            width: profileList.width
+            height: units.gu(4)
         }
 
     }

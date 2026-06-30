@@ -30,5 +30,6 @@
       "photo": "file://<CACHE>/greenline.tests/avatars/fixture-chat-43@s.whatsapp.net.jpg"
     }
   ],
-  "presence_updates": []
+  "presence_updates": [],
+  "reaction_updates": []
 }

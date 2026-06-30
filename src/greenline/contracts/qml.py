@@ -20,6 +20,7 @@ from models import (
     ContactItem,
     MentionSpan,
     MessageReactionItem,
+    MessageReactionUpdate,
     MessageType,
     ReadReceipt,
     UiMessage,
@@ -35,6 +36,7 @@ CHAT_LIST_ITEM_FIELDS = {field.name for field in fields(ChatListItem)}
 CHAT_LIST_ENTRY_FIELDS = {field.name for field in fields(ChatListEntry)}
 CONTACT_ITEM_FIELDS = {field.name for field in fields(ContactItem)}
 MESSAGE_REACTION_ITEM_FIELDS = {field.name for field in fields(MessageReactionItem)}
+MESSAGE_REACTION_UPDATE_FIELDS = {field.name for field in fields(MessageReactionUpdate)}
 
 
 def _require(condition: bool, message: str) -> None:
@@ -283,6 +285,15 @@ def assert_message_reactions_response(payload: Any) -> None:
         assert_message_reaction_item(reaction, f"MessageReactionsResponse.reactions[{index}]")
 
 
+def assert_message_reaction_update(payload: Any, path: str = "MessageReactionUpdate") -> None:
+    reaction = _assert_dict(payload, path)
+    _assert_keys(reaction, MESSAGE_REACTION_UPDATE_FIELDS, path)
+    for key in ("chat_id", "message_id", "jid", "name", "photo", "emoji"):
+        _assert_str(reaction, key, path)
+    for key in ("is_self", "removed"):
+        _assert_bool(reaction, key, path)
+
+
 def assert_chat_info_member(payload: Any, path: str) -> None:
     member = _assert_dict(payload, path)
     _assert_keys(member, {"jid", "name", "photo"}, path)
@@ -454,6 +465,12 @@ def assert_message_upsert_payload(payload: Any) -> None:
     messages = _assert_list_of_dicts(payload, "message-upsert")
     for index, message in enumerate(messages):
         assert_ui_message(message, f"message-upsert[{index}]")
+
+
+def assert_message_reaction_update_payload(payload: Any) -> None:
+    updates = _assert_list_of_dicts(payload, "message-reaction-update")
+    for index, update in enumerate(updates):
+        assert_message_reaction_update(update, f"message-reaction-update[{index}]")
 
 
 def assert_chat_list_update_payload(payload: Any) -> None:
@@ -838,6 +855,11 @@ EVENT_CONTRACTS: dict[str, EventContract] = {
     ),
     "chat-list-update": EventContract("chat-list-update", assert_chat_list_update_payload),
     "chat-presence": EventContract("chat-presence", assert_chat_presence_payload),
+    "message-reaction-update": EventContract(
+        "message-reaction-update",
+        assert_message_reaction_update_payload,
+        "Incremental message reaction updates.",
+    ),
     "message-upsert": EventContract("message-upsert", assert_message_upsert_payload),
     "presence-update": EventContract("presence-update", assert_presence_update_payload),
     "sender-photo-update": EventContract("sender-photo-update", assert_sender_photo_update_payload),

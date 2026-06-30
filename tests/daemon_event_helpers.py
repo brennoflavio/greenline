@@ -64,6 +64,7 @@ class DispatchResult:
     chat_updates: dict[str, dict[str, Any]]
     message_upserts: list[dict[str, Any]]
     message_updates: list[dict[str, Any]]
+    reaction_updates: list[dict[str, Any]]
     photo_updates: list[dict[str, str]]
     presence_updates: list[dict[str, Any]]
     chat_presence_updates: list[dict[str, Any]]
@@ -309,6 +310,7 @@ def dispatch_daemon_fixture_with_buckets(fixture: DaemonEventFixture) -> Dispatc
     chat_updates: dict[str, dict[str, Any]] = {}
     message_upserts: list[dict[str, Any]] = []
     message_updates: list[dict[str, Any]] = []
+    reaction_updates: list[dict[str, Any]] = []
     photo_updates: list[dict[str, str]] = []
     presence_updates: list[dict[str, Any]] = []
     chat_presence_updates: list[dict[str, Any]] = []
@@ -321,11 +323,13 @@ def dispatch_daemon_fixture_with_buckets(fixture: DaemonEventFixture) -> Dispatc
         photo_updates,
         presence_updates,
         chat_presence_updates,
+        reaction_updates=reaction_updates,
     )
     return DispatchResult(
         chat_updates=normalize_snapshot_value(chat_updates),
         message_upserts=normalize_snapshot_value(message_upserts),
         message_updates=normalize_snapshot_value(message_updates),
+        reaction_updates=normalize_snapshot_value(reaction_updates),
         photo_updates=normalize_snapshot_value(photo_updates),
         presence_updates=normalize_snapshot_value(presence_updates),
         chat_presence_updates=normalize_snapshot_value(chat_presence_updates),
