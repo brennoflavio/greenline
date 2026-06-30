@@ -40,7 +40,7 @@ from greenline.session import SessionStatusResponse, build_session_status_respon
 from greenline.storage_migrations import (
     run_storage_migrations as run_kv_storage_migrations,
 )
-from greenline.store.identity import clear_chat_runtime_cache
+from greenline.store.identity import bootstrap_own_jid, clear_chat_runtime_cache
 from greenline.store.records import (
     DaemonLastEventIDRecord,
     NotificationsSuppressedRecord,
@@ -180,6 +180,8 @@ def check_daemon_status() -> DaemonStatusResponse:
 def get_session_status() -> SessionStatusResponse:
     try:
         result = daemon_client().get_session_status()
+        if result.LoggedIn:
+            bootstrap_own_jid()
         return build_session_status_response(
             logged_in=result.LoggedIn,
             qr_image_base64=result.QRImage,

@@ -2,13 +2,14 @@ from dataclasses import dataclass, replace
 from datetime import datetime
 from typing import Any, Dict, List, Optional, cast
 
-from constants import GROUP_JID_SUFFIX
+from constants import GROUP_JID_SUFFIX, WHATSAPP_JID_SUFFIX
 from greenline.contracts.kv import GreenlineKV
 from greenline.store.identity import (
     canonicalize_contact_jid,
     jid_display_name,
     preferred_contact_name,
     remember_chat,
+    remember_own_jid,
     update_chat_name,
     upsert_identity_chat,
 )
@@ -658,6 +659,15 @@ def store_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = None) -> Op
     msg = message_event_to_message(evt, raw)
     if msg is None:
         return None
+
+    if (
+        msg.is_outgoing
+        and msg.chat_id.endswith(WHATSAPP_JID_SUFFIX)
+        and not msg.chat_id.endswith(GROUP_JID_SUFFIX)
+        and msg.sender
+        and msg.sender == msg.chat_id
+    ):
+        remember_own_jid(msg.chat_id)
 
     business_name = ""
     if evt.Info.VerifiedName and evt.Info.VerifiedName.Details:

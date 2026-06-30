@@ -208,6 +208,25 @@ def message_from_record(record: StoredMessageRecord) -> Message:
     return Message(**payload)
 
 
+def is_history_sync_protocol_message(record: StoredMessageRecord, chat_id: str) -> bool:
+    if not record.is_outgoing or not record.sender or record.sender != chat_id:
+        return False
+
+    raw = record.raw if isinstance(record.raw, dict) else None
+    if raw is None:
+        return False
+
+    raw_message = raw.get("Message")
+    if not isinstance(raw_message, dict):
+        return False
+
+    protocol_message = raw_message.get("protocolMessage")
+    if not isinstance(protocol_message, dict):
+        return False
+
+    return protocol_message.get("type") == 5 and isinstance(protocol_message.get("historySyncNotification"), dict)
+
+
 def record_payload_without_none(record: Any) -> dict[str, Any]:
     if not (is_dataclass(record) and not isinstance(record, type)):
         raise TypeError(f"expected dataclass instance, got {type(record).__name__}")

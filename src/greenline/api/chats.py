@@ -19,6 +19,7 @@ from greenline.contracts.validation import BoundaryValidationError
 from greenline.reporting import crash_reporter
 from greenline.store.identity import (
     canonicalize_contact_jid,
+    get_own_jid,
     prioritize_missing_avatar_chat_ids,
 )
 from greenline.store.mentions import build_mention_candidate, validate_mention_spans
@@ -99,8 +100,11 @@ def get_chat_list(request: GetChatListRequest) -> ChatListResponse:
             entries = kv.get_partial_records("chat:")
             drafts = {key.removeprefix("draft:"): value.value for key, value in kv.get_partial_records("draft:")}
 
+        own_jid = get_own_jid()
         chats = []
         for _, value in entries:
+            if own_jid and value.id == own_jid:
+                continue
             chat = ui_chat(value)
             if chat.archived != request.archived:
                 continue

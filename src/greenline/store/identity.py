@@ -4,22 +4,30 @@ from typing import Any, Dict, Optional
 from constants import GROUP_JID_SUFFIX, WHATSAPP_JID_SUFFIX
 from greenline.contracts.daemon import DaemonClientProtocol, daemon_client
 from greenline.contracts.kv import GreenlineKV
-from greenline.store.records import LidMapRecord, OwnJIDRecord
+from greenline.store.records import (
+    LidMapRecord,
+    OwnJIDRecord,
+    is_history_sync_protocol_message,
+)
 from models import ChatListItem, ReadReceipt
 
 AVATAR_PRIORITY_BATCH_SIZE = 20
+_SELF_CHAT_BOOTSTRAP_MESSAGE_PAGE_SIZE = 20
+_SELF_CHAT_PROTOCOL_PREVIEW = "Unsupported Message type arrived: protocolMessage"
 
 _CHAT_RUNTIME_CACHE: Dict[str, Dict[str, Any]] = {}
 _OWN_JID = ""
+_OWN_JID_BOOTSTRAP_ATTEMPTED = False
 _STATUS_BROADCAST_JID = "status@broadcast"
 _NEWSLETTER_JID_SUFFIX = "@newsletter"
 _LID_JID_SUFFIX = "@lid"
 
 
 def clear_chat_runtime_cache() -> None:
-    global _OWN_JID
+    global _OWN_JID, _OWN_JID_BOOTSTRAP_ATTEMPTED
     _CHAT_RUNTIME_CACHE.clear()
     _OWN_JID = ""
+    _OWN_JID_BOOTSTRAP_ATTEMPTED = False
 
 
 def remember_chat(chat: ChatListItem) -> None:
@@ -268,6 +276,40 @@ def canonicalize_contact_jid(
             resolved = stripped_jid
 
     return _strip_device_suffix(str(resolved if resolved is not None else stripped_jid))
+
+
+def bootstrap_own_jid() -> str:
+    global _OWN_JID_BOOTSTRAP_ATTEMPTED
+
+    own_jid = get_own_jid()
+    if own_jid or _OWN_JID_BOOTSTRAP_ATTEMPTED:
+        return own_jid
+    _OWN_JID_BOOTSTRAP_ATTEMPTED = True
+
+    with GreenlineKV() as kv:
+        candidates = [
+            chat
+            for _, chat in kv.get_partial_records("chat:")
+            if (
+                chat.id.endswith(WHATSAPP_JID_SUFFIX)
+                and not chat.is_group
+                and chat.read_receipt == ReadReceipt.SENT
+                and chat.last_message == _SELF_CHAT_PROTOCOL_PREVIEW
+            )
+        ]
+        candidates.sort(key=lambda chat: chat.last_message_timestamp, reverse=True)
+
+        for chat in candidates:
+            entries, _ = kv.get_partial_page_records(
+                f"message:{chat.id}:",
+                page_size=_SELF_CHAT_BOOTSTRAP_MESSAGE_PAGE_SIZE,
+                reverse=True,
+            )
+            for _, record in entries:
+                if is_history_sync_protocol_message(record, chat.id):
+                    return remember_own_jid(chat.id)
+
+    return ""
 
 
 def upsert_identity_chat(

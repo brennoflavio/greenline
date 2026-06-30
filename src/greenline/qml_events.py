@@ -5,6 +5,7 @@ from typing import Any, Iterable, Mapping
 
 from greenline import qml_payloads
 from greenline.contracts.qml import validate_qml_event
+from greenline.store.identity import get_own_jid
 from models import ChatListItem, Message, MessageReactionUpdate
 
 
@@ -35,8 +36,12 @@ def message_upsert_payload(messages: Iterable[Message | Mapping[str, Any]]) -> l
 
 
 def chat_list_update_payload(chats: Iterable[ChatListItem | Mapping[str, Any]]) -> list[dict[str, Any]]:
+    own_jid = get_own_jid()
     payloads: list[dict[str, Any]] = []
     for chat in chats:
+        chat_id = chat.id if type(chat) is ChatListItem else str(_mapping_payload(chat).get("id") or "")
+        if own_jid and chat_id == own_jid:
+            continue
         if type(chat) is ChatListItem:
             payloads.append(qml_payloads.ui_chat(chat))
         else:
