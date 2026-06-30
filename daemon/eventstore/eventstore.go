@@ -75,7 +75,10 @@ func (s *Store) List(afterID int64, limit int) ([]Event, error) {
 		}
 		events = append(events, e)
 	}
-	return events, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return events, nil
 }
 
 func (s *Store) Delete(upToID int64) error {

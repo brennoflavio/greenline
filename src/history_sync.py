@@ -39,9 +39,14 @@ from greenline.store.messages import unsupported_message_text
 from greenline.store.records import (
     LidMapRecord,
     MessageIndexRecord,
+    StoredMessageRecord,
     stored_message_record,
 )
-from greenline.store.repository import message_index_key, message_storage_key
+from greenline.store.repository import (
+    get_message_entry_with_key,
+    message_index_key,
+    message_storage_key,
+)
 from models import ChatListItem, Message, MessageType, ReadReceipt
 from ut_components.utils import enum_to_str as _enum_to_str
 from whatsmeow_types import (
@@ -67,7 +72,8 @@ def handle_history_sync(event: Any) -> Dict[str, Dict[str, Any]]:
 
     Returns a dict mapping chat JID to serialized ChatListItem for UI updates.
     """
-    raw = json.loads(event.payload or "{}")
+    payload = event.payload or "{}"
+    raw = json.loads(payload)
     evt = from_dict(data_class=HistorySyncEvent, data=raw)
 
     conversations = evt.Data.conversations or []
@@ -83,11 +89,7 @@ def handle_history_sync(event: Any) -> Dict[str, Dict[str, Any]]:
     with GreenlineKV() as kv:
         for conv in conversations:
             chat_jid = canonicalize_contact_jid(conv.ID, jid_map=jid_map) if conv.ID else ""
-            if not chat_jid:
-                continue
-            if chat_jid == STATUS_BROADCAST_JID:
-                continue
-            if chat_jid.endswith(NEWSLETTER_SERVER):
+            if not chat_jid or chat_jid == STATUS_BROADCAST_JID or chat_jid.endswith(NEWSLETTER_SERVER):
                 continue
 
             unread_message_ids, first_unread_message_id, unread_count = _conversation_unread_state(conv)
@@ -105,7 +107,6 @@ def handle_history_sync(event: Any) -> Dict[str, Dict[str, Any]]:
 
         _process_pushnames(kv, pushnames, jid_map, chat_updates)
         _process_lid_mappings(kv, lid_mappings)
-
         kv.commit_cached()
 
     return chat_updates
@@ -433,16 +434,13 @@ def _process_messages(
     if not messages:
         return
 
-    existing_entries = kv.get_partial_records(f"message:{chat_jid}:")
-    existing_by_id: Dict[str, tuple[str, Any]] = {value.id: (key, value) for key, value in existing_entries}
+    existing_by_id: Dict[str, tuple[str, Any]] = {}
+    legacy_by_id: Dict[str, tuple[str, StoredMessageRecord]] | None = None
 
     for msg_wrap in messages:
         inner = msg_wrap.message
         msg_id = inner.key.ID
-        if not msg_id:
-            continue
-
-        if inner.messageStubType:
+        if not msg_id or inner.messageStubType:
             continue
 
         content = _history_message_content(inner)
@@ -473,10 +471,42 @@ def _process_messages(
             read_receipt = _STATUS_TO_RECEIPT.get(inner.status, ReadReceipt.SENT)
 
         existing_entry = existing_by_id.get(msg_id)
+        if existing_entry is None:
+            existing_key, existing_value = get_message_entry_with_key(kv, chat_jid, msg_id)
+            if existing_key is None or existing_value is None:
+                exact_key = message_storage_key(chat_jid, ts_unix, msg_id)
+                exact_value = kv.get_record(exact_key)
+                if (
+                    isinstance(exact_value, StoredMessageRecord)
+                    and exact_value.id == msg_id
+                    and exact_value.chat_id == chat_jid
+                ):
+                    existing_key, existing_value = exact_key, exact_value
+                    kv.put_cached_record(message_index_key(chat_jid, msg_id), MessageIndexRecord(exact_key))
+                else:
+                    if legacy_by_id is None:
+                        legacy_by_id = {}
+                        for legacy_key, legacy_value in kv.get_partial_records(f"message:{chat_jid}:"):
+                            if not isinstance(legacy_value, StoredMessageRecord):
+                                continue
+                            if legacy_value.id and legacy_value.chat_id == chat_jid:
+                                legacy_by_id[legacy_value.id] = (legacy_key, legacy_value)
+                                kv.put_cached_record(
+                                    message_index_key(chat_jid, legacy_value.id), MessageIndexRecord(legacy_key)
+                                )
+                    legacy_entry = legacy_by_id.get(msg_id)
+                    if legacy_entry is not None:
+                        existing_key, existing_value = legacy_entry
+            if existing_key is not None and existing_value is not None:
+                existing_entry = (existing_key, existing_value)
+                existing_by_id[msg_id] = existing_entry
+
         if existing_entry is not None:
             existing_key, existing_value = existing_entry
             if existing_value.read_receipt != read_receipt:
-                kv.put_cached_record(existing_key, replace(existing_value, read_receipt=read_receipt))
+                updated_value = replace(existing_value, read_receipt=read_receipt)
+                kv.put_cached_record(existing_key, updated_value)
+                existing_by_id[msg_id] = (existing_key, updated_value)
             continue
 
         sender_raw = str(inner.participant or "") if not is_outgoing else ""
@@ -539,8 +569,10 @@ def _process_messages(
         raw_message: Dict[str, Any] = {"Message": content}
         if isinstance(inner.finalLiveLocation, dict):
             raw_message["FinalLiveLocation"] = inner.finalLiveLocation
-        kv.put_cached_record(key, stored_message_record(msg, raw_message))
+        stored_record = stored_message_record(msg, raw_message)
+        kv.put_cached_record(key, stored_record)
         kv.put_cached_record(message_index_key(chat_jid, msg_id), MessageIndexRecord(key))
+        existing_by_id[msg_id] = (key, stored_record)
 
 
 def _process_conversation(

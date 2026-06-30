@@ -491,7 +491,9 @@ def dispatch_event(
     chat_presence_updates: list[dict[str, Any]],
     reaction_updates: list[dict[str, Any]] | None = None,
 ) -> None:
-    with error_trace_context("event", event_type=getattr(event, "event_type", ""), event_id=getattr(event, "id", None)):
+    event_type = str(getattr(event, "event_type", ""))
+    event_id = getattr(event, "id", None)
+    with error_trace_context("event", event_type=event_type, event_id=event_id):
         try:
             _dispatch_event_inner(
                 event,
