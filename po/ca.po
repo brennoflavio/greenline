@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-29 13:49+0000\n"
+"POT-Creation-Date: 2026-06-30 14:34+0000\n"
 "PO-Revision-Date: 2026-06-26 19:33+0000\n"
 "Last-Translator: Walter Garcia-Fontes <walter.garcia@upf.edu>\n"
 "Language-Team: Catalan <https://hosted.weblate.org/projects/ubports/"
@@ -73,130 +73,130 @@ msgstr "No s'ha pogut iniciar el xat"
 msgid "Failed to import contact"
 msgstr "No s'ha pogut importar el contacte"
 
-#: ../qml/ChatListPage.qml:257
+#: ../qml/ChatListPage.qml:258
 msgid "No archived chats"
 msgstr "No hi ha xats arxivats"
 
-#: ../qml/ChatListPage.qml:257
+#: ../qml/ChatListPage.qml:258
 msgid "No chats found"
 msgstr "No s'ha trobat cap xat"
 
-#: ../qml/ChatListPage.qml:277 ../qml/ChatListPage.qml:370
+#: ../qml/ChatListPage.qml:278 ../qml/ChatListPage.qml:371
 msgid "Chats"
 msgstr "Xats"
 
-#: ../qml/ChatListPage.qml:283
+#: ../qml/ChatListPage.qml:284
 msgid "New"
 msgstr "Nou"
 
-#: ../qml/ChatListPage.qml:290 ../qml/ChatListPage.qml:370
+#: ../qml/ChatListPage.qml:291 ../qml/ChatListPage.qml:371
 msgid "Archived"
 msgstr "Arxivat"
 
-#: ../qml/ChatListPage.qml:325 ../qml/components/NewChatDialog.qml:52
+#: ../qml/ChatListPage.qml:326 ../qml/components/NewChatDialog.qml:52
 msgid "Import Contact"
 msgstr "Importa un contacte"
 
-#: ../qml/ChatPage.qml:84
+#: ../qml/ChatPage.qml:233 ../qml/components/ChatMessageList.qml:338
 msgid "You"
 msgstr "Vos"
 
-#: ../qml/ChatPage.qml:116
+#: ../qml/ChatPage.qml:275
 msgid "Message updated"
 msgstr "Missatge actualitzat"
 
-#: ../qml/ChatPage.qml:122
+#: ../qml/ChatPage.qml:281
 msgid "Failed to edit message"
 msgstr "No s'ha pogut editar el missatge"
 
-#: ../qml/ChatPage.qml:132
+#: ../qml/ChatPage.qml:291
 msgid "Message deleted"
 msgstr "S'ha suprimit el missatge"
 
-#: ../qml/ChatPage.qml:135
+#: ../qml/ChatPage.qml:294
 msgid "Failed to delete message"
 msgstr "No s'ha pogut suprimir el missatge"
 
-#: ../qml/ChatPage.qml:158
+#: ../qml/ChatPage.qml:317
 msgid "No internet connection. Connect and try again."
 msgstr "No hi ha connexió a Internet. Connecteu-vos i torneu-ho a provar."
 
-#: ../qml/ChatPage.qml:171 ../qml/ChatPage.qml:1106
+#: ../qml/ChatPage.qml:330 ../qml/ChatPage.qml:1316
 msgid "Failed to download media"
 msgstr "No s'ha pogut baixar el suport"
 
-#: ../qml/ChatPage.qml:465
+#: ../qml/ChatPage.qml:720
 msgid "Failed to load older messages"
 msgstr "No s'han pogut carregar els missatges antics"
 
-#: ../qml/ChatPage.qml:555
+#: ../qml/ChatPage.qml:803
 msgid "Failed to send audio"
 msgstr "No s'ha pogut enviar l'àudio"
 
-#: ../qml/ChatPage.qml:662 ../qml/DocumentPreviewPage.qml:42
+#: ../qml/ChatPage.qml:906 ../qml/DocumentPreviewPage.qml:42
 #: ../qml/DocumentPreviewPage.qml:97
 #: ../qml/components/ChatAttachmentDialog.qml:42
 #: ../qml/components/DocumentMessage.qml:61
 msgid "Document"
 msgstr "Document"
 
-#: ../qml/ChatPage.qml:674
+#: ../qml/ChatPage.qml:916
 msgid "Failed to send document"
 msgstr "No s'ha pogut enviar el document"
 
-#: ../qml/ChatPage.qml:715
+#: ../qml/ChatPage.qml:955
 msgid "Failed to send contact"
 msgstr "No s'ha pogut enviar el contacte"
 
-#: ../qml/ChatPage.qml:757
+#: ../qml/ChatPage.qml:995
 msgid "Failed to send location"
 msgstr "No s'ha pogut enviar la ubicació"
 
-#: ../qml/ChatPage.qml:841
+#: ../qml/ChatPage.qml:1072
 msgid "WhatsApp messages read today"
 msgstr "Missatges de WhatsApp llegits avui"
 
-#: ../qml/ChatPage.qml:842
+#: ../qml/ChatPage.qml:1073
 msgid "No WhatsApp messages read today"
 msgstr "No hi ha missatges de WhatsApp llegits avui"
 
-#: ../qml/ChatPage.qml:850
+#: ../qml/ChatPage.qml:1081
 msgid "WhatsApp messages sent today"
 msgstr "Missatges de WhatsApp enviats avui"
 
-#: ../qml/ChatPage.qml:851
+#: ../qml/ChatPage.qml:1082
 msgid "No WhatsApp messages sent today"
 msgstr "No s'han enviat missatges de WhatsApp avui"
 
-#: ../qml/ChatPage.qml:879
+#: ../qml/ChatPage.qml:1111
 msgid "Scroll up to load older messages first"
 msgstr "Desplaça amunt per a carregar primer els missatges antics"
 
-#: ../qml/ChatPage.qml:886
+#: ../qml/ChatPage.qml:1118
 msgid "Copied to clipboard"
 msgstr "S'ha copiat al porta-retalls"
 
-#: ../qml/ChatPage.qml:1065
+#: ../qml/ChatPage.qml:1291
 msgid "recording audio..."
 msgstr "s'està gravant l'àudio..."
 
-#: ../qml/ChatPage.qml:1065
+#: ../qml/ChatPage.qml:1291
 msgid "typing..."
 msgstr "s'està escrivint..."
 
-#: ../qml/ChatPage.qml:1160
+#: ../qml/ChatPage.qml:1370
 msgid "Send Photo"
 msgstr "Envia una foto"
 
-#: ../qml/ChatPage.qml:1171
+#: ../qml/ChatPage.qml:1381
 msgid "Send Video"
 msgstr "Envia un vídeo"
 
-#: ../qml/ChatPage.qml:1182
+#: ../qml/ChatPage.qml:1392
 msgid "Send Document"
 msgstr "Envia el document"
 
-#: ../qml/ChatPage.qml:1193
+#: ../qml/ChatPage.qml:1403
 msgid "Send Contact"
 msgstr "Envia el contacte"
 
@@ -223,8 +223,8 @@ msgid "Share"
 msgstr "Comparteix"
 
 #: ../qml/ContactPreviewPage.qml:101 ../qml/DocumentPreviewPage.qml:101
-#: ../qml/ImagePreviewPage.qml:67 ../qml/MessageReactionsPage.qml:314
-#: ../qml/VideoPreviewPage.qml:71 ../qml/components/ChatPageHeader.qml:18
+#: ../qml/ImagePreviewPage.qml:67 ../qml/MessageReactionsPage.qml:369
+#: ../qml/VideoPreviewPage.qml:71 ../qml/components/ChatPageHeader.qml:17
 #: ../qml/ut_components/AppHeader.qml:78
 msgid "Back"
 msgstr "Enrere"
@@ -269,48 +269,48 @@ msgstr "Només s'utilitzarà el primer element compartit"
 msgid "Unable to open the shared file"
 msgstr "No s'ha pogut obrir el fitxer compartit"
 
-#: ../qml/MessageReactionsPage.qml:34
+#: ../qml/MessageReactionsPage.qml:113
 msgid "Failed to load reactions"
 msgstr "Ha fallat en carregar les reaccions"
 
-#: ../qml/MessageReactionsPage.qml:52
+#: ../qml/MessageReactionsPage.qml:130
 msgid "Failed to send reaction"
 msgstr "No s'ha pogut enviar la reacció"
 
-#: ../qml/MessageReactionsPage.qml:197
+#: ../qml/MessageReactionsPage.qml:252
 msgid "Remove"
 msgstr "Elimina"
 
-#: ../qml/MessageReactionsPage.qml:199
+#: ../qml/MessageReactionsPage.qml:254
 msgid "Deleting reaction…"
 msgstr "S'està suprimint la reacció…"
 
-#: ../qml/MessageReactionsPage.qml:199
+#: ../qml/MessageReactionsPage.qml:254
 msgid "Reaction removed"
 msgstr "Reacció eliminada"
 
-#: ../qml/MessageReactionsPage.qml:210
+#: ../qml/MessageReactionsPage.qml:265
 msgid "Loading reactions…"
 msgstr "S'estan carregant reaccions…"
 
-#: ../qml/MessageReactionsPage.qml:227
+#: ../qml/MessageReactionsPage.qml:282
 msgid "No reactions yet"
 msgstr "Encara no hi ha reaccions"
 
-#: ../qml/MessageReactionsPage.qml:273
+#: ../qml/MessageReactionsPage.qml:328
 msgid "Quick reactions"
 msgstr "Reaccions ràpides"
 
-#: ../qml/MessageReactionsPage.qml:288
+#: ../qml/MessageReactionsPage.qml:343
 msgid "Reaction updated"
 msgstr "S'ha actualitzat la reacció"
 
-#: ../qml/MessageReactionsPage.qml:288
+#: ../qml/MessageReactionsPage.qml:343
 msgid "Sending reaction…"
 msgstr "S'està enviant la reacció…"
 
-#: ../qml/MessageReactionsPage.qml:310
-#: ../qml/components/ChatMessageList.qml:260
+#: ../qml/MessageReactionsPage.qml:365
+#: ../qml/components/ChatMessageList.qml:539
 msgid "Reactions"
 msgstr "Reaccions"
 
@@ -367,36 +367,36 @@ msgstr "S'està esperant confirmació..."
 msgid "Login with Phone Number"
 msgstr "Inicia la sessió amb el número de telèfon"
 
-#: ../qml/ProfilePage.qml:105
+#: ../qml/ProfilePage.qml:81
 msgid "Group"
 msgstr "Grup"
 
-#: ../qml/ProfilePage.qml:119 ../qml/SettingsPage.qml:256
+#: ../qml/ProfilePage.qml:95 ../qml/SettingsPage.qml:256
 #: ../qml/ut_components/AppHeader.qml:94
 msgid "Settings"
 msgstr "Configuració"
 
-#: ../qml/ProfilePage.qml:122
+#: ../qml/ProfilePage.qml:98
 msgid "Mute notifications"
 msgstr "Silencia les notificacions"
 
-#: ../qml/ProfilePage.qml:123
+#: ../qml/ProfilePage.qml:99
 msgid "Silence all notifications from this chat"
 msgstr "Silencia totes les notificacions d'aquest xat"
 
-#: ../qml/ProfilePage.qml:134
+#: ../qml/ProfilePage.qml:110
 msgid "Description"
 msgstr "Descripció"
 
-#: ../qml/ProfilePage.qml:155
+#: ../qml/ProfilePage.qml:131
 msgid "Members"
 msgstr "Membres"
 
-#: ../qml/ProfilePage.qml:159
+#: ../qml/ProfilePage.qml:135
 msgid "%1 members"
 msgstr "%1 membres"
 
-#: ../qml/ProfilePage.qml:286
+#: ../qml/ProfilePage.qml:229
 msgid "Profile"
 msgstr "Perfil"
 
@@ -488,7 +488,7 @@ msgstr ""
 msgid "Resetting app..."
 msgstr "S'està reiniciant l'aplicació..."
 
-#: ../qml/StickerPickerPage.qml:55
+#: ../qml/StickerPickerPage.qml:60
 msgid ""
 "No stickers yet.\n"
 "Receive stickers in chats to use them here."
@@ -496,7 +496,7 @@ msgstr ""
 "Encara no hi ha adhesius.\n"
 "Rebeu adhesius en els xats per utilitzar-los aquí."
 
-#: ../qml/StickerPickerPage.qml:84
+#: ../qml/StickerPickerPage.qml:89
 msgid "Send Sticker"
 msgstr "Envia l'adhesiu"
 
@@ -528,19 +528,19 @@ msgstr "Ubicació"
 msgid "Type a message..."
 msgstr "Escriviu un missatge..."
 
-#: ../qml/components/ChatListItem.qml:171
+#: ../qml/components/ChatListItem.qml:140
 msgid "Mute"
 msgstr "Silencia"
 
-#: ../qml/components/ChatListItem.qml:171
+#: ../qml/components/ChatListItem.qml:140
 msgid "Unmute"
 msgstr "No silenciïs"
 
-#: ../qml/components/ChatListItem.qml:176
+#: ../qml/components/ChatListItem.qml:145
 msgid "Archive"
 msgstr "Arxiva"
 
-#: ../qml/components/ChatListItem.qml:176
+#: ../qml/components/ChatListItem.qml:145
 msgid "Unarchive"
 msgstr "Desarxiva"
 
@@ -548,33 +548,33 @@ msgstr "Desarxiva"
 msgid "Search chats..."
 msgstr "Cerca els xats..."
 
-#: ../qml/components/ChatMessageList.qml:66
+#: ../qml/components/ChatMessageList.qml:269
 msgid "Deleted message"
 msgstr "Missatge eliminat"
 
-#: ../qml/components/ChatMessageList.qml:69
+#: ../qml/components/ChatMessageList.qml:272
 msgid "View-once message. Open WhatsApp on your primary device to view it."
 msgstr ""
 "Visualitza un missatge. Obre WhatsApp al teu dispositiu principal per "
 "veure'l."
 
-#: ../qml/components/ChatMessageList.qml:200
+#: ../qml/components/ChatMessageList.qml:465
 msgid "Unread"
 msgstr "Sense llegir"
 
-#: ../qml/components/ChatMessageList.qml:237
+#: ../qml/components/ChatMessageList.qml:516
 msgid "Delete"
 msgstr "Suprimeix"
 
-#: ../qml/components/ChatMessageList.qml:248
+#: ../qml/components/ChatMessageList.qml:527
 msgid "Reply"
 msgstr "Respon"
 
-#: ../qml/components/ChatMessageList.qml:254
+#: ../qml/components/ChatMessageList.qml:533
 msgid "Edit"
 msgstr "Edita"
 
-#: ../qml/components/ChatMessageList.qml:266
+#: ../qml/components/ChatMessageList.qml:545
 msgid "Copy"
 msgstr "Copia"
 
@@ -625,7 +625,7 @@ msgstr "No s'ha pogut obtenir la ubicació actual"
 msgid "Location request timed out"
 msgstr "La sol·licitud d'ubicació ha excedit el temps"
 
-#: ../qml/components/MessageBubble.qml:217
+#: ../qml/components/MessageBubble.qml:187
 msgid "edited"
 msgstr "editat"
 
@@ -644,11 +644,11 @@ msgstr ""
 msgid "OK"
 msgstr "D'acord"
 
-#: ../qml/components/RichTextMessage.qml:129
+#: ../qml/components/RichTextMessage.qml:130
 msgid "Show less"
 msgstr "Mostra menys"
 
-#: ../qml/components/RichTextMessage.qml:129
+#: ../qml/components/RichTextMessage.qml:130
 msgid "Show more"
 msgstr "Mostra'n més"
 
