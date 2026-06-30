@@ -14,7 +14,6 @@ from daemon_types import (
     SendMessageReply,
     SendReactionReply,
     SessionStatusReply,
-    SyncAvatarReply,
     VersionReply,
 )
 from greenline.contracts.codecs import decode_dataclass, encode_dataclass
@@ -71,8 +70,8 @@ class GetGroupParticipantsRequest:
 
 
 @dataclass
-class SyncAvatarRequest:
-    JID: str
+class PrioritizeAvatarsRequest:
+    JIDs: list[str]
 
 
 @dataclass
@@ -205,7 +204,7 @@ class DaemonClientProtocol(Protocol):
 
     def get_group_participants(self, chat_jid: str) -> GetGroupParticipantsReply: ...
 
-    def sync_avatar(self, jid: str) -> SyncAvatarReply: ...
+    def prioritize_avatars(self, jids: list[str]) -> EmptyReply: ...
 
     def list_events(self, after_id: int = 0, limit: int = 100) -> ListEventsReply: ...
 
@@ -477,9 +476,9 @@ class GreenlineDaemon:
         )
         return _decode_reply(GetGroupParticipantsReply, data, contract="Service.GetGroupParticipants")
 
-    def sync_avatar(self, jid: str) -> SyncAvatarReply:
-        data = self._call("Service.SyncAvatar", SyncAvatarRequest(JID=jid))
-        return _decode_reply(SyncAvatarReply, data, contract="Service.SyncAvatar")
+    def prioritize_avatars(self, jids: list[str]) -> EmptyReply:
+        data = self._call("Service.PrioritizeAvatars", PrioritizeAvatarsRequest(JIDs=list(jids)))
+        return _decode_empty_reply(data, contract="Service.PrioritizeAvatars")
 
     def list_events(self, after_id: int = 0, limit: int = 100) -> ListEventsReply:
         data = _with_empty_list(

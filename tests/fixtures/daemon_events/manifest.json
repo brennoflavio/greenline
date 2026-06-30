@@ -223,6 +223,11 @@
     {
       "event_type": "Picture",
       "path": "event/picture_update.json",
+      "source_family": "parse_only"
+    },
+    {
+      "event_type": "AvatarSync",
+      "path": "event/avatar_sync.json",
       "source_family": "photo_update"
     },
     {

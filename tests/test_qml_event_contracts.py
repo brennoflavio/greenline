@@ -42,12 +42,12 @@ def test_daemon_event_handler_contracts_for_sync_message_chat_photo_presence(
 ) -> None:
     from greenline.events.chat_sync import DaemonEventHandler
 
-    picture_fixture = FIXTURE_BY_PATH["event/picture_update.json"]
-    seed_prerequisite_kv(picture_fixture)
+    avatar_fixture = FIXTURE_BY_PATH["event/avatar_sync.json"]
+    seed_prerequisite_kv(avatar_fixture)
     fake_daemon_rpc.queue_events(
         [
             FIXTURE_BY_PATH["message/conversation.json"].stored_event(),
-            FIXTURE_BY_PATH["event/picture_update.json"].stored_event(),
+            FIXTURE_BY_PATH["event/avatar_sync.json"].stored_event(),
             FIXTURE_BY_PATH["event/presence_online.json"].stored_event(),
             FIXTURE_BY_PATH["event/chatpresence.json"].stored_event(),
         ],

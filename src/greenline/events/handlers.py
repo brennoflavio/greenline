@@ -18,6 +18,7 @@ from greenline.store.identity import (
     remember_chat,
     resolve_sender_name,
     resolve_sender_photo,
+    select_missing_avatar_priority_jids,
     update_chat_name,
     upsert_identity_chat,
 )
@@ -48,6 +49,7 @@ from receipt_store import process_receipt
 from rpc import DaemonNotReadyError, DaemonTimeoutError
 from unread_counter import reconcile_unread_total
 from whatsmeow_types import (
+    AvatarSyncEvent,
     BlocklistEvent,
     BusinessNameEvent,
     CallRejectEvent,
@@ -353,35 +355,37 @@ def _handle_mute(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None:
             chat_updates[chat.id] = dataclass_to_ui_dict(chat)
 
 
-def _handle_picture(
+def _handle_picture(event: Any) -> None:
+    _parse_ignored_event(event, PictureEvent)
+
+
+def _handle_avatar_sync(
     event: Any,
     chat_updates: dict[str, dict[str, Any]],
     photo_updates: list[dict[str, str]],
 ) -> None:
     raw = json.loads(event.payload or "{}")
-    evt = from_dict(data_class=PictureEvent, data=raw)
+    evt = from_dict(data_class=AvatarSyncEvent, data=raw)
     jid = canonicalize_contact_jid(daemon_client().ensure_jid(evt.JID).JID)
     if not jid:
         return
 
     photo = ""
     if not evt.Remove:
-        avatar_path = daemon_client().sync_avatar(jid).AvatarPath
-        photo = "file://" + avatar_path if avatar_path else ""
-        if not photo:
+        if not evt.AvatarPath:
             return
+        photo = "file://" + evt.AvatarPath
 
     with GreenlineKV() as kv:
         key = f"chat:{jid}"
         chat = kv.get_record(key)
-        if chat is None:
+        if chat is None or chat.photo == photo:
             return
-        if chat.photo != photo:
-            chat.photo = photo
-            kv.put_record(key, chat)
-            remember_chat(chat)
-            chat_updates[chat.id] = dataclass_to_ui_dict(chat)
-            photo_updates.append({"jid": jid, "photo": photo})
+        chat.photo = photo
+        kv.put_record(key, chat)
+        remember_chat(chat)
+        chat_updates[chat.id] = dataclass_to_ui_dict(chat)
+        photo_updates.append({"jid": jid, "photo": photo})
 
 
 def _format_presence_status(available: bool, last_seen: str) -> str:
@@ -534,7 +538,9 @@ def _dispatch_event_inner(
     elif event.event_type == "Mute":
         _handle_mute(event, chat_updates)
     elif event.event_type == "Picture":
-        _handle_picture(event, chat_updates, photo_updates)
+        _handle_picture(event)
+    elif event.event_type == "AvatarSync":
+        _handle_avatar_sync(event, chat_updates, photo_updates)
     elif event.event_type == "PushName":
         _handle_push_name(event, chat_updates)
     elif event.event_type == "BusinessName":
@@ -547,6 +553,11 @@ def _dispatch_event_inner(
         updated = handle_history_sync(event)
         chat_updates.update(updated)
         reconcile_unread_total()
+        prioritized = select_missing_avatar_priority_jids(
+            sorted(updated.values(), key=lambda chat: int(chat.get("last_message_timestamp", 0)), reverse=True)
+        )
+        if prioritized:
+            daemon_client().prioritize_avatars(prioritized)
     elif event.event_type == "GroupInfo":
         _handle_group_info(event)
     elif event.event_type == "Blocklist":

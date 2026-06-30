@@ -562,6 +562,11 @@ class GetChatListRequest:
 
 
 @dataclass(frozen=True)
+class PrioritizeChatAvatarsRequest:
+    chat_ids: list[str] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
 class GetMessagesRequest:
     chat_id: str
     cursor: str = ""
@@ -754,6 +759,13 @@ API_CONTRACTS: dict[str, ApiContract] = {
     ),
     "pair_phone": ApiContract("pair_phone", assert_pair_phone_response, "dict", request_type=PairPhoneRequest),
     "ping_daemon": ApiContract("ping_daemon", assert_success_response, "dict"),
+    "prioritize_chat_avatars": ApiContract(
+        "prioritize_chat_avatars",
+        assert_none_response,
+        "none",
+        request_type=PrioritizeChatAvatarsRequest,
+        notes="Fire-and-forget avatar priority hint for visible chats.",
+    ),
     "run_storage_migrations": ApiContract(
         "run_storage_migrations",
         assert_none_response,

@@ -156,11 +156,11 @@ def test_json_like_validator_logs_metadata(caplog: pytest.LogCaptureFixture) -> 
     assert not validate_json_like(
         {"path": Path("avatar.jpg")},
         boundary="daemon_rpc",
-        contract="Service.SyncAvatar",
+        contract="Service.PrioritizeAvatars",
         direction="encode",
     )
 
-    assert "daemon_rpc contract=Service.SyncAvatar direction=encode validation failed" in caplog.text
+    assert "daemon_rpc contract=Service.PrioritizeAvatars direction=encode validation failed" in caplog.text
 
 
 def test_json_like_assertion_raises_after_logging(caplog: pytest.LogCaptureFixture) -> None:

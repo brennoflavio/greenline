@@ -421,6 +421,13 @@ class PictureEvent:
 
 
 @dataclass
+class AvatarSyncEvent:
+    JID: str = ""
+    AvatarPath: str = ""
+    Remove: bool = False
+
+
+@dataclass
 class ContactEvent:
     JID: str = ""
     Timestamp: str = ""

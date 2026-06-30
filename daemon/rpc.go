@@ -367,23 +367,15 @@ func (s *Service) GetGroupParticipants(args *GetGroupParticipantsArgs, reply *Ge
 	return nil
 }
 
-// SyncAvatar types
-
-type SyncAvatarArgs struct {
-	JID string
+type PrioritizeAvatarsArgs struct {
+	JIDs []string
 }
 
-type SyncAvatarReply struct {
-	AvatarPath string
-}
-
-func (s *Service) SyncAvatar(args *SyncAvatarArgs, reply *SyncAvatarReply) error {
+func (s *Service) PrioritizeAvatars(args *PrioritizeAvatarsArgs, reply *struct{}) error {
 	if err := s.requireLogin(); err != nil {
 		return err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	reply.AvatarPath = s.syncer.ForceSync(ctx, args.JID)
+	s.syncer.PromoteHigh(args.JIDs)
 	return nil
 }
 

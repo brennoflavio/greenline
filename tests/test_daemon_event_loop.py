@@ -64,12 +64,12 @@ def test_process_events_once_advances_and_deletes_processed_events(fake_daemon_r
 def test_daemon_event_handler_emits_batched_qml_payloads(fake_daemon_rpc) -> None:
     from greenline.events.chat_sync import DaemonEventHandler
 
-    picture_fixture = FIXTURE_BY_PATH["event/picture_update.json"]
-    seed_prerequisite_kv(picture_fixture)
+    avatar_fixture = FIXTURE_BY_PATH["event/avatar_sync.json"]
+    seed_prerequisite_kv(avatar_fixture)
     fake_daemon_rpc.queue_events(
         [
             _fixture_event("message/conversation.json"),
-            _fixture_event("event/picture_update.json", event_id=36),
+            _fixture_event("event/avatar_sync.json", event_id=36),
             *_ignored_events(100, 498),
         ],
         [
@@ -125,11 +125,10 @@ def test_daemon_event_handler_emits_batched_qml_payloads(fake_daemon_rpc) -> Non
         assert kv.get_record(LAST_EVENT_ID_KEY) == DaemonLastEventIDRecord(1097)
 
 
-def test_picture_event_does_not_clear_existing_photo_on_transient_sync_failure(fake_daemon_rpc) -> None:
+def test_picture_event_is_parse_only_for_avatar_updates(fake_daemon_rpc) -> None:
     from greenline.events.handlers import dispatch_event
 
     chat = seed_chat(DEFAULT_SENDER_ID, photo="file:///tmp/existing.jpg", muted=False)
-    fake_daemon_rpc.sync_avatar_paths[DEFAULT_SENDER_ID] = ""
 
     event = daemon_types.StoredEvent(
         id=9000,
@@ -188,21 +187,29 @@ def test_chat_list_update_event_does_not_clear_existing_photo_on_empty_avatar_pa
         assert kv.get_record(f"chat:{chat.id}").photo == "file:///tmp/existing.jpg"
 
 
-def test_picture_remove_event_still_clears_existing_photo(fake_daemon_rpc) -> None:
+def test_history_sync_event_prioritizes_recent_missing_avatars(fake_daemon_rpc) -> None:
+    from greenline.events.handlers import dispatch_event
+
+    event = _fixture_event("history_sync/conversation_text.json", event_id=9001)
+
+    dispatch_event(event, {}, [], [], [], [], [])
+
+    assert fake_daemon_rpc.prioritize_avatars_calls == [["fixture-chat-47@s.whatsapp.net"]]
+
+
+def test_avatar_sync_remove_event_still_clears_existing_photo(fake_daemon_rpc) -> None:
     from greenline.events.handlers import dispatch_event
 
     chat = seed_chat(DEFAULT_SENDER_ID, photo="file:///tmp/existing.jpg", muted=False)
 
     event = daemon_types.StoredEvent(
-        id=9001,
-        event_type="Picture",
+        id=9002,
+        event_type="AvatarSync",
         payload=json.dumps(
             {
                 "JID": DEFAULT_SENDER_ID,
-                "Author": "",
-                "Timestamp": "2026-01-01T00:00:00Z",
+                "AvatarPath": "",
                 "Remove": True,
-                "PictureID": "",
             }
         ),
         created_at=0,

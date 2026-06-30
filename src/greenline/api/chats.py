@@ -10,13 +10,17 @@ from greenline.contracts.kv import GreenlineKV
 from greenline.contracts.qml import (
     ChatIdRequest,
     GetChatListRequest,
+    PrioritizeChatAvatarsRequest,
     SetChatDraftRequest,
     StartChatByPhoneRequest,
     StartChatFromContactRequest,
 )
 from greenline.contracts.validation import BoundaryValidationError
 from greenline.reporting import crash_reporter
-from greenline.store.identity import canonicalize_contact_jid
+from greenline.store.identity import (
+    canonicalize_contact_jid,
+    prioritize_missing_avatar_chat_ids,
+)
 from greenline.store.mentions import build_mention_candidate, validate_mention_spans
 from greenline.store.records import DraftMentionsRecord, DraftRecord, GroupProfileRecord
 from models import (
@@ -108,6 +112,13 @@ def get_chat_list(request: GetChatListRequest) -> ChatListResponse:
         raise
     except Exception as error:
         return ChatListResponse(success=False, chats=[], message=str(error))
+
+
+def prioritize_chat_avatars(request: PrioritizeChatAvatarsRequest) -> None:
+    try:
+        prioritize_missing_avatar_chat_ids(request.chat_ids)
+    except Exception:
+        pass
 
 
 def _normalize_phone_number(phone_number: str) -> str:

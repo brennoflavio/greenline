@@ -91,9 +91,13 @@ Page {
 
     function refreshChatList() {
         python.call('main.get_chat_list', [showArchived], function(result) {
-            if (result.success)
-                updateChats(result.chats, false);
+            if (!result.success)
+                return ;
 
+            updateChats(result.chats, false);
+            python.call('main.prioritize_chat_avatars', [result.chats.map(function(chat) {
+                return chat.id;
+            })]);
         });
     }
 

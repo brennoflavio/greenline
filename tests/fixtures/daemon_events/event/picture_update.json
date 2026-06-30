@@ -1,7 +1,7 @@
 {
   "_meta": {
     "source": "handwritten minimal daemon-shaped JSON",
-    "source_family": "photo_update"
+    "source_family": "parse_only"
   },
   "event_type": "Picture",
   "id": 36,

@@ -89,11 +89,6 @@ class SendReactionReply:
 
 
 @dataclass
-class SyncAvatarReply:
-    AvatarPath: str
-
-
-@dataclass
 class GetChatSettingsReply:
     MutedUntil: int
 

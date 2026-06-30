@@ -7,6 +7,8 @@ from greenline.contracts.kv import GreenlineKV
 from greenline.store.records import LidMapRecord, OwnJIDRecord
 from models import ChatListItem, ReadReceipt
 
+AVATAR_PRIORITY_BATCH_SIZE = 20
+
 _CHAT_RUNTIME_CACHE: Dict[str, Dict[str, Any]] = {}
 _OWN_JID = ""
 _STATUS_BROADCAST_JID = "status@broadcast"
@@ -154,6 +156,51 @@ def resolve_sender_photo(sender_jid: str) -> str:
     if data is None:
         return ""
     return str(data.get("photo", "") or "")
+
+
+def _is_avatar_priority_jid(jid: str) -> bool:
+    return bool(jid) and jid != _STATUS_BROADCAST_JID and not jid.endswith(_NEWSLETTER_JID_SUFFIX)
+
+
+def select_missing_avatar_priority_jids(
+    chats: list[dict[str, Any]],
+    *,
+    limit: int = AVATAR_PRIORITY_BATCH_SIZE,
+) -> list[str]:
+    prioritized: list[str] = []
+    seen: set[str] = set()
+
+    for chat in chats:
+        jid = canonicalize_contact_jid(str(chat.get("id") or ""))
+        if not _is_avatar_priority_jid(jid) or jid in seen:
+            continue
+        if str(chat.get("photo") or ""):
+            continue
+        prioritized.append(jid)
+        seen.add(jid)
+        if len(prioritized) >= limit:
+            break
+
+    return prioritized
+
+
+def prioritize_missing_avatar_chat_ids(chat_ids: list[str]) -> None:
+    ordered_chats: list[dict[str, Any]] = []
+    seen: set[str] = set()
+
+    for chat_id in chat_ids:
+        jid = canonicalize_contact_jid(chat_id)
+        if jid in seen:
+            continue
+        chat = _get_chat_data(jid)
+        if chat is None:
+            continue
+        ordered_chats.append(chat)
+        seen.add(jid)
+
+    prioritized = select_missing_avatar_priority_jids(ordered_chats)
+    if prioritized:
+        daemon_client().prioritize_avatars(prioritized)
 
 
 def _is_contact_identity_jid(jid: str) -> bool:

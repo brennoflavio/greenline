@@ -1,0 +1,48 @@
+{
+  "added": {},
+  "changed": {
+    "chat:fixture-chat-43@s.whatsapp.net": {
+      "after": {
+        "archived": false,
+        "business_name": "",
+        "date": "11:59",
+        "first_unread_message_id": "",
+        "full_name": "",
+        "id": "fixture-chat-43@s.whatsapp.net",
+        "is_group": false,
+        "last_message": "Seed message",
+        "last_message_mentioned_jids": [],
+        "last_message_timestamp": 1,
+        "last_message_type": "text",
+        "muted": false,
+        "name": "Old Fixture Name",
+        "name_updated_at": 1,
+        "photo": "file://<CACHE>/greenline.tests/avatars/fixture-chat-43@s.whatsapp.net.jpg",
+        "push_name": "",
+        "read_receipt": "",
+        "unread_count": 0
+      },
+      "before": {
+        "archived": false,
+        "business_name": "",
+        "date": "11:59",
+        "first_unread_message_id": "",
+        "full_name": "",
+        "id": "fixture-chat-43@s.whatsapp.net",
+        "is_group": false,
+        "last_message": "Seed message",
+        "last_message_mentioned_jids": [],
+        "last_message_timestamp": 1,
+        "last_message_type": "text",
+        "muted": false,
+        "name": "Old Fixture Name",
+        "name_updated_at": 1,
+        "photo": "",
+        "push_name": "",
+        "read_receipt": "",
+        "unread_count": 0
+      }
+    }
+  },
+  "deleted": {}
+}

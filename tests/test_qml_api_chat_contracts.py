@@ -62,6 +62,20 @@ def test_get_chat_list_contract_rejects_malformed_chat() -> None:
         main.get_chat_list()
 
 
+def test_prioritize_chat_avatars_contract_filters_missing_photos_in_input_order(fake_daemon_rpc) -> None:
+    missing_first = seed_chat("missing-first@s.whatsapp.net", photo="")
+    seed_chat("has-photo@s.whatsapp.net", photo="file:///tmp/existing.jpg")
+    seed_chat("news@newsletter", photo="")
+    missing_second = seed_chat("missing-second@s.whatsapp.net", photo="")
+
+    result = main.prioritize_chat_avatars(
+        ["has-photo@s.whatsapp.net", missing_first.id, "news@newsletter", missing_second.id]
+    )
+
+    validate_api_response("prioritize_chat_avatars", result)
+    assert fake_daemon_rpc.prioritize_avatars_calls == [[missing_first.id, missing_second.id]]
+
+
 def test_get_contact_list_contract_success_and_failure(fake_daemon_rpc, monkeypatch: pytest.MonkeyPatch) -> None:
     fake_daemon_rpc.contacts = [
         daemon_types.Contact(

@@ -17,7 +17,6 @@ from daemon_types import (
     SendMessageReply,
     SendReactionReply,
     SessionStatusReply,
-    SyncAvatarReply,
     VersionReply,
 )
 from greenline.contracts.daemon import (
@@ -217,6 +216,21 @@ def test_daemon_boundary_normalizes_null_event_list() -> None:
     assert transport.calls == [("Service.ListEvents", {"AfterID": 3, "Limit": 4})]
 
 
+def test_daemon_boundary_encodes_avatar_priorities() -> None:
+    transport = FakeTransport({"Service.PrioritizeAvatars": {}})
+    daemon = GreenlineDaemon(transport=transport)  # type: ignore[arg-type]
+
+    reply = daemon.prioritize_avatars(["chat-2@s.whatsapp.net", "chat-1@s.whatsapp.net"])
+
+    assert reply == EmptyReply()
+    assert transport.calls == [
+        (
+            "Service.PrioritizeAvatars",
+            {"JIDs": ["chat-2@s.whatsapp.net", "chat-1@s.whatsapp.net"]},
+        )
+    ]
+
+
 def test_daemon_boundary_rejects_missing_event_list() -> None:
     transport = FakeTransport({"Service.ListEvents": {}})
     daemon = GreenlineDaemon(transport=transport)  # type: ignore[arg-type]
@@ -339,7 +353,7 @@ def test_daemon_boundary_decodes_groups_with_nested_participants() -> None:
     assert transport.calls == [("Service.GetGroups", {})]
 
 
-def test_daemon_boundary_decodes_group_participants_sync_avatar_settings_and_pair_phone() -> None:
+def test_daemon_boundary_decodes_group_participants_settings_and_pair_phone() -> None:
     transport = FakeTransport(
         {
             "Service.GetGroupParticipants": {
@@ -354,7 +368,6 @@ def test_daemon_boundary_decodes_group_participants_sync_avatar_settings_and_pai
                     }
                 ]
             },
-            "Service.SyncAvatar": {"AvatarPath": "/tmp/avatar.jpg"},
             "Service.GetChatSettings": {"MutedUntil": 12345},
             "Service.PairPhone": {"Code": "12345678"},
         }
@@ -371,12 +384,10 @@ def test_daemon_boundary_decodes_group_participants_sync_avatar_settings_and_pai
             is_super_admin=False,
         )
     ]
-    assert daemon.sync_avatar("contact@s.whatsapp.net") == SyncAvatarReply(AvatarPath="/tmp/avatar.jpg")
     assert daemon.get_chat_settings("chat-1") == GetChatSettingsReply(MutedUntil=12345)
     assert daemon.pair_phone("15551234567") == PairPhoneReply(Code="12345678")
     assert transport.calls == [
         ("Service.GetGroupParticipants", {"ChatJID": "group@g.us"}),
-        ("Service.SyncAvatar", {"JID": "contact@s.whatsapp.net"}),
         ("Service.GetChatSettings", {"ChatJID": "chat-1"}),
         ("Service.PairPhone", {"Phone": "15551234567"}),
     ]

@@ -40,6 +40,7 @@ OUTPUT_SNAPSHOT_ROOT = Path(__file__).parent / "fixtures" / "daemon_event_output
 
 EVENT_DATACLASSES: dict[str, type[Any] | None] = {
     "Blocklist": whatsmeow_types.BlocklistEvent,
+    "AvatarSync": whatsmeow_types.AvatarSyncEvent,
     "BusinessName": whatsmeow_types.BusinessNameEvent,
     "CallReject": whatsmeow_types.CallRejectEvent,
     "ChatPresence": whatsmeow_types.ChatPresenceEvent,
@@ -410,7 +411,7 @@ def _seed_reaction_prerequisites(fixture: DaemonEventFixture) -> None:
 
 
 def _seed_chat_update_prerequisites(fixture: DaemonEventFixture) -> None:
-    if fixture.event_type in {"Mute", "Picture", "PushName", "BusinessName"}:
+    if fixture.event_type in {"Mute", "Picture", "AvatarSync", "PushName", "BusinessName"}:
         chat_id = str(fixture.payload.get("JID") or "")
         if chat_id:
             seed_chat(chat_id, name="Old Fixture Name", timestamp_unix=1)

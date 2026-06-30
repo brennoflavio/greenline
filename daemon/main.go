@@ -32,6 +32,12 @@ type helperNotification struct {
 	Muted     bool            `json:"muted"`
 }
 
+type avatarSyncEnvelope struct {
+	JID        string `json:"JID"`
+	AvatarPath string `json:"AvatarPath,omitempty"`
+	Remove     bool   `json:"Remove"`
+}
+
 func notificationIconPath(cacheDir, jid string) string {
 	if jid == "" {
 		return ""
@@ -138,6 +144,22 @@ func main() {
 		log.Fatal(err)
 	}
 
+	storeAvatarSyncEvent := func(change avatarsync.Event) {
+		payload := avatarSyncEnvelope{
+			JID:        change.JID,
+			AvatarPath: change.AvatarPath,
+			Remove:     change.Remove,
+		}
+		data, err := json.Marshal(payload)
+		if err != nil {
+			logger.Error("failed to marshal avatar sync event", "jid", change.JID, "error", err)
+			return
+		}
+		if err := evStore.Insert("AvatarSync", data); err != nil {
+			logger.Error("failed to store avatar sync event", "jid", change.JID, "error", err)
+		}
+	}
+
 	var notifier *notify.Notifier
 	if *appID != "" {
 		n, err := notify.New(*appID)
@@ -148,7 +170,7 @@ func main() {
 		}
 	}
 
-	syncer := avatarsync.New(client, *cacheDir, logger)
+	syncer := avatarsync.New(client, *cacheDir, logger, storeAvatarSyncEvent)
 	svc := &Service{client: client, eventStore: evStore, syncer: syncer, notifier: notifier, cacheDir: *cacheDir}
 
 	client.AddEventHandler(func(evt interface{}) {
@@ -159,6 +181,16 @@ func main() {
 		case *events.Message:
 			if err := client.NormalizeMessageEdit(context.Background(), msg); err != nil {
 				logger.Warn("failed to normalize edited message", "message_id", msg.Info.ID, "error", err)
+			}
+		case *events.Picture:
+			jid := client.ResolveJID(context.Background(), msg.JID).String()
+			if jid == "" {
+				jid = msg.JID.String()
+			}
+			if msg.Remove {
+				syncer.Remove(jid)
+			} else {
+				syncer.PromoteUrgent(jid)
 			}
 		}
 

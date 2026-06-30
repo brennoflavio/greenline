@@ -147,8 +147,7 @@ class FakeDaemonRPC:
     logout_calls: int = 0
     download_media_calls: list[dict[str, Any]] = []
     download_media_result: str = ""
-    sync_avatar_calls: list[str] = []
-    sync_avatar_paths: dict[str, str] = {}
+    prioritize_avatars_calls: list[list[str]] = []
 
     @classmethod
     def reset(cls) -> None:
@@ -186,8 +185,7 @@ class FakeDaemonRPC:
         cls.logout_calls = 0
         cls.download_media_calls = []
         cls.download_media_result = ""
-        cls.sync_avatar_calls = []
-        cls.sync_avatar_paths = {}
+        cls.prioritize_avatars_calls = []
 
     @classmethod
     def queue_events(cls, *batches: list[daemon_types.StoredEvent]) -> None:
@@ -361,16 +359,9 @@ class FakeDaemonRPC:
         path.write_bytes(b"")
         return DownloadMediaReply(FilePath=str(path))
 
-    def sync_avatar(self, jid: str) -> daemon_types.SyncAvatarReply:
-        self.__class__.sync_avatar_calls.append(jid)
-        configured = self.__class__.sync_avatar_paths.get(jid)
-        if configured is not None:
-            return daemon_types.SyncAvatarReply(AvatarPath=configured)
-        cache_root = Path(os.environ["XDG_CACHE_HOME"]) / "greenline.tests" / "avatars"
-        cache_root.mkdir(parents=True, exist_ok=True)
-        path = cache_root / f"{jid.replace('/', '_')}.jpg"
-        path.write_bytes(b"")
-        return daemon_types.SyncAvatarReply(AvatarPath=str(path))
+    def prioritize_avatars(self, jids: list[str]) -> EmptyReply:
+        self.__class__.prioritize_avatars_calls.append(list(jids))
+        return EmptyReply()
 
 
 @pytest.fixture(autouse=True)
