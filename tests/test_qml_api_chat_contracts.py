@@ -440,7 +440,7 @@ def test_toggle_mute_contract_and_emits_full_chat_update(fake_daemon_rpc, fake_p
     result = main.toggle_mute(chat.id)
 
     validate_api_response("toggle_mute", result)
-    assert fake_daemon_rpc.set_muted_calls == [{"chat_id": chat.id, "muted": True}]
+    assert fake_daemon_rpc.set_muted_calls == []
     event_payload = _last_event(fake_pyotherside_module, "chat-list-update")
     validate_event_payload("chat-list-update", event_payload)
     assert event_payload[0]["muted"] is True

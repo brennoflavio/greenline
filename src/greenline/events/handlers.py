@@ -336,23 +336,7 @@ def _handle_business_name(event: Any, chat_updates: dict[str, dict[str, Any]]) -
 
 
 def _handle_mute(event: Any, chat_updates: dict[str, dict[str, Any]]) -> None:
-    raw = json.loads(event.payload or "{}")
-    jid = raw.get("JID", "")
-    if not jid:
-        return
-    jid = canonicalize_contact_jid(daemon_client().ensure_jid(jid).JID)
-    action = raw.get("Action") or {}
-    muted = action.get("muted", False)
-
-    with GreenlineKV() as kv:
-        key = f"chat:{jid}"
-        chat = kv.get_record(key)
-        if chat is None:
-            return
-        if chat.muted != muted:
-            chat.muted = muted
-            kv.put_record(key, chat)
-            chat_updates[chat.id] = dataclass_to_ui_dict(chat)
+    return
 
 
 def _handle_picture(event: Any) -> None:

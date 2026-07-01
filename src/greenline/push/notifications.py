@@ -1,5 +1,4 @@
 import json
-import time
 from datetime import datetime
 from typing import Any, Dict, Optional, cast
 from urllib.parse import quote
@@ -7,7 +6,7 @@ from urllib.parse import quote
 from dacite import from_dict
 
 from constants import GROUP_JID_SUFFIX
-from greenline.contracts.daemon import DaemonClientProtocol, daemon_client
+from greenline.contracts.daemon import daemon_client
 from greenline.contracts.kv import GreenlineKV
 from greenline.contracts.validation import BoundaryValidationError
 from greenline.store.identity import (
@@ -51,7 +50,7 @@ def build_postal_output(raw_payload: str) -> Dict[str, Any]:
     if _notifications_suppressed(envelope):
         return {}
 
-    notification = _build_notification(rpc, event_type, event, envelope)
+    notification = _build_notification(event_type, event, envelope)
     if notification is None:
         return {}
 
@@ -66,28 +65,26 @@ def build_postal_output(raw_payload: str) -> Dict[str, Any]:
 
 
 def _build_notification(
-    rpc: DaemonClientProtocol,
     event_type: str,
     event: Dict[str, Any],
     envelope: Dict[str, Any],
 ) -> Optional[Dict[str, Any]]:
     if event_type == "Message":
-        return _build_message_notification(rpc, event, envelope)
+        return _build_message_notification(event, envelope)
     if event_type == "UndecryptableMessage":
-        return _build_undecryptable_notification(rpc, event, envelope)
+        return _build_undecryptable_notification(event, envelope)
     if event_type == "CallOffer":
         return _build_call_notification(event, envelope)
     return None
 
 
 def _build_message_notification(
-    rpc: DaemonClientProtocol,
     event: Dict[str, Any],
     envelope: Dict[str, Any],
 ) -> Optional[Dict[str, Any]]:
     evt = from_dict(data_class=MessageEvent, data=event)
     chat_jid = str(envelope.get("chat_jid") or evt.Info.Chat)
-    if chat_jid and _is_muted(rpc, chat_jid, envelope):
+    if chat_jid and _is_muted(chat_jid):
         return None
 
     body = _extract_message_body(event)
@@ -112,7 +109,6 @@ def _build_message_notification(
 
 
 def _build_undecryptable_notification(
-    rpc: DaemonClientProtocol,
     event: Dict[str, Any],
     envelope: Dict[str, Any],
 ) -> Optional[Dict[str, Any]]:
@@ -121,7 +117,7 @@ def _build_undecryptable_notification(
         return None
 
     chat_jid = str(envelope.get("chat_jid") or evt.Info.Chat)
-    if chat_jid and _is_muted(rpc, chat_jid, envelope):
+    if chat_jid and _is_muted(chat_jid):
         return None
 
     summary, body = _message_summary_and_body(
@@ -146,7 +142,10 @@ def _build_call_notification(
     envelope: Dict[str, Any],
 ) -> Optional[Dict[str, Any]]:
     evt = from_dict(data_class=CallOfferEvent, data=event)
-    chat_jid = str(envelope.get("chat_jid") or evt.CallCreator or evt.From)
+    chat_jid = str(envelope.get("chat_jid") or evt.GroupJID or evt.CallCreator or evt.From)
+    if chat_jid and _is_muted(chat_jid):
+        return None
+
     summary = resolve_sender_name(chat_jid) if chat_jid else "Incoming call"
     body = "Incoming audio call — answer on your primary phone"
     if _contains_video_tag(event.get("Data")):
@@ -353,13 +352,52 @@ def _notifications_suppressed(envelope: Dict[str, Any]) -> bool:
         return bool(envelope.get("suppressed"))
 
 
-def _is_muted(rpc: DaemonClientProtocol, chat_jid: str, envelope: Dict[str, Any]) -> bool:
-    if "muted" in envelope:
-        return bool(envelope.get("muted"))
+def _is_muted(chat_jid: str) -> bool:
+    if not chat_jid:
+        return False
+
     try:
-        muted_until = int(rpc.get_chat_settings(chat_jid).MutedUntil)
+        with GreenlineKV() as kv:
+            for candidate in _chat_key_candidates(chat_jid, kv):
+                chat = kv.get_record(f"chat:{candidate}")
+                if chat is not None:
+                    return bool(chat.muted)
+    except BoundaryValidationError:
+        raise
     except Exception:
         return False
-    if muted_until == -1:
-        return True
-    return muted_until > int(time.time() * 1000)
+
+    return False
+
+
+def _chat_key_candidates(chat_jid: str, kv: GreenlineKV) -> list[str]:
+    raw_jid = str(chat_jid or "").strip()
+    if not raw_jid:
+        return []
+
+    candidates = [raw_jid]
+    stripped_jid = _strip_device_suffix(raw_jid)
+    if stripped_jid not in candidates:
+        candidates.append(stripped_jid)
+
+    for lid_key in (f"lid_map:{stripped_jid}", f"lid_map:{raw_jid}"):
+        lid_map = kv.get_record(lid_key)
+        mapped_jid = str(getattr(lid_map, "value", "") or "")
+        if not mapped_jid:
+            continue
+        mapped_jid = _strip_device_suffix(mapped_jid)
+        if mapped_jid not in candidates:
+            candidates.append(mapped_jid)
+
+    return candidates
+
+
+def _strip_device_suffix(jid: str) -> str:
+    if not jid or "@" not in jid:
+        return jid
+
+    user, server = jid.split("@", 1)
+    base_user, separator, device = user.rpartition(":")
+    if separator and base_user and device.isdigit():
+        user = base_user
+    return f"{user}@{server}"

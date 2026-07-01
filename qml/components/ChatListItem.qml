@@ -111,7 +111,7 @@ ListItem {
                     width: units.gu(2.5)
                     height: units.gu(2.5)
                     radius: width / 2
-                    color: LomiriColors.green
+                    color: root.chat.muted ? "gray" : LomiriColors.green
                     visible: root.chat.unread_count > 0
                     Layout.alignment: Qt.AlignRight
 

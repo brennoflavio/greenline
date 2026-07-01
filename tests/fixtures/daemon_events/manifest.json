@@ -218,7 +218,7 @@
     {
       "event_type": "Mute",
       "path": "event/mute_on.json",
-      "source_family": "chat_update"
+      "source_family": "parse_only"
     },
     {
       "event_type": "Picture",

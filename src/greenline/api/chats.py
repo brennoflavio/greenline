@@ -337,15 +337,8 @@ def toggle_mute(request: ChatIdRequest) -> SuccessResponse:
         chat = kv.get_record(f"chat:{request.chat_id}")
         if chat is None:
             return SuccessResponse(success=False, message="Chat not found")
-        new_muted = not chat.muted
-
-    daemon_client().set_muted(request.chat_id, new_muted)
-
-    with GreenlineKV() as kv:
-        chat = kv.get_record(f"chat:{request.chat_id}")
-        if chat is not None:
-            chat.muted = new_muted
-            kv.put_record(f"chat:{request.chat_id}", chat)
-            qml_events.emit_chat_list_update([chat])
+        chat.muted = not chat.muted
+        kv.put_record(f"chat:{request.chat_id}", chat)
+        qml_events.emit_chat_list_update([chat])
 
     return SuccessResponse(success=True, message="")

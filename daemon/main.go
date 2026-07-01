@@ -29,7 +29,6 @@ type helperNotification struct {
 	ChatJID   string          `json:"chat_jid,omitempty"`
 	ChatName  string          `json:"chat_name,omitempty"`
 	Icon      string          `json:"icon,omitempty"`
-	Muted     bool            `json:"muted"`
 }
 
 type avatarSyncEnvelope struct {
@@ -64,7 +63,6 @@ func buildHelperNotificationPayload(client *waconn.Client, cacheDir string, evt 
 		chatJID := client.ResolveJID(ctx, msg.Info.Chat).String()
 		envelope.ChatJID = chatJID
 		envelope.Icon = notificationIconPath(cacheDir, chatJID)
-		envelope.Muted = client.IsMuted(ctx, msg.Info.Chat)
 		if msg.Info.Chat.Server == types.GroupServer {
 			groupName := msg.Info.Chat.User
 			if groupInfo, err := client.GetGroupInfo(ctx, msg.Info.Chat); err == nil && groupInfo.Name != "" {
@@ -79,7 +77,6 @@ func buildHelperNotificationPayload(client *waconn.Client, cacheDir string, evt 
 		chatJID := client.ResolveJID(ctx, msg.Info.Chat).String()
 		envelope.ChatJID = chatJID
 		envelope.Icon = notificationIconPath(cacheDir, chatJID)
-		envelope.Muted = client.IsMuted(ctx, msg.Info.Chat)
 		if msg.Info.Chat.Server == types.GroupServer {
 			groupName := msg.Info.Chat.User
 			if groupInfo, err := client.GetGroupInfo(ctx, msg.Info.Chat); err == nil && groupInfo.Name != "" {
@@ -88,7 +85,11 @@ func buildHelperNotificationPayload(client *waconn.Client, cacheDir string, evt 
 			envelope.ChatName = groupName
 		}
 	case *events.CallOffer:
-		chatJID := client.ResolveJID(ctx, msg.CallCreator).String()
+		callChatJID := msg.CallCreator
+		if msg.GroupJID.Server != "" {
+			callChatJID = msg.GroupJID
+		}
+		chatJID := client.ResolveJID(ctx, callChatJID).String()
 		envelope.ChatJID = chatJID
 		envelope.Icon = notificationIconPath(cacheDir, chatJID)
 	default:

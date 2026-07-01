@@ -172,14 +172,6 @@ class ChatListUpdateEvent(Event):
 
         return None
 
-    @staticmethod
-    def _is_muted(jid: str) -> bool:
-        try:
-            reply = daemon_client().get_chat_settings(jid)
-            return bool(reply.MutedUntil != 0)
-        except Exception:
-            return False
-
     def _sync_contacts(self, chat_updates: list[dict[str, Any]], photo_updates: list[dict[str, str]]) -> None:
         reply = daemon_client().get_contacts()
         if not reply.Contacts:
@@ -202,8 +194,6 @@ class ChatListUpdateEvent(Event):
                     push_name=contact.push_name,
                     business_name=contact.business_name,
                 )
-                muted = self._is_muted(jid)
-
                 if key in existing:
                     chat = existing[key]
                     changed = update_chat_name(
@@ -218,9 +208,6 @@ class ChatListUpdateEvent(Event):
                             chat.photo = photo
                             changed = True
                             photo_updates.append({"jid": jid, "photo": photo})
-                    if chat.muted != muted:
-                        chat.muted = muted
-                        changed = True
                     if changed:
                         kv.put_record(key, chat)
                         remember_chat(chat)
@@ -236,7 +223,6 @@ class ChatListUpdateEvent(Event):
                         read_receipt=ReadReceipt.NONE,
                         unread_count=0,
                         is_group=False,
-                        muted=muted,
                         full_name=contact.full_name,
                         push_name=contact.push_name,
                         business_name=contact.business_name,
@@ -262,7 +248,6 @@ class ChatListUpdateEvent(Event):
                 jid = canonicalize_contact_jid(group.jid)
                 key = f"chat:{jid}"
                 photo = ("file://" + group.avatar_path) if group.avatar_path else ""
-                muted = self._is_muted(jid)
                 members = [
                     GroupProfileMemberRecord(
                         jid=canonicalize_contact_jid(participant.jid),
@@ -292,9 +277,6 @@ class ChatListUpdateEvent(Event):
                             chat.photo = photo
                             changed = True
                             photo_updates.append({"jid": jid, "photo": photo})
-                    if chat.muted != muted:
-                        chat.muted = muted
-                        changed = True
                     if changed:
                         kv.put_record(key, chat)
                         remember_chat(chat)
@@ -310,7 +292,6 @@ class ChatListUpdateEvent(Event):
                         read_receipt=ReadReceipt.NONE,
                         unread_count=0,
                         is_group=True,
-                        muted=muted,
                         name_updated_at=now,
                     )
                     kv.put_record(key, chat)

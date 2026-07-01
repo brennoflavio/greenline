@@ -13,7 +13,7 @@ DAEMON_EVENT_CONTRACTS: dict[str, str] = {
     "Receipt": "handled",
     "UndecryptableMessage": "handled",
     "Contact": "handled",
-    "Mute": "handled",
+    "Mute": "parse-only",
     "Picture": "parse-only",
     "AvatarSync": "handled",
     "PushName": "handled",
