@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-06-30 14:34+0000\n"
-"PO-Revision-Date: 2026-06-26 19:33+0000\n"
+"PO-Revision-Date: 2026-07-02 09:03+0000\n"
 "Last-Translator: Walter Garcia-Fontes <walter.garcia@upf.edu>\n"
 "Language-Team: Catalan <https://hosted.weblate.org/projects/ubports/"
 "greenline/ca/>\n"
@@ -443,10 +443,8 @@ msgid "About"
 msgstr "Quant a"
 
 #: ../qml/SettingsPage.qml:120
-#, fuzzy
-#| msgid "Build Version"
 msgid "Release Version"
-msgstr "Versió de la compilació"
+msgstr "Versió de la llançament"
 
 #: ../qml/SettingsPage.qml:127 ../qml/SettingsPage.qml:147
 #: ../qml/SettingsPage.qml:209 ../qml/SettingsPage.qml:210
@@ -455,7 +453,7 @@ msgstr "Desconegut"
 
 #: ../qml/SettingsPage.qml:140
 msgid "Build Commit"
-msgstr ""
+msgstr "Enviament de la compilació"
 
 #: ../qml/SettingsPage.qml:161
 msgid "Data"
