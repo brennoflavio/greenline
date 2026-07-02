@@ -16,6 +16,8 @@ Rectangle {
     property int activeMentionStart: -1
     property bool syncingMentionState: false
     property bool suppressTextTracking: false
+    property bool moveCursorToEndOnNextFocus: false
+    property int pendingCursorRestoreAttempts: 0
     property string previousText: ""
 
     signal clearReplyRequested()
@@ -31,8 +33,14 @@ Rectangle {
         messageInput.text = nextText || "";
         suppressTextTracking = false;
         previousText = messageInput.text;
+        moveCursorToEndOnNextFocus = messageInput.text.length > 0;
+        pendingCursorRestoreAttempts = moveCursorToEndOnNextFocus ? 8 : 0;
         setMentionSpans(nextMentionSpans);
         updateMentionSuggestions();
+        messageInput.cursorPosition = messageInput.text.length;
+        Qt.callLater(function() {
+            messageInput.cursorPosition = messageInput.text.length;
+        });
     }
 
     function setMentionSpans(nextMentionSpans) {
@@ -184,15 +192,29 @@ Rectangle {
                         previousText = text;
                         return ;
                     }
+                    pendingCursorRestoreAttempts = 0;
+                    moveCursorToEndOnNextFocus = false;
+                    cursorRestoreTimer.stop();
                     setMentionSpans(MentionHelpers.updateMentionSpansForEdit(previousText, text, root.mentionSpans));
                     previousText = text;
                     updateMentionSuggestions();
                 }
-                onCursorPositionChanged: updateMentionSuggestions()
-                onActiveFocusChanged: {
-                    if (!activeFocus && !mentionSuggestions.suggestionPointerDown && !mentionSuggestions.visible)
-                        clearMentionSuggestions();
+                onCursorPositionChanged: {
+                    if (activeFocus && pendingCursorRestoreAttempts > 0 && cursorPosition !== text.length)
+                        cursorRestoreTimer.restart();
 
+                    updateMentionSuggestions();
+                }
+                onActiveFocusChanged: {
+                    if (activeFocus && root.moveCursorToEndOnNextFocus && messageInput.text.length > 0)
+                        cursorRestoreTimer.restart();
+
+                    if (!activeFocus) {
+                        pendingCursorRestoreAttempts = 0;
+                        if (!mentionSuggestions.suggestionPointerDown && !mentionSuggestions.visible)
+                            clearMentionSuggestions();
+
+                    }
                 }
 
                 anchors {
@@ -207,6 +229,32 @@ Rectangle {
 
         }
 
+    }
+
+    Timer {
+        id: cursorRestoreTimer
+
+        interval: 16
+        repeat: true
+        running: false
+        onTriggered: {
+            if (!messageInput.activeFocus || pendingCursorRestoreAttempts <= 0) {
+                stop();
+                return ;
+            }
+            if (messageInput.cursorPosition !== messageInput.text.length)
+                messageInput.cursorPosition = messageInput.text.length;
+
+            pendingCursorRestoreAttempts -= 1;
+            if (messageInput.cursorPosition === messageInput.text.length) {
+                moveCursorToEndOnNextFocus = false;
+                if (pendingCursorRestoreAttempts <= 0)
+                    stop();
+
+            } else if (pendingCursorRestoreAttempts <= 0) {
+                stop();
+            }
+        }
     }
 
 }

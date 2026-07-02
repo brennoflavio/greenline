@@ -19,7 +19,10 @@ Dialog {
         text: root.initialText
         autoSize: true
         maximumLineCount: 6
-        Component.onCompleted: forceActiveFocus()
+        Component.onCompleted: {
+            forceActiveFocus();
+            cursorPosition = text.length;
+        }
     }
 
     Button {
