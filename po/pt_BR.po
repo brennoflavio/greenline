@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-30 14:34+0000\n"
+"POT-Creation-Date: 2026-07-02 06:15+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -67,130 +67,130 @@ msgstr ""
 msgid "Failed to import contact"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:258
+#: ../qml/ChatListPage.qml:262
 msgid "No archived chats"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:258
+#: ../qml/ChatListPage.qml:262
 msgid "No chats found"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:278 ../qml/ChatListPage.qml:371
+#: ../qml/ChatListPage.qml:282 ../qml/ChatListPage.qml:375
 msgid "Chats"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:284
+#: ../qml/ChatListPage.qml:288
 msgid "New"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:291 ../qml/ChatListPage.qml:371
+#: ../qml/ChatListPage.qml:295 ../qml/ChatListPage.qml:375
 msgid "Archived"
 msgstr ""
 
-#: ../qml/ChatListPage.qml:326 ../qml/components/NewChatDialog.qml:52
+#: ../qml/ChatListPage.qml:330 ../qml/components/NewChatDialog.qml:52
 msgid "Import Contact"
 msgstr ""
 
-#: ../qml/ChatPage.qml:233 ../qml/components/ChatMessageList.qml:338
+#: ../qml/ChatPage.qml:235 ../qml/components/ChatMessageList.qml:338
 msgid "You"
 msgstr ""
 
-#: ../qml/ChatPage.qml:275
+#: ../qml/ChatPage.qml:277
 msgid "Message updated"
 msgstr ""
 
-#: ../qml/ChatPage.qml:281
+#: ../qml/ChatPage.qml:283
 msgid "Failed to edit message"
 msgstr ""
 
-#: ../qml/ChatPage.qml:291
+#: ../qml/ChatPage.qml:293
 msgid "Message deleted"
 msgstr ""
 
-#: ../qml/ChatPage.qml:294
+#: ../qml/ChatPage.qml:296
 msgid "Failed to delete message"
 msgstr ""
 
-#: ../qml/ChatPage.qml:317
+#: ../qml/ChatPage.qml:319
 msgid "No internet connection. Connect and try again."
 msgstr ""
 
-#: ../qml/ChatPage.qml:330 ../qml/ChatPage.qml:1316
+#: ../qml/ChatPage.qml:332 ../qml/ChatPage.qml:1338
 msgid "Failed to download media"
 msgstr ""
 
-#: ../qml/ChatPage.qml:720
+#: ../qml/ChatPage.qml:731
 msgid "Failed to load older messages"
 msgstr ""
 
-#: ../qml/ChatPage.qml:803
+#: ../qml/ChatPage.qml:814
 msgid "Failed to send audio"
 msgstr ""
 
-#: ../qml/ChatPage.qml:906 ../qml/DocumentPreviewPage.qml:42
+#: ../qml/ChatPage.qml:917 ../qml/DocumentPreviewPage.qml:42
 #: ../qml/DocumentPreviewPage.qml:97
 #: ../qml/components/ChatAttachmentDialog.qml:42
 #: ../qml/components/DocumentMessage.qml:61
 msgid "Document"
 msgstr ""
 
-#: ../qml/ChatPage.qml:916
+#: ../qml/ChatPage.qml:927
 msgid "Failed to send document"
 msgstr ""
 
-#: ../qml/ChatPage.qml:955
+#: ../qml/ChatPage.qml:966
 msgid "Failed to send contact"
 msgstr ""
 
-#: ../qml/ChatPage.qml:995
+#: ../qml/ChatPage.qml:1006
 msgid "Failed to send location"
 msgstr ""
 
-#: ../qml/ChatPage.qml:1072
+#: ../qml/ChatPage.qml:1083
 msgid "WhatsApp messages read today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:1073
+#: ../qml/ChatPage.qml:1084
 msgid "No WhatsApp messages read today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:1081
+#: ../qml/ChatPage.qml:1092
 msgid "WhatsApp messages sent today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:1082
+#: ../qml/ChatPage.qml:1093
 msgid "No WhatsApp messages sent today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:1111
+#: ../qml/ChatPage.qml:1122
 msgid "Scroll up to load older messages first"
 msgstr ""
 
-#: ../qml/ChatPage.qml:1118
+#: ../qml/ChatPage.qml:1129
 msgid "Copied to clipboard"
 msgstr ""
 
-#: ../qml/ChatPage.qml:1291
+#: ../qml/ChatPage.qml:1313
 msgid "recording audio..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:1291
+#: ../qml/ChatPage.qml:1313
 msgid "typing..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:1370
+#: ../qml/ChatPage.qml:1392
 msgid "Send Photo"
 msgstr ""
 
-#: ../qml/ChatPage.qml:1381
+#: ../qml/ChatPage.qml:1403
 msgid "Send Video"
 msgstr ""
 
-#: ../qml/ChatPage.qml:1392
+#: ../qml/ChatPage.qml:1414
 msgid "Send Document"
 msgstr ""
 
-#: ../qml/ChatPage.qml:1403
+#: ../qml/ChatPage.qml:1425
 msgid "Send Contact"
 msgstr ""
 
@@ -206,7 +206,7 @@ msgstr ""
 
 #: ../qml/ContactPreviewPage.qml:70 ../qml/DocumentPreviewPage.qml:70
 #: ../qml/ImagePreviewPage.qml:36 ../qml/VideoPreviewPage.qml:38
-#: ../qml/components/EditMessageDialog.qml:32
+#: ../qml/components/EditMessageDialog.qml:35
 msgid "Save"
 msgstr ""
 
@@ -335,7 +335,7 @@ msgstr ""
 
 #: ../qml/PhonePairingPage.qml:120 ../qml/SettingsPage.qml:231
 #: ../qml/components/ChatAttachmentDialog.qml:74
-#: ../qml/components/EditMessageDialog.qml:26
+#: ../qml/components/EditMessageDialog.qml:29
 #: ../qml/components/LocationFetchDialog.qml:91
 #: ../qml/components/NewChatDialog.qml:35
 #: ../qml/components/VoiceMessageRecorderDialog.qml:85
@@ -502,7 +502,7 @@ msgstr ""
 msgid "Location"
 msgstr ""
 
-#: ../qml/components/ChatComposer.qml:179
+#: ../qml/components/ChatComposer.qml:187
 msgid "Type a message..."
 msgstr ""
 
@@ -616,14 +616,6 @@ msgstr ""
 
 #: ../qml/components/NewChatDialog.qml:41
 msgid "OK"
-msgstr ""
-
-#: ../qml/components/RichTextMessage.qml:130
-msgid "Show less"
-msgstr ""
-
-#: ../qml/components/RichTextMessage.qml:130
-msgid "Show more"
 msgstr ""
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:31
