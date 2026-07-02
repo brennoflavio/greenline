@@ -4,6 +4,7 @@ from qml_contract_helpers import DEFAULT_SENDER_ID, seed_sender_identity
 
 from greenline.qml_text import build_text_render_data, format_qml_text
 from greenline.store.mentions import template_mention_text
+from models import MentionSpan
 
 
 def test_format_qml_text_escapes_html() -> None:
@@ -55,6 +56,50 @@ def test_format_qml_text_keeps_unmatched_or_malformed_mentions_readable() -> Non
 
     assert format_qml_text("Hello \ue0002\ue001", [DEFAULT_SENDER_ID]) == "Hello \ue0002\ue001"
     assert format_qml_text("Hello \ue000oops\ue001", [DEFAULT_SENDER_ID]) == "Hello \ue000oops\ue001"
+
+
+def test_format_qml_text_renders_plain_text_mentions_from_spans() -> None:
+    assert format_qml_text(
+        "@Empório Minatto https://example.com",
+        [DEFAULT_SENDER_ID],
+        [MentionSpan(DEFAULT_SENDER_ID, "Empório Minatto", 0, 16)],
+    ) == (
+        '<a href="greenline://chat/222%40s.whatsapp.net">@Empório Minatto</a> '
+        '<a href="https://example.com">https://example.com</a>'
+    )
+
+
+def test_format_qml_text_ignores_mismatched_plain_text_mention_spans() -> None:
+    assert (
+        format_qml_text(
+            "@Empório Minatto",
+            [DEFAULT_SENDER_ID],
+            [MentionSpan(DEFAULT_SENDER_ID, "Alice", 0, 16)],
+        )
+        == "@Empório Minatto"
+    )
+
+
+def test_format_qml_text_ignores_plain_text_mention_spans_with_invalid_prefix_boundary() -> None:
+    assert (
+        format_qml_text(
+            "a@Empório Minatto",
+            [DEFAULT_SENDER_ID],
+            [MentionSpan(DEFAULT_SENDER_ID, "Empório Minatto", 1, 16)],
+        )
+        == "a@Empório Minatto"
+    )
+
+
+def test_format_qml_text_ignores_plain_text_mention_spans_with_invalid_suffix_boundary() -> None:
+    assert (
+        format_qml_text(
+            "@Empório Minattox",
+            [DEFAULT_SENDER_ID],
+            [MentionSpan(DEFAULT_SENDER_ID, "Empório Minatto", 0, 16)],
+        )
+        == "@Empório Minattox"
+    )
 
 
 def test_build_text_render_data_marks_plain_newline_message_as_simple() -> None:

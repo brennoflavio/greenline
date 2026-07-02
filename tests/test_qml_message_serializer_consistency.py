@@ -6,6 +6,7 @@ import pytest
 from contracts.qml_payloads import assert_ui_message
 from qml_contract_helpers import (
     DEFAULT_CHAT_ID,
+    DEFAULT_GROUP_ID,
     DEFAULT_SENDER_ID,
     assert_formatted_message_fields,
     seed_chat,
@@ -17,7 +18,7 @@ from greenline import qml_events, qml_payloads
 from greenline.api.common import ui_message_dict
 from greenline.events.handlers import render_message_payload
 from greenline.store.mentions import template_mention_text
-from models import MessageType
+from models import MentionSpan, MessageType
 
 
 @pytest.mark.parametrize("message_type", list(MessageType))
@@ -104,3 +105,40 @@ def test_message_serializers_preserve_plain_mentions_and_emit_greenline_anchor()
 
     assert payload["text"] == "Hello @Alice"
     assert payload["formatted_text"] == 'Hello <a href="greenline://chat/222%40s.whatsapp.net">@Alice</a>'
+
+
+def test_message_serializers_render_plain_text_mentions_from_spans_as_clickable_links() -> None:
+    seed_sender_identity(DEFAULT_SENDER_ID, name="Empório Minatto", photo="file:///tmp/minatto.jpg")
+    seed_chat(DEFAULT_GROUP_ID, name="Test", is_group=True)
+    message = seed_message(
+        DEFAULT_GROUP_ID,
+        "message-mention-spans",
+        is_outgoing=True,
+        text="@Empório Minatto ",
+        mentioned_jids=[],
+        mention_spans=[MentionSpan(DEFAULT_SENDER_ID, "Empório Minatto", 0, 16)],
+        reply_to_id="",
+    )
+
+    expected = qml_payloads.ui_message(message)
+    stored_payload = qml_payloads.stored_ui_message(asdict(message))
+    api_common = ui_message_dict(message)
+    daemon_render = render_message_payload(asdict(message))
+    bridge_render = qml_events.message_upsert_payload([asdict(message)])[0]
+    import main
+
+    initial_load = main.get_messages(DEFAULT_GROUP_ID)["messages"][-1]
+
+    for candidate in (expected, stored_payload, api_common, daemon_render, bridge_render, initial_load):
+        assert_ui_message(candidate)
+        assert_formatted_message_fields(candidate)
+        assert candidate["text"] == "@Empório Minatto "
+        assert candidate["formatted_text"] == ('<a href="greenline://chat/222%40s.whatsapp.net">@Empório Minatto</a> ')
+        assert candidate["text_render_mode"] == "rich"
+        assert set(candidate) == set(expected)
+
+    assert stored_payload == expected
+    assert api_common == expected
+    assert daemon_render == expected
+    assert bridge_render == expected
+    assert initial_load == expected

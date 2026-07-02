@@ -181,7 +181,7 @@ def _typed_mention_spans(value: Any) -> list[MentionSpan]:
 def with_text_render_fields(message: Message) -> Message:
     from greenline.qml_text import TEXT_RENDER_MODE_RICH, build_text_render_data
 
-    if message.mentioned_jids:
+    if message.mentioned_jids or message.mention_spans:
         return replace(
             message,
             rendered_text="",
@@ -189,7 +189,7 @@ def with_text_render_fields(message: Message) -> Message:
             text_render_mode=TEXT_RENDER_MODE_RICH,
         )
 
-    render_data = build_text_render_data(message.text, message.mentioned_jids)
+    render_data = build_text_render_data(message.text, message.mentioned_jids, message.mention_spans)
     return replace(
         message,
         rendered_text=render_data.plain_text,
@@ -199,7 +199,7 @@ def with_text_render_fields(message: Message) -> Message:
 
 
 def needs_text_render_backfill(record: StoredMessageRecord) -> bool:
-    if not record.text or record.mentioned_jids:
+    if not record.text or record.mentioned_jids or record.mention_spans:
         return False
     return record.rendered_text == "" or record.rendered_formatted_text == ""
 

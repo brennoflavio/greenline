@@ -27,7 +27,7 @@ from greenline.store.records import (
     StoredMessageRecord,
 )
 from greenline.store.repository import message_storage_key
-from models import MessageType, ReadReceipt
+from models import MentionSpan, MessageType, ReadReceipt
 
 
 def _event_payloads(fake_pyotherside, name: str) -> list[object]:
@@ -185,6 +185,80 @@ def test_get_messages_keeps_mention_rendering_fresh_without_cached_text() -> Non
     assert isinstance(updated, StoredMessageRecord)
     assert updated.rendered_text == "Hello @Alice"
     assert updated.rendered_formatted_text == 'Hello <a href="greenline://chat/222%40s.whatsapp.net">@Alice</a>'
+
+
+def test_get_messages_renders_plain_text_mentions_from_spans_as_rich_links() -> None:
+    seed_chat(DEFAULT_CHAT_ID)
+    seed_sender_identity(DEFAULT_SENDER_ID, name="Empório Minatto")
+    record = StoredMessageRecord(
+        id="mention-span-message",
+        chat_id=DEFAULT_CHAT_ID,
+        type=MessageType.TEXT,
+        is_outgoing=True,
+        timestamp="02:40",
+        timestamp_unix=124,
+        read_receipt=ReadReceipt.READ,
+        text="@Empório Minatto ",
+        mentioned_jids=[DEFAULT_SENDER_ID],
+        mention_spans=[MentionSpan(DEFAULT_SENDER_ID, "Empório Minatto", 0, 16)],
+        rendered_text="",
+        rendered_formatted_text="",
+        text_render_mode="rich",
+        reply_to_id="",
+        temp_id="pending-mention-span-1",
+    )
+    key = message_storage_key(DEFAULT_CHAT_ID, 124, "mention-span-message")
+    with GreenlineKV() as kv:
+        kv.put_record(key, record)
+
+    result = main.get_messages(DEFAULT_CHAT_ID, "", 10)
+
+    validate_api_response("get_messages", result)
+    assert result["messages"][0]["text"] == "@Empório Minatto "
+    assert result["messages"][0]["formatted_text"] == (
+        '<a href="greenline://chat/222%40s.whatsapp.net">@Empório Minatto</a> '
+    )
+    assert result["messages"][0]["text_render_mode"] == "rich"
+
+
+def test_get_messages_keeps_mention_span_rendering_fresh_without_cached_text() -> None:
+    seed_chat(DEFAULT_CHAT_ID)
+    seed_sender_identity(DEFAULT_SENDER_ID, name="Empório Minatto")
+    record = StoredMessageRecord(
+        id="mention-span-stale-cache-message",
+        chat_id=DEFAULT_CHAT_ID,
+        type=MessageType.TEXT,
+        is_outgoing=True,
+        timestamp="02:41",
+        timestamp_unix=125,
+        read_receipt=ReadReceipt.READ,
+        text="@Empório Minatto ",
+        mentioned_jids=[],
+        mention_spans=[MentionSpan(DEFAULT_SENDER_ID, "Empório Minatto", 0, 16)],
+        rendered_text="@Empório Minatto ",
+        rendered_formatted_text="@Empório Minatto ",
+        text_render_mode="simple",
+        reply_to_id="",
+        temp_id="pending-mention-span-2",
+    )
+    key = message_storage_key(DEFAULT_CHAT_ID, 125, "mention-span-stale-cache-message")
+    with GreenlineKV() as kv:
+        kv.put_record(key, record)
+
+    result = main.get_messages(DEFAULT_CHAT_ID, "", 10)
+
+    validate_api_response("get_messages", result)
+    assert result["messages"][0]["text"] == "@Empório Minatto "
+    assert result["messages"][0]["formatted_text"] == (
+        '<a href="greenline://chat/222%40s.whatsapp.net">@Empório Minatto</a> '
+    )
+    assert result["messages"][0]["text_render_mode"] == "rich"
+    with GreenlineKV() as kv:
+        updated = kv.get_record(key)
+    assert isinstance(updated, StoredMessageRecord)
+    assert updated.rendered_text == "@Empório Minatto "
+    assert updated.rendered_formatted_text == "@Empório Minatto "
+    assert updated.text_render_mode == "simple"
 
 
 def test_get_message_reactions_contract_prefers_push_name_for_self() -> None:

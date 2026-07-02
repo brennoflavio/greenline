@@ -6,6 +6,7 @@ from urllib.parse import quote
 
 from greenline.store.identity import resolve_sender_name
 from greenline.store.mentions import render_mention_text
+from models import MentionSpan
 
 _MENTION_PLACEHOLDER_RE = re.compile(r"\ue000(\d+)\ue001")
 _TOKEN_RE = re.compile(r"(?P<url>https?://[^\s<]+)|(?P<mention>\ue000(?P<mention_index>\d+)\ue001)")
@@ -81,33 +82,121 @@ def _format_mention(match: re.Match[str], mentioned_jids: Sequence[str]) -> str:
     return f'<a href="{href}">@{html.escape(label)}</a>'
 
 
-def format_qml_text(text: str, mentioned_jids: Optional[Sequence[str]] = None) -> str:
+def _format_span_mention(span_text: str, jid: str) -> str:
+    if not jid:
+        return _escape_plain_text(span_text)
+
+    href = html.escape(f"greenline://chat/{quote(jid, safe='')}", quote=True)
+    return f'<a href="{href}">{html.escape(span_text)}</a>'
+
+
+def _utf16_boundary_map(text: str) -> dict[int, int]:
+    boundaries = {0: 0}
+    offset = 0
+    for index, char in enumerate(text):
+        offset += 2 if ord(char) > 0xFFFF else 1
+        boundaries[offset] = index + 1
+    return boundaries
+
+
+def _mention_span_bounds(text: str, span: MentionSpan) -> tuple[int, int] | tuple[None, None]:
+    if span.start < 0 or span.length <= 0:
+        return None, None
+
+    boundaries = _utf16_boundary_map(text)
+    start_index = boundaries.get(span.start)
+    end_index = boundaries.get(span.start + span.length)
+    if start_index is None or end_index is None or end_index <= start_index:
+        return None, None
+    return start_index, end_index
+
+
+def _is_mention_boundary_char(char: str) -> bool:
+    return char == "" or not (char.isalnum() or char == "_")
+
+
+def _has_valid_mention_boundaries(text: str, start_index: int, end_index: int) -> bool:
+    before = text[start_index - 1] if start_index > 0 else ""
+    after = text[end_index] if end_index < len(text) else ""
+    return _is_mention_boundary_char(before) and _is_mention_boundary_char(after)
+
+
+def _format_plain_text_with_urls(text: str) -> str:
     if not text:
         return ""
 
-    normalized_mentioned_jids = list(mentioned_jids or [])
     parts: List[str] = []
     last_end = 0
-
-    for match in _TOKEN_RE.finditer(text):
+    for match in re.finditer(r"https?://[^\s<]+", text):
         parts.append(_format_plain_segment(text[last_end : match.start()]))
-        if match.group("url"):
-            parts.append(_format_url(match.group("url")))
-        else:
-            parts.append(_format_mention(match, normalized_mentioned_jids))
+        parts.append(_format_url(match.group(0)))
         last_end = match.end()
-
     parts.append(_format_plain_segment(text[last_end:]))
     return "".join(parts)
 
 
-def build_text_render_data(text: str, mentioned_jids: Optional[Sequence[str]] = None) -> TextRenderData:
+def _format_text_with_mention_spans(text: str, mention_spans: Sequence[MentionSpan]) -> str:
+    parts: List[str] = []
+    last_end = 0
+    for span in sorted(mention_spans, key=lambda item: item.start):
+        start_index, end_index = _mention_span_bounds(text, span)
+        if start_index is None or end_index is None or start_index < last_end:
+            continue
+
+        span_text = text[start_index:end_index]
+        if span_text != f"@{span.label}" or not _has_valid_mention_boundaries(text, start_index, end_index):
+            continue
+
+        parts.append(_format_plain_text_with_urls(text[last_end:start_index]))
+        parts.append(_format_span_mention(span_text, span.jid))
+        last_end = end_index
+
+    parts.append(_format_plain_text_with_urls(text[last_end:]))
+    return "".join(parts)
+
+
+def format_qml_text(
+    text: str,
+    mentioned_jids: Optional[Sequence[str]] = None,
+    mention_spans: Optional[Sequence[MentionSpan]] = None,
+) -> str:
+    if not text:
+        return ""
+
+    normalized_mentioned_jids = list(mentioned_jids or [])
+    if normalized_mentioned_jids and _MENTION_PLACEHOLDER_RE.search(text):
+        parts: List[str] = []
+        last_end = 0
+
+        for match in _TOKEN_RE.finditer(text):
+            parts.append(_format_plain_segment(text[last_end : match.start()]))
+            if match.group("url"):
+                parts.append(_format_url(match.group("url")))
+            else:
+                parts.append(_format_mention(match, normalized_mentioned_jids))
+            last_end = match.end()
+
+        parts.append(_format_plain_segment(text[last_end:]))
+        return "".join(parts)
+
+    normalized_mention_spans = list(mention_spans or [])
+    if normalized_mention_spans:
+        return _format_text_with_mention_spans(text, normalized_mention_spans)
+
+    return _format_plain_text_with_urls(text)
+
+
+def build_text_render_data(
+    text: str,
+    mentioned_jids: Optional[Sequence[str]] = None,
+    mention_spans: Optional[Sequence[MentionSpan]] = None,
+) -> TextRenderData:
     if not text:
         return TextRenderData(plain_text="", rich_text="", render_mode=TEXT_RENDER_MODE_SIMPLE)
 
     normalized_mentioned_jids = list(mentioned_jids or [])
     plain_text = render_mention_text(text, normalized_mentioned_jids)
-    rich_text = format_qml_text(text, normalized_mentioned_jids)
+    rich_text = format_qml_text(text, normalized_mentioned_jids, mention_spans)
     render_mode = TEXT_RENDER_MODE_RICH if rich_text != _escape_plain_text(plain_text) else TEXT_RENDER_MODE_SIMPLE
     return TextRenderData(plain_text=plain_text, rich_text=rich_text, render_mode=render_mode)
 
