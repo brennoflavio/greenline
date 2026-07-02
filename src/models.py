@@ -81,6 +81,9 @@ class Message:
     sender: str = ""
     sender_raw: str = ""
     text: str = ""
+    rendered_text: str = ""
+    rendered_formatted_text: str = ""
+    text_render_mode: str = "simple"
     mentioned_jids: List[str] = field(default_factory=list)
     mention_spans: List[MentionSpan] = field(default_factory=list)
     image_source: str = ""

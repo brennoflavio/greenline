@@ -229,6 +229,8 @@
         "UnavailableRequestID": ""
       },
       "read_receipt": "",
+      "rendered_formatted_text": "",
+      "rendered_text": "",
       "reply_quote_payload_json": "{\"audioMessage\":{\"PTT\":true,\"URL\":\"https://example.test/fixture\",\"contextInfo\":{\"participant\":\"fixture-user-15@lid\",\"quotedMessage\":{\"imageMessage\":{\"JPEGThumbnail\":\"REDACTED_JPEGTHUMBNAIL\",\"URL\":\"https://example.test/fixture\",\"contextInfo\":{\"forwardingScore\":1,\"isForwarded\":true,\"pairedMediaType\":0},\"directPath\":\"/v/fixture/media-4.enc\",\"fileEncSHA256\":\"REDACTED_FILEENCSHA256\",\"fileLength\":136494,\"fileSHA256\":\"REDACTED_FILESHA256\",\"firstScanLength\":10245,\"firstScanSidecar\":\"REDACTED_FIRSTSCANSIDECAR\",\"height\":1280,\"imageSourceType\":0,\"mediaKey\":\"REDACTED_MEDIAKEY\",\"mediaKeyTimestamp\":1,\"midQualityFileSHA256\":\"REDACTED_MIDQUALITYFILESHA256\",\"mimetype\":\"image/jpeg\",\"scanLengths\":[10245,36321,31928,57998],\"scansSidecar\":\"REDACTED_SCANSSIDECAR\",\"width\":960}},\"quotedType\":0,\"stanzaID\":\"fixture-message-007\"},\"directPath\":\"/v/fixture/media-3.enc\",\"fileEncSHA256\":\"REDACTED_FILEENCSHA256\",\"fileLength\":13603,\"fileSHA256\":\"REDACTED_FILESHA256\",\"mediaKey\":\"REDACTED_MEDIAKEY\",\"mediaKeyTimestamp\":1,\"mimetype\":\"audio/ogg; codecs=opus\",\"seconds\":5,\"streamingSidecar\":\"REDACTED_STREAMINGSIDECAR\",\"waveform\":\"REDACTED_WAVEFORM\"},\"messageContextInfo\":{\"messageSecret\":\"REDACTED_MESSAGESECRET\"}}",
       "reply_to_from_me": false,
       "reply_to_id": "fixture-message-007",
@@ -242,6 +244,7 @@
       "sticker_source": "",
       "temp_id": "",
       "text": "",
+      "text_render_mode": "simple",
       "thumbnail_path": "",
       "timestamp": "12:00",
       "timestamp_unix": 1735732800,

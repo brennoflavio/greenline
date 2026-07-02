@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from qml_contract_helpers import DEFAULT_SENDER_ID, seed_sender_identity
 
-from greenline.qml_text import format_qml_text
+from greenline.qml_text import build_text_render_data, format_qml_text
 from greenline.store.mentions import template_mention_text
 
 
@@ -55,3 +55,19 @@ def test_format_qml_text_keeps_unmatched_or_malformed_mentions_readable() -> Non
 
     assert format_qml_text("Hello \ue0002\ue001", [DEFAULT_SENDER_ID]) == "Hello \ue0002\ue001"
     assert format_qml_text("Hello \ue000oops\ue001", [DEFAULT_SENDER_ID]) == "Hello \ue000oops\ue001"
+
+
+def test_build_text_render_data_marks_plain_newline_message_as_simple() -> None:
+    render_data = build_text_render_data("Hello\nWorld")
+
+    assert render_data.plain_text == "Hello\nWorld"
+    assert render_data.rich_text == "Hello<br/>World"
+    assert render_data.render_mode == "simple"
+
+
+def test_build_text_render_data_marks_formatted_message_as_rich() -> None:
+    render_data = build_text_render_data("Hello *bold* world")
+
+    assert render_data.plain_text == "Hello *bold* world"
+    assert render_data.rich_text == "Hello <b>bold</b> world"
+    assert render_data.render_mode == "rich"

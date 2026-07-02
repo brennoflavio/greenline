@@ -31,7 +31,11 @@ from greenline.store.mentions import (
     quoted_message_template,
 )
 from greenline.store.reactions import apply_message_reactions_flag
-from greenline.store.records import message_from_record, stored_message_record
+from greenline.store.records import (
+    message_from_record,
+    stored_message_record,
+    with_text_render_fields,
+)
 from greenline.store.repository import (
     _find_message_entry,
     message_storage_key,
@@ -555,62 +559,66 @@ def _deleted_message_target_id(evt: MessageEvent, raw: Optional[Dict[str, Any]])
 
 
 def _merge_edited_message(existing: Message, updated: Message) -> Message:
-    return replace(
-        existing,
-        type=updated.type,
-        edited=True,
-        sender=updated.sender or existing.sender,
-        sender_raw=updated.sender_raw or existing.sender_raw,
-        text=updated.text,
-        mentioned_jids=list(updated.mentioned_jids),
-        mention_spans=list(updated.mention_spans),
-        image_source=updated.image_source or existing.image_source,
-        caption=updated.caption,
-        duration=updated.duration or existing.duration,
-        sticker_source=updated.sticker_source or existing.sticker_source,
-        media_path=updated.media_path or existing.media_path,
-        thumbnail_path=updated.thumbnail_path or existing.thumbnail_path,
-        mimetype=updated.mimetype or existing.mimetype,
-        file_name=updated.file_name or existing.file_name,
-        reply_to_id=updated.reply_to_id,
-        reply_to_sender_id=updated.reply_to_sender_id,
-        reply_to_sender_raw=updated.reply_to_sender_raw,
-        reply_to_from_me=updated.reply_to_from_me,
-        reply_to_text=updated.reply_to_text,
-        reply_to_mentioned_jids=list(updated.reply_to_mentioned_jids),
-        button_text=updated.button_text,
-        button_url=updated.button_url,
-        link_title=updated.link_title,
-        link_description=updated.link_description,
-        link_url=updated.link_url,
+    return with_text_render_fields(
+        replace(
+            existing,
+            type=updated.type,
+            edited=True,
+            sender=updated.sender or existing.sender,
+            sender_raw=updated.sender_raw or existing.sender_raw,
+            text=updated.text,
+            mentioned_jids=list(updated.mentioned_jids),
+            mention_spans=list(updated.mention_spans),
+            image_source=updated.image_source or existing.image_source,
+            caption=updated.caption,
+            duration=updated.duration or existing.duration,
+            sticker_source=updated.sticker_source or existing.sticker_source,
+            media_path=updated.media_path or existing.media_path,
+            thumbnail_path=updated.thumbnail_path or existing.thumbnail_path,
+            mimetype=updated.mimetype or existing.mimetype,
+            file_name=updated.file_name or existing.file_name,
+            reply_to_id=updated.reply_to_id,
+            reply_to_sender_id=updated.reply_to_sender_id,
+            reply_to_sender_raw=updated.reply_to_sender_raw,
+            reply_to_from_me=updated.reply_to_from_me,
+            reply_to_text=updated.reply_to_text,
+            reply_to_mentioned_jids=list(updated.reply_to_mentioned_jids),
+            button_text=updated.button_text,
+            button_url=updated.button_url,
+            link_title=updated.link_title,
+            link_description=updated.link_description,
+            link_url=updated.link_url,
+        )
     )
 
 
 def _merge_deleted_message(existing: Message, sender: str, sender_raw: str = "") -> Message:
-    return replace(
-        existing,
-        type=MessageType.DELETED,
-        edited=False,
-        sender=sender or existing.sender,
-        sender_raw=sender_raw or existing.sender_raw,
-        text="",
-        mentioned_jids=[],
-        mention_spans=[],
-        image_source="",
-        caption="",
-        duration="",
-        sticker_source="",
-        media_path="",
-        thumbnail_path="",
-        mimetype="",
-        file_name="",
-        send_status="",
-        temp_id="",
-        button_text="",
-        button_url="",
-        link_title="",
-        link_description="",
-        link_url="",
+    return with_text_render_fields(
+        replace(
+            existing,
+            type=MessageType.DELETED,
+            edited=False,
+            sender=sender or existing.sender,
+            sender_raw=sender_raw or existing.sender_raw,
+            text="",
+            mentioned_jids=[],
+            mention_spans=[],
+            image_source="",
+            caption="",
+            duration="",
+            sticker_source="",
+            media_path="",
+            thumbnail_path="",
+            mimetype="",
+            file_name="",
+            send_status="",
+            temp_id="",
+            button_text="",
+            button_url="",
+            link_title="",
+            link_description="",
+            link_url="",
+        )
     )
 
 

@@ -161,6 +161,8 @@
         "UnavailableRequestID": ""
       },
       "read_receipt": "",
+      "rendered_formatted_text": "Fixture Place",
+      "rendered_text": "Fixture Place",
       "reply_quote_payload_json": "{\"locationMessage\":{\"JPEGThumbnail\":\"REDACTED_JPEGTHUMBNAIL\",\"URL\":\"\",\"address\":\"1600 Amphitheatre Parkway, Mountain View, CA\",\"contextInfo\":{\"participant\":\"fixture-user-49@s.whatsapp.net\",\"quotedMessage\":{\"conversation\":\"Quoted fixture text.\"},\"stanzaID\":\"fixture-quoted-048\"},\"degreesLatitude\":37.4219999,\"degreesLongitude\":-122.0840575,\"isLive\":false,\"name\":\"Fixture Place\"},\"messageContextInfo\":{\"messageSecret\":\"REDACTED_MESSAGESECRET\"}}",
       "reply_to_from_me": false,
       "reply_to_id": "fixture-quoted-048",
@@ -174,6 +176,7 @@
       "sticker_source": "",
       "temp_id": "",
       "text": "Fixture Place",
+      "text_render_mode": "simple",
       "thumbnail_path": "",
       "timestamp": "12:48",
       "timestamp_unix": 1735735680,

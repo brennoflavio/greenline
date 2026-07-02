@@ -8,13 +8,10 @@ MessageBubble {
     property string formattedText: ""
     property string buttonText: ""
     property string buttonUrl: ""
-    property bool expanded: false
-    property int collapsedLineCount: 10
     readonly property bool hasOpenableButton: buttonText !== "" && (buttonUrl.indexOf("https://") === 0 || buttonUrl.indexOf("http://") === 0)
     readonly property real senderWidthHint: showSender ? senderMeasure.implicitWidth + units.gu(2) : 0
     readonly property real replyWidthHint: replyToId !== "" ? Math.max(replySenderMeasure.implicitWidth, replyTextMeasure.implicitWidth) + units.gu(3.5) : 0
     readonly property real buttonWidthHint: hasOpenableButton ? units.gu(24) : 0
-    readonly property bool shouldCollapse: fullHeightMeasure.implicitHeight > collapsedHeightMeasure.implicitHeight + units.gu(0.1)
     readonly property bool usesFormattedText: formattedText !== ""
     readonly property string displayText: usesFormattedText ? formattedText : text
     readonly property string plainDisplayText: usesFormattedText ? formattedText.replace(/<br\s*\/?>/gi, "\n").replace(/<\/p>/gi, "\n").replace(/<\/div>/gi, "\n").replace(/<\/li>/gi, "\n").replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">") : text
@@ -68,30 +65,6 @@ MessageBubble {
     }
 
     Label {
-        id: fullHeightMeasure
-
-        visible: false
-        text: root.plainDisplayText
-        textFormat: Text.PlainText
-        fontSize: "small"
-        wrapMode: Text.Wrap
-        width: parent.width
-    }
-
-    Label {
-        id: collapsedHeightMeasure
-
-        visible: false
-        text: root.plainDisplayText
-        textFormat: Text.PlainText
-        fontSize: "small"
-        wrapMode: Text.Wrap
-        width: parent.width
-        maximumLineCount: root.collapsedLineCount
-        elide: Text.ElideRight
-    }
-
-    Label {
         text: root.displayText
         textFormat: root.usesFormattedText ? Text.RichText : Text.PlainText
         onLinkActivated: Qt.openUrlExternally(link)
@@ -99,8 +72,6 @@ MessageBubble {
         color: "#303030"
         wrapMode: Text.Wrap
         width: parent.width
-        maximumLineCount: root.shouldCollapse && !root.expanded ? root.collapsedLineCount : 2.14748e+09
-        elide: root.shouldCollapse && !root.expanded ? Text.ElideRight : Text.ElideNone
     }
 
     Button {
@@ -108,43 +79,6 @@ MessageBubble {
         width: parent.width
         visible: root.hasOpenableButton
         onClicked: Qt.openUrlExternally(root.buttonUrl)
-    }
-
-    Column {
-        visible: root.shouldCollapse
-        width: parent.width
-        spacing: 0
-
-        Item {
-            width: 1
-            height: toggleLabel.implicitHeight
-        }
-
-        Item {
-            width: parent.width
-            height: toggleLabel.implicitHeight + units.gu(0.6)
-
-            Label {
-                id: toggleLabel
-
-                text: root.expanded ? i18n.tr("Show less") : i18n.tr("Show more")
-                fontSize: "small"
-                color: LomiriColors.blue
-
-                anchors {
-                    left: parent.left
-                    verticalCenter: parent.verticalCenter
-                }
-
-            }
-
-            MouseArea {
-                anchors.fill: parent
-                onClicked: root.expanded = !root.expanded
-            }
-
-        }
-
     }
 
     Item {

@@ -345,7 +345,7 @@ Item {
     }
 
     function usesRichTextMessage(message) {
-        return !!message && (!!message.reply_to_id || (root.isGroup && !message.is_outgoing));
+        return !!message && (!!message.reply_to_id || (root.isGroup && !message.is_outgoing) || (message.text_render_mode || "simple") === "rich");
     }
 
     function messageComponentFor(message) {

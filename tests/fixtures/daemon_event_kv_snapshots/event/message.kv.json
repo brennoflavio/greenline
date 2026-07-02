@@ -145,6 +145,8 @@
         "UnavailableRequestID": ""
       },
       "read_receipt": "",
+      "rendered_formatted_text": "Fixture message text.",
+      "rendered_text": "Fixture message text.",
       "reply_quote_payload_json": "{\"conversation\":\"Fixture message text.\",\"messageContextInfo\":{\"deviceListMetadata\":{\"recipientKeyHash\":\"REDACTED_RECIPIENTKEYHASH\",\"recipientTimestamp\":1,\"senderKeyHash\":\"REDACTED_SENDERKEYHASH\",\"senderTimestamp\":1},\"deviceListMetadataVersion\":2,\"messageSecret\":\"REDACTED_MESSAGESECRET\"}}",
       "reply_to_from_me": false,
       "reply_to_id": "",
@@ -158,6 +160,7 @@
       "sticker_source": "",
       "temp_id": "",
       "text": "Fixture message text.",
+      "text_render_mode": "simple",
       "thumbnail_path": "",
       "timestamp": "12:00",
       "timestamp_unix": 1735732800,

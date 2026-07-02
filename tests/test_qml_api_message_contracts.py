@@ -18,6 +18,7 @@ from qml_contract_helpers import (
 import main
 from greenline.contracts.kv import GreenlineKV
 from greenline.contracts.validation import BoundaryValidationError
+from greenline.store.mentions import template_mention_text
 from greenline.store.records import (
     MessageReactionRecord,
     OwnJIDRecord,
@@ -25,6 +26,7 @@ from greenline.store.records import (
     StickerCacheRecord,
     StoredMessageRecord,
 )
+from greenline.store.repository import message_storage_key
 from models import MessageType, ReadReceipt
 
 
@@ -110,6 +112,79 @@ def test_get_message_reactions_contract_resolves_sender_details() -> None:
         ],
         "message": "",
     }
+
+
+def test_get_messages_backfills_missing_text_render_fields() -> None:
+    seed_chat(DEFAULT_CHAT_ID)
+    record = StoredMessageRecord(
+        id="legacy-message",
+        chat_id=DEFAULT_CHAT_ID,
+        type=MessageType.TEXT,
+        is_outgoing=False,
+        timestamp="12:34",
+        timestamp_unix=123,
+        read_receipt=ReadReceipt.DELIVERED,
+        sender=DEFAULT_SENDER_ID,
+        sender_raw=DEFAULT_SENDER_ID,
+        text="Hello *bold* world",
+        rendered_text="",
+        rendered_formatted_text="",
+        text_render_mode="simple",
+        reply_to_id="",
+    )
+    key = message_storage_key(DEFAULT_CHAT_ID, 123, "legacy-message")
+    with GreenlineKV() as kv:
+        kv.put_record(key, record)
+
+    result = main.get_messages(DEFAULT_CHAT_ID, "", 10)
+
+    validate_api_response("get_messages", result)
+    assert result["messages"][0]["formatted_text"] == "Hello <b>bold</b> world"
+    assert result["messages"][0]["text_render_mode"] == "rich"
+    with GreenlineKV() as kv:
+        updated = kv.get_record(key)
+    assert isinstance(updated, StoredMessageRecord)
+    assert updated.rendered_text == "Hello *bold* world"
+    assert updated.rendered_formatted_text == "Hello <b>bold</b> world"
+    assert updated.text_render_mode == "rich"
+
+
+def test_get_messages_keeps_mention_rendering_fresh_without_cached_text() -> None:
+    seed_chat(DEFAULT_CHAT_ID)
+    seed_sender_identity(DEFAULT_SENDER_ID, name="Alice")
+    templated_text, mentioned_jids = template_mention_text("Hello @222", [DEFAULT_SENDER_ID])
+    record = StoredMessageRecord(
+        id="mention-message",
+        chat_id=DEFAULT_CHAT_ID,
+        type=MessageType.TEXT,
+        is_outgoing=False,
+        timestamp="12:34",
+        timestamp_unix=124,
+        read_receipt=ReadReceipt.DELIVERED,
+        sender=DEFAULT_SENDER_ID,
+        sender_raw=DEFAULT_SENDER_ID,
+        text=templated_text,
+        mentioned_jids=mentioned_jids,
+        rendered_text="Hello @Alice",
+        rendered_formatted_text='Hello <a href="greenline://chat/222%40s.whatsapp.net">@Alice</a>',
+        text_render_mode="rich",
+        reply_to_id="",
+    )
+    key = message_storage_key(DEFAULT_CHAT_ID, 124, "mention-message")
+    with GreenlineKV() as kv:
+        kv.put_record(key, record)
+    seed_sender_identity(DEFAULT_SENDER_ID, name="Bob")
+
+    result = main.get_messages(DEFAULT_CHAT_ID, "", 10)
+
+    validate_api_response("get_messages", result)
+    assert result["messages"][0]["text"] == "Hello @Bob"
+    assert result["messages"][0]["formatted_text"] == 'Hello <a href="greenline://chat/222%40s.whatsapp.net">@Bob</a>'
+    with GreenlineKV() as kv:
+        updated = kv.get_record(key)
+    assert isinstance(updated, StoredMessageRecord)
+    assert updated.rendered_text == "Hello @Alice"
+    assert updated.rendered_formatted_text == 'Hello <a href="greenline://chat/222%40s.whatsapp.net">@Alice</a>'
 
 
 def test_get_message_reactions_contract_prefers_push_name_for_self() -> None:
@@ -650,6 +725,10 @@ def test_edit_text_message_contract_success_and_failure(fake_daemon_rpc, fake_py
     validate_api_response("edit_text_message", success)
     assert fake_daemon_rpc.edit_message_calls[0]["text"] == "After"
     _assert_all_contract_events(fake_pyotherside_module)
+    message_updates = _event_payloads(fake_pyotherside_module, "message-upsert")
+    assert message_updates[-1][0]["text"] == "After"
+    assert message_updates[-1][0]["formatted_text"] == "After"
+    assert message_updates[-1][0]["text_render_mode"] == "simple"
 
     missing = main.edit_text_message(DEFAULT_CHAT_ID, "missing", "After")
     validate_api_response("edit_text_message", missing)

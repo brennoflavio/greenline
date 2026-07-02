@@ -56,8 +56,11 @@ from greenline.store.reactions import (
 )
 from greenline.store.records import (
     StoredMessageRecord,
+    backfilled_stored_message_record,
     message_from_record,
+    needs_text_render_backfill,
     updated_stored_message_record,
+    with_text_render_fields,
 )
 from greenline.store.repository import (
     get_message_entry_with_key as _lookup_message_entry_with_key,
@@ -289,7 +292,25 @@ def get_messages(request: GetMessagesRequest) -> MessagesResponse:
         if has_more and entries:
             next_cursor = entries[-1][0]
 
-        messages = [message_from_record(value) for _, value in entries]
+        backfilled_count = 0
+        normalized_entries = []
+        for key, value in entries:
+            next_value = value
+            if needs_text_render_backfill(value):
+                try:
+                    next_value = backfilled_stored_message_record(value)
+                    kv.put_cached_record(key, next_value)
+                    backfilled_count += 1
+                except Exception:
+                    next_value = value
+            normalized_entries.append((key, next_value))
+        if backfilled_count > 0:
+            try:
+                kv.commit_cached()
+            except Exception:
+                pass
+
+        messages = [message_from_record(value) for _, value in normalized_entries]
         messages.sort(key=lambda message: (message.timestamp_unix, message.id))
         rendered_messages = [ui_message(message) for message in messages]
 
@@ -441,6 +462,7 @@ def edit_text_message(request: EditTextMessageRequest) -> SuccessResponse:
     updated_msg = message_from_record(entry)
     updated_msg.text = normalized_text
     updated_msg.edited = True
+    updated_msg = with_text_render_fields(updated_msg)
 
     with GreenlineKV() as kv:
         kv.put_record(entry_key, updated_stored_message_record(entry, updated_msg))

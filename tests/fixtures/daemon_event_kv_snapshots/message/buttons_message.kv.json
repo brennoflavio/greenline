@@ -191,6 +191,8 @@
         "UnavailableRequestID": ""
       },
       "read_receipt": "",
+      "rendered_formatted_text": "Unsupported Message type arrived: buttonsMessage",
+      "rendered_text": "Unsupported Message type arrived: buttonsMessage",
       "reply_quote_payload_json": "{\"buttonsMessage\":{\"Header\":null,\"buttons\":[{\"buttonID\":\"fixture-message-020\",\"buttonText\":{\"displayText\":\"Fixture text.\"},\"type\":1},{\"buttonID\":\"fixture-message-021\",\"buttonText\":{\"displayText\":\"Fixture text.\"},\"type\":1}],\"contentText\":\"Fixture text.\",\"headerType\":1},\"messageContextInfo\":{\"deviceListMetadata\":{\"recipientKeyHash\":\"REDACTED_RECIPIENTKEYHASH\",\"recipientTimestamp\":1},\"deviceListMetadataVersion\":2}}",
       "reply_to_from_me": false,
       "reply_to_id": "",
@@ -204,6 +206,7 @@
       "sticker_source": "",
       "temp_id": "",
       "text": "Unsupported Message type arrived: buttonsMessage",
+      "text_render_mode": "simple",
       "thumbnail_path": "",
       "timestamp": "12:00",
       "timestamp_unix": 1735732800,

@@ -1,9 +1,15 @@
+from dataclasses import replace
 from typing import Any, Optional, Tuple
 
 from greenline.contracts.kv import GreenlineKV
-from greenline.qml_text import format_qml_text
+from greenline.qml_text import (
+    TEXT_RENDER_MODE_SIMPLE,
+    TextRenderData,
+    build_text_render_data,
+    format_qml_text,
+)
 from greenline.store.identity import resolve_sender_name, resolve_sender_photo
-from greenline.store.mentions import render_mention_text, render_message_mentions
+from greenline.store.mentions import render_mention_text
 from greenline.store.records import (
     MessageIndexRecord,
     StoredMessageRecord,
@@ -95,11 +101,30 @@ def _resolve_reply_preview_text(message: Message) -> str:
 
 
 def to_ui_message(message: Message) -> UiMessage:
-    formatted_text = format_qml_text(message.text, message.mentioned_jids)
+    if message.mentioned_jids:
+        text_render_data = build_text_render_data(message.text, message.mentioned_jids)
+    elif message.text and (message.rendered_text or message.rendered_formatted_text):
+        text_render_data = TextRenderData(
+            plain_text=message.rendered_text or render_mention_text(message.text, message.mentioned_jids),
+            rich_text=message.rendered_formatted_text or format_qml_text(message.text, message.mentioned_jids),
+            render_mode=message.text_render_mode or TEXT_RENDER_MODE_SIMPLE,
+        )
+    else:
+        text_render_data = build_text_render_data(message.text, message.mentioned_jids)
+
     formatted_caption = format_qml_text(message.caption, message.mentioned_jids)
     reply_preview_text = _resolve_reply_preview_text(message)
+    rendered_reply_to_text = render_mention_text(reply_preview_text, message.reply_to_mentioned_jids)
     formatted_reply_to_text = format_qml_text(reply_preview_text, message.reply_to_mentioned_jids)
-    rendered = render_message_mentions(message)
+    rendered = replace(
+        message,
+        text=text_render_data.plain_text,
+        rendered_text=text_render_data.plain_text,
+        rendered_formatted_text=text_render_data.rich_text,
+        text_render_mode=text_render_data.render_mode,
+        caption=render_mention_text(message.caption, message.mentioned_jids),
+        reply_to_text=rendered_reply_to_text,
+    )
 
     sender_name = ""
     sender_photo = ""
@@ -114,9 +139,9 @@ def to_ui_message(message: Message) -> UiMessage:
         reply_to_sender = resolve_sender_name(rendered.reply_to_sender_id)
 
     payload = dict(vars(rendered))
-    payload["formatted_text"] = formatted_text
+    payload["formatted_text"] = text_render_data.rich_text
     payload["formatted_caption"] = formatted_caption
-    payload["reply_to_text"] = render_mention_text(reply_preview_text, message.reply_to_mentioned_jids)
+    payload["reply_to_text"] = rendered_reply_to_text
     payload["formatted_reply_to_text"] = formatted_reply_to_text
 
     return UiMessage(

@@ -187,6 +187,8 @@
         "UnavailableRequestID": ""
       },
       "read_receipt": "sent",
+      "rendered_formatted_text": "Fixture text.",
+      "rendered_text": "Fixture text.",
       "reply_quote_payload_json": "{\"extendedTextMessage\":{\"contextInfo\":{\"disappearingMode\":{\"initiator\":0,\"trigger\":1}},\"description\":\"Fixture text.\",\"inviteLinkGroupTypeV2\":0,\"matchedText\":\"Fixture text.\",\"previewType\":0,\"text\":\"Fixture text.\",\"title\":\"Fixture text.\"},\"messageContextInfo\":{\"deviceListMetadata\":{\"receiverAccountType\":0,\"recipientKeyHash\":\"REDACTED_RECIPIENTKEYHASH\",\"recipientTimestamp\":1,\"senderAccountType\":0,\"senderKeyHash\":\"REDACTED_SENDERKEYHASH\",\"senderTimestamp\":1},\"deviceListMetadataVersion\":2,\"limitSharingV2\":{\"initiatedByMe\":false,\"trigger\":0},\"messageSecret\":\"REDACTED_MESSAGESECRET\"}}",
       "reply_to_from_me": false,
       "reply_to_id": "",
@@ -200,6 +202,7 @@
       "sticker_source": "",
       "temp_id": "",
       "text": "Fixture text.",
+      "text_render_mode": "simple",
       "thumbnail_path": "",
       "timestamp": "12:00",
       "timestamp_unix": 1735732800,

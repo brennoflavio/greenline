@@ -155,6 +155,8 @@
         "UnavailableRequestID": ""
       },
       "read_receipt": "",
+      "rendered_formatted_text": "",
+      "rendered_text": "",
       "reply_quote_payload_json": "{\"audioMessage\":{\"PTT\":true,\"URL\":\"https://example.test/fixture\",\"directPath\":\"/v/fixture/media-5.enc\",\"fileEncSHA256\":\"REDACTED_FILEENCSHA256\",\"fileLength\":29635,\"fileSHA256\":\"REDACTED_FILESHA256\",\"mediaKey\":\"REDACTED_MEDIAKEY\",\"mediaKeyTimestamp\":1,\"mimetype\":\"audio/ogg; codecs=opus\",\"seconds\":13,\"waveform\":\"REDACTED_WAVEFORM\"},\"messageContextInfo\":{\"messageSecret\":\"REDACTED_MESSAGESECRET\"}}",
       "reply_to_from_me": false,
       "reply_to_id": "",
@@ -168,6 +170,7 @@
       "sticker_source": "",
       "temp_id": "",
       "text": "",
+      "text_render_mode": "simple",
       "thumbnail_path": "",
       "timestamp": "12:00",
       "timestamp_unix": 1735732800,

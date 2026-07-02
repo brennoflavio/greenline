@@ -165,6 +165,8 @@
         "UnavailableRequestID": ""
       },
       "read_receipt": "",
+      "rendered_formatted_text": "",
+      "rendered_text": "",
       "reply_quote_payload_json": "{\"messageContextInfo\":{\"messageSecret\":\"REDACTED_MESSAGESECRET\"},\"stickerMessage\":{\"URL\":\"https://example.test/fixture\",\"directPath\":\"/v/fixture/media-8.enc\",\"fileEncSHA256\":\"REDACTED_FILEENCSHA256\",\"fileLength\":379848,\"fileSHA256\":\"REDACTED_FILESHA256\",\"firstFrameLength\":3396,\"firstFrameSidecar\":\"REDACTED_FIRSTFRAMESIDECAR\",\"isAiSticker\":false,\"isAnimated\":true,\"isAvatar\":false,\"isLottie\":false,\"mediaKey\":\"REDACTED_MEDIAKEY\",\"mediaKeyTimestamp\":1,\"mimetype\":\"image/webp\",\"premium\":0,\"stickerSentTS\":1}}",
       "reply_to_from_me": false,
       "reply_to_id": "",
@@ -178,6 +180,7 @@
       "sticker_source": "",
       "temp_id": "",
       "text": "",
+      "text_render_mode": "simple",
       "thumbnail_path": "",
       "timestamp": "12:00",
       "timestamp_unix": 1735732800,

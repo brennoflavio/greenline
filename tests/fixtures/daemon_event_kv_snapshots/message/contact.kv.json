@@ -149,6 +149,8 @@
         "UnavailableRequestID": ""
       },
       "read_receipt": "",
+      "rendered_formatted_text": "",
+      "rendered_text": "",
       "reply_quote_payload_json": "{\"contactMessage\":{\"displayName\":\"Fixture text.\",\"vcard\":\"BEGIN:VCARD\\nVERSION:3.0\\nFN:Fixture Contact\\nTEL;TYPE=CELL:+1-555-000-0000\\nEND:VCARD\\n\"},\"messageContextInfo\":{\"limitSharingV2\":{\"initiatedByMe\":false,\"limitSharingSettingTimestamp\":1,\"sharingLimited\":true,\"trigger\":1},\"messageSecret\":\"REDACTED_MESSAGESECRET\"}}",
       "reply_to_from_me": false,
       "reply_to_id": "",
@@ -162,6 +164,7 @@
       "sticker_source": "",
       "temp_id": "",
       "text": "",
+      "text_render_mode": "simple",
       "thumbnail_path": "",
       "timestamp": "12:00",
       "timestamp_unix": 1735732800,

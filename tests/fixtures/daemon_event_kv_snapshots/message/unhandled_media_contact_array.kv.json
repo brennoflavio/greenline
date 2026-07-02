@@ -179,6 +179,8 @@
         "UnavailableRequestID": ""
       },
       "read_receipt": "",
+      "rendered_formatted_text": "",
+      "rendered_text": "",
       "reply_quote_payload_json": "{\"contactsArrayMessage\":{\"contacts\":[{\"displayName\":\"+1 555-000-0001\",\"vcard\":\"BEGIN:VCARD\\nVERSION:3.0\\nFN:Fixture Contact One\\nTEL;TYPE=CELL:+1-555-000-0001\\nEND:VCARD\"},{\"displayName\":\"+1 555-000-0002\",\"vcard\":\"BEGIN:VCARD\\nVERSION:3.0\\nFN:Fixture Contact Two\\nTEL;TYPE=CELL:+1-555-000-0002\\nEND:VCARD\"}],\"contextInfo\":{\"ephemeralSettingTimestamp\":1}},\"messageContextInfo\":{\"deviceListMetadata\":{\"recipientKeyHash\":\"REDACTED_RECIPIENTKEYHASH\",\"recipientTimestamp\":1,\"senderKeyHash\":\"REDACTED_SENDERKEYHASH\",\"senderTimestamp\":1},\"deviceListMetadataVersion\":2},\"senderKeyDistributionMessage\":{\"axolotlSenderKeyDistributionMessage\":\"REDACTED_TOKEN\",\"groupID\":\"fixture-group-20@g.us\"}}",
       "reply_to_from_me": false,
       "reply_to_id": "",
@@ -192,6 +194,7 @@
       "sticker_source": "",
       "temp_id": "",
       "text": "",
+      "text_render_mode": "simple",
       "thumbnail_path": "",
       "timestamp": "12:00",
       "timestamp_unix": 1735732800,

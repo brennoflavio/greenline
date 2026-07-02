@@ -1,14 +1,25 @@
 import html
 import re
+from dataclasses import dataclass
 from typing import List, Optional, Sequence, Tuple
 from urllib.parse import quote
 
 from greenline.store.identity import resolve_sender_name
+from greenline.store.mentions import render_mention_text
 
 _MENTION_PLACEHOLDER_RE = re.compile(r"\ue000(\d+)\ue001")
 _TOKEN_RE = re.compile(r"(?P<url>https?://[^\s<]+)|(?P<mention>\ue000(?P<mention_index>\d+)\ue001)")
 _BOLD_RE = re.compile(r"\*(?=\S)(.+?)(?<=\S)\*")
 _SIMPLE_URL_TRAILING_PUNCTUATION = ".,!?:;"
+TEXT_RENDER_MODE_SIMPLE = "simple"
+TEXT_RENDER_MODE_RICH = "rich"
+
+
+@dataclass(frozen=True)
+class TextRenderData:
+    plain_text: str
+    rich_text: str
+    render_mode: str
 
 
 def _escape_plain_text(text: str) -> str:
@@ -90,4 +101,21 @@ def format_qml_text(text: str, mentioned_jids: Optional[Sequence[str]] = None) -
     return "".join(parts)
 
 
-__all__ = ["format_qml_text"]
+def build_text_render_data(text: str, mentioned_jids: Optional[Sequence[str]] = None) -> TextRenderData:
+    if not text:
+        return TextRenderData(plain_text="", rich_text="", render_mode=TEXT_RENDER_MODE_SIMPLE)
+
+    normalized_mentioned_jids = list(mentioned_jids or [])
+    plain_text = render_mention_text(text, normalized_mentioned_jids)
+    rich_text = format_qml_text(text, normalized_mentioned_jids)
+    render_mode = TEXT_RENDER_MODE_RICH if rich_text != _escape_plain_text(plain_text) else TEXT_RENDER_MODE_SIMPLE
+    return TextRenderData(plain_text=plain_text, rich_text=rich_text, render_mode=render_mode)
+
+
+__all__ = [
+    "TextRenderData",
+    "TEXT_RENDER_MODE_RICH",
+    "TEXT_RENDER_MODE_SIMPLE",
+    "build_text_render_data",
+    "format_qml_text",
+]

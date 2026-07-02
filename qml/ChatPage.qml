@@ -17,7 +17,7 @@ Page {
     property string chatPhoto: ""
     property bool isGroup: false
     property var messages: []
-    property int messagePageSize: 50
+    property int messagePageSize: 20
     property string nextMessagesCursor: ""
     property bool hasOlderMessages: false
     property bool loadingOlderMessages: false
@@ -52,6 +52,8 @@ Page {
     property var lastSavedDraftMentionSpans: []
     property var pendingDraftMentionSpans: []
     property var mentionCandidates: []
+    property bool deferredOpenTasksScheduled: false
+    property int deferredOpenTasksDelayMs: 300
 
     function currentReplyContext() {
         if (replyToMessageId === "")
@@ -349,6 +351,7 @@ Page {
                 nextMessagesCursor = result.next_cursor || "";
                 hasOlderMessages = !!result.has_more;
                 resetChatMessages(result.messages || []);
+                scheduleDeferredOpenTasks();
                 var unreadOnOpen = initialUnreadCount;
                 if (unreadOnOpen > 0) {
                     initialUnreadCount = 0;
@@ -369,6 +372,14 @@ Page {
             else
                 mentionCandidates = [];
         });
+    }
+
+    function scheduleDeferredOpenTasks() {
+        if (deferredOpenTasksScheduled)
+            return ;
+
+        deferredOpenTasksScheduled = true;
+        deferredOpenTasksTimer.restart();
     }
 
     function loadDraft() {
@@ -1186,6 +1197,20 @@ Page {
         }
     }
 
+    Timer {
+        id: deferredOpenTasksTimer
+
+        interval: deferredOpenTasksDelayMs
+        repeat: false
+        onTriggered: {
+            loadDraft();
+            if (!isGroup)
+                python.call('main.subscribe_presence', [chatId], function() {
+            });
+
+        }
+    }
+
     Python {
         id: python
 
@@ -1208,12 +1233,9 @@ Page {
                 } else {
                     loadInitialMessages();
                 }
-                loadDraft();
                 if (isGroup)
                     loadMentionCandidates();
-                else
-                    python.call('main.subscribe_presence', [chatId], function() {
-                });
+
                 setHandler('message-upsert', function(incomingMessages) {
                     var updated = messages.slice();
                     var messagesToUpsert = [];

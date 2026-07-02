@@ -55,6 +55,8 @@
         }
       },
       "read_receipt": "",
+      "rendered_formatted_text": "History sync fixture text.",
+      "rendered_text": "History sync fixture text.",
       "reply_quote_payload_json": "{\"conversation\":\"History sync fixture text.\"}",
       "reply_to_from_me": false,
       "reply_to_id": "",
@@ -68,6 +70,7 @@
       "sticker_source": "",
       "temp_id": "",
       "text": "History sync fixture text.",
+      "text_render_mode": "simple",
       "thumbnail_path": "",
       "timestamp": "12:47",
       "timestamp_unix": 1735735620,

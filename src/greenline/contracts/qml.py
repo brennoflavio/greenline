@@ -28,6 +28,7 @@ from models import (
 
 MESSAGE_TYPES = {item.value for item in MessageType}
 READ_RECEIPTS = {item.value for item in ReadReceipt}
+TEXT_RENDER_MODES = {"simple", "rich"}
 
 Validator = Callable[[Any], None]
 
@@ -147,6 +148,9 @@ def assert_ui_message(payload: Any, path: str = "UiMessage") -> None:
         "sender",
         "sender_raw",
         "text",
+        "rendered_text",
+        "rendered_formatted_text",
+        "text_render_mode",
         "formatted_text",
         "image_source",
         "caption",
@@ -174,6 +178,10 @@ def assert_ui_message(payload: Any, path: str = "UiMessage") -> None:
         "reply_to_sender",
     ):
         _assert_str(message, key, path)
+    _require(
+        message["text_render_mode"] in TEXT_RENDER_MODES,
+        f"{path}.text_render_mode has unknown value {message['text_render_mode']!r}",
+    )
     for key in ("is_outgoing", "edited", "has_reactions", "reply_to_from_me"):
         _assert_bool(message, key, path)
     _assert_int(message, "timestamp_unix", path)

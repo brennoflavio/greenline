@@ -157,6 +157,8 @@
         "UnavailableRequestID": ""
       },
       "read_receipt": "",
+      "rendered_formatted_text": "Unsupported Message type arrived: poll",
+      "rendered_text": "Unsupported Message type arrived: poll",
       "reply_quote_payload_json": "{\"messageContextInfo\":{\"messageSecret\":\"REDACTED_MESSAGESECRET\"},\"pollCreationMessageV3\":{\"name\":\"Fixture text.\",\"options\":[{\"optionName\":\"Fixture text.\"},{\"optionName\":\"Fixture text.\"}],\"pollContentType\":1,\"pollType\":0,\"selectableOptionsCount\":0}}",
       "reply_to_from_me": false,
       "reply_to_id": "",
@@ -170,6 +172,7 @@
       "sticker_source": "",
       "temp_id": "",
       "text": "Unsupported Message type arrived: poll",
+      "text_render_mode": "simple",
       "thumbnail_path": "",
       "timestamp": "12:00",
       "timestamp_unix": 1735732800,

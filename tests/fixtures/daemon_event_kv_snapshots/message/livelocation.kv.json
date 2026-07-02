@@ -141,6 +141,8 @@
         "UnavailableRequestID": ""
       },
       "read_receipt": "",
+      "rendered_formatted_text": "0.0, 0.0",
+      "rendered_text": "0.0, 0.0",
       "reply_quote_payload_json": "{\"liveLocationMessage\":{\"JPEGThumbnail\":\"REDACTED_JPEGTHUMBNAIL\",\"degreesLatitude\":0.0,\"degreesLongitude\":0.0,\"sequenceNumber\":1},\"messageContextInfo\":{\"messageSecret\":\"REDACTED_MESSAGESECRET\"}}",
       "reply_to_from_me": false,
       "reply_to_id": "",
@@ -154,6 +156,7 @@
       "sticker_source": "",
       "temp_id": "",
       "text": "0.0, 0.0",
+      "text_render_mode": "simple",
       "thumbnail_path": "",
       "timestamp": "12:00",
       "timestamp_unix": 1735732800,

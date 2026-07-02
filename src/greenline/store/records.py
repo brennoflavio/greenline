@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import asdict, dataclass, field, is_dataclass
+from dataclasses import asdict, dataclass, field, is_dataclass, replace
 from typing import Any
 
 from greenline.contracts.codecs import to_json_like
@@ -178,8 +178,38 @@ def _typed_mention_spans(value: Any) -> list[MentionSpan]:
     return [span if isinstance(span, MentionSpan) else MentionSpan(**span) for span in value]
 
 
+def with_text_render_fields(message: Message) -> Message:
+    from greenline.qml_text import TEXT_RENDER_MODE_RICH, build_text_render_data
+
+    if message.mentioned_jids:
+        return replace(
+            message,
+            rendered_text="",
+            rendered_formatted_text="",
+            text_render_mode=TEXT_RENDER_MODE_RICH,
+        )
+
+    render_data = build_text_render_data(message.text, message.mentioned_jids)
+    return replace(
+        message,
+        rendered_text=render_data.plain_text,
+        rendered_formatted_text=render_data.rich_text,
+        text_render_mode=render_data.render_mode,
+    )
+
+
+def needs_text_render_backfill(record: StoredMessageRecord) -> bool:
+    if not record.text or record.mentioned_jids:
+        return False
+    return record.rendered_text == "" or record.rendered_formatted_text == ""
+
+
+def backfilled_stored_message_record(record: StoredMessageRecord) -> StoredMessageRecord:
+    return updated_stored_message_record(record, message_from_record(record))
+
+
 def stored_message_record(message: Message, raw: dict[str, Any] | None = None) -> StoredMessageRecord:
-    payload = asdict(message)
+    payload = asdict(with_text_render_fields(message))
     payload["mention_spans"] = _typed_mention_spans(payload["mention_spans"])
     if raw is not None:
         raw_message = raw.get("Message")
@@ -191,7 +221,7 @@ def stored_message_record(message: Message, raw: dict[str, Any] | None = None) -
 
 
 def updated_stored_message_record(record: StoredMessageRecord, message: Message) -> StoredMessageRecord:
-    payload = asdict(message)
+    payload = asdict(with_text_render_fields(message))
     payload["mention_spans"] = _typed_mention_spans(payload["mention_spans"])
     payload["media_download"] = record.media_download
     payload["reply_quote_payload_json"] = record.reply_quote_payload_json

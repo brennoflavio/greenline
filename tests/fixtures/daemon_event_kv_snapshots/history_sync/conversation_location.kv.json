@@ -70,6 +70,8 @@
         }
       },
       "read_receipt": "",
+      "rendered_formatted_text": "40.689247, -74.044502",
+      "rendered_text": "40.689247, -74.044502",
       "reply_quote_payload_json": "{\"locationMessage\":{\"JPEGThumbnail\":\"REDACTED_JPEGTHUMBNAIL\",\"URL\":\"https://maps.app.goo.gl/fixture-location\",\"address\":\"History sync fixture location.\",\"contextInfo\":{\"participant\":\"fixture-user-50@s.whatsapp.net\",\"quotedMessage\":{\"conversation\":\"History sync quoted text.\"},\"stanzaID\":\"fixture-quoted-049\"},\"degreesLatitude\":40.689247,\"degreesLongitude\":-74.044502,\"isLive\":false,\"name\":\"\"}}",
       "reply_to_from_me": false,
       "reply_to_id": "fixture-quoted-049",
@@ -83,6 +85,7 @@
       "sticker_source": "",
       "temp_id": "",
       "text": "40.689247, -74.044502",
+      "text_render_mode": "simple",
       "thumbnail_path": "",
       "timestamp": "12:48",
       "timestamp_unix": 1735735680,

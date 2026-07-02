@@ -79,6 +79,8 @@
         }
       },
       "read_receipt": "",
+      "rendered_formatted_text": "51.5007292, -0.1246254",
+      "rendered_text": "51.5007292, -0.1246254",
       "reply_quote_payload_json": "{\"liveLocationMessage\":{\"JPEGThumbnail\":\"REDACTED_JPEGTHUMBNAIL\",\"caption\":\"History sync live location.\",\"contextInfo\":{\"participant\":\"fixture-user-52@s.whatsapp.net\",\"quotedMessage\":{\"liveLocationMessage\":{\"degreesLatitude\":48.85837,\"degreesLongitude\":2.294481,\"sequenceNumber\":1}},\"stanzaID\":\"fixture-quoted-051\"},\"degreesLatitude\":51.5007292,\"degreesLongitude\":-0.1246254,\"sequenceNumber\":5}}",
       "reply_to_from_me": false,
       "reply_to_id": "fixture-quoted-051",
@@ -92,6 +94,7 @@
       "sticker_source": "",
       "temp_id": "",
       "text": "51.5007292, -0.1246254",
+      "text_render_mode": "simple",
       "thumbnail_path": "",
       "timestamp": "12:49",
       "timestamp_unix": 1735735740,

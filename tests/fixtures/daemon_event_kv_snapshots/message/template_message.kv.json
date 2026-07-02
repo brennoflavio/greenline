@@ -231,6 +231,8 @@
         "UnavailableRequestID": ""
       },
       "read_receipt": "",
+      "rendered_formatted_text": "Fixture text.<br/><br/>Fixture text.",
+      "rendered_text": "Fixture text.\n\nFixture text.",
       "reply_quote_payload_json": "{\"messageContextInfo\":{\"deviceListMetadata\":{\"recipientKeyHash\":\"REDACTED_RECIPIENTKEYHASH\",\"recipientTimestamp\":1},\"deviceListMetadataVersion\":2},\"templateMessage\":{\"Format\":null,\"hydratedTemplate\":{\"Title\":{\"HydratedTitleText\":\"Fixture text.\"},\"hydratedButtons\":[{\"HydratedButton\":{\"QuickReplyButton\":{\"ID\":\"fixture-message-013\",\"displayText\":\"Fixture text.\"}},\"index\":0},{\"HydratedButton\":{\"QuickReplyButton\":{\"ID\":\"fixture-message-014\",\"displayText\":\"Fixture text.\"}},\"index\":1},{\"HydratedButton\":{\"QuickReplyButton\":{\"ID\":\"fixture-message-015\",\"displayText\":\"Fixture text.\"}},\"index\":2}],\"hydratedContentText\":\"Fixture text.\",\"hydratedFooterText\":\"Fixture text.\",\"templateID\":\"fixture-message-016\"},\"templateID\":\"fixture-message-016\"}}",
       "reply_to_from_me": false,
       "reply_to_id": "",
@@ -244,6 +246,7 @@
       "sticker_source": "",
       "temp_id": "",
       "text": "Fixture text.\n\nFixture text.",
+      "text_render_mode": "simple",
       "thumbnail_path": "",
       "timestamp": "12:00",
       "timestamp_unix": 1735732800,
