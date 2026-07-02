@@ -9,6 +9,7 @@ MessageBubble {
     property string buttonText: ""
     property string buttonUrl: ""
     readonly property bool hasOpenableButton: buttonText !== "" && (buttonUrl.indexOf("https://") === 0 || buttonUrl.indexOf("http://") === 0)
+    readonly property real buttonWidthHint: hasOpenableButton ? units.gu(24) : 0
     readonly property string displayText: text !== "" ? text : formattedText
 
     copyableText: {
@@ -20,6 +21,16 @@ MessageBubble {
             parts.push(buttonUrl);
 
         return parts.join("\n");
+    }
+    preferredBubbleWidth: Math.max(textMeasure.implicitWidth + units.gu(2), buttonWidthHint)
+
+    Label {
+        id: textMeasure
+
+        visible: false
+        text: root.displayText
+        textFormat: Text.PlainText
+        fontSize: "small"
     }
 
     Label {
