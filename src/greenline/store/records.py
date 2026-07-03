@@ -179,15 +179,7 @@ def _typed_mention_spans(value: Any) -> list[MentionSpan]:
 
 
 def with_text_render_fields(message: Message) -> Message:
-    from greenline.qml_text import TEXT_RENDER_MODE_RICH, build_text_render_data
-
-    if message.mentioned_jids or message.mention_spans:
-        return replace(
-            message,
-            rendered_text="",
-            rendered_formatted_text="",
-            text_render_mode=TEXT_RENDER_MODE_RICH,
-        )
+    from greenline.qml_text import build_text_render_data
 
     render_data = build_text_render_data(message.text, message.mentioned_jids, message.mention_spans)
     return replace(
@@ -199,13 +191,24 @@ def with_text_render_fields(message: Message) -> Message:
 
 
 def needs_text_render_backfill(record: StoredMessageRecord) -> bool:
-    if not record.text or record.mentioned_jids or record.mention_spans:
+    if not record.text:
         return False
     return record.rendered_text == "" or record.rendered_formatted_text == ""
 
 
 def backfilled_stored_message_record(record: StoredMessageRecord) -> StoredMessageRecord:
-    return updated_stored_message_record(record, message_from_record(record))
+    from greenline.qml_text import build_text_render_data
+
+    message = message_from_record(record)
+    render_data = build_text_render_data(message.text, message.mentioned_jids, message.mention_spans)
+    payload = asdict(record)
+    payload["mention_spans"] = _typed_mention_spans(payload["mention_spans"])
+    payload["rendered_text"] = record.rendered_text or render_data.plain_text
+    payload["rendered_formatted_text"] = record.rendered_formatted_text or render_data.rich_text
+    payload["text_render_mode"] = (
+        record.text_render_mode if record.rendered_formatted_text else render_data.render_mode
+    ) or render_data.render_mode
+    return StoredMessageRecord(**payload)
 
 
 def stored_message_record(message: Message, raw: dict[str, Any] | None = None) -> StoredMessageRecord:

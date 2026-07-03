@@ -149,7 +149,115 @@ def test_get_messages_backfills_missing_text_render_fields() -> None:
     assert updated.text_render_mode == "rich"
 
 
-def test_get_messages_keeps_mention_rendering_fresh_without_cached_text() -> None:
+def test_get_messages_preserves_cached_simple_list_messages() -> None:
+    seed_chat(DEFAULT_CHAT_ID)
+    record = StoredMessageRecord(
+        id="list-message",
+        chat_id=DEFAULT_CHAT_ID,
+        type=MessageType.TEXT,
+        is_outgoing=False,
+        timestamp="12:34",
+        timestamp_unix=124,
+        read_receipt=ReadReceipt.DELIVERED,
+        sender=DEFAULT_SENDER_ID,
+        sender_raw=DEFAULT_SENDER_ID,
+        text="- first\n- second",
+        rendered_text="- first\n- second",
+        rendered_formatted_text="- first<br/>- second",
+        text_render_mode="simple",
+        reply_to_id="",
+    )
+    key = message_storage_key(DEFAULT_CHAT_ID, 124, "list-message")
+    with GreenlineKV() as kv:
+        kv.put_record(key, record)
+
+    result = main.get_messages(DEFAULT_CHAT_ID, "", 10)
+
+    validate_api_response("get_messages", result)
+    assert result["messages"][0]["formatted_text"] == "- first<br/>- second"
+    assert result["messages"][0]["text_render_mode"] == "simple"
+    with GreenlineKV() as kv:
+        updated = kv.get_record(key)
+    assert isinstance(updated, StoredMessageRecord)
+    assert updated.rendered_text == "- first\n- second"
+    assert updated.rendered_formatted_text == "- first<br/>- second"
+    assert updated.text_render_mode == "simple"
+
+
+def test_get_messages_preserves_cached_rich_list_messages() -> None:
+    seed_chat(DEFAULT_CHAT_ID)
+    record = StoredMessageRecord(
+        id="rich-list-message",
+        chat_id=DEFAULT_CHAT_ID,
+        type=MessageType.TEXT,
+        is_outgoing=False,
+        timestamp="12:35",
+        timestamp_unix=125,
+        read_receipt=ReadReceipt.DELIVERED,
+        sender=DEFAULT_SENDER_ID,
+        sender_raw=DEFAULT_SENDER_ID,
+        text="* *bold* https://example.com",
+        rendered_text="* *bold* https://example.com",
+        rendered_formatted_text='* <b>bold</b> <a href="https://example.com">https://example.com</a>',
+        text_render_mode="rich",
+        reply_to_id="",
+    )
+    key = message_storage_key(DEFAULT_CHAT_ID, 125, "rich-list-message")
+    with GreenlineKV() as kv:
+        kv.put_record(key, record)
+
+    result = main.get_messages(DEFAULT_CHAT_ID, "", 10)
+
+    validate_api_response("get_messages", result)
+    assert result["messages"][0]["formatted_text"] == (
+        '* <b>bold</b> <a href="https://example.com">https://example.com</a>'
+    )
+    assert result["messages"][0]["text_render_mode"] == "rich"
+    with GreenlineKV() as kv:
+        updated = kv.get_record(key)
+    assert isinstance(updated, StoredMessageRecord)
+    assert updated.rendered_text == "* *bold* https://example.com"
+    assert updated.rendered_formatted_text == ('* <b>bold</b> <a href="https://example.com">https://example.com</a>')
+    assert updated.text_render_mode == "rich"
+
+
+def test_get_messages_preserves_cached_list_formatting_when_only_plain_cache_is_missing() -> None:
+    seed_chat(DEFAULT_CHAT_ID)
+    record = StoredMessageRecord(
+        id="partial-list-message",
+        chat_id=DEFAULT_CHAT_ID,
+        type=MessageType.TEXT,
+        is_outgoing=False,
+        timestamp="12:36",
+        timestamp_unix=126,
+        read_receipt=ReadReceipt.DELIVERED,
+        sender=DEFAULT_SENDER_ID,
+        sender_raw=DEFAULT_SENDER_ID,
+        text="- first\n- second",
+        rendered_text="",
+        rendered_formatted_text="- first<br/>- second",
+        text_render_mode="simple",
+        reply_to_id="",
+    )
+    key = message_storage_key(DEFAULT_CHAT_ID, 126, "partial-list-message")
+    with GreenlineKV() as kv:
+        kv.put_record(key, record)
+
+    result = main.get_messages(DEFAULT_CHAT_ID, "", 10)
+
+    validate_api_response("get_messages", result)
+    assert result["messages"][0]["text"] == "- first\n- second"
+    assert result["messages"][0]["formatted_text"] == "- first<br/>- second"
+    assert result["messages"][0]["text_render_mode"] == "simple"
+    with GreenlineKV() as kv:
+        updated = kv.get_record(key)
+    assert isinstance(updated, StoredMessageRecord)
+    assert updated.rendered_text == "- first\n- second"
+    assert updated.rendered_formatted_text == "- first<br/>- second"
+    assert updated.text_render_mode == "simple"
+
+
+def test_get_messages_preserves_cached_mention_rendering() -> None:
     seed_chat(DEFAULT_CHAT_ID)
     seed_sender_identity(DEFAULT_SENDER_ID, name="Alice")
     templated_text, mentioned_jids = template_mention_text("Hello @222", [DEFAULT_SENDER_ID])
@@ -178,8 +286,8 @@ def test_get_messages_keeps_mention_rendering_fresh_without_cached_text() -> Non
     result = main.get_messages(DEFAULT_CHAT_ID, "", 10)
 
     validate_api_response("get_messages", result)
-    assert result["messages"][0]["text"] == "Hello @Bob"
-    assert result["messages"][0]["formatted_text"] == 'Hello <a href="greenline://chat/222%40s.whatsapp.net">@Bob</a>'
+    assert result["messages"][0]["text"] == "Hello @Alice"
+    assert result["messages"][0]["formatted_text"] == 'Hello <a href="greenline://chat/222%40s.whatsapp.net">@Alice</a>'
     with GreenlineKV() as kv:
         updated = kv.get_record(key)
     assert isinstance(updated, StoredMessageRecord)
@@ -221,7 +329,7 @@ def test_get_messages_renders_plain_text_mentions_from_spans_as_rich_links() -> 
     assert result["messages"][0]["text_render_mode"] == "rich"
 
 
-def test_get_messages_keeps_mention_span_rendering_fresh_without_cached_text() -> None:
+def test_get_messages_preserves_cached_mention_span_rendering() -> None:
     seed_chat(DEFAULT_CHAT_ID)
     seed_sender_identity(DEFAULT_SENDER_ID, name="Empório Minatto")
     record = StoredMessageRecord(
@@ -249,10 +357,8 @@ def test_get_messages_keeps_mention_span_rendering_fresh_without_cached_text() -
 
     validate_api_response("get_messages", result)
     assert result["messages"][0]["text"] == "@Empório Minatto "
-    assert result["messages"][0]["formatted_text"] == (
-        '<a href="greenline://chat/222%40s.whatsapp.net">@Empório Minatto</a> '
-    )
-    assert result["messages"][0]["text_render_mode"] == "rich"
+    assert result["messages"][0]["formatted_text"] == "@Empório Minatto "
+    assert result["messages"][0]["text_render_mode"] == "simple"
     with GreenlineKV() as kv:
         updated = kv.get_record(key)
     assert isinstance(updated, StoredMessageRecord)

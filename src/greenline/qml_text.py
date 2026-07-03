@@ -11,6 +11,7 @@ from models import MentionSpan
 _MENTION_PLACEHOLDER_RE = re.compile(r"\ue000(\d+)\ue001")
 _TOKEN_RE = re.compile(r"(?P<url>https?://[^\s<]+)|(?P<mention>\ue000(?P<mention_index>\d+)\ue001)")
 _BOLD_RE = re.compile(r"\*(?=\S)(.+?)(?<=\S)\*")
+_LIST_ITEM_RE = re.compile(r"^(?P<marker>[-*])\s+(?P<content>.*)$")
 _SIMPLE_URL_TRAILING_PUNCTUATION = ".,!?:;"
 TEXT_RENDER_MODE_SIMPLE = "simple"
 TEXT_RENDER_MODE_RICH = "rich"
@@ -111,6 +112,44 @@ def _mention_span_bounds(text: str, span: MentionSpan) -> tuple[int, int] | tupl
     return start_index, end_index
 
 
+def _utf16_offsets_by_index(text: str) -> list[int]:
+    offsets = [0]
+    offset = 0
+    for char in text:
+        offset += 2 if ord(char) > 0xFFFF else 1
+        offsets.append(offset)
+    return offsets
+
+
+def _segment_mention_spans(
+    text: str,
+    mention_spans: Sequence[MentionSpan],
+    start_index: int,
+    end_index: int,
+    utf16_offsets: Sequence[int],
+) -> list[MentionSpan]:
+    if start_index >= end_index:
+        return []
+
+    segment_start_utf16 = utf16_offsets[start_index]
+    segment_spans: list[MentionSpan] = []
+    for span in mention_spans:
+        span_start_index, span_end_index = _mention_span_bounds(text, span)
+        if span_start_index is None or span_end_index is None:
+            continue
+        if span_start_index < start_index or span_end_index > end_index:
+            continue
+        segment_spans.append(
+            MentionSpan(
+                jid=span.jid,
+                label=span.label,
+                start=span.start - segment_start_utf16,
+                length=span.length,
+            )
+        )
+    return segment_spans
+
+
 def _is_mention_boundary_char(char: str) -> bool:
     return char == "" or not (char.isalnum() or char == "_")
 
@@ -155,14 +194,11 @@ def _format_text_with_mention_spans(text: str, mention_spans: Sequence[MentionSp
     return "".join(parts)
 
 
-def format_qml_text(
+def _format_inline_text(
     text: str,
     mentioned_jids: Optional[Sequence[str]] = None,
     mention_spans: Optional[Sequence[MentionSpan]] = None,
 ) -> str:
-    if not text:
-        return ""
-
     normalized_mentioned_jids = list(mentioned_jids or [])
     if normalized_mentioned_jids and _MENTION_PLACEHOLDER_RE.search(text):
         parts: List[str] = []
@@ -184,6 +220,43 @@ def format_qml_text(
         return _format_text_with_mention_spans(text, normalized_mention_spans)
 
     return _format_plain_text_with_urls(text)
+
+
+def format_qml_text(
+    text: str,
+    mentioned_jids: Optional[Sequence[str]] = None,
+    mention_spans: Optional[Sequence[MentionSpan]] = None,
+) -> str:
+    if not text:
+        return ""
+
+    normalized_mentioned_jids = list(mentioned_jids or [])
+    normalized_mention_spans = list(mention_spans or [])
+    utf16_offsets = _utf16_offsets_by_index(text)
+    formatted_lines: list[str] = []
+    line_start = 0
+
+    for line in text.split("\n"):
+        line_end = line_start + len(line)
+        list_match = _LIST_ITEM_RE.match(line)
+        if list_match:
+            content_start = line_start + list_match.start("content")
+            content_spans = _segment_mention_spans(
+                text,
+                normalized_mention_spans,
+                content_start,
+                line_end,
+                utf16_offsets,
+            )
+            formatted_lines.append(
+                f"• {_format_inline_text(list_match.group('content'), normalized_mentioned_jids, content_spans)}"
+            )
+        else:
+            line_spans = _segment_mention_spans(text, normalized_mention_spans, line_start, line_end, utf16_offsets)
+            formatted_lines.append(_format_inline_text(line, normalized_mentioned_jids, line_spans))
+        line_start = line_end + 1
+
+    return "<br/>".join(formatted_lines)
 
 
 def build_text_render_data(

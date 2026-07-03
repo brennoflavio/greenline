@@ -42,6 +42,31 @@ def test_format_qml_text_handles_mixed_content_without_post_processing_links() -
     )
 
 
+def test_format_qml_text_renders_dash_list_syntax_as_bullets() -> None:
+    assert format_qml_text("- first\n- second") == "• first<br/>• second"
+
+
+def test_format_qml_text_renders_star_list_syntax_as_bullets() -> None:
+    assert format_qml_text("* first\n* second") == "• first<br/>• second"
+
+
+def test_format_qml_text_preserves_inline_formatting_inside_list_items() -> None:
+    assert format_qml_text("* *bold* https://example.com") == (
+        '• <b>bold</b> <a href="https://example.com">https://example.com</a>'
+    )
+
+
+def test_format_qml_text_renders_mention_spans_inside_list_items() -> None:
+    assert (
+        format_qml_text(
+            "- @Empório Minatto",
+            [DEFAULT_SENDER_ID],
+            [MentionSpan(DEFAULT_SENDER_ID, "Empório Minatto", 2, 16)],
+        )
+        == '• <a href="greenline://chat/222%40s.whatsapp.net">@Empório Minatto</a>'
+    )
+
+
 def test_format_qml_text_renders_mentions_as_greenline_links() -> None:
     seed_sender_identity(DEFAULT_SENDER_ID, name="Alice")
     templated_text, mentioned_jids = template_mention_text("Hello @222", [DEFAULT_SENDER_ID])
@@ -115,4 +140,12 @@ def test_build_text_render_data_marks_formatted_message_as_rich() -> None:
 
     assert render_data.plain_text == "Hello *bold* world"
     assert render_data.rich_text == "Hello <b>bold</b> world"
+    assert render_data.render_mode == "rich"
+
+
+def test_build_text_render_data_marks_list_message_as_rich() -> None:
+    render_data = build_text_render_data("- first\n- second")
+
+    assert render_data.plain_text == "- first\n- second"
+    assert render_data.rich_text == "• first<br/>• second"
     assert render_data.render_mode == "rich"

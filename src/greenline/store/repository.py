@@ -101,9 +101,7 @@ def _resolve_reply_preview_text(message: Message) -> str:
 
 
 def to_ui_message(message: Message) -> UiMessage:
-    if message.mentioned_jids or message.mention_spans:
-        text_render_data = build_text_render_data(message.text, message.mentioned_jids, message.mention_spans)
-    elif message.text and (message.rendered_text or message.rendered_formatted_text):
+    if message.text and (message.rendered_text or message.rendered_formatted_text):
         text_render_data = TextRenderData(
             plain_text=message.rendered_text or render_mention_text(message.text, message.mentioned_jids),
             rich_text=message.rendered_formatted_text
