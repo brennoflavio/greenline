@@ -6,6 +6,7 @@ import pytest
 from contracts.qml_registry import validate_api_response, validate_event_payload
 from qml_contract_helpers import (
     DEFAULT_CHAT_ID,
+    DEFAULT_GROUP_ID,
     DEFAULT_SENDER_ID,
     assert_formatted_message_fields,
     make_media_file,
@@ -693,6 +694,45 @@ def test_send_text_message_contract_and_pending_outbox_emits(fake_daemon_rpc, fa
     assert message_updates[0][0]["id"] == "pending-text-1"
     assert message_updates[-1][0]["temp_id"] == "pending-text-1"
     assert message_updates[-1][0]["id"] == "sent-message"
+
+
+def test_send_text_message_reply_to_own_group_message_preserves_stored_sender_participant(
+    fake_daemon_rpc,
+    fake_pyotherside_module,
+) -> None:
+    seed_chat(DEFAULT_GROUP_ID)
+    seed_message(
+        DEFAULT_GROUP_ID,
+        "own-group-message",
+        is_outgoing=True,
+        text="Original",
+        timestamp_unix=1_700_000_001,
+        reply_to_id="",
+    )
+    with GreenlineKV() as kv:
+        indexed_key = kv.get_record(f"message_index:{DEFAULT_GROUP_ID}:own-group-message")
+        stored_message = kv.get_record(indexed_key.value)
+        stored_message.sender = "self@s.whatsapp.net"
+        stored_message.sender_raw = "self@lid"
+        kv.put_record(indexed_key.value, stored_message)
+    _start_dispatcher()
+
+    result = main.send_text_message(
+        DEFAULT_GROUP_ID,
+        "Reply",
+        "pending-self-reply",
+        {"id": "own-group-message", "sender": "You", "text": "Original", "participant": ""},
+    )
+
+    validate_api_response("send_text_message", result)
+    _wait_for(lambda: len(fake_daemon_rpc.send_message_calls) >= 1)
+    reply_context = fake_daemon_rpc.send_message_calls[0]["reply_context"]
+    assert reply_context["id"] == "own-group-message"
+    assert reply_context["participant"] == "self@lid"
+    assert reply_context["participant_raw"] == "self@lid"
+    assert reply_context["participant_canonical"] == "self@s.whatsapp.net"
+    assert reply_context["from_me"] is True
+    _assert_all_contract_events(fake_pyotherside_module)
 
 
 def test_send_text_message_boundary_failure_remains_pending(fake_daemon_rpc, fake_pyotherside_module) -> None:

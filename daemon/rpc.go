@@ -582,21 +582,39 @@ func (s *Service) buildMessageContext(args *SendMessageArgs) (*waE2E.ContextInfo
 
 	ctx := context.Background()
 	ctxInfo := &waE2E.ContextInfo{}
+	chatJID := types.JID{}
+	if args.ChatJID != "" {
+		parsedChatJID, err := types.ParseJID(args.ChatJID)
+		if err == nil {
+			chatJID = parsedChatJID
+		}
+	}
 	if args.ReplyToMessageID != "" {
 		ctxInfo.StanzaID = proto.String(args.ReplyToMessageID)
 
 		participant := args.ReplyParticipantJID
 		if participant == "" {
-			ownJID := s.client.GetOwnJID()
-			if !ownJID.IsEmpty() {
-				participant = ownJID.String()
+			if chatJID.Server == types.GroupServer {
+				ownLID := s.client.GetOwnLID()
+				if !ownLID.IsEmpty() {
+					participant = ownLID.String()
+				}
+			}
+			if participant == "" {
+				ownJID := s.client.GetOwnJID()
+				if !ownJID.IsEmpty() {
+					participant = ownJID.String()
+				}
 			}
 		} else {
 			participantJID, err := types.ParseJID(participant)
 			if err != nil {
 				return nil, fmt.Errorf("invalid reply participant JID: %w", err)
 			}
-			participant = s.client.ResolveJID(ctx, participantJID).String()
+			if chatJID.Server != types.GroupServer || participantJID.Server != types.HiddenUserServer {
+				participantJID = s.client.ResolveJID(ctx, participantJID)
+			}
+			participant = participantJID.String()
 		}
 		if participant != "" {
 			ctxInfo.Participant = proto.String(participant)
@@ -1023,6 +1041,7 @@ func (s *Service) EditMessage(args *EditMessageArgs, reply *EditMessageReply) er
 	}
 
 	replyContext, err := s.buildMessageContext(&SendMessageArgs{
+		ChatJID:                args.ChatJID,
 		ReplyToMessageID:       args.ReplyToMessageID,
 		ReplyParticipantJID:    args.ReplyParticipantJID,
 		ReplyQuotedMessageJSON: args.ReplyQuotedMessageJSON,

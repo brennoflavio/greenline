@@ -172,10 +172,11 @@ def _resolve_reply_context(
     rendered_msg = ui_message(stored_msg)
 
     resolved["from_me"] = stored_msg.is_outgoing
-    if not stored_msg.is_outgoing and (stored_msg.sender_raw or stored_msg.sender):
-        resolved["participant"] = stored_msg.sender_raw or stored_msg.sender
-        resolved["participant_raw"] = stored_msg.sender_raw or stored_msg.sender
-        resolved["participant_canonical"] = stored_msg.sender
+    stored_participant = stored_msg.sender_raw or stored_msg.sender
+    if stored_participant:
+        resolved["participant"] = stored_participant
+        resolved["participant_raw"] = stored_participant
+        resolved["participant_canonical"] = stored_msg.sender or stored_participant
     else:
         resolved["participant"] = ""
         resolved["participant_raw"] = ""

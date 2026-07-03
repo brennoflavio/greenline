@@ -551,6 +551,13 @@ func (c *Client) GetOwnJID() types.JID {
 	return *c.waCli.Store.ID
 }
 
+func (c *Client) GetOwnLID() types.JID {
+	if c.waCli.Store == nil {
+		return types.JID{}
+	}
+	return c.waCli.Store.LID
+}
+
 func (c *Client) DownloadMediaWithPath(ctx context.Context, directPath string, encFileHash, fileHash, mediaKey []byte, fileLength int, mediaType whatsmeow.MediaType, mmsType string) ([]byte, error) {
 	return c.waCli.DownloadMediaWithPath(ctx, directPath, encFileHash, fileHash, mediaKey, fileLength, mediaType, mmsType)
 }
