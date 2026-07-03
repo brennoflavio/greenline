@@ -8,151 +8,159 @@ msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-07-03 04:26+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Automatically generated\n"
-"Language-Team: none\n"
+"PO-Revision-Date: 2026-07-03 11:09+0000\n"
+"Last-Translator: ferihumh <h.ferihumer@mailbox.org>\n"
+"Language-Team: German <https://hosted.weblate.org/projects/ubports/greenline/"
+"de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 2026.7.1.dev0\n"
 
 #: ../qml/AuthorizationPage.qml:37
 msgid "Scan QR Code"
-msgstr ""
+msgstr "QR Code scannen"
 
 #: ../qml/AuthorizationPage.qml:45
 msgid ""
 "Open WhatsApp on your phone, go to Settings → Linked Devices → Link a "
 "Device, then scan the code below."
 msgstr ""
+"Öffne WhatsApp auf deinem Telefon, gehe zu Einstellungen → verknüpfte Geräte "
+"→ Gerät verknüpfen, dann Code scannen."
 
 #: ../qml/AuthorizationPage.qml:85
 msgid "Loading QR Code..."
-msgstr ""
+msgstr "Lade QR Code..."
 
 #: ../qml/AuthorizationPage.qml:97
 msgid "The code refreshes automatically. Keep this screen open while scanning."
 msgstr ""
+"Der Code wird automatisch aktualisiert. Lassen Sie diesen Bildschirm während "
+"des Scannens geöffnet."
 
 #: ../qml/AuthorizationPage.qml:106
 msgid "Login with phone number"
-msgstr ""
+msgstr "Mit Telefonnummer anmelden"
 
 #: ../qml/AuthorizationPage.qml:143
 msgid "Link Device"
-msgstr ""
+msgstr "Gerät verbinden"
 
 #: ../qml/ChatListPage.qml:20
 msgid "Share to chat"
-msgstr ""
+msgstr "Im Chat teilen"
 
 #: ../qml/ChatListPage.qml:38
 msgid "The shared file is no longer available"
-msgstr ""
+msgstr "Die freigegebene Datei ist nicht mehr verfügbar"
 
 #: ../qml/ChatListPage.qml:49 ../qml/Main.qml:98
 msgid "Unsupported shared item"
-msgstr ""
+msgstr "Nicht unterstütztes gemeinsames Element"
 
 #: ../qml/ChatListPage.qml:56
 msgid "Failed to share file"
-msgstr ""
+msgstr "Dateifreigabe fehlgeschlagen"
 
 #: ../qml/ChatListPage.qml:74
 msgid "Failed to start chat"
-msgstr ""
+msgstr "Der Chat konnte nicht gestartet werden"
 
 #: ../qml/ChatListPage.qml:84
 msgid "Failed to import contact"
-msgstr ""
+msgstr "Kontaktimport fehlgeschlagen"
 
 #: ../qml/ChatListPage.qml:262
 msgid "No archived chats"
-msgstr ""
+msgstr "Keine archivierten Chats"
 
 #: ../qml/ChatListPage.qml:262
 msgid "No chats found"
-msgstr ""
+msgstr "Keine Chats gefunden"
 
 #: ../qml/ChatListPage.qml:282 ../qml/ChatListPage.qml:375
 msgid "Chats"
-msgstr ""
+msgstr "Unterhaltung"
 
 #: ../qml/ChatListPage.qml:288
 msgid "New"
-msgstr ""
+msgstr "Neu"
 
 #: ../qml/ChatListPage.qml:295 ../qml/ChatListPage.qml:375
 msgid "Archived"
-msgstr ""
+msgstr "Archiviert"
 
 #: ../qml/ChatListPage.qml:330 ../qml/components/NewChatDialog.qml:52
 msgid "Import Contact"
-msgstr ""
+msgstr "Kontakt importieren"
 
 #: ../qml/ChatPage.qml:235 ../qml/components/ChatMessageList.qml:338
 msgid "You"
-msgstr ""
+msgstr "Du"
 
 #: ../qml/ChatPage.qml:277
 msgid "Message updated"
-msgstr ""
+msgstr "Nachricht aktualisiert"
 
 #: ../qml/ChatPage.qml:283
 msgid "Failed to edit message"
-msgstr ""
+msgstr "Die Nachricht konnte nicht bearbeitet werden"
 
 #: ../qml/ChatPage.qml:293
 msgid "Message deleted"
-msgstr ""
+msgstr "Nachricht gelöscht"
 
 #: ../qml/ChatPage.qml:296
 msgid "Failed to delete message"
-msgstr ""
+msgstr "Nachricht konnte nicht gelöscht werden"
 
 #: ../qml/ChatPage.qml:319
 msgid "No internet connection. Connect and try again."
 msgstr ""
+"Keine Internetverbindung. Stellen Sie eine Verbindung her und versuchen Sie "
+"es erneut."
 
 #: ../qml/ChatPage.qml:332 ../qml/ChatPage.qml:1338
 msgid "Failed to download media"
-msgstr ""
+msgstr "Das Herunterladen der Medien ist fehlgeschlagen"
 
 #: ../qml/ChatPage.qml:731
 msgid "Failed to load older messages"
-msgstr ""
+msgstr "Das Laden älterer Nachrichten ist fehlgeschlagen"
 
 #: ../qml/ChatPage.qml:814
 msgid "Failed to send audio"
-msgstr ""
+msgstr "Das Senden der Audiodaten ist fehlgeschlagen"
 
 #: ../qml/ChatPage.qml:917 ../qml/DocumentPreviewPage.qml:42
 #: ../qml/DocumentPreviewPage.qml:97
 #: ../qml/components/ChatAttachmentDialog.qml:42
 #: ../qml/components/DocumentMessage.qml:61
 msgid "Document"
-msgstr ""
+msgstr "Dokument"
 
 #: ../qml/ChatPage.qml:927
 msgid "Failed to send document"
-msgstr ""
+msgstr "Das Senden des Dokuments ist fehlgeschlagen"
 
 #: ../qml/ChatPage.qml:966
 msgid "Failed to send contact"
-msgstr ""
+msgstr "Kontakt senden fehlgeschlagen"
 
 #: ../qml/ChatPage.qml:1006
 msgid "Failed to send location"
-msgstr ""
+msgstr "Standort senden fehlgeschlagen"
 
 #: ../qml/ChatPage.qml:1083
 msgid "WhatsApp messages read today"
-msgstr ""
+msgstr "Heute gelesene WhatsApp-Nachrichten"
 
 #: ../qml/ChatPage.qml:1084
 msgid "No WhatsApp messages read today"
-msgstr ""
+msgstr "Heute wurden keine WhatsApp-Nachrichten gelesen"
 
 #: ../qml/ChatPage.qml:1092
 msgid "WhatsApp messages sent today"
@@ -214,7 +222,7 @@ msgstr ""
 #: ../qml/ImagePreviewPage.qml:48 ../qml/VideoPreviewPage.qml:51
 #: ../qml/components/ContentTransferPage.qml:11
 msgid "Share"
-msgstr ""
+msgstr "Teilen"
 
 #: ../qml/ContactPreviewPage.qml:101 ../qml/DocumentPreviewPage.qml:101
 #: ../qml/ImagePreviewPage.qml:67 ../qml/MessageReactionsPage.qml:369
@@ -340,7 +348,7 @@ msgstr ""
 #: ../qml/components/NewChatDialog.qml:35
 #: ../qml/components/VoiceMessageRecorderDialog.qml:85
 msgid "Cancel"
-msgstr ""
+msgstr "Abbrechen"
 
 #: ../qml/PhonePairingPage.qml:138
 msgid ""
@@ -363,7 +371,7 @@ msgstr ""
 #: ../qml/ProfilePage.qml:95 ../qml/SettingsPage.qml:256
 #: ../qml/ut_components/AppHeader.qml:94
 msgid "Settings"
-msgstr ""
+msgstr "Einstellungen"
 
 #: ../qml/ProfilePage.qml:98
 msgid "Mute notifications"
@@ -427,7 +435,7 @@ msgstr ""
 
 #: ../qml/SettingsPage.qml:101
 msgid "About"
-msgstr ""
+msgstr "Über"
 
 #: ../qml/SettingsPage.qml:120
 msgid "Release Version"
