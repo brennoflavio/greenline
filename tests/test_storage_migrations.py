@@ -198,7 +198,7 @@ def test_remove_gallery_images_field_rewrites_message_records_and_advances_schem
     assert migrated_message is not None
     assert "images" not in migrated_message
     assert untouched_after == untouched_unhandled
-    assert version == KVSchemaVersionRecord(value=2)
+    assert version == KVSchemaVersionRecord(value=3)
 
 
 def test_remove_gallery_images_field_commits_in_batches_for_large_message_sets() -> None:
@@ -218,7 +218,7 @@ def test_remove_gallery_images_field_commits_in_batches_for_large_message_sets()
     assert last_message is not None
     assert "images" not in first_message
     assert "images" not in last_message
-    assert version == KVSchemaVersionRecord(value=2)
+    assert version == KVSchemaVersionRecord(value=3)
 
 
 def test_remove_gallery_images_field_preserves_strict_kv_decode_for_current_message_records() -> None:
@@ -251,3 +251,44 @@ def test_remove_gallery_images_field_preserves_strict_kv_decode_for_current_mess
     assert record is not None
     assert record.id == "msg-1"
     assert record.text == "hello"
+
+
+def test_remove_legacy_ui_message_fields_preserves_strict_kv_decode() -> None:
+    record = stored_message_record(
+        Message(
+            id="msg-1",
+            chat_id="chat-1",
+            type=MessageType.TEXT,
+            is_outgoing=False,
+            timestamp="12:34",
+            timestamp_unix=1234,
+            read_receipt=ReadReceipt.NONE,
+            sender="sender@s.whatsapp.net",
+            sender_raw="sender@s.whatsapp.net",
+            text="hello",
+        )
+    )
+    payload = encode_dataclass(record, boundary="kv", contract="message:", direction="encode")
+    payload["reply_to_sender"] = "Sender Name"
+    payload["sender_name"] = "Sender Name"
+    payload["sender_photo"] = "/tmp/sender.jpg"
+
+    with GreenlineKV() as kv:
+        kv.raw.put(storage_migrations.SCHEMA_VERSION_KEY, 2)
+        kv.raw.put("message:msg-1", payload)
+
+    storage_migrations.run_storage_migrations()
+
+    with GreenlineKV() as kv:
+        migrated_payload = kv.raw.get("message:msg-1")
+        migrated_record = kv.get_record("message:msg-1", required=True)
+        version = kv.get_record(storage_migrations.SCHEMA_VERSION_KEY)
+
+    assert migrated_payload is not None
+    assert "reply_to_sender" not in migrated_payload
+    assert "sender_name" not in migrated_payload
+    assert "sender_photo" not in migrated_payload
+    assert migrated_record is not None
+    assert migrated_record.id == "msg-1"
+    assert migrated_record.text == "hello"
+    assert version == KVSchemaVersionRecord(value=3)

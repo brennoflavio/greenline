@@ -7,6 +7,11 @@ from greenline.store.records import KVSchemaVersionRecord
 
 SCHEMA_VERSION_KEY = "kv.schema_version"
 Migration = Callable[[Any], None]
+_OBSOLETE_MESSAGE_FIELDS = (
+    "reply_to_sender",
+    "sender_name",
+    "sender_photo",
+)
 
 
 def initialize_storage_schema(_raw_kv: Any) -> None:
@@ -32,7 +37,31 @@ def remove_gallery_images_field(raw_kv: Any) -> None:
             break
 
 
-MIGRATIONS: list[Migration] = [initialize_storage_schema, remove_gallery_images_field]
+def remove_legacy_ui_message_fields(raw_kv: Any) -> None:
+    cursor: str | None = None
+
+    while True:
+        rows, cursor = raw_kv.get_partial_page("message:", cursor=cursor)
+        wrote_changes = False
+        for key, value in rows:
+            if not isinstance(value, dict) or not any(field in value for field in _OBSOLETE_MESSAGE_FIELDS):
+                continue
+            updated_value = dict(value)
+            for field in _OBSOLETE_MESSAGE_FIELDS:
+                updated_value.pop(field, None)
+            raw_kv.put_cached(key, updated_value)
+            wrote_changes = True
+        if wrote_changes:
+            raw_kv.commit_cached()
+        if cursor is None:
+            break
+
+
+MIGRATIONS: list[Migration] = [
+    initialize_storage_schema,
+    remove_gallery_images_field,
+    remove_legacy_ui_message_fields,
+]
 
 
 def run_storage_migrations() -> None:
