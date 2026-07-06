@@ -60,7 +60,7 @@ MessageBubble {
                     fontSize: "small"
                     font.bold: true
                     color: "#303030"
-                    wrapMode: Text.WordWrap
+                    wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                     maximumLineCount: 2
                     elide: Text.ElideRight
                     width: parent.width - units.gu(1.6)
@@ -71,7 +71,7 @@ MessageBubble {
                     text: root.linkDescription
                     fontSize: "x-small"
                     color: "#666666"
-                    wrapMode: Text.WordWrap
+                    wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                     maximumLineCount: 3
                     elide: Text.ElideRight
                     width: parent.width - units.gu(1.6)
@@ -109,7 +109,7 @@ MessageBubble {
         onLinkActivated: Qt.openUrlExternally(link)
         fontSize: "small"
         color: "#303030"
-        wrapMode: Text.WordWrap
+        wrapMode: Text.WrapAtWordBoundaryOrAnywhere
         width: parent.width
         visible: text !== ""
     }
