@@ -1,0 +1,710 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the greenline.brennoflavio package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: greenline.brennoflavio\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-06 16:34+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: uk\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+
+#: ../qml/AuthorizationPage.qml:37
+msgid "Scan QR Code"
+msgstr ""
+
+#: ../qml/AuthorizationPage.qml:45
+msgid ""
+"Open WhatsApp on your phone, go to Settings → Linked Devices → Link a "
+"Device, then scan the code below."
+msgstr ""
+
+#: ../qml/AuthorizationPage.qml:85
+msgid "Loading QR Code..."
+msgstr ""
+
+#: ../qml/AuthorizationPage.qml:97
+msgid "The code refreshes automatically. Keep this screen open while scanning."
+msgstr ""
+
+#: ../qml/AuthorizationPage.qml:106
+msgid "Login with phone number"
+msgstr ""
+
+#: ../qml/AuthorizationPage.qml:143
+msgid "Link Device"
+msgstr ""
+
+#: ../qml/ChatListPage.qml:20
+msgid "Share to chat"
+msgstr ""
+
+#: ../qml/ChatListPage.qml:38
+msgid "The shared file is no longer available"
+msgstr ""
+
+#: ../qml/ChatListPage.qml:49 ../qml/Main.qml:98
+msgid "Unsupported shared item"
+msgstr ""
+
+#: ../qml/ChatListPage.qml:56
+msgid "Failed to share file"
+msgstr ""
+
+#: ../qml/ChatListPage.qml:74
+msgid "Failed to start chat"
+msgstr ""
+
+#: ../qml/ChatListPage.qml:84
+msgid "Failed to import contact"
+msgstr ""
+
+#: ../qml/ChatListPage.qml:262
+msgid "No archived chats"
+msgstr ""
+
+#: ../qml/ChatListPage.qml:262
+msgid "No chats found"
+msgstr ""
+
+#: ../qml/ChatListPage.qml:282 ../qml/ChatListPage.qml:375
+msgid "Chats"
+msgstr ""
+
+#: ../qml/ChatListPage.qml:288
+msgid "New"
+msgstr ""
+
+#: ../qml/ChatListPage.qml:295 ../qml/ChatListPage.qml:375
+msgid "Archived"
+msgstr ""
+
+#: ../qml/ChatListPage.qml:330 ../qml/components/NewChatDialog.qml:52
+msgid "Import Contact"
+msgstr ""
+
+#: ../qml/ChatPage.qml:235 ../qml/components/ChatMessageList.qml:338
+msgid "You"
+msgstr ""
+
+#: ../qml/ChatPage.qml:277
+msgid "Message updated"
+msgstr ""
+
+#: ../qml/ChatPage.qml:283
+msgid "Failed to edit message"
+msgstr ""
+
+#: ../qml/ChatPage.qml:293
+msgid "Message deleted"
+msgstr ""
+
+#: ../qml/ChatPage.qml:296
+msgid "Failed to delete message"
+msgstr ""
+
+#: ../qml/ChatPage.qml:319
+msgid "No internet connection. Connect and try again."
+msgstr ""
+
+#: ../qml/ChatPage.qml:332 ../qml/ChatPage.qml:1338
+msgid "Failed to download media"
+msgstr ""
+
+#: ../qml/ChatPage.qml:731
+msgid "Failed to load older messages"
+msgstr ""
+
+#: ../qml/ChatPage.qml:814
+msgid "Failed to send audio"
+msgstr ""
+
+#: ../qml/ChatPage.qml:917 ../qml/DocumentPreviewPage.qml:42
+#: ../qml/DocumentPreviewPage.qml:97
+#: ../qml/components/ChatAttachmentDialog.qml:42
+#: ../qml/components/DocumentMessage.qml:61
+msgid "Document"
+msgstr ""
+
+#: ../qml/ChatPage.qml:927
+msgid "Failed to send document"
+msgstr ""
+
+#: ../qml/ChatPage.qml:966
+msgid "Failed to send contact"
+msgstr ""
+
+#: ../qml/ChatPage.qml:1006
+msgid "Failed to send location"
+msgstr ""
+
+#: ../qml/ChatPage.qml:1083
+msgid "WhatsApp messages read today"
+msgstr ""
+
+#: ../qml/ChatPage.qml:1084
+msgid "No WhatsApp messages read today"
+msgstr ""
+
+#: ../qml/ChatPage.qml:1092
+msgid "WhatsApp messages sent today"
+msgstr ""
+
+#: ../qml/ChatPage.qml:1093
+msgid "No WhatsApp messages sent today"
+msgstr ""
+
+#: ../qml/ChatPage.qml:1122
+msgid "Scroll up to load older messages first"
+msgstr ""
+
+#: ../qml/ChatPage.qml:1129
+msgid "Copied to clipboard"
+msgstr ""
+
+#: ../qml/ChatPage.qml:1313
+msgid "recording audio..."
+msgstr ""
+
+#: ../qml/ChatPage.qml:1313
+msgid "typing..."
+msgstr ""
+
+#: ../qml/ChatPage.qml:1392
+msgid "Send Photo"
+msgstr ""
+
+#: ../qml/ChatPage.qml:1403
+msgid "Send Video"
+msgstr ""
+
+#: ../qml/ChatPage.qml:1414
+msgid "Send Document"
+msgstr ""
+
+#: ../qml/ChatPage.qml:1425
+msgid "Send Contact"
+msgstr ""
+
+#: ../qml/ContactPreviewPage.qml:42 ../qml/ContactPreviewPage.qml:97
+#: ../qml/components/ChatAttachmentDialog.qml:58
+#: ../qml/components/ContactMessage.qml:47
+msgid "Contact"
+msgstr ""
+
+#: ../qml/ContactPreviewPage.qml:50
+msgid "Ready to export"
+msgstr ""
+
+#: ../qml/ContactPreviewPage.qml:70 ../qml/DocumentPreviewPage.qml:70
+#: ../qml/ImagePreviewPage.qml:36 ../qml/VideoPreviewPage.qml:38
+#: ../qml/components/EditMessageDialog.qml:35
+msgid "Save"
+msgstr ""
+
+#: ../qml/ContactPreviewPage.qml:82 ../qml/DocumentPreviewPage.qml:82
+#: ../qml/ImagePreviewPage.qml:48 ../qml/VideoPreviewPage.qml:51
+#: ../qml/components/ContentTransferPage.qml:11
+msgid "Share"
+msgstr ""
+
+#: ../qml/ContactPreviewPage.qml:101 ../qml/DocumentPreviewPage.qml:101
+#: ../qml/ImagePreviewPage.qml:67 ../qml/MessageReactionsPage.qml:369
+#: ../qml/VideoPreviewPage.qml:71 ../qml/components/ChatPageHeader.qml:17
+#: ../qml/ut_components/AppHeader.qml:78
+msgid "Back"
+msgstr ""
+
+#: ../qml/DaemonSetupPage.qml:46
+msgid "The background service is installed but not running."
+msgstr ""
+
+#: ../qml/DaemonSetupPage.qml:46
+msgid "The background service needs to be installed to sync your messages."
+msgstr ""
+
+#: ../qml/DaemonSetupPage.qml:65
+msgid "Install & Start"
+msgstr ""
+
+#: ../qml/DaemonSetupPage.qml:65
+msgid "Start Service"
+msgstr ""
+
+#: ../qml/DaemonSetupPage.qml:121
+msgid "Setup"
+msgstr ""
+
+#: ../qml/DocumentPreviewPage.qml:50
+msgid "Downloaded"
+msgstr ""
+
+#: ../qml/ImagePreviewPage.qml:63
+msgid "Image"
+msgstr ""
+
+#: ../qml/Main.qml:84
+msgid "No shared file was received"
+msgstr ""
+
+#: ../qml/Main.qml:90
+msgid "Only the first shared item will be used"
+msgstr ""
+
+#: ../qml/Main.qml:93
+msgid "Unable to open the shared file"
+msgstr ""
+
+#: ../qml/MessageReactionsPage.qml:113
+msgid "Failed to load reactions"
+msgstr ""
+
+#: ../qml/MessageReactionsPage.qml:130
+msgid "Failed to send reaction"
+msgstr ""
+
+#: ../qml/MessageReactionsPage.qml:252
+msgid "Remove"
+msgstr ""
+
+#: ../qml/MessageReactionsPage.qml:254
+msgid "Deleting reaction…"
+msgstr ""
+
+#: ../qml/MessageReactionsPage.qml:254
+msgid "Reaction removed"
+msgstr ""
+
+#: ../qml/MessageReactionsPage.qml:265
+msgid "Loading reactions…"
+msgstr ""
+
+#: ../qml/MessageReactionsPage.qml:282
+msgid "No reactions yet"
+msgstr ""
+
+#: ../qml/MessageReactionsPage.qml:328
+msgid "Quick reactions"
+msgstr ""
+
+#: ../qml/MessageReactionsPage.qml:343
+msgid "Reaction updated"
+msgstr ""
+
+#: ../qml/MessageReactionsPage.qml:343
+msgid "Sending reaction…"
+msgstr ""
+
+#: ../qml/MessageReactionsPage.qml:365
+#: ../qml/components/ChatMessageList.qml:539
+msgid "Reactions"
+msgstr ""
+
+#: ../qml/PhonePairingPage.qml:48
+msgid ""
+"Enter your phone number with country code, digits only (e.g. 5511999999999)."
+msgstr ""
+
+#: ../qml/PhonePairingPage.qml:59
+msgid "Phone Number"
+msgstr ""
+
+#: ../qml/PhonePairingPage.qml:62 ../qml/components/NewChatDialog.qml:9
+msgid "Enter digits only, no leading zero (e.g. 5511999999999)"
+msgstr ""
+
+#: ../qml/PhonePairingPage.qml:78
+msgid "Get Pairing Code"
+msgstr ""
+
+#: ../qml/PhonePairingPage.qml:89
+msgid "Failed to get pairing code"
+msgstr ""
+
+#: ../qml/PhonePairingPage.qml:112
+msgid "Requesting pairing code..."
+msgstr ""
+
+#: ../qml/PhonePairingPage.qml:120 ../qml/SettingsPage.qml:231
+#: ../qml/components/ChatAttachmentDialog.qml:74
+#: ../qml/components/EditMessageDialog.qml:29
+#: ../qml/components/LocationFetchDialog.qml:91
+#: ../qml/components/NewChatDialog.qml:35
+#: ../qml/components/VoiceMessageRecorderDialog.qml:85
+msgid "Cancel"
+msgstr ""
+
+#: ../qml/PhonePairingPage.qml:138
+msgid ""
+"Open WhatsApp on your phone, go to Settings → Linked Devices → Link with "
+"phone number, then enter the code below."
+msgstr ""
+
+#: ../qml/PhonePairingPage.qml:162
+msgid "Waiting for confirmation..."
+msgstr ""
+
+#: ../qml/PhonePairingPage.qml:196
+msgid "Login with Phone Number"
+msgstr ""
+
+#: ../qml/ProfilePage.qml:81
+msgid "Group"
+msgstr ""
+
+#: ../qml/ProfilePage.qml:95 ../qml/SettingsPage.qml:256
+#: ../qml/ut_components/AppHeader.qml:94
+msgid "Settings"
+msgstr ""
+
+#: ../qml/ProfilePage.qml:98
+msgid "Mute notifications"
+msgstr ""
+
+#: ../qml/ProfilePage.qml:99
+msgid "Silence all notifications from this chat"
+msgstr ""
+
+#: ../qml/ProfilePage.qml:110
+msgid "Description"
+msgstr ""
+
+#: ../qml/ProfilePage.qml:131
+msgid "Members"
+msgstr ""
+
+#: ../qml/ProfilePage.qml:135
+msgid "%1 members"
+msgstr ""
+
+#: ../qml/ProfilePage.qml:229
+msgid "Profile"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:41
+msgid "Notifications"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:46
+msgid "Enable Notifications"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:47
+msgid "Show notifications for new messages and calls"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:61
+msgid "Diagnostics"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:66
+msgid "Error Reporting"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:67
+msgid "Report app errors to help diagnose issues"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:81
+msgid "Daemon"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:86
+msgid "Stop Daemon on Exit"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:87
+msgid "Stop the daemon when the app closes and disable boot autostart"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:101
+msgid "About"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:120
+msgid "Release Version"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:127 ../qml/SettingsPage.qml:147
+#: ../qml/SettingsPage.qml:209 ../qml/SettingsPage.qml:210
+msgid "Unknown"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:140
+msgid "Build Commit"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:161
+msgid "Data"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:175
+msgid ""
+"Uninstall the daemon, log out from WhatsApp, and delete all local data "
+"including messages, settings and cache."
+msgstr ""
+
+#: ../qml/SettingsPage.qml:190 ../qml/SettingsPage.qml:227
+#: ../qml/SettingsPage.qml:236
+msgid "Reset App"
+msgstr ""
+
+#: ../qml/SettingsPage.qml:228
+msgid ""
+"This will uninstall the daemon, log out from WhatsApp, and delete all local "
+"data. You will need to reinstall the daemon and scan the QR code again to "
+"reconnect."
+msgstr ""
+
+#: ../qml/SettingsPage.qml:252
+msgid "Resetting app..."
+msgstr ""
+
+#: ../qml/StickerPickerPage.qml:60
+msgid ""
+"No stickers yet.\n"
+"Receive stickers in chats to use them here."
+msgstr ""
+
+#: ../qml/StickerPickerPage.qml:89
+msgid "Send Sticker"
+msgstr ""
+
+#: ../qml/VideoPreviewPage.qml:67 ../qml/components/ChatAttachmentDialog.qml:26
+msgid "Video"
+msgstr ""
+
+#: ../qml/components/ChatAttachmentDialog.qml:15
+msgid "Send Attachment"
+msgstr ""
+
+#: ../qml/components/ChatAttachmentDialog.qml:18
+msgid "Photo"
+msgstr ""
+
+#: ../qml/components/ChatAttachmentDialog.qml:34
+msgid "Audio"
+msgstr ""
+
+#: ../qml/components/ChatAttachmentDialog.qml:50
+msgid "Sticker"
+msgstr ""
+
+#: ../qml/components/ChatAttachmentDialog.qml:66
+msgid "Location"
+msgstr ""
+
+#: ../qml/components/ChatComposer.qml:187
+msgid "Type a message..."
+msgstr ""
+
+#: ../qml/components/ChatListItem.qml:140
+msgid "Mute"
+msgstr ""
+
+#: ../qml/components/ChatListItem.qml:140
+msgid "Unmute"
+msgstr ""
+
+#: ../qml/components/ChatListItem.qml:145
+msgid "Archive"
+msgstr ""
+
+#: ../qml/components/ChatListItem.qml:145
+msgid "Unarchive"
+msgstr ""
+
+#: ../qml/components/ChatListSearchBar.qml:8
+msgid "Search chats..."
+msgstr ""
+
+#: ../qml/components/ChatMessageList.qml:269
+msgid "Deleted message"
+msgstr ""
+
+#: ../qml/components/ChatMessageList.qml:272
+msgid "View-once message. Open WhatsApp on your primary device to view it."
+msgstr ""
+
+#: ../qml/components/ChatMessageList.qml:465
+msgid "Unread"
+msgstr ""
+
+#: ../qml/components/ChatMessageList.qml:516
+msgid "Delete"
+msgstr ""
+
+#: ../qml/components/ChatMessageList.qml:527
+msgid "Reply"
+msgstr ""
+
+#: ../qml/components/ChatMessageList.qml:533
+msgid "Edit"
+msgstr ""
+
+#: ../qml/components/ChatMessageList.qml:545
+msgid "Copy"
+msgstr ""
+
+#: ../qml/components/ContactMessage.qml:55
+#: ../qml/components/DocumentMessage.qml:69
+#: ../qml/components/LocationMessage.qml:57
+msgid "Tap to open"
+msgstr ""
+
+#: ../qml/components/ContactMessage.qml:55
+#: ../qml/components/LocationMessage.qml:57
+msgid "Unavailable"
+msgstr ""
+
+#: ../qml/components/ContentTransferPage.qml:11
+msgid "Save to"
+msgstr ""
+
+#: ../qml/components/DocumentMessage.qml:69
+msgid "Downloading..."
+msgstr ""
+
+#: ../qml/components/DocumentMessage.qml:69
+msgid "Tap to download"
+msgstr ""
+
+#: ../qml/components/EditMessageDialog.qml:14
+msgid "Edit Message"
+msgstr ""
+
+#: ../qml/components/LocationFetchDialog.qml:53
+msgid "Location services are unavailable"
+msgstr ""
+
+#: ../qml/components/LocationFetchDialog.qml:60
+msgid "Share Current Location"
+msgstr ""
+
+#: ../qml/components/LocationFetchDialog.qml:61
+msgid "Fetching your current location…"
+msgstr ""
+
+#: ../qml/components/LocationFetchDialog.qml:77
+msgid "Unable to get current location"
+msgstr ""
+
+#: ../qml/components/LocationFetchDialog.qml:87
+msgid "Location request timed out"
+msgstr ""
+
+#: ../qml/components/MessageBubble.qml:187
+msgid "edited"
+msgstr ""
+
+#: ../qml/components/NewChatDialog.qml:15
+msgid "New Chat"
+msgstr ""
+
+#: ../qml/components/NewChatDialog.qml:16
+msgid ""
+"Enter a phone number with country code, digits only (e.g. 5511999999999)."
+msgstr ""
+
+#: ../qml/components/NewChatDialog.qml:41
+msgid "OK"
+msgstr ""
+
+#: ../qml/components/VoiceMessageRecorderDialog.qml:31
+msgid "Record Voice Message"
+msgstr ""
+
+#: ../qml/components/VoiceMessageRecorderDialog.qml:48
+msgid "Recording ready to send"
+msgstr ""
+
+#: ../qml/components/VoiceMessageRecorderDialog.qml:48
+msgid "Recording…"
+msgstr ""
+
+#: ../qml/components/VoiceMessageRecorderDialog.qml:48
+msgid "Tap record to capture a voice message"
+msgstr ""
+
+#: ../qml/components/VoiceMessageRecorderDialog.qml:53
+msgid "Duration: %1"
+msgstr ""
+
+#: ../qml/components/VoiceMessageRecorderDialog.qml:57
+msgid "Status: %1"
+msgstr ""
+
+#: ../qml/components/VoiceMessageRecorderDialog.qml:57
+msgid "ready"
+msgstr ""
+
+#: ../qml/components/VoiceMessageRecorderDialog.qml:63
+msgid "Error: %1"
+msgstr ""
+
+#: ../qml/components/VoiceMessageRecorderDialog.qml:69
+msgid "Record"
+msgstr ""
+
+#: ../qml/components/VoiceMessageRecorderDialog.qml:69
+msgid "Record Again"
+msgstr ""
+
+#: ../qml/components/VoiceMessageRecorderDialog.qml:69
+msgid "Stop"
+msgstr ""
+
+#: ../qml/components/VoiceMessageRecorderDialog.qml:92
+msgid "Send"
+msgstr ""
+
+#: ../qml/ut_components/ActionableList.qml:107
+#: ../qml/ut_components/CardList.qml:84
+msgid "Search"
+msgstr ""
+
+#: ../qml/ut_components/ActionableList.qml:109
+#: ../qml/ut_components/CardList.qml:82
+msgid "No items"
+msgstr ""
+
+#: ../qml/ut_components/Form.qml:81
+msgid "Submit"
+msgstr ""
+
+#: ../qml/ut_components/ImageViewer.qml:388
+msgid "Failed to load image"
+msgstr ""
+
+#: ../qml/ut_components/ImageViewer.qml:483
+msgid "No image to display"
+msgstr ""
+
+#: ../qml/ut_components/InputField.qml:91
+msgid "Invalid input"
+msgstr ""
+
+#: ../qml/ut_components/InputField.qml:166
+msgid "This field is required"
+msgstr ""
+
+#: ../qml/ut_components/VideoViewer.qml:438
+msgid "Failed to load video"
+msgstr ""
+
+#: ../qml/ut_components/VideoViewer.qml:640
+msgid "No video to display"
+msgstr ""
+
+#: greenline.desktop.in.h:1
+msgid "Greenline"
+msgstr ""
