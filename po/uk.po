@@ -8,331 +8,338 @@ msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-07-06 16:34+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Automatically generated\n"
-"Language-Team: none\n"
+"PO-Revision-Date: 2026-07-09 12:01+0000\n"
+"Last-Translator: Serhii Horichenko <serhii@horichenko.com>\n"
+"Language-Team: Ukrainian <https://hosted.weblate.org/projects/ubports/"
+"greenline/uk/>\n"
 "Language: uk\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
-"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"X-Generator: Weblate 2026.7.1.dev0\n"
 
 #: ../qml/AuthorizationPage.qml:37
 msgid "Scan QR Code"
-msgstr ""
+msgstr "Сканувати QR-код"
 
 #: ../qml/AuthorizationPage.qml:45
 msgid ""
 "Open WhatsApp on your phone, go to Settings → Linked Devices → Link a "
 "Device, then scan the code below."
 msgstr ""
+"Відкрийте на своєму телефоні WhatsApp, перейдіть у Налаштування → Під'єднані "
+"пристрої → Приєднати пристрій, та відскануйте наданий нижче код."
 
 #: ../qml/AuthorizationPage.qml:85
 msgid "Loading QR Code..."
-msgstr ""
+msgstr "Завантаження QR-коду..."
 
 #: ../qml/AuthorizationPage.qml:97
 msgid "The code refreshes automatically. Keep this screen open while scanning."
 msgstr ""
+"Код оновлюється автоматично. Під час сканування тримайте цей екран відкритим."
 
 #: ../qml/AuthorizationPage.qml:106
 msgid "Login with phone number"
-msgstr ""
+msgstr "Увійти з телефонним номером"
 
 #: ../qml/AuthorizationPage.qml:143
 msgid "Link Device"
-msgstr ""
+msgstr "Приєднати пристрій"
 
 #: ../qml/ChatListPage.qml:20
 msgid "Share to chat"
-msgstr ""
+msgstr "Поділитися у чаті"
 
 #: ../qml/ChatListPage.qml:38
 msgid "The shared file is no longer available"
-msgstr ""
+msgstr "Цей спільний файл більше не доступний"
 
 #: ../qml/ChatListPage.qml:49 ../qml/Main.qml:98
 msgid "Unsupported shared item"
-msgstr ""
+msgstr "Невідомий спільний елемент"
 
 #: ../qml/ChatListPage.qml:56
 msgid "Failed to share file"
-msgstr ""
+msgstr "Поділитися файлом не вдалося"
 
 #: ../qml/ChatListPage.qml:74
 msgid "Failed to start chat"
-msgstr ""
+msgstr "Розпочати чат не вдалося"
 
 #: ../qml/ChatListPage.qml:84
 msgid "Failed to import contact"
-msgstr ""
+msgstr "Імпортувати контакт не вдалося"
 
 #: ../qml/ChatListPage.qml:262
 msgid "No archived chats"
-msgstr ""
+msgstr "Архівні чати відсутні"
 
 #: ../qml/ChatListPage.qml:262
 msgid "No chats found"
-msgstr ""
+msgstr "Чатів не знайдено"
 
 #: ../qml/ChatListPage.qml:282 ../qml/ChatListPage.qml:375
 msgid "Chats"
-msgstr ""
+msgstr "Чати"
 
 #: ../qml/ChatListPage.qml:288
 msgid "New"
-msgstr ""
+msgstr "Новий"
 
 #: ../qml/ChatListPage.qml:295 ../qml/ChatListPage.qml:375
 msgid "Archived"
-msgstr ""
+msgstr "Заархівовано"
 
 #: ../qml/ChatListPage.qml:330 ../qml/components/NewChatDialog.qml:52
 msgid "Import Contact"
-msgstr ""
+msgstr "Імпортувати контакт"
 
 #: ../qml/ChatPage.qml:235 ../qml/components/ChatMessageList.qml:338
 msgid "You"
-msgstr ""
+msgstr "Ти"
 
 #: ../qml/ChatPage.qml:277
 msgid "Message updated"
-msgstr ""
+msgstr "Повідомлення оновлене"
 
 #: ../qml/ChatPage.qml:283
 msgid "Failed to edit message"
-msgstr ""
+msgstr "Змінити повідомлення не вдалося"
 
 #: ../qml/ChatPage.qml:293
 msgid "Message deleted"
-msgstr ""
+msgstr "Повідомлення видалене"
 
 #: ../qml/ChatPage.qml:296
 msgid "Failed to delete message"
-msgstr ""
+msgstr "Повідомлення видалити не вдалося"
 
 #: ../qml/ChatPage.qml:319
 msgid "No internet connection. Connect and try again."
-msgstr ""
+msgstr "Відсутній інтернет. Під'єднайтеся та спробуйте ще раз."
 
 #: ../qml/ChatPage.qml:332 ../qml/ChatPage.qml:1338
 msgid "Failed to download media"
-msgstr ""
+msgstr "Отримати медіафайл не вдалося"
 
 #: ../qml/ChatPage.qml:731
 msgid "Failed to load older messages"
-msgstr ""
+msgstr "Старі повідомлення завантажити не вдалося"
 
 #: ../qml/ChatPage.qml:814
 msgid "Failed to send audio"
-msgstr ""
+msgstr "Надіслати аудіо не вдалося"
 
 #: ../qml/ChatPage.qml:917 ../qml/DocumentPreviewPage.qml:42
 #: ../qml/DocumentPreviewPage.qml:97
 #: ../qml/components/ChatAttachmentDialog.qml:42
 #: ../qml/components/DocumentMessage.qml:61
 msgid "Document"
-msgstr ""
+msgstr "Документ"
 
 #: ../qml/ChatPage.qml:927
 msgid "Failed to send document"
-msgstr ""
+msgstr "Надіслати документ не вдалося"
 
 #: ../qml/ChatPage.qml:966
 msgid "Failed to send contact"
-msgstr ""
+msgstr "Надіслати контакт не вдалося"
 
 #: ../qml/ChatPage.qml:1006
 msgid "Failed to send location"
-msgstr ""
+msgstr "Надіслати розташування не вдалося"
 
 #: ../qml/ChatPage.qml:1083
 msgid "WhatsApp messages read today"
-msgstr ""
+msgstr "Прочитані сьогодні повідомлення WhatsApp"
 
 #: ../qml/ChatPage.qml:1084
 msgid "No WhatsApp messages read today"
-msgstr ""
+msgstr "Сьогодні немає прочитаних повідомлень WhatsApp"
 
 #: ../qml/ChatPage.qml:1092
 msgid "WhatsApp messages sent today"
-msgstr ""
+msgstr "Надіслані сьогодні повідомлення WhatsApp"
 
 #: ../qml/ChatPage.qml:1093
 msgid "No WhatsApp messages sent today"
-msgstr ""
+msgstr "Сьогодні немає надісланих повідомлень WhatsApp"
 
 #: ../qml/ChatPage.qml:1122
 msgid "Scroll up to load older messages first"
-msgstr ""
+msgstr "Для завантаження спочатку старих повідомлень гортайте вгору"
 
 #: ../qml/ChatPage.qml:1129
 msgid "Copied to clipboard"
-msgstr ""
+msgstr "Скопійовано до буфера обміну"
 
 #: ../qml/ChatPage.qml:1313
 msgid "recording audio..."
-msgstr ""
+msgstr "запис аудіо..."
 
 #: ../qml/ChatPage.qml:1313
 msgid "typing..."
-msgstr ""
+msgstr "пише..."
 
 #: ../qml/ChatPage.qml:1392
 msgid "Send Photo"
-msgstr ""
+msgstr "Надіслати фото"
 
 #: ../qml/ChatPage.qml:1403
 msgid "Send Video"
-msgstr ""
+msgstr "Надіслати відео"
 
 #: ../qml/ChatPage.qml:1414
 msgid "Send Document"
-msgstr ""
+msgstr "Надіслати документ"
 
 #: ../qml/ChatPage.qml:1425
 msgid "Send Contact"
-msgstr ""
+msgstr "Надіслати контакт"
 
 #: ../qml/ContactPreviewPage.qml:42 ../qml/ContactPreviewPage.qml:97
 #: ../qml/components/ChatAttachmentDialog.qml:58
 #: ../qml/components/ContactMessage.qml:47
 msgid "Contact"
-msgstr ""
+msgstr "Контакт"
 
 #: ../qml/ContactPreviewPage.qml:50
 msgid "Ready to export"
-msgstr ""
+msgstr "Готові до експорту"
 
 #: ../qml/ContactPreviewPage.qml:70 ../qml/DocumentPreviewPage.qml:70
 #: ../qml/ImagePreviewPage.qml:36 ../qml/VideoPreviewPage.qml:38
 #: ../qml/components/EditMessageDialog.qml:35
 msgid "Save"
-msgstr ""
+msgstr "Зберегти"
 
 #: ../qml/ContactPreviewPage.qml:82 ../qml/DocumentPreviewPage.qml:82
 #: ../qml/ImagePreviewPage.qml:48 ../qml/VideoPreviewPage.qml:51
 #: ../qml/components/ContentTransferPage.qml:11
 msgid "Share"
-msgstr ""
+msgstr "Поділитися"
 
 #: ../qml/ContactPreviewPage.qml:101 ../qml/DocumentPreviewPage.qml:101
 #: ../qml/ImagePreviewPage.qml:67 ../qml/MessageReactionsPage.qml:369
 #: ../qml/VideoPreviewPage.qml:71 ../qml/components/ChatPageHeader.qml:17
 #: ../qml/ut_components/AppHeader.qml:78
 msgid "Back"
-msgstr ""
+msgstr "Назад"
 
 #: ../qml/DaemonSetupPage.qml:46
 msgid "The background service is installed but not running."
-msgstr ""
+msgstr "Фонову службу встановлено, але вона не працює."
 
 #: ../qml/DaemonSetupPage.qml:46
 msgid "The background service needs to be installed to sync your messages."
-msgstr ""
+msgstr "Для синхронізації повідомлень потрібно встановити фонову службу."
 
 #: ../qml/DaemonSetupPage.qml:65
 msgid "Install & Start"
-msgstr ""
+msgstr "Встановити та запустити"
 
 #: ../qml/DaemonSetupPage.qml:65
 msgid "Start Service"
-msgstr ""
+msgstr "Запустити службу"
 
 #: ../qml/DaemonSetupPage.qml:121
 msgid "Setup"
-msgstr ""
+msgstr "Налаштувати"
 
 #: ../qml/DocumentPreviewPage.qml:50
 msgid "Downloaded"
-msgstr ""
+msgstr "Отримано"
 
 #: ../qml/ImagePreviewPage.qml:63
 msgid "Image"
-msgstr ""
+msgstr "Зображення"
 
 #: ../qml/Main.qml:84
 msgid "No shared file was received"
-msgstr ""
+msgstr "Спільних файлів не отримано"
 
 #: ../qml/Main.qml:90
 msgid "Only the first shared item will be used"
-msgstr ""
+msgstr "Буде використано лише перший спільний елемент"
 
 #: ../qml/Main.qml:93
 msgid "Unable to open the shared file"
-msgstr ""
+msgstr "Відкрити спільний файл не вдалося"
 
 #: ../qml/MessageReactionsPage.qml:113
 msgid "Failed to load reactions"
-msgstr ""
+msgstr "Завантажити реакції не вдалося"
 
 #: ../qml/MessageReactionsPage.qml:130
 msgid "Failed to send reaction"
-msgstr ""
+msgstr "Надіслати реакції не вдалося"
 
 #: ../qml/MessageReactionsPage.qml:252
 msgid "Remove"
-msgstr ""
+msgstr "Вилучити"
 
 #: ../qml/MessageReactionsPage.qml:254
 msgid "Deleting reaction…"
-msgstr ""
+msgstr "Видалення реакції…"
 
 #: ../qml/MessageReactionsPage.qml:254
 msgid "Reaction removed"
-msgstr ""
+msgstr "Реакцію вилучено"
 
 #: ../qml/MessageReactionsPage.qml:265
 msgid "Loading reactions…"
-msgstr ""
+msgstr "Завантаження реакцій…"
 
 #: ../qml/MessageReactionsPage.qml:282
 msgid "No reactions yet"
-msgstr ""
+msgstr "Реакцій ще немає"
 
 #: ../qml/MessageReactionsPage.qml:328
 msgid "Quick reactions"
-msgstr ""
+msgstr "Швидкі реакції"
 
 #: ../qml/MessageReactionsPage.qml:343
 msgid "Reaction updated"
-msgstr ""
+msgstr "Реакції оновлені"
 
 #: ../qml/MessageReactionsPage.qml:343
 msgid "Sending reaction…"
-msgstr ""
+msgstr "Надсилання реакцій…"
 
 #: ../qml/MessageReactionsPage.qml:365
 #: ../qml/components/ChatMessageList.qml:539
 msgid "Reactions"
-msgstr ""
+msgstr "Реакції"
 
 #: ../qml/PhonePairingPage.qml:48
 msgid ""
 "Enter your phone number with country code, digits only (e.g. 5511999999999)."
 msgstr ""
+"Вкажіть свій номер телефону з кодом країни без інших знаків (напр. "
+"380441112233)."
 
 #: ../qml/PhonePairingPage.qml:59
 msgid "Phone Number"
-msgstr ""
+msgstr "Номер телефону"
 
 #: ../qml/PhonePairingPage.qml:62 ../qml/components/NewChatDialog.qml:9
 msgid "Enter digits only, no leading zero (e.g. 5511999999999)"
-msgstr ""
+msgstr "Напишіть тільки цифри без нуля на початку (напр. 380441112233)"
 
 #: ../qml/PhonePairingPage.qml:78
 msgid "Get Pairing Code"
-msgstr ""
+msgstr "Отримати код підключення"
 
 #: ../qml/PhonePairingPage.qml:89
 msgid "Failed to get pairing code"
-msgstr ""
+msgstr "Код підключення отримати не вдалося"
 
 #: ../qml/PhonePairingPage.qml:112
 msgid "Requesting pairing code..."
-msgstr ""
+msgstr "Запит коду підключення..."
 
 #: ../qml/PhonePairingPage.qml:120 ../qml/SettingsPage.qml:231
 #: ../qml/components/ChatAttachmentDialog.qml:74
@@ -341,122 +348,126 @@ msgstr ""
 #: ../qml/components/NewChatDialog.qml:35
 #: ../qml/components/VoiceMessageRecorderDialog.qml:85
 msgid "Cancel"
-msgstr ""
+msgstr "Скасувати"
 
 #: ../qml/PhonePairingPage.qml:138
 msgid ""
 "Open WhatsApp on your phone, go to Settings → Linked Devices → Link with "
 "phone number, then enter the code below."
 msgstr ""
+"Відкрийте на своєму телефоні WhatsApp, перейдіть у Налаштування → Під'єднані "
+"пристрої → Приєднати через номер телефону, та використайте наданий нижче код."
 
 #: ../qml/PhonePairingPage.qml:162
 msgid "Waiting for confirmation..."
-msgstr ""
+msgstr "Очікується схвалення..."
 
 #: ../qml/PhonePairingPage.qml:196
 msgid "Login with Phone Number"
-msgstr ""
+msgstr "Увійти з Телефонним номером"
 
 #: ../qml/ProfilePage.qml:81
 msgid "Group"
-msgstr ""
+msgstr "Група"
 
 #: ../qml/ProfilePage.qml:95 ../qml/SettingsPage.qml:256
 #: ../qml/ut_components/AppHeader.qml:94
 msgid "Settings"
-msgstr ""
+msgstr "Налаштування"
 
 #: ../qml/ProfilePage.qml:98
 msgid "Mute notifications"
-msgstr ""
+msgstr "Обеззвучити сповіщення"
 
 #: ../qml/ProfilePage.qml:99
 msgid "Silence all notifications from this chat"
-msgstr ""
+msgstr "Обеззвучити усі сповіщення у цьому чаті"
 
 #: ../qml/ProfilePage.qml:110
 msgid "Description"
-msgstr ""
+msgstr "Опис"
 
 #: ../qml/ProfilePage.qml:131
 msgid "Members"
-msgstr ""
+msgstr "Учасники"
 
 #: ../qml/ProfilePage.qml:135
 msgid "%1 members"
-msgstr ""
+msgstr "%1 учасників"
 
 #: ../qml/ProfilePage.qml:229
 msgid "Profile"
-msgstr ""
+msgstr "Профіль"
 
 #: ../qml/SettingsPage.qml:41
 msgid "Notifications"
-msgstr ""
+msgstr "Сповіщення"
 
 #: ../qml/SettingsPage.qml:46
 msgid "Enable Notifications"
-msgstr ""
+msgstr "Увімкнути сповіщення"
 
 #: ../qml/SettingsPage.qml:47
 msgid "Show notifications for new messages and calls"
-msgstr ""
+msgstr "Показувати сповіщення для нових повідомлень та викликів"
 
 #: ../qml/SettingsPage.qml:61
 msgid "Diagnostics"
-msgstr ""
+msgstr "Діагностика"
 
 #: ../qml/SettingsPage.qml:66
 msgid "Error Reporting"
-msgstr ""
+msgstr "Звіт про помилки"
 
 #: ../qml/SettingsPage.qml:67
 msgid "Report app errors to help diagnose issues"
-msgstr ""
+msgstr "Надсилайте звіти про помилки для допомоги їх діагностування"
 
 #: ../qml/SettingsPage.qml:81
 msgid "Daemon"
-msgstr ""
+msgstr "Служба"
 
 #: ../qml/SettingsPage.qml:86
 msgid "Stop Daemon on Exit"
-msgstr ""
+msgstr "На виході зупиняти службу"
 
 #: ../qml/SettingsPage.qml:87
 msgid "Stop the daemon when the app closes and disable boot autostart"
-msgstr ""
+msgstr "Коли програма закривається та вимикається автозапуск, зупиняти службу"
 
 #: ../qml/SettingsPage.qml:101
 msgid "About"
-msgstr ""
+msgstr "Інфо"
 
 #: ../qml/SettingsPage.qml:120
 msgid "Release Version"
-msgstr ""
+msgstr "Версія випуску"
 
 #: ../qml/SettingsPage.qml:127 ../qml/SettingsPage.qml:147
 #: ../qml/SettingsPage.qml:209 ../qml/SettingsPage.qml:210
 msgid "Unknown"
-msgstr ""
+msgstr "Невідомо"
 
 #: ../qml/SettingsPage.qml:140
 msgid "Build Commit"
-msgstr ""
+msgstr "Комміт збірки"
 
 #: ../qml/SettingsPage.qml:161
 msgid "Data"
-msgstr ""
+msgstr "Дані"
 
 #: ../qml/SettingsPage.qml:175
 msgid ""
 "Uninstall the daemon, log out from WhatsApp, and delete all local data "
 "including messages, settings and cache."
 msgstr ""
+"Видалити службу, вийти з WhatsApp та видалити усі локальні дані включно з "
+"повідомленнями, налаштуваннями та кешем."
 
 #: ../qml/SettingsPage.qml:190 ../qml/SettingsPage.qml:227
 #: ../qml/SettingsPage.qml:236
 msgid "Reset App"
-msgstr ""
+msgstr "Скинути налаштування програми"
 
 #: ../qml/SettingsPage.qml:228
 msgid ""
@@ -464,247 +475,255 @@ msgid ""
 "data. You will need to reinstall the daemon and scan the QR code again to "
 "reconnect."
 msgstr ""
+"Ця дія видалить службу, виконає вихід з WhatsApp та видалить усі локальні "
+"дані. Для відновлення з'єднання буде потрібно перевстановити цю службу та "
+"відсканувати ще раз QR-код."
 
 #: ../qml/SettingsPage.qml:252
 msgid "Resetting app..."
-msgstr ""
+msgstr "Скидання налаштувань..."
 
 #: ../qml/StickerPickerPage.qml:60
 msgid ""
 "No stickers yet.\n"
 "Receive stickers in chats to use them here."
 msgstr ""
+"Наліпок ще немає.\n"
+"Щоб користуватися тут наліпками, отримайте їх у чатах."
 
 #: ../qml/StickerPickerPage.qml:89
 msgid "Send Sticker"
-msgstr ""
+msgstr "Надіслати наліпку"
 
 #: ../qml/VideoPreviewPage.qml:67 ../qml/components/ChatAttachmentDialog.qml:26
 msgid "Video"
-msgstr ""
+msgstr "Відео"
 
 #: ../qml/components/ChatAttachmentDialog.qml:15
 msgid "Send Attachment"
-msgstr ""
+msgstr "Надіслати вкладення"
 
 #: ../qml/components/ChatAttachmentDialog.qml:18
 msgid "Photo"
-msgstr ""
+msgstr "Фото"
 
 #: ../qml/components/ChatAttachmentDialog.qml:34
 msgid "Audio"
-msgstr ""
+msgstr "Аудіо"
 
 #: ../qml/components/ChatAttachmentDialog.qml:50
 msgid "Sticker"
-msgstr ""
+msgstr "Наліпка"
 
 #: ../qml/components/ChatAttachmentDialog.qml:66
 msgid "Location"
-msgstr ""
+msgstr "Розташування"
 
 #: ../qml/components/ChatComposer.qml:187
 msgid "Type a message..."
-msgstr ""
+msgstr "Залишіть повідомлення..."
 
 #: ../qml/components/ChatListItem.qml:140
 msgid "Mute"
-msgstr ""
+msgstr "Обеззвучити"
 
 #: ../qml/components/ChatListItem.qml:140
 msgid "Unmute"
-msgstr ""
+msgstr "Повернути звук"
 
 #: ../qml/components/ChatListItem.qml:145
 msgid "Archive"
-msgstr ""
+msgstr "Архів"
 
 #: ../qml/components/ChatListItem.qml:145
 msgid "Unarchive"
-msgstr ""
+msgstr "Розархівувати"
 
 #: ../qml/components/ChatListSearchBar.qml:8
 msgid "Search chats..."
-msgstr ""
+msgstr "Пошук чатів..."
 
 #: ../qml/components/ChatMessageList.qml:269
 msgid "Deleted message"
-msgstr ""
+msgstr "Видалене повідомлення"
 
 #: ../qml/components/ChatMessageList.qml:272
 msgid "View-once message. Open WhatsApp on your primary device to view it."
 msgstr ""
+"Одноразове повідомлення. Для перегляду відкрийте WhatsApp на своєму "
+"основному пристрої."
 
 #: ../qml/components/ChatMessageList.qml:465
 msgid "Unread"
-msgstr ""
+msgstr "Непрочитане"
 
 #: ../qml/components/ChatMessageList.qml:516
 msgid "Delete"
-msgstr ""
+msgstr "Видалити"
 
 #: ../qml/components/ChatMessageList.qml:527
 msgid "Reply"
-msgstr ""
+msgstr "Відповісти"
 
 #: ../qml/components/ChatMessageList.qml:533
 msgid "Edit"
-msgstr ""
+msgstr "Редагувати"
 
 #: ../qml/components/ChatMessageList.qml:545
 msgid "Copy"
-msgstr ""
+msgstr "Копіювати"
 
 #: ../qml/components/ContactMessage.qml:55
 #: ../qml/components/DocumentMessage.qml:69
 #: ../qml/components/LocationMessage.qml:57
 msgid "Tap to open"
-msgstr ""
+msgstr "Відкрити дотиком"
 
 #: ../qml/components/ContactMessage.qml:55
 #: ../qml/components/LocationMessage.qml:57
 msgid "Unavailable"
-msgstr ""
+msgstr "Недоступно"
 
 #: ../qml/components/ContentTransferPage.qml:11
 msgid "Save to"
-msgstr ""
+msgstr "Зберегти до"
 
 #: ../qml/components/DocumentMessage.qml:69
 msgid "Downloading..."
-msgstr ""
+msgstr "Завантаження..."
 
 #: ../qml/components/DocumentMessage.qml:69
 msgid "Tap to download"
-msgstr ""
+msgstr "Завантажити дотиком"
 
 #: ../qml/components/EditMessageDialog.qml:14
 msgid "Edit Message"
-msgstr ""
+msgstr "Редагувати повідомлення"
 
 #: ../qml/components/LocationFetchDialog.qml:53
 msgid "Location services are unavailable"
-msgstr ""
+msgstr "Служби геопозиції недоступні"
 
 #: ../qml/components/LocationFetchDialog.qml:60
 msgid "Share Current Location"
-msgstr ""
+msgstr "Поділитися поточним розташуванням"
 
 #: ../qml/components/LocationFetchDialog.qml:61
 msgid "Fetching your current location…"
-msgstr ""
+msgstr "Визначення Вашого розташування…"
 
 #: ../qml/components/LocationFetchDialog.qml:77
 msgid "Unable to get current location"
-msgstr ""
+msgstr "Визначити розташування не вдалося"
 
 #: ../qml/components/LocationFetchDialog.qml:87
 msgid "Location request timed out"
-msgstr ""
+msgstr "Запит на розташування перевищив час очікування"
 
 #: ../qml/components/MessageBubble.qml:187
 msgid "edited"
-msgstr ""
+msgstr "змінено"
 
 #: ../qml/components/NewChatDialog.qml:15
 msgid "New Chat"
-msgstr ""
+msgstr "Новий чат"
 
 #: ../qml/components/NewChatDialog.qml:16
 msgid ""
 "Enter a phone number with country code, digits only (e.g. 5511999999999)."
 msgstr ""
+"Вкажіть номер телефону з кодом країни без інших знаків (напр. 380441112233)."
 
 #: ../qml/components/NewChatDialog.qml:41
 msgid "OK"
-msgstr ""
+msgstr "ОК"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:31
 msgid "Record Voice Message"
-msgstr ""
+msgstr "Записати голосове повідомлення"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:48
 msgid "Recording ready to send"
-msgstr ""
+msgstr "Запис готовий до надсилання"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:48
 msgid "Recording…"
-msgstr ""
+msgstr "Запис…"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:48
 msgid "Tap record to capture a voice message"
-msgstr ""
+msgstr "Для створення голосового повідомлення торкніться до запису"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:53
 msgid "Duration: %1"
-msgstr ""
+msgstr "Тривалість: %1"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:57
 msgid "Status: %1"
-msgstr ""
+msgstr "Статус: %1"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:57
 msgid "ready"
-msgstr ""
+msgstr "готово"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:63
 msgid "Error: %1"
-msgstr ""
+msgstr "Помилка: %1"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:69
 msgid "Record"
-msgstr ""
+msgstr "Запис"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:69
 msgid "Record Again"
-msgstr ""
+msgstr "Записати знову"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:69
 msgid "Stop"
-msgstr ""
+msgstr "Стоп"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:92
 msgid "Send"
-msgstr ""
+msgstr "Надіслати"
 
 #: ../qml/ut_components/ActionableList.qml:107
 #: ../qml/ut_components/CardList.qml:84
 msgid "Search"
-msgstr ""
+msgstr "Пошук"
 
 #: ../qml/ut_components/ActionableList.qml:109
 #: ../qml/ut_components/CardList.qml:82
 msgid "No items"
-msgstr ""
+msgstr "Порожньо"
 
 #: ../qml/ut_components/Form.qml:81
 msgid "Submit"
-msgstr ""
+msgstr "Надіслати"
 
 #: ../qml/ut_components/ImageViewer.qml:388
 msgid "Failed to load image"
-msgstr ""
+msgstr "Завантажити зображення не вдалося"
 
 #: ../qml/ut_components/ImageViewer.qml:483
 msgid "No image to display"
-msgstr ""
+msgstr "Зображень немає"
 
 #: ../qml/ut_components/InputField.qml:91
 msgid "Invalid input"
-msgstr ""
+msgstr "Хибне введення"
 
 #: ../qml/ut_components/InputField.qml:166
 msgid "This field is required"
-msgstr ""
+msgstr "Це поле обов'язкове"
 
 #: ../qml/ut_components/VideoViewer.qml:438
 msgid "Failed to load video"
-msgstr ""
+msgstr "Завантажити відео не вдалося"
 
 #: ../qml/ut_components/VideoViewer.qml:640
 msgid "No video to display"
-msgstr ""
+msgstr "Відео немає"
 
 #: greenline.desktop.in.h:1
 msgid "Greenline"
-msgstr ""
+msgstr "Greenline"
