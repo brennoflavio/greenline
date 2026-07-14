@@ -1163,7 +1163,7 @@ func (s *Service) DownloadMedia(args *DownloadMediaArgs, reply *DownloadMediaRep
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
-	data, err := s.client.DownloadMediaWithPath(ctx, args.DirectPath, encSHA256, fileSHA256, mediaKey, args.FileLength, wmMediaType, mmsType)
+	data, err := s.client.DownloadMediaWithPath(ctx, args.DirectPath, encSHA256, fileSHA256, mediaKey, wmMediaType, mmsType)
 	if err != nil {
 		return fmt.Errorf("download failed: %w", err)
 	}
