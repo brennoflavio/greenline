@@ -179,7 +179,7 @@ def test_settings_contracts(monkeypatch: pytest.MonkeyPatch) -> None:
         "success": True,
         "notifications_suppressed": False,
         "stop_daemon_on_exit": False,
-        "error_reporting": True,
+        "error_reporting": False,
         "release_version": "1.0.0~rc1",
         "build_version": "deadbeef",
     }
@@ -188,7 +188,7 @@ def test_settings_contracts(monkeypatch: pytest.MonkeyPatch) -> None:
     validate_api_response("set_notifications_suppressed", changed_notifications)
     assert changed_notifications == {"success": True, "message": ""}
 
-    changed_reporting = main.set_error_reporting(False)
+    changed_reporting = main.set_error_reporting(True)
     validate_api_response("set_error_reporting", changed_reporting)
     assert changed_reporting == {"success": True, "message": ""}
 
@@ -198,7 +198,7 @@ def test_settings_contracts(monkeypatch: pytest.MonkeyPatch) -> None:
         "success": True,
         "notifications_suppressed": True,
         "stop_daemon_on_exit": False,
-        "error_reporting": False,
+        "error_reporting": True,
         "release_version": "1.0.0~rc1",
         "build_version": "deadbeef",
     }

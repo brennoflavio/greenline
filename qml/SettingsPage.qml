@@ -65,7 +65,7 @@ Page {
 
                     title: i18n.tr("Error Reporting")
                     subtitle: i18n.tr("Report app errors to help diagnose issues")
-                    checked: true
+                    checked: false
                     onToggled: function(newChecked) {
                         python.call('main.set_error_reporting', [newChecked], function(result) {
                             if (!result.success)

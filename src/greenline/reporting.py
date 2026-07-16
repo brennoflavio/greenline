@@ -21,7 +21,7 @@ def get_error_reporting() -> bool:
     from greenline.store.records import ErrorReportingRecord
 
     with GreenlineKV() as kv:
-        return kv.get_record(ERROR_REPORTING_KEY, default=ErrorReportingRecord(True)).value
+        return kv.get_record(ERROR_REPORTING_KEY, default=ErrorReportingRecord(False)).value
 
 
 def set_error_reporting(enabled: bool) -> None:
@@ -68,6 +68,15 @@ def capture_stack_summary(limit: int = 12, *, skip: int = 0) -> list[dict[str, A
 
 def get_build_version() -> str:
     try:
+        from daemon import get_release_build_version
+
+        return get_release_build_version() or ""
+    except Exception:
+        return ""
+
+
+def get_build_commit() -> str:
+    try:
         from daemon import get_expected_daemon_version
 
         return get_expected_daemon_version() or ""
@@ -78,6 +87,7 @@ def get_build_version() -> str:
 def _format_report(report: str, **payload: Any) -> str:
     metadata = dict(payload)
     metadata["build_version"] = get_build_version()
+    metadata["build_commit"] = get_build_commit()
     return (
         report.rstrip()
         + REPORT_METADATA_MARKER

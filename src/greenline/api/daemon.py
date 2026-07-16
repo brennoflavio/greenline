@@ -252,7 +252,7 @@ def get_settings() -> SettingsResponse:
             success=False,
             notifications_suppressed=False,
             stop_daemon_on_exit=False,
-            error_reporting=True,
+            error_reporting=False,
             release_version="",
             build_version="",
         )

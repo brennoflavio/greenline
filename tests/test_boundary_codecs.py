@@ -59,7 +59,8 @@ def _capture_reports(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, object]]
     monkeypatch.setenv("GREENLINE_ENABLE_REPORTING_IN_TESTS", "1")
     reporting.set_error_reporting(True)
     monkeypatch.setattr(reporting, "CRASH_REPORT_URL", "https://example.test/report")
-    monkeypatch.setattr(reporting, "get_build_version", lambda: "test-commit")
+    monkeypatch.setattr(reporting, "get_build_version", lambda: "test-version")
+    monkeypatch.setattr(reporting, "get_build_commit", lambda: "test-commit")
 
     def fake_post(*, url: str, json: dict[str, object]):
         posts.append({"url": url, "json": json})
@@ -82,7 +83,25 @@ def _report_metadata(post: dict[str, object]) -> dict[str, object]:
     prefix, marker, metadata = report.partition(reporting.REPORT_METADATA_MARKER)
     assert prefix
     assert marker == reporting.REPORT_METADATA_MARKER
-    return json.loads(metadata)
+    parsed = json.loads(metadata)
+    assert parsed["build_version"] == "test-version"
+    assert parsed["build_commit"] == "test-commit"
+    return parsed
+
+
+def test_error_reports_include_packaged_build_metadata(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("APP_DIR", str(tmp_path))
+    metadata_dir = tmp_path / "src"
+    metadata_dir.mkdir()
+    (metadata_dir / "build-version.txt").write_text("1.2.3~rc1")
+    (metadata_dir / "version.txt").write_text("deadbeef")
+
+    _report, _marker, metadata = reporting._format_report("failure").partition(reporting.REPORT_METADATA_MARKER)
+
+    assert json.loads(metadata) == {
+        "build_commit": "deadbeef",
+        "build_version": "1.2.3~rc1",
+    }
 
 
 def test_encode_dataclass_returns_json_like_payload() -> None:
@@ -193,7 +212,6 @@ def test_invalid_decode_posts_structured_validation_report(monkeypatch: pytest.M
     assert metadata["boundary"] == "daemon_rpc"
     assert metadata["contract"] == "Service.SendMessage"
     assert metadata["direction"] == "decode"
-    assert metadata["build_version"] == "test-commit"
     assert metadata["trace"] == []
     assert isinstance(metadata["stack"], list)
     assert metadata["stack"]
@@ -244,7 +262,6 @@ def test_validation_failure_normalizes_non_json_payload(monkeypatch: pytest.Monk
     assert metadata["boundary"] == "daemon_rpc"
     assert metadata["contract"] == "Service.SendMessage"
     assert metadata["direction"] == "decode"
-    assert metadata["build_version"] == "test-commit"
     assert metadata["trace"] == []
     assert isinstance(metadata["stack"], list)
     assert metadata["stack"]
@@ -410,7 +427,6 @@ def test_validation_failure_includes_trace_context(monkeypatch: pytest.MonkeyPat
 
     assert len(posts) == 1
     metadata = _report_metadata(posts[0])
-    assert metadata["build_version"] == "test-commit"
     assert metadata["trace"] == [{"name": "event", "event_type": "Message", "event_id": 42}]
 
 
@@ -434,7 +450,6 @@ def test_crash_reporter_posts_and_reraises(monkeypatch: pytest.MonkeyPatch) -> N
     assert len(posts) == 1
     metadata = _report_metadata(posts[0])
     assert "RuntimeError: boom" in str(posts[0]["report"])
-    assert metadata["build_version"] == "test-commit"
     assert metadata["trace"] == [{"name": "call", "function": f"{explode.__module__}.explode"}]
 
 
