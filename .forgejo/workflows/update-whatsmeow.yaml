@@ -1,0 +1,149 @@
+name: Update whatsmeow
+enable-email-notifications: true
+
+on:
+  schedule:
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the default branch
+        uses: https://code.forgejo.org/actions/checkout@v4
+        with:
+          ref: master
+          persist-credentials: false
+
+      - name: Install Go
+        run: |
+          set -eu
+          GO_VERSION=1.25.0
+          GO_FILENAME="go${GO_VERSION}.linux-amd64.tar.gz"
+          GO_SHA256=2852af0cb20a13139b3448992e69b868e50ed0f8a1e5940ee1de9e19a123b613
+          curl -fsSL "https://go.dev/dl/${GO_FILENAME}" -o "/tmp/${GO_FILENAME}"
+          echo "${GO_SHA256}  /tmp/${GO_FILENAME}" | sha256sum -c -
+          rm -rf "$HOME/.local/go"
+          mkdir -p "$HOME/.local"
+          tar -xzf "/tmp/${GO_FILENAME}" -C "$HOME/.local"
+          echo "$HOME/.local/go/bin" >> "$GITHUB_PATH"
+
+      - name: Check for an update
+        id: version
+        run: |
+          set -eu
+          cd daemon
+          current="$(go list -m -f '{{.Version}}' go.mau.fi/whatsmeow)"
+          latest="$(go list -m -u -f '{{with .Update}}{{.Version}}{{end}}' go.mau.fi/whatsmeow)"
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "latest=$latest" >> "$GITHUB_OUTPUT"
+          if [ -n "$latest" ]; then
+            echo "update=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "update=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check for an existing pull request
+        if: steps.version.outputs.update == 'true'
+        id: pull-request
+        env:
+          FORGEJO_SERVER: ${{ github.server_url }}
+          FORGEJO_REPOSITORY: ${{ github.repository }}
+          FORGEJO_TOKEN: ${{ forge.token }}
+        run: |
+          set -eu
+          node <<'NODE'
+          const { appendFileSync } = require('node:fs')
+
+          async function main() {
+            const branch = 'automation/update-whatsmeow'
+            const [owner] = process.env.FORGEJO_REPOSITORY.split('/')
+            let existing = ''
+
+            for (let page = 1; ; page += 1) {
+              const url = new URL(`/api/v1/repos/${process.env.FORGEJO_REPOSITORY}/pulls`, process.env.FORGEJO_SERVER)
+              url.searchParams.set('state', 'open')
+              url.searchParams.set('limit', '50')
+              url.searchParams.set('page', String(page))
+              const response = await fetch(url, {
+                headers: { Authorization: `token ${process.env.FORGEJO_TOKEN}` },
+              })
+              if (!response.ok) throw new Error(`Unable to list pull requests: ${response.status}`)
+              const pullRequests = await response.json()
+              const pullRequest = pullRequests.find(({ head }) =>
+                head?.ref === branch && head?.repo?.owner?.login === owner,
+              )
+              if (pullRequest) {
+                existing = String(pullRequest.number)
+                break
+              }
+              if (pullRequests.length < 50) break
+            }
+
+            appendFileSync(process.env.GITHUB_OUTPUT, `branch=${branch}\nexisting=${existing}\n`)
+          }
+
+          main().catch((error) => {
+            console.error(error)
+            process.exit(1)
+          })
+          NODE
+
+      - name: Create pull request
+        if: steps.version.outputs.update == 'true' && steps.pull-request.outputs.existing == ''
+        env:
+          BASE_BRANCH: master
+          CURRENT: ${{ steps.version.outputs.current }}
+          LATEST: ${{ steps.version.outputs.latest }}
+          BRANCH: ${{ steps.pull-request.outputs.branch }}
+          FORGEJO_SERVER: ${{ github.server_url }}
+          FORGEJO_REPOSITORY: ${{ github.repository }}
+          FORGEJO_TOKEN: ${{ forge.token }}
+        run: |
+          set -eu
+          git config user.name 'forgejo-actions'
+          git config user.email 'contato@brennoflavio.com.br'
+
+          git remote set-url origin "https://oauth2:${FORGEJO_TOKEN}@${FORGEJO_SERVER#https://}/${FORGEJO_REPOSITORY}.git"
+          branch_exists=false
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+            git fetch origin "$BRANCH"
+            git checkout -B "$BRANCH" "origin/$BRANCH"
+            branch_exists=true
+          else
+            git checkout -b "$BRANCH"
+          fi
+
+          (
+            cd daemon
+            go get "go.mau.fi/whatsmeow@${LATEST}"
+            go mod tidy
+          )
+
+          if ! git diff --quiet -- daemon/go.mod daemon/go.sum; then
+            git add daemon/go.mod daemon/go.sum
+            git commit -m "chore(daemon): update whatsmeow to ${LATEST}"
+            git push origin "HEAD:refs/heads/${BRANCH}"
+          elif [ "$branch_exists" = false ]; then
+            echo 'Module update did not change go.mod or go.sum' >&2
+            exit 1
+          fi
+
+          owner="${FORGEJO_REPOSITORY%%/*}"
+          head="${owner}:${BRANCH}"
+          compare_url="https://github.com/tulir/whatsmeow/compare/${CURRENT##*-}...${LATEST##*-}"
+          payload="$(printf '{"title":"chore(daemon): update whatsmeow to %s","head":"%s","base":"%s","body":"Automated update of `go.mau.fi/whatsmeow`.\\n\\n## Upstream changelog\\n\\n[Compare %s...%s](%s)"}' "$LATEST" "$head" "$BASE_BRANCH" "$CURRENT" "$LATEST" "$compare_url")"
+          curl -fsS -X POST "${FORGEJO_SERVER}/api/v1/repos/${FORGEJO_REPOSITORY}/pulls" \
+            --header "Authorization: token ${FORGEJO_TOKEN}" \
+            --header 'Content-Type: application/json' \
+            --data "$payload"
+
+concurrency:
+  group: update-whatsmeow
+  cancel-in-progress: false

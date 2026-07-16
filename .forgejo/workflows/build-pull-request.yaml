@@ -1,0 +1,65 @@
+name: Build pull request
+enable-email-notifications: true
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: clickable-ut24-1x-arm64
+    timeout-minutes: 45
+
+    steps:
+      - name: Install Node.js for JavaScript actions
+        run: |
+          set -eu
+          case "$(uname -m)" in
+            x86_64) NODE_ARCH=x64 ;;
+            aarch64) NODE_ARCH=arm64 ;;
+            *)
+              echo "Unsupported architecture: $(uname -m)" >&2
+              exit 1
+              ;;
+          esac
+          NODE_VERSION=v20.19.2
+          NODE_FILENAME="node-$NODE_VERSION-linux-$NODE_ARCH.tar.gz"
+          NODE_DIR="$HOME/.local/node-$NODE_VERSION"
+          curl -fsSL "https://nodejs.org/dist/$NODE_VERSION/$NODE_FILENAME" -o "/tmp/$NODE_FILENAME"
+          curl -fsSL "https://nodejs.org/dist/$NODE_VERSION/SHASUMS256.txt" -o /tmp/SHASUMS256.txt
+          cd /tmp
+          grep " $NODE_FILENAME$" SHASUMS256.txt | sha256sum -c -
+          mkdir -p "$NODE_DIR"
+          tar -xzf "/tmp/$NODE_FILENAME" -C "$NODE_DIR" --strip-components=1
+          echo "$NODE_DIR/bin" >> "$GITHUB_PATH"
+
+      - name: Checkout code
+        uses: https://code.forgejo.org/actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        run: |
+          set -eu
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Run tests
+        run: uv run pytest
+
+      - name: Verify runner tooling
+        run: |
+          set -eu
+          node --version
+          uv --version
+          clickable --version
+
+      - name: Build
+        run: clickable build --arch arm64
+
+concurrency:
+  group: build-pull-request-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
