@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(greenline C CXX)
 
+include(CTest)
 find_package(Qt5 REQUIRED COMPONENTS Core Qml Multimedia)
 
 # Automatically create moc files
@@ -88,6 +89,24 @@ add_library(audiocaptureplugin MODULE
 )
 target_link_libraries(audiocaptureplugin PRIVATE Qt5::Core Qt5::Qml Qt5::Multimedia)
 install(TARGETS audiocaptureplugin LIBRARY DESTINATION ${DATA_DIR}qml/AudioCapture)
+
+add_library(messagemodelplugin MODULE
+    plugin/messagemodel/messagelistmodel.cpp
+    plugin/messagemodel/plugin.cpp
+)
+target_link_libraries(messagemodelplugin PRIVATE Qt5::Core Qt5::Qml)
+install(TARGETS messagemodelplugin LIBRARY DESTINATION ${DATA_DIR}qml/MessageModel)
+
+if(BUILD_TESTING)
+    add_executable(messagemodel_test
+        tests/cpp/test_messagelistmodel.cpp
+        plugin/messagemodel/messagelistmodel.cpp
+        plugin/messagemodel/messagelistmodel.h
+    )
+    target_include_directories(messagemodel_test PRIVATE plugin/messagemodel)
+    target_link_libraries(messagemodel_test PRIVATE Qt5::Core)
+    add_test(NAME messagemodel_test COMMAND messagemodel_test)
+endif()
 
 # Golang Daemon
 install(FILES "build-daemon.sh" DESTINATION ${DATA_DIR})

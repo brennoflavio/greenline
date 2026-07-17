@@ -1,6 +1,6 @@
 """Shared bridge for app-level events emitted from Python to QML."""
 
-from dataclasses import asdict, is_dataclass
+from dataclasses import asdict, is_dataclass, replace
 from typing import Any, Iterable, Mapping
 
 from greenline import qml_payloads
@@ -25,9 +25,74 @@ def _mapping_payload(value: Any) -> Mapping[str, Any]:
     raise TypeError(f"Unsupported QML payload type: {type(value).__name__}")
 
 
+def _message_aliases(message: Message | Mapping[str, Any]) -> tuple[tuple[str, str], ...]:
+    if type(message) is Message:
+        chat_id = message.chat_id
+        message_id = message.id
+        temp_id = message.temp_id
+    else:
+        payload = _mapping_payload(message)
+        chat_id = str(payload.get("chat_id") or "")
+        message_id = str(payload.get("id") or "")
+        temp_id = str(payload.get("temp_id") or "")
+
+    aliases: list[tuple[str, str]] = []
+    if message_id:
+        aliases.append((chat_id, message_id))
+    if temp_id and temp_id != message_id:
+        aliases.append((chat_id, temp_id))
+    return tuple(aliases)
+
+
+def _message_temp_id(message: Message | Mapping[str, Any]) -> str:
+    if type(message) is Message:
+        return message.temp_id
+    return str(_mapping_payload(message).get("temp_id") or "")
+
+
+def _with_temp_alias(message: Message | Mapping[str, Any], temp_id: str) -> Message | Mapping[str, Any]:
+    if type(message) is Message:
+        return replace(message, temp_id=temp_id)
+
+    payload = dict(_mapping_payload(message))
+    payload["temp_id"] = temp_id
+    return payload
+
+
+def _coalesce_message_upserts(
+    messages: Iterable[Message | Mapping[str, Any]],
+) -> list[Message | Mapping[str, Any]]:
+    coalesced: list[Message | Mapping[str, Any]] = []
+    indexes_by_alias: dict[tuple[str, str], int] = {}
+    for message in messages:
+        aliases = _message_aliases(message)
+        existing_index = next((indexes_by_alias[alias] for alias in aliases if alias in indexes_by_alias), None)
+        if existing_index is None:
+            existing_index = len(coalesced)
+            coalesced.append(message)
+        else:
+            previous = coalesced[existing_index]
+            previous_aliases = _message_aliases(previous)
+            previous_temp_id = _message_temp_id(previous)
+            current_temp_id = _message_temp_id(message)
+            if not current_temp_id and previous_temp_id:
+                message = _with_temp_alias(message, previous_temp_id)
+                aliases = _message_aliases(message)
+
+            for alias in previous_aliases:
+                if indexes_by_alias.get(alias) == existing_index:
+                    del indexes_by_alias[alias]
+            coalesced[existing_index] = message
+
+        for alias in aliases:
+            indexes_by_alias[alias] = existing_index
+
+    return coalesced
+
+
 def message_upsert_payload(messages: Iterable[Message | Mapping[str, Any]]) -> list[dict[str, Any]]:
     payloads: list[dict[str, Any]] = []
-    for message in messages:
+    for message in _coalesce_message_upserts(messages):
         if type(message) is Message:
             payloads.append(qml_payloads.ui_message(message))
         else:

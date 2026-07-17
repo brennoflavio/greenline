@@ -43,7 +43,8 @@ Item {
     }
 
     width: parent.width
-    height: wrapper.height + units.gu(0.5)
+    implicitHeight: wrapper.height + units.gu(0.5)
+    height: implicitHeight
 
     GenericPhoto {
         id: avatar

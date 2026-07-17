@@ -41,10 +41,10 @@ MessageBubble {
 
             Image {
                 width: parent.width
-                height: status === Image.Ready && implicitWidth > 0 && implicitHeight > 0 ? Math.min(width / (implicitWidth / implicitHeight), units.gu(20)) : 0
+                height: source !== "" ? units.gu(12) : 0
                 source: root.thumbnailSource
                 fillMode: Image.PreserveAspectCrop
-                visible: status === Image.Ready
+                visible: source !== ""
             }
 
             Column {

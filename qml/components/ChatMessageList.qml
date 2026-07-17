@@ -1,27 +1,26 @@
-import "../lib/ChatHelpers.js" as ChatHelpers
 import Lomiri.Components 1.3
 import QtQuick 2.7
+import qml.MessageModel 1.0 as MessageModel
 
 Item {
     id: root
 
-    property var messages: []
     property var senderMetadataByJid: ({
     })
     property bool hasOlderMessages: false
     property bool loadingOlderMessages: false
-    property string pendingRestoreMessageId: ""
     property var downloadingIds: ({
     })
     property bool isGroup: false
-    property var messageIndexesById: ({
-    })
-    property var messageIndexesByTempId: ({
-    })
     property int unreadCount: 0
     property string unreadDividerMessageId: ""
     property int editWindowSeconds: 20 * 60
-    readonly property bool atBottom: messageList.atYEnd
+    property real olderLoadThreshold: units.gu(12)
+    property bool olderLoadCoolingDown: false
+    readonly property int count: messageModel.count
+    readonly property real distanceFromTop: Math.max(0, messageList.visibleArea.yPosition * messageList.contentHeight)
+    readonly property real distanceFromBottom: Math.max(0, (1 - messageList.visibleArea.yPosition - messageList.visibleArea.heightRatio) * messageList.contentHeight)
+    readonly property bool atBottom: messageList.count === 0 || messageList.atYEnd || distanceFromBottom <= units.gu(2)
 
     signal replyRequested(var message)
     signal editRequested(var message)
@@ -34,224 +33,74 @@ Item {
     signal messageNotLoaded(string messageId)
 
     function messageAt(index) {
-        if (index < 0 || index >= messageModel.count)
-            return null;
-
-        return messageModel.get(index).message;
+        return messageModel.messageAt(index);
     }
 
-    function clearMessageIndexes() {
-        messageIndexesById = ({
-        });
-        messageIndexesByTempId = ({
-        });
+    function messagesOldestFirst() {
+        return messageModel.messagesOldestFirst();
     }
 
-    function setMessageIndex(message, index) {
-        if (!message)
-            return ;
-
-        if (message.id)
-            messageIndexesById[message.id] = index;
-
-        if (message.temp_id)
-            messageIndexesByTempId[message.temp_id] = index;
-
-    }
-
-    function removeMessageIndex(message) {
-        if (!message)
-            return ;
-
-        if (message.id)
-            delete messageIndexesById[message.id];
-
-        if (message.temp_id)
-            delete messageIndexesByTempId[message.temp_id];
-
-    }
-
-    function refreshMessageIndexes(startIndex) {
-        for (var i = startIndex; i < messageModel.count; i++) {
-            var modelMessage = messageAt(i);
-            if (!modelMessage)
-                continue;
-
-            if (modelMessage.id)
-                messageIndexesById[modelMessage.id] = i;
-
-            if (modelMessage.temp_id)
-                messageIndexesByTempId[modelMessage.temp_id] = i;
-
-        }
-    }
-
-    function findModelIndexById(messageId) {
-        if (!messageId)
-            return -1;
-
-        return messageIndexesById.hasOwnProperty(messageId) ? messageIndexesById[messageId] : -1;
-    }
-
-    function findModelIndexByIdOrTempId(messageId, tempId) {
-        if (messageId !== "") {
-            if (messageIndexesById.hasOwnProperty(messageId))
-                return messageIndexesById[messageId];
-
-            if (messageIndexesByTempId.hasOwnProperty(messageId))
-                return messageIndexesByTempId[messageId];
-
-        }
-        if (tempId !== "") {
-            if (messageIndexesById.hasOwnProperty(tempId))
-                return messageIndexesById[tempId];
-
-            if (messageIndexesByTempId.hasOwnProperty(tempId))
-                return messageIndexesByTempId[tempId];
-
-        }
-        return -1;
-    }
-
-    function findDisplayInsertIndex(message) {
-        for (var i = 0; i < messageModel.count; i++) {
-            var existingMessage = messageAt(i);
-            if (ChatHelpers.messageComesBefore(existingMessage, message))
-                return i;
-
-        }
-        return messageModel.count;
-    }
-
-    function insertDisplayMessage(message) {
-        var wasAtBottom = messageList.atYEnd;
-        var insertIndex = findDisplayInsertIndex(message);
-        messageModel.insert(insertIndex, {
-            "message": message
-        });
-        refreshMessageIndexes(insertIndex);
-        if (wasAtBottom && insertIndex === 0)
-            scrollToBottomTimer.restart();
-
-        return insertIndex;
-    }
-
-    function setMessageAt(index, message) {
-        if (index < 0 || index >= messageModel.count)
-            return false;
-
-        var previousMessage = messageAt(index);
-        if (previousMessage)
-            removeMessageIndex(previousMessage);
-
-        messageModel.set(index, {
-            "message": message
-        });
-        setMessageIndex(message, index);
-        return true;
-    }
-
-    function prepareOlderMessages(messageId) {
-        pendingRestoreMessageId = messageId;
-    }
-
-    function restoreOlderMessages() {
-        if (pendingRestoreMessageId === "")
-            return ;
-
-        var restoreIndex = findModelIndexById(pendingRestoreMessageId);
-        if (restoreIndex !== -1)
-            messageList.positionViewAtIndex(restoreIndex, ListView.End);
-
-        pendingRestoreMessageId = "";
-    }
-
-    function scheduleRestoreOlderMessages() {
-        if (pendingRestoreMessageId === "")
-            return ;
-
-        restoreOlderMessagesTimer.restart();
+    function containsMessage(messageId) {
+        return messageModel.containsMessage(messageId || "");
     }
 
     function resetMessages(oldestFirstMessages) {
-        messageModel.clear();
-        clearMessageIndexes();
-        var nextMessages = oldestFirstMessages || [];
-        for (var i = nextMessages.length - 1; i >= 0; i--) {
-            messageModel.append({
-                "message": nextMessages[i]
-            });
-            setMessageIndex(nextMessages[i], nextMessages.length - 1 - i);
-        }
+        messageModel.resetMessages(oldestFirstMessages || []);
     }
 
     function appendPendingMessage(message) {
-        insertDisplayMessage(message);
+        if (!message)
+            return [];
+
+        var insertedMessages = messageModel.upsertMessages([message]);
         scrollToBottomTimer.restart();
+        return insertedMessages;
     }
 
     function replaceMessageByIdOrTempId(message) {
         if (!message)
-            return -1;
+            return [];
 
-        var wasAtBottom = messageList.atYEnd;
-        var replaceIndex = findModelIndexByIdOrTempId(message.id || "", message.temp_id || "");
-        if (replaceIndex !== -1) {
-            var previousMessage = messageAt(replaceIndex);
-            removeMessageIndex(previousMessage);
-            messageModel.remove(replaceIndex);
-            refreshMessageIndexes(replaceIndex);
-        }
-        var insertIndex = insertDisplayMessage(message);
+        var wasAtBottom = root.atBottom;
+        var insertedMessages = messageModel.upsertMessages([message]);
         if (wasAtBottom)
             scrollToBottomTimer.restart();
 
-        return insertIndex;
-    }
-
-    function patchMessageAtIndex(index, patch) {
-        var currentMessage = messageAt(index);
-        if (!currentMessage)
-            return false;
-
-        return setMessageAt(index, Object.assign({
-        }, currentMessage, patch));
+        return insertedMessages;
     }
 
     function patchMessageByIdOrTempId(messageId, tempId, patch) {
-        var patchIndex = findModelIndexByIdOrTempId(messageId || "", tempId || "");
-        if (patchIndex === -1)
-            return false;
-
-        return patchMessageAtIndex(patchIndex, patch);
+        return messageModel.patchMessage(messageId || "", tempId || "", patch || {
+        });
     }
 
     function upsertMessages(messagesToUpsert) {
-        var nextMessages = messagesToUpsert || [];
-        for (var i = 0; i < nextMessages.length; i++) {
-            if (nextMessages[i])
-                replaceMessageByIdOrTempId(nextMessages[i]);
+        var wasAtBottom = root.atBottom;
+        var insertedMessages = messageModel.upsertMessages(messagesToUpsert || []);
+        if (wasAtBottom && insertedMessages.length > 0)
+            scrollToBottomTimer.restart();
 
-        }
+        return insertedMessages;
     }
 
-    function appendOlderMessages(olderMessages, anchorMessageId) {
-        var nextMessages = olderMessages || [];
-        if (anchorMessageId)
-            prepareOlderMessages(anchorMessageId);
+    function appendOlderMessages(olderMessages) {
+        return messageModel.appendOlderMessages(olderMessages || []);
+    }
 
-        var appendStartIndex = messageModel.count;
-        for (var i = nextMessages.length - 1; i >= 0; i--) {
-            messageModel.append({
-                "message": nextMessages[i]
-            });
-            setMessageIndex(nextMessages[i], appendStartIndex + (nextMessages.length - 1 - i));
-        }
-        scheduleRestoreOlderMessages();
+    function maybeRequestOlderMessages() {
+        if (olderLoadCoolingDown || loadingOlderMessages || !hasOlderMessages || messageModel.count === 0)
+            return ;
+
+        if (!messageList.atYBeginning && distanceFromTop > olderLoadThreshold)
+            return ;
+
+        olderLoadCoolingDown = true;
+        olderLoadCooldownTimer.restart();
+        olderMessagesRequested();
     }
 
     function scrollToMessage(messageId) {
-        var scrollIndex = findModelIndexById(messageId);
+        var scrollIndex = messageModel.indexOfMessage(messageId || "");
         if (scrollIndex !== -1) {
             messageList.positionViewAtIndex(scrollIndex, ListView.Center);
             return ;
@@ -380,14 +229,18 @@ Item {
         return root.usesRichTextMessage(message) ? richTextComponent : textComponent;
     }
 
-    onMessagesChanged: root.resetMessages(messages)
+    onAtBottomChanged: {
+        if (atBottom)
+            bottomReached();
+
+    }
 
     Timer {
-        id: restoreOlderMessagesTimer
+        id: olderLoadCooldownTimer
 
-        interval: 0
+        interval: 750
         repeat: false
-        onTriggered: root.restoreOlderMessages()
+        onTriggered: root.olderLoadCoolingDown = false
     }
 
     Timer {
@@ -398,7 +251,7 @@ Item {
         onTriggered: root.scrollToBottom()
     }
 
-    ListModel {
+    MessageModel.MessageListModel {
         id: messageModel
     }
 
@@ -411,16 +264,8 @@ Item {
         verticalLayoutDirection: ListView.BottomToTop
         spacing: units.gu(0.5)
         model: messageModel
-        onMovementEnded: {
-            if (atYBeginning && root.hasOlderMessages && !root.loadingOlderMessages)
-                root.olderMessagesRequested();
-
-        }
-        onAtYEndChanged: {
-            if (atYEnd)
-                root.bottomReached();
-
-        }
+        onMovementEnded: root.maybeRequestOlderMessages()
+        visibleArea.onYPositionChanged: root.maybeRequestOlderMessages()
 
         delegate: ListItem {
             id: messageDelegate
@@ -429,7 +274,7 @@ Item {
             property bool showUnreadDivider: root.unreadDividerMessageId !== "" && msg && msg.id === root.unreadDividerMessageId
 
             width: parent ? parent.width : 0
-            height: messageContent.height
+            height: messageContent.implicitHeight
             color: "transparent"
             highlightColor: "transparent"
             divider.visible: false
@@ -438,6 +283,7 @@ Item {
                 id: messageContent
 
                 width: parent.width
+                height: implicitHeight
                 spacing: units.gu(0.8)
 
                 Item {
@@ -497,6 +343,7 @@ Item {
                     }
 
                     width: parent.width
+                    height: item ? item.implicitHeight : 0
                     Component.onCompleted: syncSourceComponent()
                     onMsgChanged: syncSourceComponent()
 
@@ -831,7 +678,7 @@ Item {
         height: units.gu(4.5)
         radius: width / 2
         color: Qt.rgba(0, 0, 0, 0.6)
-        visible: !messageList.atYEnd
+        visible: !root.atBottom
         opacity: visible ? 1 : 0
         z: 1
 

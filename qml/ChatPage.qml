@@ -16,7 +16,6 @@ Page {
     property string chatName: ""
     property string chatPhoto: ""
     property bool isGroup: false
-    property var messages: []
     property int messagePageSize: 20
     property string nextMessagesCursor: ""
     property bool hasOlderMessages: false
@@ -442,152 +441,57 @@ Page {
     }
 
     function hasLoadedMessage(messageId) {
-        if (!messageId)
-            return false;
-
-        for (var i = 0; i < messages.length; i++) {
-            if (messages[i].id === messageId || messages[i].temp_id === messageId)
-                return true;
-
-        }
-        return false;
+        return !!messageId && chatMessageList && chatMessageList.containsMessage(messageId);
     }
 
-    function findMessageIndexByIdOrTempId(messageList, messageId, tempId) {
-        for (var i = 0; i < messageList.length; i++) {
-            var currentMessage = messageList[i];
-            var currentId = currentMessage.id || "";
-            var currentTempId = currentMessage.temp_id || "";
-            if (messageId !== "" && (currentId === messageId || currentTempId === messageId))
-                return i;
-
-            if (tempId !== "" && (currentId === tempId || currentTempId === tempId))
-                return i;
-
-        }
-        return -1;
-    }
-
-    function setChatMessages(nextMessages) {
-        messages = nextMessages || [];
+    function loadedMessagesOldestFirst() {
+        return chatMessageList ? chatMessageList.messagesOldestFirst() : [];
     }
 
     function resetChatMessages(nextMessages) {
-        setChatMessages(nextMessages);
-        seedSenderMetadataFromMessages(messages);
+        var messagesToReset = nextMessages || [];
+        seedSenderMetadataFromMessages(messagesToReset);
         if (chatMessageList)
-            chatMessageList.resetMessages(messages);
-
-    }
-
-    function replaceMessageSorted(messageList, message) {
-        var replaceIndex = findMessageIndexByIdOrTempId(messageList, message && message.id ? message.id : "", message && message.temp_id ? message.temp_id : "");
-        if (replaceIndex !== -1)
-            messageList.splice(replaceIndex, 1);
-
-        ChatHelpers.insertMessageSorted(messageList, message);
-    }
-
-    function replaceChatMessageByIdOrTempId(message) {
-        if (!message)
-            return ;
-
-        var updatedMessages = messages.slice();
-        replaceMessageSorted(updatedMessages, message);
-        setChatMessages(updatedMessages);
-        seedSenderMetadataFromMessage(message);
-        if (chatMessageList)
-            chatMessageList.replaceMessageByIdOrTempId(message);
+            chatMessageList.resetMessages(messagesToReset);
 
     }
 
     function appendPendingChatMessage(message) {
-        if (!message)
-            return ;
+        if (!message || !chatMessageList)
+            return [];
 
-        var updatedMessages = messages.slice();
-        ChatHelpers.insertMessageSorted(updatedMessages, message);
-        setChatMessages(updatedMessages);
-        if (chatMessageList)
-            chatMessageList.appendPendingMessage(message);
-
+        seedSenderMetadataFromMessage(message);
+        return chatMessageList.appendPendingMessage(message);
     }
 
     function upsertChatMessages(incomingMessages) {
         var nextMessages = incomingMessages || [];
-        var updatedMessages = messages.slice();
-        for (var i = 0; i < nextMessages.length; i++) {
-            if (nextMessages[i])
-                replaceMessageSorted(updatedMessages, nextMessages[i]);
-
-        }
-        setChatMessages(updatedMessages);
         seedSenderMetadataFromMessages(nextMessages);
-        if (chatMessageList)
-            chatMessageList.upsertMessages(nextMessages);
-
+        return chatMessageList ? chatMessageList.upsertMessages(nextMessages) : [];
     }
 
-    function appendOlderChatMessages(olderMessages, anchorMessageId) {
+    function appendOlderChatMessages(olderMessages) {
         var nextOlderMessages = olderMessages || [];
-        setChatMessages(nextOlderMessages.concat(messages));
         seedSenderMetadataFromMessages(nextOlderMessages);
-        if (chatMessageList)
-            chatMessageList.appendOlderMessages(nextOlderMessages, anchorMessageId || "");
-
+        return chatMessageList ? chatMessageList.appendOlderMessages(nextOlderMessages) : [];
     }
 
     function patchChatMessages(patches) {
         var nextPatches = patches || [];
-        if (nextPatches.length === 0)
-            return false;
-
-        var updatedMessages = messages.slice();
-        var appliedPatches = [];
+        var changed = false;
         for (var i = 0; i < nextPatches.length; i++) {
             var nextPatch = nextPatches[i];
-            var patchIndex = findMessageIndexByIdOrTempId(updatedMessages, nextPatch.messageId || "", nextPatch.tempId || "");
-            if (patchIndex === -1)
-                continue;
+            if (chatMessageList && chatMessageList.patchMessageByIdOrTempId(nextPatch.messageId || "", nextPatch.tempId || "", nextPatch.patch || {
+            }))
+                changed = true;
 
-            var currentMessage = updatedMessages[patchIndex];
-            var patch = nextPatch.patch || {
-            };
-            var changed = false;
-            for (var field in patch) {
-                if (!ChatHelpers.fieldValuesEqual(currentMessage[field], patch[field])) {
-                    changed = true;
-                    break;
-                }
-            }
-            if (!changed)
-                continue;
-
-            updatedMessages[patchIndex] = Object.assign({
-            }, currentMessage, patch);
-            appliedPatches.push({
-                "messageId": nextPatch.messageId || "",
-                "tempId": nextPatch.tempId || "",
-                "patch": patch
-            });
         }
-        if (appliedPatches.length === 0)
-            return false;
-
-        setChatMessages(updatedMessages);
-        if (chatMessageList) {
-            for (var j = 0; j < appliedPatches.length; j++) chatMessageList.patchMessageByIdOrTempId(appliedPatches[j].messageId, appliedPatches[j].tempId, appliedPatches[j].patch)
-        }
-        return true;
+        return changed;
     }
 
     function patchChatMessageByIdOrTempId(messageId, tempId, patch) {
-        return patchChatMessages([{
-            "messageId": messageId || "",
-            "tempId": tempId || "",
-            "patch": patch || {
-            }
-        }]);
+        return chatMessageList && chatMessageList.patchMessageByIdOrTempId(messageId || "", tempId || "", patch || {
+        });
     }
 
     function applyChatMetadata(chat, wasAtBottom, allowReadMarking) {
@@ -679,7 +583,7 @@ Page {
             if (result && result.success) {
                 nextMessagesCursor = result.next_cursor || "";
                 hasOlderMessages = !!result.has_more;
-                resetChatMessages(ChatHelpers.mergeRefreshedMessages(messages, result.messages || []));
+                resetChatMessages(ChatHelpers.mergeRefreshedMessages(loadedMessagesOldestFirst(), result.messages || []));
                 if (wasAtBottom)
                     chatMessageList.scrollToBottom();
 
@@ -696,7 +600,7 @@ Page {
             if (!result || !result.success)
                 return ;
 
-            if (messages.length === 0) {
+            if (chatMessageList.count === 0) {
                 recoverMessages("app-active:missing-messages", function(recoveryResult) {
                     if (recoveryResult && recoveryResult.success && wasAtBottom && (result.unread_count || 0) > 0)
                         refreshChatMetadata("app-active:post-recovery");
@@ -724,7 +628,6 @@ Page {
             return ;
 
         loadingOlderMessages = true;
-        var anchorMessageId = messages.length > 0 ? messages[0].id : "";
         python.call('main.get_messages', [chatId, nextMessagesCursor, messagePageSize], function(result) {
             loadingOlderMessages = false;
             if (!result || !result.success) {
@@ -736,7 +639,7 @@ Page {
             if (!result.messages || result.messages.length === 0)
                 return ;
 
-            appendOlderChatMessages(result.messages || [], anchorMessageId);
+            appendOlderChatMessages(result.messages || []);
         });
     }
 
@@ -1237,12 +1140,9 @@ Page {
                     loadMentionCandidates();
 
                 setHandler('message-upsert', function(incomingMessages) {
-                    var updated = messages.slice();
                     var messagesToUpsert = [];
                     var wasAtBottom = chatMessageList.atBottom;
-                    var visibleIncomingCount = 0;
                     var shouldAnchorNewUnread = !wasAtBottom && chatPage.unreadCount === 0 && chatPage.unreadDividerMessageId === "";
-                    var oldestNewUnreadMessage = null;
                     for (var i = 0; i < incomingMessages.length; i++) {
                         var message = incomingMessages[i];
                         if (message.chat_id !== chatId)
@@ -1253,23 +1153,25 @@ Page {
                             "link_preview": "🔗 Link"
                         });
 
-                        var found = findMessageIndexByIdOrTempId(updated, message.id || "", message.temp_id || "") !== -1;
-                        replaceMessageSorted(updated, message);
                         messagesToUpsert.push(message);
-                        if (!found && !message.is_outgoing) {
-                            if (wasAtBottom) {
-                                visibleIncomingCount += 1;
-                            } else {
-                                if (shouldAnchorNewUnread && (oldestNewUnreadMessage === null || ChatHelpers.messageComesBefore(message, oldestNewUnreadMessage)))
-                                    oldestNewUnreadMessage = message;
+                    }
+                    var insertedMessages = upsertChatMessages(messagesToUpsert);
+                    var visibleIncomingCount = 0;
+                    var oldestNewUnreadMessage = null;
+                    for (var j = 0; j < insertedMessages.length; j++) {
+                        var insertedMessage = insertedMessages[j];
+                        if (insertedMessage.is_outgoing)
+                            continue;
 
-                                chatPage.unreadCount += 1;
-                            }
+                        if (wasAtBottom) {
+                            visibleIncomingCount += 1;
+                        } else {
+                            if (shouldAnchorNewUnread && (oldestNewUnreadMessage === null || ChatHelpers.messageComesBefore(insertedMessage, oldestNewUnreadMessage)))
+                                oldestNewUnreadMessage = insertedMessage;
+
+                            chatPage.unreadCount += 1;
                         }
                     }
-                    if (messagesToUpsert.length > 0)
-                        upsertChatMessages(messagesToUpsert);
-
                     if (oldestNewUnreadMessage !== null)
                         chatPage.unreadDividerMessageId = oldestNewUnreadMessage.id;
 
