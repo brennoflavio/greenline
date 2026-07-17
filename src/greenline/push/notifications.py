@@ -233,7 +233,7 @@ def _extract_message_body(event: Dict[str, Any]) -> str:
             return f"📷 {caption}"
         return "📷 Photo"
 
-    video = message.get("videoMessage")
+    video = message.get("videoMessage") or message.get("ptvMessage")
     if isinstance(video, dict):
         caption = _mention_safe_text(video.get("caption"), video.get("contextInfo"))
         if caption:

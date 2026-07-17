@@ -285,6 +285,7 @@ def quoted_message_template(
         "extendedTextMessage",
         "imageMessage",
         "videoMessage",
+        "ptvMessage",
         "audioMessage",
         "documentMessage",
         "contactMessage",

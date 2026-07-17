@@ -323,8 +323,9 @@ def _quoted_message_preview(quoted: Optional[Dict[str, Any]]) -> str:
         return str(ext["text"])
     if quoted.get("imageMessage"):
         return quoted["imageMessage"].get("caption") or "📷 Photo"
-    if quoted.get("videoMessage"):
-        return quoted["videoMessage"].get("caption") or "🎥 Video"
+    video = quoted.get("videoMessage") or quoted.get("ptvMessage")
+    if video:
+        return video.get("caption") or "🎥 Video"
     if quoted.get("audioMessage"):
         return "🎵 Audio"
     if quoted.get("documentMessage"):
@@ -357,7 +358,7 @@ def extract_thumbnail_from_message_content(message_content: Optional[Dict[str, A
     if not message_content:
         return ""
     thumbnail_b64 = ""
-    for field_name in ("imageMessage", "videoMessage", "documentMessage", "extendedTextMessage"):
+    for field_name in ("imageMessage", "videoMessage", "ptvMessage", "documentMessage", "extendedTextMessage"):
         sub = (
             resolve_media_message_content(message_content, field_name)
             if field_name == "imageMessage"

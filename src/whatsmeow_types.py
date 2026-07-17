@@ -345,6 +345,7 @@ class MessageContent:
     extendedTextMessage: Optional[ExtendedTextMessage] = None
     imageMessage: Optional[ImageMessage] = None
     videoMessage: Optional[VideoMessage] = None
+    ptvMessage: Optional[VideoMessage] = None
     audioMessage: Optional[AudioMessage] = None
     documentMessage: Optional[DocumentMessage] = None
     contactMessage: Optional[ContactMessage] = None

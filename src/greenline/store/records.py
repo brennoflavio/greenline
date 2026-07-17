@@ -137,6 +137,7 @@ class KVSchemaVersionRecord:
 _MEDIA_DOWNLOAD_FIELDS = (
     ("image", "imageMessage"),
     ("video", "videoMessage"),
+    ("video", "ptvMessage"),
     ("audio", "audioMessage"),
     ("document", "documentMessage"),
     ("sticker", "stickerMessage"),

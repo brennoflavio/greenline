@@ -56,6 +56,7 @@ _SUPPORTED_MESSAGE_CONTENT_KEYS = {
     "extendedTextMessage",
     "imageMessage",
     "videoMessage",
+    "ptvMessage",
     "audioMessage",
     "documentMessage",
     "contactMessage",
@@ -136,6 +137,7 @@ def _extract_context_info(content: MessageContent) -> tuple[str, str, str, bool,
         content.extendedTextMessage,
         content.imageMessage,
         content.videoMessage,
+        content.ptvMessage,
         content.audioMessage,
         content.documentMessage,
         content.contactMessage,
@@ -185,6 +187,7 @@ def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = 
             content.extendedTextMessage is not None,
             content.imageMessage is not None,
             content.videoMessage is not None,
+            content.ptvMessage is not None,
             content.audioMessage is not None,
             content.documentMessage is not None,
             content.contactMessage is not None,
@@ -236,6 +239,7 @@ def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = 
     link_title = ""
     link_description = ""
     link_url = ""
+    video = content.videoMessage or content.ptvMessage
 
     if content.imageMessage:
         if content.imageMessage.caption:
@@ -248,14 +252,14 @@ def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = 
         caption = template_message_caption(raw_content)
         mimetype = str(template_image.get("mimetype", ""))
         button_text, button_url = template_message_button(raw_content)
-    elif content.videoMessage:
-        if content.videoMessage.caption:
+    elif video:
+        if video.caption:
             caption, mentioned_jids = _template_text_from_context_info(
-                content.videoMessage.caption,
-                content.videoMessage.contextInfo,
+                video.caption,
+                video.contextInfo,
             )
-        mimetype = content.videoMessage.mimetype
-        secs = content.videoMessage.seconds or 0
+        mimetype = video.mimetype
+        secs = video.seconds or 0
         duration = f"{secs // 60}:{secs % 60:02d}"
     elif content.audioMessage:
         mimetype = content.audioMessage.mimetype
@@ -357,7 +361,7 @@ def _derive_message_type_from_content(
         return MessageType.IMAGE
     if template_message_text(raw_content):
         return MessageType.TEXT
-    if content.videoMessage:
+    if content.videoMessage or content.ptvMessage:
         return MessageType.VIDEO
     if content.audioMessage:
         return MessageType.AUDIO

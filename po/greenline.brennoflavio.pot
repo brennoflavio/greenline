@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-17 18:03+0000\n"
+"POT-Creation-Date: 2026-07-17 18:31+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -91,7 +91,7 @@ msgstr ""
 msgid "Import Contact"
 msgstr ""
 
-#: ../qml/ChatPage.qml:234 ../qml/components/ChatMessageList.qml:193
+#: ../qml/ChatPage.qml:234 ../qml/components/ChatMessageList.qml:187
 msgid "You"
 msgstr ""
 
@@ -115,7 +115,7 @@ msgstr ""
 msgid "No internet connection. Connect and try again."
 msgstr ""
 
-#: ../qml/ChatPage.qml:331 ../qml/ChatPage.qml:1242
+#: ../qml/ChatPage.qml:331 ../qml/ChatPage.qml:1240
 msgid "Failed to download media"
 msgstr ""
 
@@ -170,27 +170,27 @@ msgstr ""
 msgid "Copied to clipboard"
 msgstr ""
 
-#: ../qml/ChatPage.qml:1217
+#: ../qml/ChatPage.qml:1215
 msgid "recording audio..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:1217
+#: ../qml/ChatPage.qml:1215
 msgid "typing..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:1296
+#: ../qml/ChatPage.qml:1294
 msgid "Send Photo"
 msgstr ""
 
-#: ../qml/ChatPage.qml:1307
+#: ../qml/ChatPage.qml:1305
 msgid "Send Video"
 msgstr ""
 
-#: ../qml/ChatPage.qml:1318
+#: ../qml/ChatPage.qml:1316
 msgid "Send Document"
 msgstr ""
 
-#: ../qml/ChatPage.qml:1329
+#: ../qml/ChatPage.qml:1327
 msgid "Send Contact"
 msgstr ""
 
@@ -304,7 +304,7 @@ msgid "Sending reaction…"
 msgstr ""
 
 #: ../qml/MessageReactionsPage.qml:365
-#: ../qml/components/ChatMessageList.qml:387
+#: ../qml/components/ChatMessageList.qml:386
 msgid "Reactions"
 msgstr ""
 
@@ -526,31 +526,31 @@ msgstr ""
 msgid "Search chats..."
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:124
+#: ../qml/components/ChatMessageList.qml:118
 msgid "Deleted message"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:127
+#: ../qml/components/ChatMessageList.qml:121
 msgid "View-once message. Open WhatsApp on your primary device to view it."
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:312
+#: ../qml/components/ChatMessageList.qml:311
 msgid "Unread"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:364
+#: ../qml/components/ChatMessageList.qml:363
 msgid "Delete"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:375
+#: ../qml/components/ChatMessageList.qml:374
 msgid "Reply"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:381
+#: ../qml/components/ChatMessageList.qml:380
 msgid "Edit"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:393
+#: ../qml/components/ChatMessageList.qml:392
 msgid "Copy"
 msgstr ""
 

@@ -145,7 +145,7 @@ def _derive_type_from_content(content: Dict[str, Any]) -> Optional[MessageType]:
         return MessageType.IMAGE
     if content.get("conversation") or ext or template_message_text(content):
         return MessageType.TEXT
-    if content.get("videoMessage"):
+    if content.get("videoMessage") or content.get("ptvMessage"):
         return MessageType.VIDEO
     if content.get("audioMessage"):
         return MessageType.AUDIO
@@ -208,7 +208,7 @@ def _extract_content_fields(
         )
     elif not img:
         text = template_message_text(content)
-    vid = content.get("videoMessage")
+    vid = content.get("videoMessage") or content.get("ptvMessage")
     aud = content.get("audioMessage")
     doc = content.get("documentMessage")
     contact = content.get("contactMessage")
@@ -300,7 +300,7 @@ def _message_preview(content: Dict[str, Any], jid_map: Dict[str, str]) -> Tuple[
                 jid_map=jid_map,
             )
         return template_message_caption(content) or "📷 Photo", []
-    vid = content.get("videoMessage")
+    vid = content.get("videoMessage") or content.get("ptvMessage")
     if vid:
         return template_mention_text(
             vid.get("caption") or "🎥 Video",
@@ -398,6 +398,7 @@ def _extract_context_info_from_dict(
         "extendedTextMessage",
         "imageMessage",
         "videoMessage",
+        "ptvMessage",
         "audioMessage",
         "documentMessage",
         "contactMessage",

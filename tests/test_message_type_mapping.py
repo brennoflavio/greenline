@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from copy import deepcopy
 from typing import Any
 
@@ -18,7 +19,11 @@ from greenline.store.messages import (
     unsupported_message_text,
 )
 from greenline.store.repository import message_index_key
-from history_sync import _message_preview, _resolve_type_and_fallback_text
+from history_sync import (
+    _message_preview,
+    _resolve_type_and_fallback_text,
+    handle_history_sync,
+)
 from models import MessageType
 
 MESSAGE_FIXTURES = [fixture for fixture in load_fixtures() if fixture.event_type in {"Message", "UndecryptableMessage"}]
@@ -110,6 +115,76 @@ def test_live_location_variants_normalize_to_location() -> None:
     assert mapped_live.type == MessageType.LOCATION
     assert mapped_live.text == "0.0, 0.0"
     assert mapped_live.link_url == "geo:0.0,0.0"
+
+
+def test_ptv_messages_are_stored_and_presented_as_videos() -> None:
+    fixture = next(fixture for fixture in MESSAGE_FIXTURES if fixture.relative_path == "message/video.json")
+    payload = deepcopy(fixture.payload)
+    for field_name in ("Message", "RawMessage"):
+        ptv = payload[field_name]["ptvMessage"] = payload[field_name].pop("videoMessage")
+        ptv["caption"] = "PTV caption"
+        ptv["JPEGThumbnail"] = "dGh1bWI="
+        ptv["contextInfo"].update(
+            {
+                "stanzaID": "fixture-quoted-ptv",
+                "participant": "fixture-user-12@s.whatsapp.net",
+                "quotedMessage": {"ptvMessage": {"caption": "Quoted PTV"}},
+            }
+        )
+
+    evt = from_dict(data_class=fixture.data_class, data=payload)
+    mapped = message_event_to_message(evt, raw=payload)
+
+    assert mapped is not None
+    assert mapped.type == MessageType.VIDEO
+    assert mapped.mimetype == "video/mp4"
+    assert mapped.caption == "PTV caption"
+    assert mapped.duration == "0:11"
+    assert mapped.thumbnail_path.startswith("file://")
+    assert mapped.reply_to_id == "fixture-quoted-ptv"
+    assert mapped.reply_to_text == "Quoted PTV"
+    assert _extract_message_body(payload) == "🎥 PTV caption"
+
+    seed_prerequisite_kv(fixture)
+    stored = store_message(evt, raw=payload)
+
+    assert stored is not None
+    with GreenlineKV() as kv:
+        index_record = kv.get_record(message_index_key(stored.message.chat_id, stored.message.id))
+        stored_record = kv.get_record(index_record.value)
+
+    assert stored_record is not None
+    assert stored_record.media_download.media_type == "video"
+    assert stored_record.media_download.direct_path == "/v/fixture/media-2.enc"
+
+    content = payload["Message"]
+    assert _resolve_type_and_fallback_text(content) == (MessageType.VIDEO, "")
+    assert _message_preview(content, {}) == ("PTV caption", [])
+
+    history_fixture = next(
+        fixture for fixture in load_fixtures() if fixture.relative_path == "history_sync/conversation_text.json"
+    )
+    history_payload = deepcopy(history_fixture.payload)
+    history_conversation = history_payload["Data"]["conversations"][0]
+    history_message = history_conversation["messages"][0]["message"]
+    history_conversation["ID"] = "fixture-ptv-chat@s.whatsapp.net"
+    history_message["key"]["ID"] = "fixture-history-ptv"
+    history_message["key"]["remoteJID"] = history_conversation["ID"]
+    history_message["message"] = {"ptvMessage": content["ptvMessage"]}
+    history_event = history_fixture.stored_event()
+    history_event.payload = json.dumps(history_payload)
+
+    chat_updates = handle_history_sync(history_event)
+
+    assert history_conversation["ID"] in chat_updates
+    with GreenlineKV() as kv:
+        index_record = kv.get_record(message_index_key(history_conversation["ID"], history_message["key"]["ID"]))
+        history_record = kv.get_record(index_record.value)
+
+    assert history_record is not None
+    assert history_record.type == MessageType.VIDEO
+    assert history_record.caption == "PTV caption"
+    assert history_record.media_download.media_type == "video"
 
 
 def test_parse_location_link_url_round_trips_coordinates() -> None:
