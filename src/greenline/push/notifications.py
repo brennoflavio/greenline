@@ -9,6 +9,7 @@ from constants import GROUP_JID_SUFFIX
 from greenline.contracts.daemon import daemon_client
 from greenline.contracts.kv import GreenlineKV
 from greenline.contracts.validation import BoundaryValidationError
+from greenline.events.chat_sync import process_events_once
 from greenline.store.identity import (
     jid_display_name,
     resolve_chat_name,
@@ -31,6 +32,11 @@ NOTIFICATIONS_SUPPRESSED_KEY = "notifications_suppressed"
 
 
 def build_postal_output(raw_payload: str) -> Dict[str, Any]:
+    try:
+        process_events_once()
+    except Exception:
+        pass
+
     try:
         envelope = json.loads(raw_payload or "{}")
     except Exception:
@@ -104,7 +110,6 @@ def _build_message_notification(
         envelope,
         chat_jid,
         evt.Info.Timestamp,
-        unread_increment=0 if evt.Info.IsFromMe else 1,
     )
 
 
@@ -133,7 +138,6 @@ def _build_undecryptable_notification(
         envelope,
         chat_jid,
         evt.Info.Timestamp,
-        unread_increment=0 if evt.Info.IsFromMe else 1,
     )
 
 
@@ -150,7 +154,7 @@ def _build_call_notification(
     body = "Incoming audio call — answer on your primary phone"
     if _contains_video_tag(event.get("Data")):
         body = "Incoming video call — answer on your primary phone"
-    return _notification(summary, body, envelope, chat_jid, evt.Timestamp, unread_increment=0)
+    return _notification(summary, body, envelope, chat_jid, evt.Timestamp)
 
 
 def _notification(
@@ -159,8 +163,6 @@ def _notification(
     envelope: Dict[str, Any],
     chat_jid: str,
     timestamp: Any = None,
-    *,
-    unread_increment: int = 0,
 ) -> Optional[Dict[str, Any]]:
     summary = str(summary or "").strip()
     if not summary:
@@ -182,7 +184,7 @@ def _notification(
             actions=actions,
             timestamp=_notification_timestamp(envelope, timestamp),
             tag=chat_jid,
-            emblem_counter=_notification_emblem_counter(unread_increment),
+            emblem_counter=_notification_emblem_counter(),
         ).dict()["notification"],
     )
 
@@ -331,9 +333,9 @@ def _parse_notification_timestamp(value: Any) -> Optional[int]:
         return None
 
 
-def _notification_emblem_counter(unread_increment: int = 0) -> Optional[EmblemCounter]:
+def _notification_emblem_counter() -> Optional[EmblemCounter]:
     try:
-        count = max(0, int(get_unread_total()) + max(0, unread_increment))
+        count = max(0, int(get_unread_total()))
     except Exception:
         return None
     return EmblemCounter(count=count, visible=count > 0)

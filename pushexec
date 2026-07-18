@@ -32,10 +32,3 @@ except Exception:
 
 with open(out, "w", encoding="utf-8") as f:
     f.write(json.dumps(helper_output))
-
-try:
-    from events import process_events_once
-
-    process_events_once()
-except Exception:
-    pass
