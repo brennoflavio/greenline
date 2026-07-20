@@ -8,8 +8,8 @@ msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-07-06 16:34+0000\n"
-"PO-Revision-Date: 2026-07-03 11:09+0000\n"
-"Last-Translator: ferihumh <h.ferihumer@mailbox.org>\n"
+"PO-Revision-Date: 2026-07-21 19:01+0000\n"
+"Last-Translator: Ettore Atalan <atalanttore@googlemail.com>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/ubports/greenline/"
 "de/>\n"
 "Language: de\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 2026.7.1.dev0\n"
+"X-Generator: Weblate 2026.8.dev0\n"
 
 #: ../qml/AuthorizationPage.qml:37
 msgid "Scan QR Code"
@@ -216,7 +216,7 @@ msgstr ""
 #: ../qml/ImagePreviewPage.qml:36 ../qml/VideoPreviewPage.qml:38
 #: ../qml/components/EditMessageDialog.qml:35
 msgid "Save"
-msgstr ""
+msgstr "Speichern"
 
 #: ../qml/ContactPreviewPage.qml:82 ../qml/DocumentPreviewPage.qml:82
 #: ../qml/ImagePreviewPage.qml:48 ../qml/VideoPreviewPage.qml:51
@@ -229,7 +229,7 @@ msgstr "Teilen"
 #: ../qml/VideoPreviewPage.qml:71 ../qml/components/ChatPageHeader.qml:17
 #: ../qml/ut_components/AppHeader.qml:78
 msgid "Back"
-msgstr ""
+msgstr "Zurück"
 
 #: ../qml/DaemonSetupPage.qml:46
 msgid "The background service is installed but not running."
@@ -500,7 +500,7 @@ msgstr ""
 
 #: ../qml/components/ChatAttachmentDialog.qml:34
 msgid "Audio"
-msgstr ""
+msgstr "Audio"
 
 #: ../qml/components/ChatAttachmentDialog.qml:50
 msgid "Sticker"
@@ -508,7 +508,7 @@ msgstr ""
 
 #: ../qml/components/ChatAttachmentDialog.qml:66
 msgid "Location"
-msgstr ""
+msgstr "Standort"
 
 #: ../qml/components/ChatComposer.qml:187
 msgid "Type a message..."
@@ -548,7 +548,7 @@ msgstr ""
 
 #: ../qml/components/ChatMessageList.qml:516
 msgid "Delete"
-msgstr ""
+msgstr "Löschen"
 
 #: ../qml/components/ChatMessageList.qml:527
 msgid "Reply"
@@ -556,7 +556,7 @@ msgstr ""
 
 #: ../qml/components/ChatMessageList.qml:533
 msgid "Edit"
-msgstr ""
+msgstr "Bearbeiten"
 
 #: ../qml/components/ChatMessageList.qml:545
 msgid "Copy"
@@ -668,7 +668,7 @@ msgstr ""
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:69
 msgid "Stop"
-msgstr ""
+msgstr "Stopp"
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:92
 msgid "Send"
@@ -677,7 +677,7 @@ msgstr ""
 #: ../qml/ut_components/ActionableList.qml:107
 #: ../qml/ut_components/CardList.qml:84
 msgid "Search"
-msgstr ""
+msgstr "Suchen"
 
 #: ../qml/ut_components/ActionableList.qml:109
 #: ../qml/ut_components/CardList.qml:82
@@ -686,7 +686,7 @@ msgstr ""
 
 #: ../qml/ut_components/Form.qml:81
 msgid "Submit"
-msgstr ""
+msgstr "Absenden"
 
 #: ../qml/ut_components/ImageViewer.qml:388
 msgid "Failed to load image"
@@ -698,11 +698,11 @@ msgstr ""
 
 #: ../qml/ut_components/InputField.qml:91
 msgid "Invalid input"
-msgstr ""
+msgstr "Ungültige Eingabe"
 
 #: ../qml/ut_components/InputField.qml:166
 msgid "This field is required"
-msgstr ""
+msgstr "Dieses Feld ist erforderlich"
 
 #: ../qml/ut_components/VideoViewer.qml:438
 msgid "Failed to load video"
