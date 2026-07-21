@@ -41,7 +41,19 @@ endif()
 if(DEFINED ENV{GREENLINE_BUILD_VERSION} AND NOT "$ENV{GREENLINE_BUILD_VERSION}" STREQUAL "")
   set(BUILD_VERSION "$ENV{GREENLINE_BUILD_VERSION}")
 else()
-  string(TIMESTAMP BUILD_VERSION "%y%m%d%H%M%S" UTC)
+  execute_process(
+    COMMAND git describe --tags --exact-match HEAD
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_TAG
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+  )
+  if(GIT_TAG)
+    string(REGEX REPLACE "^v" "" BUILD_VERSION "${GIT_TAG}")
+    string(REPLACE "-rc" "~rc" BUILD_VERSION "${BUILD_VERSION}")
+  else()
+    string(TIMESTAMP BUILD_VERSION "%y%m%d%H%M%S" UTC)
+  endif()
 endif()
 
 if(NOT BUILD_VERSION MATCHES "^[0-9][0-9A-Za-z.+:~-]*$")
