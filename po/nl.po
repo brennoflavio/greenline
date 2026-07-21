@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-06 16:34+0000\n"
+"POT-Creation-Date: 2026-07-18 05:12+0000\n"
 "PO-Revision-Date: 2026-07-03 02:59+0000\n"
 "Last-Translator: Heimen Stoffels <vistausss@fastmail.com>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/ubports/greenline/"
@@ -97,106 +97,106 @@ msgstr "Gearchiveerd"
 msgid "Import Contact"
 msgstr "Contactpersoon importeren"
 
-#: ../qml/ChatPage.qml:235 ../qml/components/ChatMessageList.qml:338
+#: ../qml/ChatPage.qml:234 ../qml/components/ChatMessageList.qml:187
 msgid "You"
 msgstr "Mij"
 
-#: ../qml/ChatPage.qml:277
+#: ../qml/ChatPage.qml:276
 msgid "Message updated"
 msgstr "Het bericht is bewerkt"
 
-#: ../qml/ChatPage.qml:283
+#: ../qml/ChatPage.qml:282
 msgid "Failed to edit message"
 msgstr "Het bericht kan niet worden bewerkt"
 
-#: ../qml/ChatPage.qml:293
+#: ../qml/ChatPage.qml:292
 msgid "Message deleted"
 msgstr "Het bericht is verwijderd"
 
-#: ../qml/ChatPage.qml:296
+#: ../qml/ChatPage.qml:295
 msgid "Failed to delete message"
 msgstr "Het bericht kan niet worden verwijderd"
 
-#: ../qml/ChatPage.qml:319
+#: ../qml/ChatPage.qml:318
 msgid "No internet connection. Connect and try again."
 msgstr "Er is geen internetverbinding. Maak verbinding en probeer het opnieuw."
 
-#: ../qml/ChatPage.qml:332 ../qml/ChatPage.qml:1338
+#: ../qml/ChatPage.qml:331 ../qml/ChatPage.qml:1240
 msgid "Failed to download media"
 msgstr "De media kan niet worden opgehaald"
 
-#: ../qml/ChatPage.qml:731
+#: ../qml/ChatPage.qml:634
 msgid "Failed to load older messages"
 msgstr "De oudere berichten kunnen niet worden geladen"
 
-#: ../qml/ChatPage.qml:814
+#: ../qml/ChatPage.qml:717
 msgid "Failed to send audio"
 msgstr "De audio kan niet worden verstuurd"
 
-#: ../qml/ChatPage.qml:917 ../qml/DocumentPreviewPage.qml:42
+#: ../qml/ChatPage.qml:820 ../qml/DocumentPreviewPage.qml:42
 #: ../qml/DocumentPreviewPage.qml:97
 #: ../qml/components/ChatAttachmentDialog.qml:42
 #: ../qml/components/DocumentMessage.qml:61
 msgid "Document"
 msgstr "Document"
 
-#: ../qml/ChatPage.qml:927
+#: ../qml/ChatPage.qml:830
 msgid "Failed to send document"
 msgstr "Het document kan niet worden verstuurd"
 
-#: ../qml/ChatPage.qml:966
+#: ../qml/ChatPage.qml:869
 msgid "Failed to send contact"
 msgstr "De contactpersoon kan niet worden verstuurd"
 
-#: ../qml/ChatPage.qml:1006
+#: ../qml/ChatPage.qml:909
 msgid "Failed to send location"
 msgstr "De locatie kan niet worden verstuurd"
 
-#: ../qml/ChatPage.qml:1083
+#: ../qml/ChatPage.qml:986
 msgid "WhatsApp messages read today"
 msgstr "Aantal vandaag gelezen whatsappjes"
 
-#: ../qml/ChatPage.qml:1084
+#: ../qml/ChatPage.qml:987
 msgid "No WhatsApp messages read today"
 msgstr "Je hebt vandaag geen whatsappjes gelezen"
 
-#: ../qml/ChatPage.qml:1092
+#: ../qml/ChatPage.qml:995
 msgid "WhatsApp messages sent today"
 msgstr "Aantal vandaag verstuurde whatsappjes"
 
-#: ../qml/ChatPage.qml:1093
+#: ../qml/ChatPage.qml:996
 msgid "No WhatsApp messages sent today"
 msgstr "Je hebt vandaag geen whatsappjes verstuurd"
 
-#: ../qml/ChatPage.qml:1122
+#: ../qml/ChatPage.qml:1025
 msgid "Scroll up to load older messages first"
 msgstr "Scrol omhoog om oudere berichten te laden"
 
-#: ../qml/ChatPage.qml:1129
+#: ../qml/ChatPage.qml:1032
 msgid "Copied to clipboard"
 msgstr "Gekopieerd naar het klembord"
 
-#: ../qml/ChatPage.qml:1313
+#: ../qml/ChatPage.qml:1215
 msgid "recording audio..."
 msgstr "is audio aan het opnemen…"
 
-#: ../qml/ChatPage.qml:1313
+#: ../qml/ChatPage.qml:1215
 msgid "typing..."
 msgstr "is aan het typen…"
 
-#: ../qml/ChatPage.qml:1392
+#: ../qml/ChatPage.qml:1294
 msgid "Send Photo"
 msgstr "Foto versturen"
 
-#: ../qml/ChatPage.qml:1403
+#: ../qml/ChatPage.qml:1305
 msgid "Send Video"
 msgstr "Video versturen"
 
-#: ../qml/ChatPage.qml:1414
+#: ../qml/ChatPage.qml:1316
 msgid "Send Document"
 msgstr "Document versturen"
 
-#: ../qml/ChatPage.qml:1425
+#: ../qml/ChatPage.qml:1327
 msgid "Send Contact"
 msgstr "Contactpersoon versturen"
 
@@ -310,7 +310,7 @@ msgid "Sending reaction…"
 msgstr "Bezig met versturen van reactie…"
 
 #: ../qml/MessageReactionsPage.qml:365
-#: ../qml/components/ChatMessageList.qml:539
+#: ../qml/components/ChatMessageList.qml:386
 msgid "Reactions"
 msgstr "Reacties"
 
@@ -544,33 +544,33 @@ msgstr "Dearchiveren"
 msgid "Search chats..."
 msgstr "Gesprekken doorzoeken…"
 
-#: ../qml/components/ChatMessageList.qml:269
+#: ../qml/components/ChatMessageList.qml:118
 msgid "Deleted message"
 msgstr "Verwijderd bericht"
 
-#: ../qml/components/ChatMessageList.qml:272
+#: ../qml/components/ChatMessageList.qml:121
 msgid "View-once message. Open WhatsApp on your primary device to view it."
 msgstr ""
 "Dit is een eenmalig te lezen bericht. Open WhatsApp op je primaire apparaat "
 "om het te lezen."
 
-#: ../qml/components/ChatMessageList.qml:465
+#: ../qml/components/ChatMessageList.qml:311
 msgid "Unread"
 msgstr "Ongelezen"
 
-#: ../qml/components/ChatMessageList.qml:516
+#: ../qml/components/ChatMessageList.qml:363
 msgid "Delete"
 msgstr "Verwijderen"
 
-#: ../qml/components/ChatMessageList.qml:527
+#: ../qml/components/ChatMessageList.qml:374
 msgid "Reply"
 msgstr "Beantwoorden"
 
-#: ../qml/components/ChatMessageList.qml:533
+#: ../qml/components/ChatMessageList.qml:380
 msgid "Edit"
 msgstr "Bewerken"
 
-#: ../qml/components/ChatMessageList.qml:545
+#: ../qml/components/ChatMessageList.qml:392
 msgid "Copy"
 msgstr "Kopiëren"
 
@@ -621,7 +621,7 @@ msgstr "De huidige locatie kan niet worden vastgesteld"
 msgid "Location request timed out"
 msgstr "Het locatieverzoek is verlopen"
 
-#: ../qml/components/MessageBubble.qml:187
+#: ../qml/components/MessageBubble.qml:188
 msgid "edited"
 msgstr "bewerkt"
 
