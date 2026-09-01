@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-07-28 04:35+0000\n"
-"PO-Revision-Date: 2026-08-31 09:55+0000\n"
+"PO-Revision-Date: 2026-09-01 16:54+0000\n"
 "Last-Translator: Alagirisamy Rengaraj <radhaalagirisamy@gmail.com>\n"
 "Language-Team: Tamil <https://hosted.weblate.org/projects/ubports/greenline/"
 "ta/>\n"
@@ -438,7 +438,7 @@ msgstr ""
 #: ../qml/SettingsPage.qml:127 ../qml/SettingsPage.qml:147
 #: ../qml/SettingsPage.qml:209 ../qml/SettingsPage.qml:210
 msgid "Unknown"
-msgstr ""
+msgstr "அறியாதது"
 
 #: ../qml/SettingsPage.qml:140
 msgid "Build Commit"
@@ -554,7 +554,7 @@ msgstr ""
 
 #: ../qml/components/ChatMessageList.qml:392
 msgid "Copy"
-msgstr ""
+msgstr "நகல்"
 
 #: ../qml/components/ContactMessage.qml:55
 #: ../qml/components/DocumentMessage.qml:69
