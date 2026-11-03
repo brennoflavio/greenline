@@ -107,6 +107,9 @@ class Message:
     link_title: str = ""
     link_description: str = ""
     link_url: str = ""
+    poll_question: str = ""
+    poll_options: List[str] = field(default_factory=list)
+    poll_selectable_count: int = 0
 
 
 @dataclass

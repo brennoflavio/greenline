@@ -57,7 +57,7 @@ FIELD_EXPECTATIONS: dict[str, dict[str, Any]] = {
     "message/unhandled_media_gif.json": {"mimetype": "video/mp4", "duration": "0:01"},
     "message/unhandled_medianotify.json": {"text": "Unsupported Message type arrived: medianotify"},
     "message/unhandled_poll.json": {
-        "text": "📊 WhatsApp-kysely\n\nFixture text.\n\n○ Fixture text.\n○ Fixture text.\n\nÄänestäminen ei vielä käytössä."
+        "text": "📊 WhatsApp-kysely\n\nFixture text.\n\n○ Fixture text.\n○ Fixture text."
     },
     "message/unhandled_text.json": {"text": "Unsupported Message type arrived: protocolMessage"},
     "event/message.json": {"text": "Fixture message text."},

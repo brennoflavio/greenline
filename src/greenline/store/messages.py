@@ -71,7 +71,7 @@ def poll_message_text(raw_content: Dict[str, Any]) -> Optional[str]:
         if name:
             lines.append(f"○ {name}")
 
-    lines.extend(["", "Äänestäminen ei vielä käytössä."])
+    # Poll voting is handled by the interactive QML component.
 
     return "\n".join(lines)
 
@@ -342,6 +342,23 @@ def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = 
     sender_raw = str(raw_info.get("SenderAlt") or raw_info.get("Sender") or info.Sender or "")
     sender = canonicalize_contact_jid(sender_raw) if sender_raw else ""
 
+    poll_data = raw_content.get("pollCreationMessageV3")
+    poll_data = poll_data if isinstance(poll_data, dict) else {}
+
+    poll_question = str(poll_data.get("name") or "")
+    poll_options = [
+        option["optionName"]
+        for option in (poll_data.get("options") or [])
+        if isinstance(option, dict)
+        and isinstance(option.get("optionName"), str)
+        and option["optionName"]
+    ]
+
+    try:
+        poll_selectable_count = int(poll_data.get("selectableOptionsCount") or 0)
+    except (TypeError, ValueError):
+        poll_selectable_count = 0
+
     return Message(
         id=info.ID,
         chat_id=chat_id,
@@ -372,6 +389,9 @@ def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = 
         link_description=link_description,
         link_url=link_url,
         thumbnail_path=extract_thumbnail_from_message_content(raw_content, info.ID),
+        poll_question=poll_question,
+        poll_options=poll_options,
+        poll_selectable_count=poll_selectable_count,
     )
 
 

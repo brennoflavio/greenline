@@ -39,6 +39,13 @@ Page {
     property string replyToParticipant: ""
     property int editWindowSeconds: 20 * 60
     property bool pythonReady: false
+    property var pollVoteStates: ({})
+
+    function setPollVoteState(messageId, state) {
+        var next = Object.assign({}, pollVoteStates);
+        next[messageId] = state;
+        pollVoteStates = next;
+    }
     property bool metadataRefreshInProgress: false
     property bool metadataRefreshQueued: false
     property bool messageRecoveryInProgress: false
@@ -281,6 +288,34 @@ Page {
 
             toast.show(result && result.message ? result.message : i18n.tr("Failed to edit message"));
         });
+    }
+
+    function sendPollVote(messageId, indices) {
+        var currentState = pollVoteStates[messageId] || "idle";
+        if (currentState !== "idle")
+            return;
+
+        if (!Connectivity.online) {
+            toast.show(i18n.tr("No internet connection. Connect and try again."));
+            return;
+        }
+
+        setPollVoteState(messageId, "sending");
+
+        python.call('main.send_poll_vote', [chatId, messageId, indices],
+            function(result) {
+                var success = !!(result && result.success);
+                setPollVoteState(messageId, success ? "sent" : "idle");
+
+                if (success) {
+                    toast.show(i18n.tr("Vote sent"));
+                    return;
+                }
+
+                toast.show(result && result.message
+                    ? result.message
+                    : i18n.tr("Failed to send vote"));
+            });
     }
 
     function deleteSelectedMessage(message) {
@@ -1003,6 +1038,7 @@ Page {
         hasOlderMessages: chatPage.hasOlderMessages
         loadingOlderMessages: chatPage.loadingOlderMessages
         downloadingIds: chatPage.downloadingIds
+        pollVoteStates: chatPage.pollVoteStates
         senderMetadataByJid: chatPage.senderMetadataByJid
         isGroup: chatPage.isGroup
         unreadCount: chatPage.unreadCount
@@ -1027,6 +1063,7 @@ Page {
         onEditRequested: chatPage.startEdit(message)
         onDeleteRequested: chatPage.deleteSelectedMessage(message)
         onReactionsRequested: chatPage.openMessageReactions(message)
+        onPollVoteRequested: chatPage.sendPollVote(messageId, indices)
         onCopyRequested: {
             Clipboard.push(text);
             toast.show(i18n.tr("Copied to clipboard"));

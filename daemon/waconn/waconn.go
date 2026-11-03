@@ -570,6 +570,14 @@ func (c *Client) SendMessage(ctx context.Context, to types.JID, message *waE2E.M
 	return c.waCli.SendMessage(ctx, to, message)
 }
 
+func (c *Client) BuildPollVote(
+	ctx context.Context,
+	pollInfo *types.MessageInfo,
+	optionNames []string,
+) (*waE2E.Message, error) {
+	return c.waCli.BuildPollVote(ctx, pollInfo, optionNames)
+}
+
 func (c *Client) BuildEdit(chat types.JID, id types.MessageID, newContent *waE2E.Message) *waE2E.Message {
 	return c.waCli.BuildEdit(chat, id, newContent)
 }

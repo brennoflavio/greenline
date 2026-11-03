@@ -26,6 +26,7 @@ from greenline.contracts.qml import (
     SendImageMessageRequest,
     SendLocationMessageRequest,
     SendMessageReactionRequest,
+    SendPollVoteRequest,
     SendStickerMessageRequest,
     SendTextMessageRequest,
     SendVideoMessageRequest,
@@ -54,6 +55,7 @@ from greenline.store.reactions import (
     put_message_reaction,
     refresh_message_reactions_flag,
 )
+from greenline.store.records import original_poll_payload
 from greenline.store.records import (
     StoredMessageRecord,
     backfilled_stored_message_record,
@@ -504,6 +506,78 @@ def delete_message(request: DeleteMessageRequest) -> SuccessResponse:
 
     qml_events.emit_message_upsert([deleted_msg])
     qml_events.emit_chat_list_update([chat])
+    return SuccessResponse(success=True, message="")
+
+
+@crash_reporter
+@dataclass_to_dict
+def send_poll_vote(request: SendPollVoteRequest) -> SuccessResponse:
+    entry = _get_message_entry(request.chat_id, request.message_id)
+    if entry is None:
+        return SuccessResponse(success=False, message="Poll message not found")
+
+    if _is_local_only_message_entry(entry):
+        return SuccessResponse(success=False, message="Poll has not been sent yet")
+
+    poll, raw_info = original_poll_payload(entry)
+    if not poll:
+        return SuccessResponse(success=False, message="Original poll data unavailable")
+
+    options = poll.get("options")
+    if not isinstance(options, list) or not options:
+        return SuccessResponse(success=False, message="Poll options unavailable")
+
+    indices = request.option_indices
+    if (
+        not isinstance(indices, list)
+        or not indices
+        or any(type(index) is not int for index in indices)
+        or len(set(indices)) != len(indices)
+        or any(index < 0 or index >= len(options) for index in indices)
+    ):
+        return SuccessResponse(success=False, message="Invalid poll option selection")
+
+    try:
+        allowed = int(poll.get("selectableOptionsCount") or 0)
+    except (TypeError, ValueError):
+        return SuccessResponse(success=False, message="Invalid poll selection limit")
+
+    if allowed < 0:
+        return SuccessResponse(success=False, message="Invalid poll selection limit")
+    if allowed > 0 and len(indices) > allowed:
+        return SuccessResponse(success=False, message="Too many selected options")
+
+    names = []
+    for index in indices:
+        option = options[index]
+        if not isinstance(option, dict):
+            return SuccessResponse(success=False, message="Invalid poll option")
+        name = option.get("optionName")
+        if not isinstance(name, str) or not name:
+            return SuccessResponse(success=False, message="Invalid poll option name")
+        names.append(name)
+
+    from_me = entry.is_outgoing
+    sender = str(raw_info.get("Sender") or "").strip()
+
+    if not sender:
+        if from_me:
+            return SuccessResponse(success=False, message="Original own sender JID unavailable")
+        if entry.chat_id.endswith(GROUP_JID_SUFFIX):
+            return SuccessResponse(success=False, message="Original group poll sender unavailable")
+        sender = entry.chat_id
+
+    try:
+        daemon_client().send_poll_vote(
+            chat_jid=request.chat_id,
+            poll_message_id=request.message_id,
+            poll_sender_jid=sender,
+            poll_from_me=from_me,
+            option_names=names,
+        )
+    except Exception as error:
+        return SuccessResponse(success=False, message=str(error))
+
     return SuccessResponse(success=True, message="")
 
 
