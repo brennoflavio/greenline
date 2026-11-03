@@ -50,6 +50,33 @@ from whatsmeow_types import (
     UndecryptableMessageEvent,
 )
 
+def poll_message_text(raw_content: Dict[str, Any]) -> Optional[str]:
+    poll = raw_content.get("pollCreationMessageV3")
+
+    if not isinstance(poll, dict):
+        return None
+
+    question = str(poll.get("name") or "").strip()
+    options = poll.get("options") or []
+
+    if not question:
+        return None
+
+    lines = ["📊 WhatsApp-kysely", "", question, ""]
+
+    for option in options:
+        if not isinstance(option, dict):
+            continue
+        name = str(option.get("optionName") or "").strip()
+        if name:
+            lines.append(f"○ {name}")
+
+    lines.extend(["", "Äänestäminen ei vielä käytössä."])
+
+    return "\n".join(lines)
+
+
+
 UNSUPPORTED_MESSAGE_TEXT = "Unsupported Message type arrived: {message_type}"
 _SUPPORTED_MESSAGE_CONTENT_KEYS = {
     "conversation",
@@ -222,7 +249,11 @@ def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = 
     button_text = ""
     button_url = ""
 
-    if content.conversation:
+    poll_text = poll_message_text(raw_content)
+
+    if poll_text is not None:
+        text = poll_text
+    elif content.conversation:
         text = content.conversation
     elif content.extendedTextMessage:
         text, mentioned_jids = _template_text_from_context_info(
@@ -356,6 +387,9 @@ def _derive_message_type_from_content(
     raw_contacts_array = (
         raw_content.get("contactsArrayMessage") if isinstance(raw_content.get("contactsArrayMessage"), dict) else None
     )
+
+    if poll_message_text(raw_content) is not None:
+        return MessageType.TEXT
 
     if content.imageMessage or resolve_media_message_content(raw_content, "imageMessage"):
         return MessageType.IMAGE
