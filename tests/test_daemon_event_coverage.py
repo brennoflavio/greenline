@@ -10,6 +10,7 @@ from greenline.events import handlers
 
 DAEMON_EVENT_CONTRACTS: dict[str, str] = {
     "Message": "handled",
+    "PollVote": "handled",
     "Receipt": "handled",
     "UndecryptableMessage": "handled",
     "Contact": "handled",

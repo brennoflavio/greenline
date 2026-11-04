@@ -69,6 +69,10 @@
       "mention_spans": [],
       "mentioned_jids": [],
       "mimetype": "image/webp",
+      "poll_options": [],
+      "poll_question": "",
+      "poll_selectable_count": 0,
+      "poll_vote_counts": [],
       "raw": {
         "Info": {
           "AddressingMode": "lid",

@@ -13,6 +13,7 @@ from daemon_types import (
     PairPhoneReply,
     SendMessageReply,
     SendReactionReply,
+    SendPollVoteReply,
     SessionStatusReply,
     VersionReply,
 )
@@ -118,6 +119,15 @@ class EditMessageRequest:
 class DeleteMessageRequest:
     ChatJID: str
     MessageID: str
+
+
+@dataclass
+class SendPollVoteRequest:
+    ChatJID: str
+    PollMessageID: str
+    PollSenderJID: str
+    PollFromMe: bool
+    OptionNames: list[str]
 
 
 @dataclass
@@ -241,6 +251,15 @@ class DaemonClientProtocol(Protocol):
     ) -> EditMessageReply: ...
 
     def delete_message(self, chat_jid: str, message_id: str) -> DeleteMessageReply: ...
+
+    def send_poll_vote(
+        self,
+        chat_jid: str,
+        poll_message_id: str,
+        poll_sender_jid: str,
+        poll_from_me: bool,
+        option_names: list[str],
+    ) -> SendPollVoteReply: ...
 
     def send_reaction(
         self,
@@ -563,6 +582,39 @@ class GreenlineDaemon:
             DeleteMessageRequest(ChatJID=chat_jid, MessageID=message_id),
         )
         return _decode_reply(DeleteMessageReply, data, contract="Service.DeleteMessage")
+
+    def send_poll_vote(
+        self,
+        chat_jid: str,
+        poll_message_id: str,
+        poll_sender_jid: str,
+        poll_from_me: bool,
+        option_names: list[str],
+    ) -> SendPollVoteReply:
+        if not chat_jid or not poll_message_id or not poll_sender_jid:
+            raise ValueError("Poll chat, message ID and sender are required")
+        if not option_names or any(not isinstance(name, str) or not name for name in option_names):
+            raise ValueError("At least one non-empty poll option is required")
+
+        request = SendPollVoteRequest(
+            ChatJID=chat_jid,
+            PollMessageID=poll_message_id,
+            PollSenderJID=poll_sender_jid,
+            PollFromMe=bool(poll_from_me),
+            OptionNames=list(option_names),
+        )
+        data = self._call("Service.SendPollVote", request)
+        reply = _decode_reply(
+            SendPollVoteReply,
+            data,
+            contract="Service.SendPollVote",
+        )
+        if not reply.MessageID or reply.Timestamp <= 0:
+            raise BoundaryValidationError(
+                "Service.SendPollVote reply requires a message ID "
+                "and positive timestamp"
+            )
+        return reply
 
     def send_reaction(
         self,

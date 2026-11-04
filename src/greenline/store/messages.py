@@ -50,6 +50,33 @@ from whatsmeow_types import (
     UndecryptableMessageEvent,
 )
 
+def poll_message_text(raw_content: Dict[str, Any]) -> Optional[str]:
+    poll = raw_content.get("pollCreationMessageV3")
+
+    if not isinstance(poll, dict):
+        return None
+
+    question = str(poll.get("name") or "").strip()
+    options = poll.get("options") or []
+
+    if not question:
+        return None
+
+    lines = ["📊 WhatsApp-kysely", "", question, ""]
+
+    for option in options:
+        if not isinstance(option, dict):
+            continue
+        name = str(option.get("optionName") or "").strip()
+        if name:
+            lines.append(f"○ {name}")
+
+    # Poll voting is handled by the interactive QML component.
+
+    return "\n".join(lines)
+
+
+
 UNSUPPORTED_MESSAGE_TEXT = "Unsupported Message type arrived: {message_type}"
 _SUPPORTED_MESSAGE_CONTENT_KEYS = {
     "conversation",
@@ -222,7 +249,11 @@ def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = 
     button_text = ""
     button_url = ""
 
-    if content.conversation:
+    poll_text = poll_message_text(raw_content)
+
+    if poll_text is not None:
+        text = poll_text
+    elif content.conversation:
         text = content.conversation
     elif content.extendedTextMessage:
         text, mentioned_jids = _template_text_from_context_info(
@@ -311,6 +342,23 @@ def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = 
     sender_raw = str(raw_info.get("SenderAlt") or raw_info.get("Sender") or info.Sender or "")
     sender = canonicalize_contact_jid(sender_raw) if sender_raw else ""
 
+    poll_data = raw_content.get("pollCreationMessageV3")
+    poll_data = poll_data if isinstance(poll_data, dict) else {}
+
+    poll_question = str(poll_data.get("name") or "")
+    poll_options = [
+        option["optionName"]
+        for option in (poll_data.get("options") or [])
+        if isinstance(option, dict)
+        and isinstance(option.get("optionName"), str)
+        and option["optionName"]
+    ]
+
+    try:
+        poll_selectable_count = int(poll_data.get("selectableOptionsCount") or 0)
+    except (TypeError, ValueError):
+        poll_selectable_count = 0
+
     return Message(
         id=info.ID,
         chat_id=chat_id,
@@ -341,6 +389,9 @@ def message_event_to_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = 
         link_description=link_description,
         link_url=link_url,
         thumbnail_path=extract_thumbnail_from_message_content(raw_content, info.ID),
+        poll_question=poll_question,
+        poll_options=poll_options,
+        poll_selectable_count=poll_selectable_count,
     )
 
 
@@ -356,6 +407,9 @@ def _derive_message_type_from_content(
     raw_contacts_array = (
         raw_content.get("contactsArrayMessage") if isinstance(raw_content.get("contactsArrayMessage"), dict) else None
     )
+
+    if poll_message_text(raw_content) is not None:
+        return MessageType.TEXT
 
     if content.imageMessage or resolve_media_message_content(raw_content, "imageMessage"):
         return MessageType.IMAGE
@@ -710,6 +764,13 @@ def store_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = None) -> Op
         msg = apply_message_reactions_flag(msg, kv)
         kv.put_record(key, stored_message_record(msg, raw))
         put_message_index(kv, msg.chat_id, msg.id, key)
+
+        if msg.poll_options:
+            from greenline.store.polls import refresh_poll_vote_counts
+
+            refreshed = refresh_poll_vote_counts(kv, msg.chat_id, msg.id)
+            if refreshed is not None:
+                msg = refreshed
 
     chat = upsert_chat(msg, evt.Info, count_unread=not already_stored)
     return StoredMessage(message=msg, chat=chat)

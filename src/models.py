@@ -107,6 +107,10 @@ class Message:
     link_title: str = ""
     link_description: str = ""
     link_url: str = ""
+    poll_question: str = ""
+    poll_options: List[str] = field(default_factory=list)
+    poll_selectable_count: int = 0
+    poll_vote_counts: List[int] = field(default_factory=list)
 
 
 @dataclass
@@ -117,6 +121,7 @@ class UiMessage(Message):
     sender_name: str = ""
     sender_photo: str = ""
     reply_to_sender: str = ""
+    poll_my_selected_indices: List[int] = field(default_factory=list)
 
 
 @dataclass

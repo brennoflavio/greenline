@@ -73,6 +73,10 @@
         "mention_spans": [],
         "mentioned_jids": [],
         "mimetype": "",
+        "poll_options": [],
+        "poll_question": "",
+        "poll_selectable_count": 0,
+        "poll_vote_counts": [],
         "raw": {
           "Info": {
             "AddressingMode": "",
@@ -211,6 +215,10 @@
         "mention_spans": [],
         "mentioned_jids": [],
         "mimetype": "",
+        "poll_options": [],
+        "poll_question": "",
+        "poll_selectable_count": 0,
+        "poll_vote_counts": [],
         "read_receipt": "",
         "rendered_formatted_text": "",
         "rendered_text": "",

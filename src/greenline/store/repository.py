@@ -138,6 +138,9 @@ def to_ui_message(message: Message) -> UiMessage:
         reply_to_sender = resolve_sender_name(rendered.reply_to_sender_id)
 
     payload = dict(vars(rendered))
+    payload["poll_my_selected_indices"] = list(
+        getattr(message, "poll_my_selected_indices", []) or []
+    )
     payload["formatted_text"] = text_render_data.rich_text
     payload["formatted_caption"] = formatted_caption
     payload["reply_to_text"] = rendered_reply_to_text

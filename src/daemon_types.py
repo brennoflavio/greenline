@@ -82,6 +82,12 @@ class SendMessageReply:
 
 
 @dataclass
+class SendPollVoteReply:
+    MessageID: str
+    Timestamp: int
+
+
+@dataclass
 class SendReactionReply:
     MessageID: str
     Timestamp: int

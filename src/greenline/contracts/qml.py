@@ -634,6 +634,13 @@ class SendTextMessageRequest:
 
 
 @dataclass(frozen=True)
+class SendPollVoteRequest:
+    chat_id: str
+    message_id: str
+    option_indices: list[int]
+
+
+@dataclass(frozen=True)
 class SendMessageReactionRequest:
     chat_id: str
     message_id: str
@@ -794,6 +801,9 @@ API_CONTRACTS: dict[str, ApiContract] = {
     ),
     "send_location_message": ApiContract(
         "send_location_message", assert_success_response, "dict", request_type=SendLocationMessageRequest
+    ),
+    "send_poll_vote": ApiContract(
+        "send_poll_vote", assert_success_response, "dict", request_type=SendPollVoteRequest
     ),
     "send_message_reaction": ApiContract(
         "send_message_reaction", assert_success_response, "dict", request_type=SendMessageReactionRequest

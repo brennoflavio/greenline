@@ -11,6 +11,7 @@ Item {
     property bool loadingOlderMessages: false
     property var downloadingIds: ({
     })
+    property var pollVoteStates: ({})
     property bool isGroup: false
     property int unreadCount: 0
     property string unreadDividerMessageId: ""
@@ -26,6 +27,8 @@ Item {
     signal editRequested(var message)
     signal deleteRequested(var message)
     signal reactionsRequested(var message)
+    signal pollVoteRequested(string messageId, var indices)
+
     signal copyRequested(string text)
     signal downloadRequested(string messageId, string mediaType)
     signal bottomReached()
@@ -198,6 +201,10 @@ Item {
     }
 
     function messageComponentFor(message) {
+        if (message && message.poll_question &&
+                message.poll_options && message.poll_options.length > 0)
+            return pollComponent;
+
         var type = message && message.type ? message.type : "text";
         if (type === "text" || type === "view_once" || type === "deleted")
             return root.usesRichTextMessage(message) ? richTextComponent : textComponent;
@@ -396,6 +403,31 @@ Item {
                 ]
             }
 
+        }
+
+    }
+
+    Component {
+        id: pollComponent
+
+        PollMessage {
+            question: msg.poll_question || ""
+            options: msg.poll_options || []
+            voteCounts: msg.poll_vote_counts || []
+            selectedIndices: msg.poll_my_selected_indices || []
+            selectableCount: msg.poll_selectable_count || 0
+            voteState: root.pollVoteStates[msg.id] || "idle"
+            isOutgoing: msg.is_outgoing || false
+            isGroup: root.isGroup
+            timestamp: msg.timestamp || ""
+            timestampUnix: msg.timestamp_unix || 0
+            edited: msg.edited || false
+            hasReactions: msg.has_reactions || false
+            readReceipt: msg.read_receipt || ""
+            sendStatus: msg.send_status || ""
+            senderName: root.resolvedSenderName(msg)
+            senderPhoto: root.resolvedSenderPhoto(msg)
+            onVoteRequested: root.pollVoteRequested(msg.id, indices)
         }
 
     }

@@ -1,3 +1,4 @@
+import hashlib
 import os
 import shutil
 import time
@@ -26,6 +27,7 @@ from greenline.contracts.qml import (
     SendImageMessageRequest,
     SendLocationMessageRequest,
     SendMessageReactionRequest,
+    SendPollVoteRequest,
     SendStickerMessageRequest,
     SendTextMessageRequest,
     SendVideoMessageRequest,
@@ -54,6 +56,12 @@ from greenline.store.reactions import (
     put_message_reaction,
     refresh_message_reactions_flag,
 )
+from greenline.store.polls import (
+    own_poll_selected_indices,
+    put_poll_vote,
+    refresh_poll_vote_counts,
+)
+from greenline.store.records import original_poll_payload
 from greenline.store.records import (
     StoredMessageRecord,
     backfilled_stored_message_record,
@@ -313,7 +321,20 @@ def get_messages(request: GetMessagesRequest) -> MessagesResponse:
 
         messages = [message_from_record(value) for _, value in normalized_entries]
         messages.sort(key=lambda message: (message.timestamp_unix, message.id))
-        rendered_messages = [ui_message(message) for message in messages]
+
+        own_jid = get_own_jid()
+        rendered_messages = []
+        for message in messages:
+            payload = ui_message(message)
+            if message.poll_options and own_jid:
+                payload.poll_my_selected_indices = own_poll_selected_indices(
+                    kv,
+                    message.chat_id,
+                    message.id,
+                    own_jid,
+                    message.poll_options,
+                )
+            rendered_messages.append(payload)
 
     return MessagesResponse(
         success=True,
@@ -504,6 +525,107 @@ def delete_message(request: DeleteMessageRequest) -> SuccessResponse:
 
     qml_events.emit_message_upsert([deleted_msg])
     qml_events.emit_chat_list_update([chat])
+    return SuccessResponse(success=True, message="")
+
+
+@crash_reporter
+@dataclass_to_dict
+def send_poll_vote(request: SendPollVoteRequest) -> SuccessResponse:
+    entry = _get_message_entry(request.chat_id, request.message_id)
+    if entry is None:
+        return SuccessResponse(success=False, message="Poll message not found")
+
+    if _is_local_only_message_entry(entry):
+        return SuccessResponse(success=False, message="Poll has not been sent yet")
+
+    poll, raw_info = original_poll_payload(entry)
+    if not poll:
+        return SuccessResponse(success=False, message="Original poll data unavailable")
+
+    options = poll.get("options")
+    if not isinstance(options, list) or not options:
+        return SuccessResponse(success=False, message="Poll options unavailable")
+
+    indices = request.option_indices
+    if (
+        not isinstance(indices, list)
+        or not indices
+        or any(type(index) is not int for index in indices)
+        or len(set(indices)) != len(indices)
+        or any(index < 0 or index >= len(options) for index in indices)
+    ):
+        return SuccessResponse(success=False, message="Invalid poll option selection")
+
+    try:
+        allowed = int(poll.get("selectableOptionsCount") or 0)
+    except (TypeError, ValueError):
+        return SuccessResponse(success=False, message="Invalid poll selection limit")
+
+    if allowed < 0:
+        return SuccessResponse(success=False, message="Invalid poll selection limit")
+    if allowed > 0 and len(indices) > allowed:
+        return SuccessResponse(success=False, message="Too many selected options")
+
+    names = []
+    for index in indices:
+        option = options[index]
+        if not isinstance(option, dict):
+            return SuccessResponse(success=False, message="Invalid poll option")
+        name = option.get("optionName")
+        if not isinstance(name, str) or not name:
+            return SuccessResponse(success=False, message="Invalid poll option name")
+        names.append(name)
+
+    from_me = entry.is_outgoing
+    sender = str(raw_info.get("Sender") or "").strip()
+
+    if not sender:
+        if from_me:
+            return SuccessResponse(success=False, message="Original own sender JID unavailable")
+        if entry.chat_id.endswith(GROUP_JID_SUFFIX):
+            return SuccessResponse(success=False, message="Original group poll sender unavailable")
+        sender = entry.chat_id
+
+    try:
+        reply = daemon_client().send_poll_vote(
+            chat_jid=request.chat_id,
+            poll_message_id=request.message_id,
+            poll_sender_jid=sender,
+            poll_from_me=from_me,
+            option_names=names,
+        )
+    except Exception as error:
+        return SuccessResponse(success=False, message=str(error))
+
+    selected_hashes = [
+        hashlib.sha256(name.encode("utf-8")).hexdigest()
+        for name in names
+    ]
+
+    own_jid = get_own_jid()
+
+    with GreenlineKV() as kv:
+        if own_jid:
+            put_poll_vote(
+                kv,
+                request.chat_id,
+                request.message_id,
+                own_jid,
+                selected_hashes,
+                reply.Timestamp * 1000,
+            )
+
+        updated_poll = refresh_poll_vote_counts(
+            kv,
+            request.chat_id,
+            request.message_id,
+        )
+
+    if updated_poll is not None:
+        poll_payload = ui_message(updated_poll)
+        poll_payload.poll_my_selected_indices = list(indices)
+        qml_events.emit_message_upsert([poll_payload])
+
     return SuccessResponse(success=True, message="")
 
 

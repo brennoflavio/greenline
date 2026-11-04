@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"log"
@@ -22,6 +23,16 @@ import (
 	"greenline.brennoflavio/daemon/notify"
 	"greenline.brennoflavio/daemon/waconn"
 )
+
+type PollVote struct {
+	ChatID          string   `json:"chat_id"`
+	PollID          string   `json:"poll_id"`
+	SenderJID       string   `json:"sender_jid"`
+	SenderAlt       string   `json:"sender_alt"`
+	IsFromMe        bool     `json:"is_from_me"`
+	TimestampMS     int64    `json:"timestamp_ms"`
+	SelectedOptions []string `json:"selected_options"`
+}
 
 type helperNotification struct {
 	EventType string          `json:"event_type"`
@@ -180,6 +191,41 @@ func main() {
 			*events.ClientOutdated, *events.TemporaryBan:
 			return
 		case *events.Message:
+			if msg.Message != nil && msg.Message.GetPollUpdateMessage() != nil {
+				update := msg.Message.GetPollUpdateMessage()
+				pollID := update.GetPollCreationMessageKey().GetID()
+				if pollID == "" {
+					logger.Warn("poll vote without original poll ID")
+					return
+				}
+
+				vote, err := client.DecryptPollVote(context.Background(), msg)
+				if err != nil {
+					logger.Warn("failed to decrypt poll vote", "error", err)
+					return
+				}
+
+				selected := make([]string, 0, len(vote.GetSelectedOptions()))
+				for _, option := range vote.GetSelectedOptions() {
+					selected = append(selected, hex.EncodeToString(option))
+				}
+
+				voteTimestamp := update.GetSenderTimestampMS()
+				if voteTimestamp == 0 {
+					voteTimestamp = msg.Info.Timestamp.UnixMilli()
+				}
+
+				evt = &PollVote{
+					ChatID:          msg.Info.Chat.String(),
+					PollID:          pollID,
+					SenderJID:       msg.Info.Sender.String(),
+					SenderAlt:       msg.Info.SenderAlt.String(),
+					IsFromMe:        msg.Info.IsFromMe,
+					TimestampMS:     voteTimestamp,
+					SelectedOptions: selected,
+				}
+				break
+			}
 			if err := client.NormalizeMessageEdit(context.Background(), msg); err != nil {
 				logger.Warn("failed to normalize edited message", "message_id", msg.Info.ID, "error", err)
 			}

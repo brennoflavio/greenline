@@ -538,6 +538,65 @@ type SendMessageReply struct {
 	Timestamp int64
 }
 
+// SendPollVoteArgs identifies the original poll and selected options.
+type SendPollVoteArgs struct {
+	ChatJID       string
+	PollMessageID string
+	PollSenderJID string
+	PollFromMe    bool
+	OptionNames   []string
+}
+
+type SendPollVoteReply struct {
+	MessageID string
+	Timestamp int64
+}
+
+func (s *Service) SendPollVote(args *SendPollVoteArgs, reply *SendPollVoteReply) error {
+	if err := s.requireLogin(); err != nil {
+		return err
+	}
+	if args == nil || args.PollMessageID == "" || len(args.OptionNames) == 0 {
+		return fmt.Errorf("poll message ID and selected options are required")
+	}
+
+	chat, err := types.ParseJID(args.ChatJID)
+	if err != nil {
+		return fmt.Errorf("invalid chat JID: %w", err)
+	}
+
+	if args.PollSenderJID == "" {
+		return fmt.Errorf("poll sender JID is required")
+	}
+	sender, err := types.ParseJID(args.PollSenderJID)
+	if err != nil {
+		return fmt.Errorf("invalid poll sender JID: %w", err)
+	}
+
+	pollInfo := &types.MessageInfo{}
+	pollInfo.Chat = chat
+	pollInfo.Sender = sender
+	pollInfo.ID = types.MessageID(args.PollMessageID)
+	pollInfo.IsFromMe = args.PollFromMe
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	message, err := s.client.BuildPollVote(ctx, pollInfo, args.OptionNames)
+	if err != nil {
+		return fmt.Errorf("build poll vote failed: %w", err)
+	}
+
+	resp, err := s.client.SendMessage(ctx, chat, message)
+	if err != nil {
+		return fmt.Errorf("send poll vote failed: %w", err)
+	}
+
+	reply.MessageID = string(resp.ID)
+	reply.Timestamp = resp.Timestamp.Unix()
+	return nil
+}
+
 type EditMessageArgs struct {
 	ChatJID                string
 	MessageID              string

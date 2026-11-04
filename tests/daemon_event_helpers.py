@@ -22,6 +22,7 @@ from greenline.store.records import (
     ErrorReportingRecord,
     MessageIndexRecord,
     MessageReactionRecord,
+    PollVoteRecord,
     StickerCacheRecord,
     StoredMessageRecord,
     UnhandledMessageRecord,
@@ -53,6 +54,7 @@ EVENT_DATACLASSES: dict[str, type[Any] | None] = {
     "Mute": None,
     "Picture": whatsmeow_types.PictureEvent,
     "Presence": whatsmeow_types.PresenceEvent,
+    "PollVote": None,
     "PushName": whatsmeow_types.PushNameEvent,
     "Receipt": whatsmeow_types.ReceiptEvent,
     "UndecryptableMessage": whatsmeow_types.UndecryptableMessageEvent,
@@ -387,6 +389,39 @@ def _seed_receipt_prerequisites(fixture: DaemonEventFixture) -> None:
         )
 
 
+
+def _seed_poll_vote_prerequisites(fixture: DaemonEventFixture) -> None:
+    payload = fixture.payload
+    chat_id = str(payload.get("chat_id") or "")
+    poll_id = str(payload.get("poll_id") or "")
+
+    if not chat_id or not poll_id:
+        return
+
+    seed_chat(
+        chat_id,
+        unread_count=0,
+        timestamp_unix=1,
+    )
+
+    message = seed_message(
+        chat_id,
+        poll_id,
+        text="",
+        timestamp_unix=1,
+        is_outgoing=True,
+    )
+
+    message.poll_question = "Mitä juodaan?"
+    message.poll_options = ["Kahvi", "Tee"]
+    message.poll_vote_counts = [0, 0]
+
+    storage_key = message_storage_key(chat_id, 1, poll_id)
+
+    with KV() as kv:
+        kv.put(storage_key, asdict(message))
+
+
 def _seed_reaction_prerequisites(fixture: DaemonEventFixture) -> None:
     if fixture.payload.get("Info", {}).get("Type") != "reaction":
         return
@@ -421,6 +456,8 @@ def seed_prerequisite_kv(fixture: DaemonEventFixture) -> None:
     if fixture.event_type == "Message":
         _seed_delete_prerequisites(fixture)
         _seed_reaction_prerequisites(fixture)
+    elif fixture.event_type == "PollVote":
+        _seed_poll_vote_prerequisites(fixture)
     elif fixture.event_type == "Receipt":
         _seed_receipt_prerequisites(fixture)
     else:
@@ -502,6 +539,15 @@ def validate_kv_snapshot(snapshot: dict[str, Any]) -> None:
                 direction="decode",
             )
             json.loads(record.payload)
+        elif key.startswith("poll_vote:"):
+            assert isinstance(value, dict), f"{key} must store an object"
+            decode_dataclass(
+                PollVoteRecord,
+                value,
+                boundary="kv",
+                contract="poll_vote:",
+                direction="decode",
+            )
         elif key.startswith("message_reaction:"):
             assert isinstance(value, dict), f"{key} must store an object"
             decode_dataclass(

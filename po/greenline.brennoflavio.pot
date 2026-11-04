@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: greenline.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-28 04:35+0000\n"
+"POT-Creation-Date: 2026-11-03 18:48+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -91,106 +91,114 @@ msgstr ""
 msgid "Import Contact"
 msgstr ""
 
-#: ../qml/ChatPage.qml:234 ../qml/components/ChatMessageList.qml:187
+#: ../qml/ChatPage.qml:241 ../qml/components/ChatMessageList.qml:190
 msgid "You"
 msgstr ""
 
-#: ../qml/ChatPage.qml:276
+#: ../qml/ChatPage.qml:283
 msgid "Message updated"
 msgstr ""
 
-#: ../qml/ChatPage.qml:282
+#: ../qml/ChatPage.qml:289
 msgid "Failed to edit message"
 msgstr ""
 
-#: ../qml/ChatPage.qml:292
-msgid "Message deleted"
-msgstr ""
-
-#: ../qml/ChatPage.qml:295
-msgid "Failed to delete message"
-msgstr ""
-
-#: ../qml/ChatPage.qml:318
+#: ../qml/ChatPage.qml:299 ../qml/ChatPage.qml:353
 msgid "No internet connection. Connect and try again."
 msgstr ""
 
-#: ../qml/ChatPage.qml:331 ../qml/ChatPage.qml:1240
+#: ../qml/ChatPage.qml:311 ../qml/components/PollMessage.qml:119
+msgid "Vote sent"
+msgstr ""
+
+#: ../qml/ChatPage.qml:317
+msgid "Failed to send vote"
+msgstr ""
+
+#: ../qml/ChatPage.qml:327
+msgid "Message deleted"
+msgstr ""
+
+#: ../qml/ChatPage.qml:330
+msgid "Failed to delete message"
+msgstr ""
+
+#: ../qml/ChatPage.qml:366 ../qml/ChatPage.qml:1277
 msgid "Failed to download media"
 msgstr ""
 
-#: ../qml/ChatPage.qml:634
+#: ../qml/ChatPage.qml:669
 msgid "Failed to load older messages"
 msgstr ""
 
-#: ../qml/ChatPage.qml:717
+#: ../qml/ChatPage.qml:752
 msgid "Failed to send audio"
 msgstr ""
 
-#: ../qml/ChatPage.qml:820 ../qml/DocumentPreviewPage.qml:42
+#: ../qml/ChatPage.qml:855 ../qml/DocumentPreviewPage.qml:42
 #: ../qml/DocumentPreviewPage.qml:97
 #: ../qml/components/ChatAttachmentDialog.qml:42
 #: ../qml/components/DocumentMessage.qml:61
 msgid "Document"
 msgstr ""
 
-#: ../qml/ChatPage.qml:830
+#: ../qml/ChatPage.qml:865
 msgid "Failed to send document"
 msgstr ""
 
-#: ../qml/ChatPage.qml:869
+#: ../qml/ChatPage.qml:904
 msgid "Failed to send contact"
 msgstr ""
 
-#: ../qml/ChatPage.qml:909
+#: ../qml/ChatPage.qml:944
 msgid "Failed to send location"
 msgstr ""
 
-#: ../qml/ChatPage.qml:986
+#: ../qml/ChatPage.qml:1021
 msgid "WhatsApp messages read today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:987
+#: ../qml/ChatPage.qml:1022
 msgid "No WhatsApp messages read today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:995
+#: ../qml/ChatPage.qml:1030
 msgid "WhatsApp messages sent today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:996
+#: ../qml/ChatPage.qml:1031
 msgid "No WhatsApp messages sent today"
 msgstr ""
 
-#: ../qml/ChatPage.qml:1025
+#: ../qml/ChatPage.qml:1061
 msgid "Scroll up to load older messages first"
 msgstr ""
 
-#: ../qml/ChatPage.qml:1032
+#: ../qml/ChatPage.qml:1069
 msgid "Copied to clipboard"
 msgstr ""
 
-#: ../qml/ChatPage.qml:1215
+#: ../qml/ChatPage.qml:1252
 msgid "recording audio..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:1215
+#: ../qml/ChatPage.qml:1252
 msgid "typing..."
 msgstr ""
 
-#: ../qml/ChatPage.qml:1294
+#: ../qml/ChatPage.qml:1331
 msgid "Send Photo"
 msgstr ""
 
-#: ../qml/ChatPage.qml:1305
+#: ../qml/ChatPage.qml:1342
 msgid "Send Video"
 msgstr ""
 
-#: ../qml/ChatPage.qml:1316
+#: ../qml/ChatPage.qml:1353
 msgid "Send Document"
 msgstr ""
 
-#: ../qml/ChatPage.qml:1327
+#: ../qml/ChatPage.qml:1364
 msgid "Send Contact"
 msgstr ""
 
@@ -304,7 +312,7 @@ msgid "Sending reaction…"
 msgstr ""
 
 #: ../qml/MessageReactionsPage.qml:365
-#: ../qml/components/ChatMessageList.qml:386
+#: ../qml/components/ChatMessageList.qml:393
 msgid "Reactions"
 msgstr ""
 
@@ -526,31 +534,31 @@ msgstr ""
 msgid "Search chats..."
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:118
+#: ../qml/components/ChatMessageList.qml:121
 msgid "Deleted message"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:121
+#: ../qml/components/ChatMessageList.qml:124
 msgid "View-once message. Open WhatsApp on your primary device to view it."
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:311
+#: ../qml/components/ChatMessageList.qml:318
 msgid "Unread"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:363
+#: ../qml/components/ChatMessageList.qml:370
 msgid "Delete"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:374
+#: ../qml/components/ChatMessageList.qml:381
 msgid "Reply"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:380
+#: ../qml/components/ChatMessageList.qml:387
 msgid "Edit"
 msgstr ""
 
-#: ../qml/components/ChatMessageList.qml:392
+#: ../qml/components/ChatMessageList.qml:399
 msgid "Copy"
 msgstr ""
 
@@ -616,6 +624,22 @@ msgstr ""
 
 #: ../qml/components/NewChatDialog.qml:41
 msgid "OK"
+msgstr ""
+
+#: ../qml/components/PollMessage.qml:64
+msgid "Select one or more options"
+msgstr ""
+
+#: ../qml/components/PollMessage.qml:65
+msgid "Select one option"
+msgstr ""
+
+#: ../qml/components/PollMessage.qml:117
+msgid "Sending vote..."
+msgstr ""
+
+#: ../qml/components/PollMessage.qml:120
+msgid "Vote"
 msgstr ""
 
 #: ../qml/components/VoiceMessageRecorderDialog.qml:31

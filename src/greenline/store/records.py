@@ -28,6 +28,15 @@ class StoredMessageRecord(Message):
 
 
 @dataclass
+class PollVoteRecord:
+    chat_id: str
+    poll_id: str
+    sender_jid: str
+    selected_options: list[str]
+    timestamp_ms: int
+
+
+@dataclass
 class MessageReactionRecord:
     chat_id: str
     message_id: str
@@ -233,12 +242,76 @@ def updated_stored_message_record(record: StoredMessageRecord, message: Message)
     return StoredMessageRecord(**payload)
 
 
+
+def original_poll_payload(record: StoredMessageRecord) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Read original WhatsApp poll data at the storage boundary."""
+    raw = record.raw if isinstance(record.raw, dict) else {}
+    content = raw.get("Message")
+    if not isinstance(content, dict):
+        return {}, {}
+
+    poll = content.get("pollCreationMessageV3")
+    if not isinstance(poll, dict):
+        return {}, {}
+
+    info = raw.get("Info")
+    if not isinstance(info, dict):
+        info = {}
+
+    return poll, info
+
+
+def restore_poll_fields(record, payload):
+    """Restore poll metadata from an older stored WhatsApp message."""
+    if payload.get("poll_question"):
+        return
+
+    raw = record.raw if isinstance(record.raw, dict) else {}
+    content = raw.get("Message")
+    if not isinstance(content, dict):
+        return
+
+    poll = content.get("pollCreationMessageV3")
+    if not isinstance(poll, dict):
+        return
+
+    question = poll.get("name")
+    options = poll.get("options")
+
+    if not isinstance(question, str) or not question:
+        return
+    if not isinstance(options, list) or not options:
+        return
+
+    names = []
+    for option in options:
+        if not isinstance(option, dict):
+            return
+        name = option.get("optionName")
+        if not isinstance(name, str) or not name:
+            return
+        names.append(name)
+
+    try:
+        selectable_count = int(poll.get("selectableOptionsCount") or 0)
+    except (TypeError, ValueError):
+        return
+
+    if selectable_count < 0:
+        return
+
+    payload["poll_question"] = question
+    payload["poll_options"] = names
+    payload["poll_selectable_count"] = selectable_count
+
+
 def message_from_record(record: StoredMessageRecord) -> Message:
     payload = asdict(record)
     payload["mention_spans"] = _typed_mention_spans(payload["mention_spans"])
     payload.pop("media_download", None)
     payload.pop("reply_quote_payload_json", None)
     payload.pop("raw", None)
+    restore_poll_fields(record, payload)
     return Message(**payload)
 
 

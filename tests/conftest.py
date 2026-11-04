@@ -135,6 +135,11 @@ class FakeDaemonRPC:
         MessageID="sent-message", Timestamp=1_700_000_000
     )
     send_message_exception: BaseException | None = None
+    send_poll_vote_calls: list[dict[str, Any]] = []
+    send_poll_vote_result: daemon_types.SendPollVoteReply = daemon_types.SendPollVoteReply(
+        MessageID="poll-vote-message", Timestamp=1_700_000_002
+    )
+    send_poll_vote_exception: BaseException | None = None
     send_reaction_calls: list[dict[str, Any]] = []
     send_reaction_result: daemon_types.SendReactionReply = daemon_types.SendReactionReply(
         MessageID="reaction-message", Timestamp=1_700_000_001, OwnJID="me@s.whatsapp.net"
@@ -173,6 +178,11 @@ class FakeDaemonRPC:
         cls.send_message_calls = []
         cls.send_message_result = daemon_types.SendMessageReply(MessageID="sent-message", Timestamp=1_700_000_000)
         cls.send_message_exception = None
+        cls.send_poll_vote_calls = []
+        cls.send_poll_vote_result = daemon_types.SendPollVoteReply(
+            MessageID="poll-vote-message", Timestamp=1_700_000_002
+        )
+        cls.send_poll_vote_exception = None
         cls.send_reaction_calls = []
         cls.send_reaction_result = daemon_types.SendReactionReply(
             MessageID="reaction-message", Timestamp=1_700_000_001, OwnJID="me@s.whatsapp.net"
@@ -260,6 +270,27 @@ class FakeDaemonRPC:
         if self.__class__.send_message_exception is not None:
             raise self.__class__.send_message_exception
         return self.__class__.send_message_result
+
+    def send_poll_vote(
+        self,
+        chat_jid: str,
+        poll_message_id: str,
+        poll_sender_jid: str,
+        poll_from_me: bool,
+        option_names: list[str],
+    ) -> daemon_types.SendPollVoteReply:
+        self.__class__.send_poll_vote_calls.append(
+            {
+                "chat_jid": chat_jid,
+                "poll_message_id": poll_message_id,
+                "poll_sender_jid": poll_sender_jid,
+                "poll_from_me": poll_from_me,
+                "option_names": list(option_names),
+            }
+        )
+        if self.__class__.send_poll_vote_exception is not None:
+            raise self.__class__.send_poll_vote_exception
+        return self.__class__.send_poll_vote_result
 
     def send_reaction(
         self,
