@@ -268,3 +268,72 @@ def test_reaction_event_uses_info_chat_to_update_direct_chat_message(fake_daemon
     with GreenlineKV() as kv:
         assert kv.get_record(f"message_reaction:{chat_id}:outgoing-1:{sender_id}") is not None
         assert kv.get_record(f"message_reaction:self@s.whatsapp.net:outgoing-1:{sender_id}") is None
+
+def test_poll_vote_event_updates_original_poll_and_qml(fake_daemon_rpc) -> None:
+    import hashlib
+
+    from greenline.events.chat_sync import DaemonEventHandler
+    from greenline.store.polls import poll_vote_key
+    from greenline.store.repository import get_message_entry_with_key
+    from greenline.store.records import message_from_record, stored_message_record
+    from greenline.store.messages import message_storage_key
+    from greenline.store.repository import put_message_index
+
+    chat_id = "poll-group@g.us"
+    poll_id = "poll-test-1"
+    sender_id = "voter@s.whatsapp.net"
+
+    seed_chat(chat_id, unread_count=0, is_group=True, muted=False)
+    message = seed_message(chat_id, poll_id, reply_to_id="")
+    message.poll_question = "Mitä juodaan?"
+    message.poll_options = ["Kahvi", "Tee"]
+
+    with GreenlineKV() as kv:
+        key = message_storage_key(chat_id, message.timestamp_unix, poll_id)
+        kv.put_record(key, stored_message_record(message, None))
+
+    fake_daemon_rpc.ensure_jid_map = {
+        chat_id: chat_id,
+        sender_id: sender_id,
+    }
+
+    def vote_event(event_id, option, timestamp_ms):
+        return daemon_types.StoredEvent(
+            id=event_id,
+            event_type="PollVote",
+            payload=json.dumps({
+                "chat_id": chat_id,
+                "poll_id": poll_id,
+                "sender_jid": sender_id,
+                "selected_options": [
+                    hashlib.sha256(option.encode("utf-8")).hexdigest()
+                ],
+                "timestamp_ms": timestamp_ms,
+            }),
+            created_at=0,
+        )
+
+    fake_daemon_rpc.queue_events([
+        vote_event(9101, "Kahvi", 1000),
+        vote_event(9102, "Tee", 2000),
+    ])
+
+    DaemonEventHandler()._do_trigger()
+
+    with GreenlineKV() as kv:
+        _, stored = get_message_entry_with_key(kv, chat_id, poll_id)
+        assert stored is not None
+        updated = message_from_record(stored)
+        assert updated.poll_vote_counts == [0, 1]
+
+        vote = kv.get_record(poll_vote_key(chat_id, poll_id, sender_id))
+        assert vote is not None
+        assert vote.timestamp_ms == 2000
+
+    emitted = _payloads_for("message-upsert")
+    assert emitted
+    assert any(
+        item["id"] == poll_id and item["poll_vote_counts"] == [0, 1]
+        for batch in emitted
+        for item in batch
+    )

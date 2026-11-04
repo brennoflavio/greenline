@@ -75,6 +75,10 @@
       ],
       "poll_question": "Fixture text.",
       "poll_selectable_count": 0,
+      "poll_vote_counts": [
+        0,
+        0
+      ],
       "raw": {
         "Info": {
           "AddressingMode": "lid",

@@ -1,0 +1,17 @@
+{
+  "_meta": {
+    "source": "handwritten minimal daemon-shaped JSON",
+    "source_family": "poll_vote"
+  },
+  "event_type": "PollVote",
+  "id": 9103,
+  "payload": {
+    "chat_id": "fixture-poll-group@g.us",
+    "poll_id": "fixture-poll-001",
+    "sender_jid": "fixture-poll-voter@s.whatsapp.net",
+    "selected_options": [
+      "e736fe7ca45ab6cfa9d5077d41e02da64ec51018de47783a71ee24d21a550a2d"
+    ],
+    "timestamp_ms": 1735735200000
+  }
+}

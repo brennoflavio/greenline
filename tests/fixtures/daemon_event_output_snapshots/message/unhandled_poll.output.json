@@ -49,9 +49,13 @@
       ],
       "poll_question": "Fixture text.",
       "poll_selectable_count": 0,
+      "poll_vote_counts": [
+        0,
+        0
+      ],
       "read_receipt": "",
-      "rendered_formatted_text": "",
-      "rendered_text": "",
+      "rendered_formatted_text": "\ud83d\udcca WhatsApp-kysely<br/><br/>Fixture text.<br/><br/>\u25cb Fixture text.<br/>\u25cb Fixture text.",
+      "rendered_text": "\ud83d\udcca WhatsApp-kysely\n\nFixture text.\n\n\u25cb Fixture text.\n\u25cb Fixture text.",
       "reply_to_from_me": false,
       "reply_to_id": "",
       "reply_to_mentioned_jids": [],

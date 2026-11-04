@@ -63,6 +63,9 @@ def _assert_manifest_storage_intent(fixture, diff: dict) -> None:
         _assert_empty_diff(fixture, diff)
     elif source_family in {"chat_update", "photo_update"}:
         _assert_has_written_key(diff, "chat:", fixture)
+    elif source_family == "poll_vote":
+        _assert_has_written_key(diff, "poll_vote:", fixture)
+        _assert_has_written_key(diff, "message:", fixture)
     elif source_family == "receipt":
         _assert_has_written_key(diff, "message:", fixture)
     elif source_family == "history_sync":
@@ -103,6 +106,15 @@ def _assert_manifest_output_intent(fixture, output: dict) -> None:
         assert output["presence_updates"], f"{fixture.relative_path} should emit presence_updates"
     elif source_family == "chat_presence":
         assert output["chat_presence_updates"], f"{fixture.relative_path} should emit chat_presence_updates"
+    elif source_family == "poll_vote":
+        assert output["message_upserts"], (
+            f"{fixture.relative_path} should emit updated poll message"
+        )
+        assert any(
+            message["id"] == fixture.payload["poll_id"]
+            and message["poll_vote_counts"] == [1, 0]
+            for message in output["message_upserts"]
+        ), f"{fixture.relative_path} should emit updated poll vote counts"
     elif source_family == "receipt":
         assert output["message_updates"], f"{fixture.relative_path} should emit message_updates"
     elif source_family == "chat_update":

@@ -28,6 +28,15 @@ class StoredMessageRecord(Message):
 
 
 @dataclass
+class PollVoteRecord:
+    chat_id: str
+    poll_id: str
+    sender_jid: str
+    selected_options: list[str]
+    timestamp_ms: int
+
+
+@dataclass
 class MessageReactionRecord:
     chat_id: str
     message_id: str

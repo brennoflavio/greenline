@@ -1,0 +1,129 @@
+{
+  "added": {
+    "poll_vote:fixture-poll-group@g.us:fixture-poll-001:fixture-poll-voter@s.whatsapp.net": {
+      "chat_id": "fixture-poll-group@g.us",
+      "poll_id": "fixture-poll-001",
+      "selected_options": [
+        "e736fe7ca45ab6cfa9d5077d41e02da64ec51018de47783a71ee24d21a550a2d"
+      ],
+      "sender_jid": "fixture-poll-voter@s.whatsapp.net",
+      "timestamp_ms": 1735735200000
+    }
+  },
+  "changed": {
+    "message:fixture-poll-group@g.us:1:fixture-poll-001": {
+      "after": {
+        "button_text": "",
+        "button_url": "",
+        "caption": "",
+        "chat_id": "fixture-poll-group@g.us",
+        "duration": "",
+        "edited": false,
+        "file_name": "",
+        "has_reactions": false,
+        "id": "fixture-poll-001",
+        "image_source": "",
+        "is_outgoing": true,
+        "link_description": "",
+        "link_title": "",
+        "link_url": "",
+        "media_download": {
+          "direct_path": "",
+          "file_enc_sha256": "",
+          "file_length": 0,
+          "file_name": "",
+          "file_sha256": "",
+          "media_key": "",
+          "media_type": "",
+          "mimetype": ""
+        },
+        "media_path": "",
+        "mention_spans": [],
+        "mentioned_jids": [],
+        "mimetype": "",
+        "poll_options": [
+          "Kahvi",
+          "Tee"
+        ],
+        "poll_question": "Mit\u00e4 juodaan?",
+        "poll_selectable_count": 0,
+        "poll_vote_counts": [
+          1,
+          0
+        ],
+        "read_receipt": "sent",
+        "rendered_formatted_text": "",
+        "rendered_text": "",
+        "reply_quote_payload_json": "",
+        "reply_to_from_me": false,
+        "reply_to_id": "",
+        "reply_to_mentioned_jids": [],
+        "reply_to_sender_id": "",
+        "reply_to_sender_raw": "",
+        "reply_to_text": "",
+        "send_status": "",
+        "sender": "",
+        "sender_raw": "",
+        "sticker_source": "",
+        "temp_id": "",
+        "text": "",
+        "text_render_mode": "simple",
+        "thumbnail_path": "",
+        "timestamp": "11:59",
+        "timestamp_unix": 1,
+        "type": "text"
+      },
+      "before": {
+        "button_text": "",
+        "button_url": "",
+        "caption": "",
+        "chat_id": "fixture-poll-group@g.us",
+        "duration": "",
+        "edited": false,
+        "file_name": "",
+        "has_reactions": false,
+        "id": "fixture-poll-001",
+        "image_source": "",
+        "is_outgoing": true,
+        "link_description": "",
+        "link_title": "",
+        "link_url": "",
+        "media_path": "",
+        "mention_spans": [],
+        "mentioned_jids": [],
+        "mimetype": "",
+        "poll_options": [
+          "Kahvi",
+          "Tee"
+        ],
+        "poll_question": "Mit\u00e4 juodaan?",
+        "poll_selectable_count": 0,
+        "poll_vote_counts": [
+          0,
+          0
+        ],
+        "read_receipt": "sent",
+        "rendered_formatted_text": "",
+        "rendered_text": "",
+        "reply_to_from_me": false,
+        "reply_to_id": "",
+        "reply_to_mentioned_jids": [],
+        "reply_to_sender_id": "",
+        "reply_to_sender_raw": "",
+        "reply_to_text": "",
+        "send_status": "",
+        "sender": "",
+        "sender_raw": "",
+        "sticker_source": "",
+        "temp_id": "",
+        "text": "",
+        "text_render_mode": "simple",
+        "thumbnail_path": "",
+        "timestamp": "11:59",
+        "timestamp_unix": 1,
+        "type": "text"
+      }
+    }
+  },
+  "deleted": {}
+}

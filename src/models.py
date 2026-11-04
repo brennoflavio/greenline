@@ -110,6 +110,7 @@ class Message:
     poll_question: str = ""
     poll_options: List[str] = field(default_factory=list)
     poll_selectable_count: int = 0
+    poll_vote_counts: List[int] = field(default_factory=list)
 
 
 @dataclass

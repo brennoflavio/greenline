@@ -23,6 +23,7 @@ from greenline.store.identity import (
     upsert_identity_chat,
 )
 from greenline.store.messages import store_message, store_undecryptable_message
+from greenline.store.polls import put_poll_vote, refresh_poll_vote_counts
 from greenline.store.reactions import (
     delete_message_reaction,
     put_message_reaction,
@@ -129,6 +130,54 @@ def _auto_download_sticker(msg: Message) -> str:
         kv.put_record(key, updated_stored_message_record(entry, updated))
 
     return media_path
+
+
+def _handle_poll_vote(
+    event: Any,
+    message_upserts: list[dict[str, Any]],
+) -> None:
+    payload = json.loads(event.payload or "{}")
+
+    chat_id = str(payload.get("chat_id") or "")
+    poll_id = str(payload.get("poll_id") or "")
+    sender = str(payload.get("sender_alt") or payload.get("sender_jid") or "")
+
+    if not chat_id or not poll_id or not sender:
+        return
+
+    chat_id = canonicalize_contact_jid(
+        daemon_client().ensure_jid(chat_id).JID
+    )
+    sender = canonicalize_contact_jid(
+        daemon_client().ensure_jid(sender).JID
+    )
+
+    selected = payload.get("selected_options")
+    if not isinstance(selected, list) or not all(
+        isinstance(option, str) for option in selected
+    ):
+        return
+
+    timestamp_ms = int(payload.get("timestamp_ms") or 0)
+    if timestamp_ms <= 0:
+        return
+
+    with GreenlineKV() as kv:
+        changed = put_poll_vote(
+            kv,
+            chat_id,
+            poll_id,
+            sender,
+            selected,
+            timestamp_ms,
+        )
+        updated_message = (
+            refresh_poll_vote_counts(kv, chat_id, poll_id)
+            if changed else None
+        )
+
+    if updated_message is not None:
+        message_upserts.append(dataclass_to_ui_dict(updated_message))
 
 
 def _handle_reaction_message(
@@ -513,6 +562,8 @@ def _dispatch_event_inner(
     reaction_bucket = reaction_updates if reaction_updates is not None else []
     if event.event_type == "Message":
         _handle_message(event, chat_updates, message_upserts, reaction_bucket)
+    elif event.event_type == "PollVote":
+        _handle_poll_vote(event, message_upserts)
     elif event.event_type == "Receipt":
         _handle_receipt(event, chat_updates, message_updates)
     elif event.event_type == "UndecryptableMessage":

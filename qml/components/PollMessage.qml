@@ -6,6 +6,7 @@ MessageBubble {
 
     property string question: ""
     property var options: []
+    property var voteCounts: []
     property int selectableCount: 0
     property var selectedIndices: []
     property string voteState: "idle"
@@ -99,7 +100,20 @@ MessageBubble {
                     textFormat: Text.PlainText
                     color: "#303030"
                     wrapMode: Text.Wrap
-                    width: parent.width - units.gu(3.5)
+                    width: parent.width
+                           - units.gu(3.5)
+                           - (root.voteCounts.length > 0 ? units.gu(7) : 0)
+                }
+
+                Label {
+                    text: root.voteCounts.length > index
+                        ? String(root.voteCounts[index])
+                        : ""
+                    visible: root.voteCounts.length > 0
+                    color: "#666666"
+                    fontSize: "small"
+                    horizontalAlignment: Text.AlignRight
+                    width: units.gu(6)
                 }
             }
 

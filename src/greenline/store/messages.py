@@ -765,6 +765,13 @@ def store_message(evt: MessageEvent, raw: Optional[Dict[str, Any]] = None) -> Op
         kv.put_record(key, stored_message_record(msg, raw))
         put_message_index(kv, msg.chat_id, msg.id, key)
 
+        if msg.poll_options:
+            from greenline.store.polls import refresh_poll_vote_counts
+
+            refreshed = refresh_poll_vote_counts(kv, msg.chat_id, msg.id)
+            if refreshed is not None:
+                msg = refreshed
+
     chat = upsert_chat(msg, evt.Info, count_unread=not already_stored)
     return StoredMessage(message=msg, chat=chat)
 

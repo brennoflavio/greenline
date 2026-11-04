@@ -413,6 +413,7 @@ Item {
         PollMessage {
             question: msg.poll_question || ""
             options: msg.poll_options || []
+            voteCounts: msg.poll_vote_counts || []
             selectableCount: msg.poll_selectable_count || 0
             voteState: root.pollVoteStates[msg.id] || "idle"
             isOutgoing: msg.is_outgoing || false
