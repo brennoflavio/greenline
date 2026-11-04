@@ -96,7 +96,11 @@ def message_upsert_payload(messages: Iterable[Message | Mapping[str, Any]]) -> l
         if type(message) is Message:
             payloads.append(qml_payloads.ui_message(message))
         else:
-            payloads.append(qml_payloads.stored_ui_message(_mapping_payload(message)))
+            mapping = _mapping_payload(message)
+            payload = qml_payloads.stored_ui_message(mapping)
+            if "poll_my_selected_indices" in mapping:
+                payload["poll_my_selected_indices"] = mapping["poll_my_selected_indices"]
+            payloads.append(payload)
     return payloads
 
 

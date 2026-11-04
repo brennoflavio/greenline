@@ -23,7 +23,11 @@ from greenline.store.identity import (
     upsert_identity_chat,
 )
 from greenline.store.messages import store_message, store_undecryptable_message
-from greenline.store.polls import put_poll_vote, refresh_poll_vote_counts
+from greenline.store.polls import (
+    own_poll_selected_indices,
+    put_poll_vote,
+    refresh_poll_vote_counts,
+)
 from greenline.store.reactions import (
     delete_message_reaction,
     put_message_reaction,
@@ -175,9 +179,22 @@ def _handle_poll_vote(
             refresh_poll_vote_counts(kv, chat_id, poll_id)
             if changed else None
         )
+        selected_indices = (
+            own_poll_selected_indices(
+                kv,
+                chat_id,
+                poll_id,
+                get_own_jid(),
+                updated_message.poll_options,
+            )
+            if updated_message is not None else []
+        )
 
     if updated_message is not None:
-        message_upserts.append(dataclass_to_ui_dict(updated_message))
+        payload = dataclass_to_ui_dict(updated_message)
+        if selected_indices:
+            payload["poll_my_selected_indices"] = selected_indices
+        message_upserts.append(payload)
 
 
 def _handle_reaction_message(

@@ -124,3 +124,23 @@ def refresh_poll_vote_counts(
         )
 
     return message
+
+
+def own_poll_selected_indices(kv, chat_id, poll_id, own_jid, options):
+    """Return indices selected by the current user in a poll."""
+    if not own_jid or not options:
+        return []
+
+    typed_kv = kv if isinstance(kv, GreenlineKV) else GreenlineKV(kv)
+    vote = typed_kv.get_record(poll_vote_key(chat_id, poll_id, own_jid))
+
+    if not isinstance(vote, PollVoteRecord):
+        return []
+
+    selected = set(vote.selected_options)
+
+    return [
+        index
+        for index, option in enumerate(options)
+        if hashlib.sha256(option.encode("utf-8")).hexdigest() in selected
+    ]

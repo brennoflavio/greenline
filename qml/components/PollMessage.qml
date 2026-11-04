@@ -9,6 +9,7 @@ MessageBubble {
     property var voteCounts: []
     property int selectableCount: 0
     property var selectedIndices: []
+    property var draftSelectedIndices: []
     property string voteState: "idle"
     readonly property bool sending: voteState === "sending"
     readonly property bool submitted: voteState === "sent"
@@ -20,21 +21,30 @@ MessageBubble {
         !sending && !submitted &&
         question !== "" &&
         options.length > 0 &&
-        selectedIndices.length > 0
+        draftSelectedIndices.length > 0
 
     preferredBubbleWidth: units.gu(30)
+
+    Component.onCompleted: {
+        draftSelectedIndices = selectedIndices.slice();
+    }
+
+    onSelectedIndicesChanged: {
+        if (!sending && !submitted)
+            draftSelectedIndices = selectedIndices.slice();
+    }
 
     copyableText: question + "\n" + options.join("\n")
 
     function isSelected(index) {
-        return selectedIndices.indexOf(index) !== -1;
+        return draftSelectedIndices.indexOf(index) !== -1;
     }
 
     function toggleOption(index) {
         if (sending || submitted)
             return;
 
-        var next = selectedIndices.slice();
+        var next = draftSelectedIndices.slice();
         var position = next.indexOf(index);
 
         if (position !== -1) {
@@ -47,7 +57,7 @@ MessageBubble {
             next.push(index);
         }
 
-        selectedIndices = next;
+        draftSelectedIndices = next;
     }
 
     Label {
@@ -137,7 +147,7 @@ MessageBubble {
         onClicked: {
             if (!root.canVote)
                 return;
-            root.voteRequested(root.selectedIndices.slice());
+            root.voteRequested(root.draftSelectedIndices.slice());
         }
     }
 

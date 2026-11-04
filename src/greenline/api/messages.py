@@ -1,3 +1,4 @@
+import hashlib
 import os
 import shutil
 import time
@@ -54,6 +55,11 @@ from greenline.store.reactions import (
     list_message_reactions,
     put_message_reaction,
     refresh_message_reactions_flag,
+)
+from greenline.store.polls import (
+    own_poll_selected_indices,
+    put_poll_vote,
+    refresh_poll_vote_counts,
 )
 from greenline.store.records import original_poll_payload
 from greenline.store.records import (
@@ -315,7 +321,20 @@ def get_messages(request: GetMessagesRequest) -> MessagesResponse:
 
         messages = [message_from_record(value) for _, value in normalized_entries]
         messages.sort(key=lambda message: (message.timestamp_unix, message.id))
-        rendered_messages = [ui_message(message) for message in messages]
+
+        own_jid = get_own_jid()
+        rendered_messages = []
+        for message in messages:
+            payload = ui_message(message)
+            if message.poll_options and own_jid:
+                payload.poll_my_selected_indices = own_poll_selected_indices(
+                    kv,
+                    message.chat_id,
+                    message.id,
+                    own_jid,
+                    message.poll_options,
+                )
+            rendered_messages.append(payload)
 
     return MessagesResponse(
         success=True,
@@ -568,7 +587,7 @@ def send_poll_vote(request: SendPollVoteRequest) -> SuccessResponse:
         sender = entry.chat_id
 
     try:
-        daemon_client().send_poll_vote(
+        reply = daemon_client().send_poll_vote(
             chat_jid=request.chat_id,
             poll_message_id=request.message_id,
             poll_sender_jid=sender,
@@ -577,6 +596,35 @@ def send_poll_vote(request: SendPollVoteRequest) -> SuccessResponse:
         )
     except Exception as error:
         return SuccessResponse(success=False, message=str(error))
+
+    selected_hashes = [
+        hashlib.sha256(name.encode("utf-8")).hexdigest()
+        for name in names
+    ]
+
+    own_jid = get_own_jid()
+
+    with GreenlineKV() as kv:
+        if own_jid:
+            put_poll_vote(
+                kv,
+                request.chat_id,
+                request.message_id,
+                own_jid,
+                selected_hashes,
+                reply.Timestamp * 1000,
+            )
+
+        updated_poll = refresh_poll_vote_counts(
+            kv,
+            request.chat_id,
+            request.message_id,
+        )
+
+    if updated_poll is not None:
+        poll_payload = ui_message(updated_poll)
+        poll_payload.poll_my_selected_indices = list(indices)
+        qml_events.emit_message_upsert([poll_payload])
 
     return SuccessResponse(success=True, message="")
 

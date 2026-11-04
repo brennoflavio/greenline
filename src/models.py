@@ -121,6 +121,7 @@ class UiMessage(Message):
     sender_name: str = ""
     sender_photo: str = ""
     reply_to_sender: str = ""
+    poll_my_selected_indices: List[int] = field(default_factory=list)
 
 
 @dataclass
